@@ -30,6 +30,12 @@
       <a href="editor.html?tipo=cuestionario" class="active">Editor</a>
     </nav>
     <div class="header__right">
+      <div class="tema-switcher" id="temaSwitcher">
+        <button class="tema-btn active" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+        <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+        <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+        <button class="tema-btn" data-tema="hca" title="HCA"><span class="tema-btn__dot"></span></button>
+      </div>
       <div class="header__status"><span class="header__status-dot"></span><span>Online</span></div>
     </div>
     <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
@@ -42,7 +48,7 @@
   <div class="container">
     <div class="section__header reveal">
       <div class="section__eyebrow">// Nueva actividad</div>
-      <h2 class="section__title">Armá tu<br>Cuestionario<span class="accent">.</span></h2>
+      <h2 class="section__title" id="tituloEditor">Armá tu Cuestionario<span class="accent">.</span></h2>
     </div>
     <div class="campo-grid" style="max-width:700px">
       <div class="campo">
@@ -119,7 +125,7 @@
 
       <!-- Referencia Aiken -->
       <details class="formato-ayuda">
-        <summary class="formato-ayuda__titulo">📖 Formato Aiken (opción múltiple)</summary>
+        <summary class="formato-ayuda__titulo">Formato Aiken (opción múltiple)</summary>
         <div class="formato-ayuda__contenido">
 <pre class="formato-ejemplo">¿Cuál es la capital de Uruguay?
 A. Buenos Aires
@@ -140,7 +146,7 @@ ANSWER: C</pre>
 
       <!-- Referencia extendida -->
       <details class="formato-ayuda">
-        <summary class="formato-ayuda__titulo">📖 Formato extendido (todos los tipos)</summary>
+        <summary class="formato-ayuda__titulo">Formato extendido (todos los tipos)</summary>
         <div class="formato-ayuda__contenido">
 <pre class="formato-ejemplo">## P1 :: opcion_multiple :: 1pt
 ¿Cuál es la unidad de corriente?
@@ -203,7 +209,7 @@ Explicá qué es un circuito en serie.</pre>
       </div>
 
       <details class="formato-ayuda" style="margin-bottom:1.5rem">
-        <summary class="formato-ayuda__titulo">📖 Tutorial: Usar IA para generar preguntas</summary>
+        <summary class="formato-ayuda__titulo">Tutorial: Usar IA para generar preguntas</summary>
         <div class="formato-ayuda__contenido">
           <ol style="padding-left:1.5rem;font-size:var(--fs-data);line-height:2">
             <li><strong>Completá el formulario</strong> de abajo con el tema, nivel, cantidad y tipos de pregunta.</li>
@@ -221,7 +227,7 @@ Explicá qué es un circuito en serie.</pre>
             <li>Volvé acá, <strong>pegala</strong> en el área "Respuesta de la IA" y hacé clic en <strong>"Procesar"</strong>.</li>
             <li>Las preguntas aparecen en el <strong>Editor Visual</strong> donde podés editarlas y descargar.</li>
           </ol>
-          <p style="margin-top:1rem;opacity:0.6">💡 Si la IA no respeta el formato, podés editar su respuesta antes de procesar, o personalizar el prompt.</p>
+          <p style="margin-top:1rem;opacity:0.6">Si la IA no respeta el formato, podés editar su respuesta antes de procesar, o personalizar el prompt.</p>
         </div>
       </details>
 
@@ -328,10 +334,13 @@ Explicá qué es un circuito en serie.</pre>
 
     <!-- Panel de imágenes -->
     <div id="panelImagenes" style="display:none;margin-bottom:2.5rem">
-      <div class="section__eyebrow" style="margin-bottom:1rem">// Imágenes detectadas</div>
+      <div class="section__eyebrow" style="margin-bottom:1rem">// Imágenes</div>
+      <div class="alerta alerta--info" style="margin-bottom:1rem">
+        Para incluir imágenes en una pregunta, escribí <code>[IMG: nombre.png]</code> en el enunciado (ej: <code>[IMG: circuito_serie.png]</code>). Después subí las imágenes acá y se asocian automáticamente por nombre. Las imágenes se incluyen dentro del paquete .imscc.
+      </div>
       <div class="panel-imagenes" id="dropZone">
-        <p class="panel-imagenes__titulo">Arrastrá tus imágenes acá</p>
-        <p class="panel-imagenes__sub">PNG, JPG, WebP, SVG, GIF — Se asocian automáticamente por nombre</p>
+        <p class="panel-imagenes__titulo">Arrastrá tus imágenes acá o hacé clic</p>
+        <p class="panel-imagenes__sub">PNG, JPG, WebP, SVG, GIF — max 10 MB cada una</p>
         <input type="file" id="inputImagenes" multiple accept="image/*" style="display:none">
       </div>
       <div class="panel-imagenes__lista" id="listaTokensImg"></div>
@@ -380,6 +389,7 @@ Explicá qué es un circuito en serie.</pre>
   </div>
 </footer>
 
+<script src="js/tema.js"></script>
 <script src="js/templatemo-axis-script.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script type="module" src="js/app.js"></script>

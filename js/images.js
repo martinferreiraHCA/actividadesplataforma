@@ -118,7 +118,7 @@ export class GestorImagenes {
         </select>`;
       }
 
-      chip.innerHTML = `🖼️ ${token} ${asociado ? '✅' : '⚠️'} ${selectHtml}`;
+      chip.innerHTML = `${token} ${asociado ? '[OK]' : '[—]'} ${selectHtml}`;
       contenedor.appendChild(chip);
     });
   }
