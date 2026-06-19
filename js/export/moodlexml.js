@@ -99,6 +99,21 @@ export function generarMoodleXML(preguntas, titulo) {
         break;
       }
 
+      case 'ordenamiento': {
+        // Moodle core no trae "ordering": lo damos como matching elemento → posición.
+        const items = (p.items || []).filter(t => (t ?? '').trim() !== '');
+        xml += `  <question type="matching">\n`;
+        xml += `    <name><text>${escapeXml(`P${p.numero}`)}</text></name>\n`;
+        xml += `    <questiontext format="html"><text>${cdata(enunciadoHtml((p.enunciado || '') + '\n(Ordená: asociá cada elemento con su posición.)'))}</text></questiontext>\n`;
+        xml += `    <defaultgrade>${p.puntaje}</defaultgrade>\n`;
+        xml += `    <shuffleanswers>1</shuffleanswers>\n`;
+        items.forEach((t, i) => {
+          xml += `    <subquestion format="html"><text>${cdata(escapeXml(t))}</text><answer><text>${cdata('Posición ' + (i + 1))}</text></answer></subquestion>\n`;
+        });
+        xml += `  </question>\n\n`;
+        break;
+      }
+
       case 'ensayo': {
         xml += `  <question type="essay">\n`;
         xml += `    <name><text>${escapeXml(`P${p.numero}`)}</text></name>\n`;

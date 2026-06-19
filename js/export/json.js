@@ -16,6 +16,7 @@ export function exportarJSON(preguntas, titulo, nivel) {
       respuestasAceptadas: p.respuestasAceptadas,
       tolerancia: p.tolerancia,
       pares: p.pares,
+      items: p.items,
       retro: p.retro,
       imagenes: p.imagenes,
       imagen: p.imagen || null
