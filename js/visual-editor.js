@@ -72,11 +72,10 @@ export class EditorVisual {
 
     if (this.preguntas.length === 0) {
       this.contenedor.innerHTML = `
-        <div style="text-align:center;padding:3rem 1rem;opacity:0.4">
-          <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:var(--fs-h3);text-transform:uppercase;margin-bottom:0.5rem">
-            Sin preguntas todavía
-          </p>
-          <p style="font-size:var(--fs-data)">Usá los botones de arriba para agregar preguntas.</p>
+        <div class="ve-vacio">
+          <div class="ve-vacio__icono">◳</div>
+          <p class="ve-vacio__titulo">Sin preguntas todavía</p>
+          <p class="ve-vacio__sub">Usá los botones de arriba para agregar tu primera pregunta,<br>o pasá a "Importar Texto" para pegar varias de una.</p>
         </div>
       `;
       this.onUpdate(this.preguntas);

@@ -676,6 +676,36 @@
   margin-right: 0.5rem;
 }
 
+/* ====== VISUAL EDITOR — ESTADO VACÍO ====== */
+.ve-vacio {
+  text-align: center;
+  padding: clamp(2.5rem, 6vw, 4.5rem) 1.5rem;
+  border: 4px dashed rgba(0, 0, 0, 0.15);
+  background: var(--surface);
+}
+
+.ve-vacio__icono {
+  font-size: 2.5rem;
+  opacity: 0.25;
+  margin-bottom: 0.8rem;
+}
+
+.ve-vacio__titulo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: var(--fs-h3);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.6rem;
+}
+
+.ve-vacio__sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  line-height: 1.7;
+  opacity: 0.5;
+}
+
 /* ====== VISUAL EDITOR — CARDS ====== */
 .ve-card {
   margin-bottom: var(--gap);

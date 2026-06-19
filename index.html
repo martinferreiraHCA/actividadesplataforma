@@ -145,6 +145,7 @@
   const grid = document.getElementById('gridActividades');
   let idx = 1;
 
+  const nuevasCards = [];
   Object.entries(ACTIVITIES).forEach(([id, act]) => {
     const card = document.createElement('a');
     card.href = `editor.html?tipo=${id}`;
@@ -157,8 +158,29 @@
       <p class="actividad-card__desc">${act.descripcion}</p>
     `;
     grid.appendChild(card);
+    nuevasCards.push(card);
     idx++;
   });
+
+  // Las tarjetas se crean por JS DESPUÉS de que el observer del template ya
+  // capturó su lista estática de .reveal, así que las animamos nosotros mismos.
+  // (Sin esto quedaban invisibles —opacity:0— sobre fondo blanco.)
+  if ('IntersectionObserver' in window) {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          entry.target.style.transitionDelay = (i * 0.06) + 's';
+          entry.target.classList.add('visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+    nuevasCards.forEach(c => obs.observe(c));
+    // Red de seguridad: si por lo que sea no se disparan, mostrarlas igual.
+    setTimeout(() => nuevasCards.forEach(c => c.classList.add('visible')), 1500);
+  } else {
+    nuevasCards.forEach(c => c.classList.add('visible'));
+  }
 </script>
 
 </body>

@@ -84,6 +84,9 @@ const editorVisual = new EditorVisual(
   }
 );
 
+// Mostrar el estado vacío desde el arranque (evita un área en blanco confusa)
+editorVisual.render();
+
 // Botones agregar pregunta
 document.querySelectorAll('.ve-agregar-tipo').forEach(btn => {
   btn.addEventListener('click', () => {
