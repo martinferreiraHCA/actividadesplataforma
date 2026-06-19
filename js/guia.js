@@ -127,6 +127,32 @@ Si V=12 e I=2, ¿cuánto vale R?
         </table>
         <div class="guia-aviso">Antes de bajar, la app revisa que ninguna pregunta esté incompleta
         (opciones vacías, falta marcar la correcta, etc.) y te avisa.</div>
+
+        <h4 class="guia-h">Entrá a tu plataforma</h4>
+        <p class="guia-p">Abrí la plataforma donde vas a importar el archivo (se abre en una pestaña nueva):</p>
+        <div class="ia-accesos">
+          <span class="ia-accesos__label">Ir a:</span>
+          <a class="ia-acceso" href="https://app.schoology.com/" target="_blank" rel="noopener">Schoology ↗</a>
+          <a class="ia-acceso" href="https://moodle.org/" target="_blank" rel="noopener">Moodle ↗</a>
+          <a class="ia-acceso" href="https://classroom.google.com/" target="_blank" rel="noopener">Google Classroom ↗</a>
+        </div>
+      `
+    },
+    {
+      id: "video",
+      titulo: "Video tutorial",
+      html: `
+        <p class="guia-p">Mirá el paso a paso de cómo subir los cuestionarios a tu plataforma.</p>
+        <div class="guia-video">
+          <video controls preload="metadata" playsinline>
+            <source src="media/tutorial-subir-cuestionarios.mp4" type="video/mp4">
+            Tu navegador no puede reproducir el video. Podés
+            <a href="media/tutorial-subir-cuestionarios.mp4" target="_blank" rel="noopener">descargarlo acá</a>.
+          </video>
+        </div>
+        <p class="guia-p" style="opacity:0.55">¿No se ve el video? Todavía no fue subido al repositorio.
+        Colocá tu archivo <code>.mp4</code> en la carpeta <code>media/</code> con el nombre
+        <code>tutorial-subir-cuestionarios.mp4</code> y va a aparecer acá automáticamente.</p>
       `
     },
     {
