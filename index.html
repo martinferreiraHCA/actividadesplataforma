@@ -1,59 +1,165 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generador de Actividades — HCA</title>
-  <meta name="description" content="Creá cuestionarios y actividades para Schoology, Moodle y Google Classroom en minutos.">
-  <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Actividades — HCA</title>
+<meta name="description" content="Creá cuestionarios y actividades para Schoology, Moodle y Google Classroom en minutos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/templatemo-axis-industrial.css">
+<link rel="stylesheet" href="css/templatemo-axis-main-page.css">
+<link rel="stylesheet" href="css/generador.css">
 </head>
 <body>
 
-  <header class="header-app">
-    <div class="header-app__inner">
-      <a href="index.html" class="header-app__brand">
-        <span class="header-app__logo">HCA</span>
-        Generador de Actividades
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner">
+    <div class="header__left">
+      <a href="index.html" class="header__logo" aria-label="Inicio">
+        <span class="header__logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="#FF3E00" stroke-width="2.5"/><line x1="12" y1="2" x2="12" y2="22" stroke="#FF3E00" stroke-width="2"/></svg>
+        </span>
+        HCA
       </a>
+      <span class="header__sep"></span>
+      <span class="header__product">Generador de Actividades</span>
     </div>
-  </header>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html" class="active">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+    </nav>
+    <div class="header__right">
+      <div class="header__status"><span class="header__status-dot"></span><span>Online</span></div>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
 
-  <main class="contenedor">
-    <section class="hero-landing">
-      <h1 class="hero-landing__titulo">Creá actividades para tu plataforma</h1>
-      <p class="hero-landing__subtitulo">
-        Generá cuestionarios listos para importar en Schoology, Moodle y Google Classroom. Sin instalar nada, desde el navegador.
-      </p>
-    </section>
 
-    <section id="actividades" class="grilla-actividades" role="list" aria-label="Tipos de actividad">
-    </section>
-  </main>
+<!-- ====== HERO ====== -->
+<section class="hero hero--center hero--generador">
+  <div class="hero__grid" aria-hidden="true"></div>
+  <div class="hero__label reveal">Herramienta para docentes</div>
+  <h1 class="hero__title">
+    <span class="line">Creá</span>
+    <span class="line line--indent">Actividades<span class="accent-dot">.</span></span>
+  </h1>
+  <p class="hero__desc reveal">
+    Generá cuestionarios listos para importar en Schoology, Moodle y Google Classroom. Sin instalar nada, desde el navegador.
+  </p>
+</section>
 
-  <footer class="footer-app">
-    <p>Generador de Actividades — HCA. Hecho con 🧉 para docentes.</p>
-  </footer>
 
-  <script type="module">
-    import { ACTIVITIES } from './js/activities.js';
+<!-- ====== ACTIVIDADES ====== -->
+<section class="section" id="actividades">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Elegí el tipo</div>
+      <h2 class="section__title">Tipos de<br>Actividad</h2>
+    </div>
+    <div class="actividades__grid" id="gridActividades" role="list" aria-label="Tipos de actividad">
+    </div>
+  </div>
+</section>
 
-    const grilla = document.getElementById('actividades');
 
-    Object.entries(ACTIVITIES).forEach(([id, act]) => {
-      const card = document.createElement('a');
-      card.href = `editor.html?tipo=${id}`;
-      card.className = 'card-actividad';
-      card.setAttribute('role', 'listitem');
-      card.innerHTML = `
-        <div class="card-actividad__icono">${act.icono}</div>
-        <div class="card-actividad__nombre">${act.nombre}</div>
-        <div class="card-actividad__desc">${act.descripcion}</div>
-      `;
-      grilla.appendChild(card);
-    });
-  </script>
+<!-- ====== TICKER ====== -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track">
+    <span class="ticker__item">Schoology</span>
+    <span class="ticker__item">Moodle</span>
+    <span class="ticker__item">Google Classroom</span>
+    <span class="ticker__item">Common Cartridge</span>
+    <span class="ticker__item">QTI 1.2</span>
+    <span class="ticker__item">GIFT</span>
+    <span class="ticker__item">Apps Script</span>
+    <span class="ticker__item">Schoology</span>
+    <span class="ticker__item">Moodle</span>
+    <span class="ticker__item">Google Classroom</span>
+    <span class="ticker__item">Common Cartridge</span>
+    <span class="ticker__item">QTI 1.2</span>
+    <span class="ticker__item">GIFT</span>
+    <span class="ticker__item">Apps Script</span>
+  </div>
+</div>
+
+
+<!-- ====== CÓMO FUNCIONA ====== -->
+<section class="section section--surface">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Cómo funciona</div>
+      <h2 class="section__title">3 Pasos<span class="accent">.</span></h2>
+    </div>
+    <div>
+      <article class="stack__card reveal">
+        <div class="stack__card-left"><div class="stack__card-step">01</div></div>
+        <div class="stack__card-right">
+          <h3 class="stack__card-title">Generá el<br>Prompt</h3>
+          <p class="stack__card-text">Elegí el tema, nivel y tipo de preguntas. La app arma un prompt optimizado que copiás a la IA que uses.</p>
+          <div class="stack__card-tags"><span class="tag">ChatGPT</span><span class="tag tag--filled">Claude</span><span class="tag">Gemini</span></div>
+        </div>
+      </article>
+      <article class="stack__card reveal">
+        <div class="stack__card-left"><div class="stack__card-step">02</div></div>
+        <div class="stack__card-right">
+          <h3 class="stack__card-title">Pegá la<br>Respuesta</h3>
+          <p class="stack__card-text">La IA te devuelve las preguntas en un formato estándar. Pegalo en la app y procesá.</p>
+          <div class="stack__card-tags"><span class="tag tag--safety">Automático</span><span class="tag">Tolerante</span></div>
+        </div>
+      </article>
+      <article class="stack__card reveal">
+        <div class="stack__card-left"><div class="stack__card-step">03</div></div>
+        <div class="stack__card-right">
+          <h3 class="stack__card-title">Revisá y<br>Descargá</h3>
+          <p class="stack__card-text">Editá las preguntas inline, sumá imágenes si querés, y descargá el archivo listo para tu plataforma.</p>
+          <div class="stack__card-tags"><span class="tag">.imscc</span><span class="tag tag--filled">GIFT</span><span class="tag">XML</span><span class="tag tag--safety">Apps Script</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display">HCA<span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades — HCA. Hecho con 🧉 para docentes.</span>
+  </div>
+</footer>
+
+<script src="js/templatemo-axis-script.js"></script>
+<script type="module">
+  import { ACTIVITIES } from './js/activities.js';
+
+  const grid = document.getElementById('gridActividades');
+  let idx = 1;
+
+  Object.entries(ACTIVITIES).forEach(([id, act]) => {
+    const card = document.createElement('a');
+    card.href = `editor.html?tipo=${id}`;
+    card.className = 'actividad-card reveal';
+    card.setAttribute('role', 'listitem');
+    card.innerHTML = `
+      <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+      <div class="actividad-card__icono">${act.icono}</div>
+      <h3 class="actividad-card__nombre">${act.nombre}</h3>
+      <p class="actividad-card__desc">${act.descripcion}</p>
+    `;
+    grid.appendChild(card);
+    idx++;
+  });
+</script>
 
 </body>
 </html>

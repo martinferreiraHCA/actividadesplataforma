@@ -1,4 +1,4 @@
-// Renderiza las preguntas parseadas como cards editables
+// Renderiza las preguntas parseadas como cards editables (estilo Axis Industrial)
 import { TIPOS_PREGUNTA } from './activities.js';
 
 function escapeHtml(str) {
@@ -9,7 +9,7 @@ function escapeHtml(str) {
 
 function renderEnunciado(texto) {
   let html = escapeHtml(texto);
-  html = html.replace(/\[IMG:\s*([^\]]+)\]/gi, '<span class="chip-imagen chip-imagen--pendiente" data-token="$1">🖼️ $1</span>');
+  html = html.replace(/\[IMG:\s*([^\]]+)\]/gi, '<span class="chip-imagen chip-imagen--pendiente" data-token="$1">IMG: $1</span>');
   html = html.replace(/\n/g, '<br>');
   return html;
 }
@@ -42,37 +42,32 @@ export function renderPreguntas(preguntas, contenedor) {
         break;
       }
       case 'respuesta_corta':
-        cuerpo = `<div class="alerta alerta--info" style="margin-top:0">
+        cuerpo = `<div class="alerta alerta--info">
           <strong>Respuestas aceptadas:</strong>
           <span contenteditable="true" data-idx="${idx}" data-campo="respuestasAceptadas">${escapeHtml(p.respuestasAceptadas.join(' | '))}</span>
         </div>`;
         break;
       case 'numerica':
-        cuerpo = `<div class="alerta alerta--info" style="margin-top:0">
+        cuerpo = `<div class="alerta alerta--info">
           <strong>Respuesta:</strong>
           <span contenteditable="true" data-idx="${idx}" data-campo="respuestaNum">${p.respuestaCorrecta}</span>
           ± <span contenteditable="true" data-idx="${idx}" data-campo="tolerancia">${p.tolerancia}</span>
         </div>`;
         break;
       case 'emparejamiento':
-        cuerpo = `<table style="width:100%;font-size:var(--texto-sm);border-collapse:collapse">
-          <thead><tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--color-borde)">Elemento</th>
-          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--color-borde)">Par</th></tr></thead>
+        cuerpo = `<table class="tabla-pares">
+          <thead><tr><th>Elemento</th><th>Par</th></tr></thead>
           <tbody>
           ${p.pares.map((par, pi) => `
             <tr>
-              <td style="padding:4px 8px;border-bottom:1px solid var(--color-fondo)">
-                <span contenteditable="true" data-idx="${idx}" data-pi="${pi}" data-lado="izq">${escapeHtml(par.izquierda)}</span>
-              </td>
-              <td style="padding:4px 8px;border-bottom:1px solid var(--color-fondo)">
-                <span contenteditable="true" data-idx="${idx}" data-pi="${pi}" data-lado="der">${escapeHtml(par.derecha)}</span>
-              </td>
+              <td><span contenteditable="true" data-idx="${idx}" data-pi="${pi}" data-lado="izq">${escapeHtml(par.izquierda)}</span></td>
+              <td><span contenteditable="true" data-idx="${idx}" data-pi="${pi}" data-lado="der">${escapeHtml(par.derecha)}</span></td>
             </tr>
           `).join('')}
           </tbody></table>`;
         break;
       case 'ensayo':
-        cuerpo = `<div class="alerta alerta--aviso" style="margin-top:0">
+        cuerpo = `<div class="alerta alerta--aviso">
           Corrección manual — sin respuesta automática.
         </div>`;
         break;
@@ -80,9 +75,9 @@ export function renderPreguntas(preguntas, contenedor) {
 
     card.innerHTML = `
       <div class="pregunta-card__cabecera">
-        <div style="display:flex;align-items:center;gap:var(--espacio-sm)">
+        <div style="display:flex;align-items:center;gap:0.8rem">
           <span class="pregunta-card__badge">${tipoLabel}</span>
-          <span style="font-size:var(--texto-sm);color:var(--color-texto-secundario)">P${p.numero}</span>
+          <span class="pregunta-card__num">P${p.numero}</span>
         </div>
         <div class="pregunta-card__puntaje">
           <input type="number" value="${p.puntaje}" min="0" max="100" data-idx="${idx}" data-campo="puntaje" aria-label="Puntaje"> pt
@@ -96,7 +91,6 @@ export function renderPreguntas(preguntas, contenedor) {
     contenedor.appendChild(card);
   });
 
-  // Listeners para edición inline
   contenedor.addEventListener('change', (e) => {
     const el = e.target;
     const idx = parseInt(el.dataset.idx);
