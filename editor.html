@@ -28,6 +28,7 @@
     <nav class="header__nav" id="headerNav">
       <a href="index.html">Inicio</a>
       <a href="editor.html?tipo=cuestionario" class="active">Editor</a>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
     </nav>
     <div class="header__right">
       <div class="tema-switcher" id="temaSwitcher">
@@ -59,6 +60,10 @@
         <label class="campo__etiqueta" for="veNivel">Nivel / Grupo</label>
         <input class="campo__input" type="text" id="veNivel" placeholder="Ej: 3° BD, 9° EBI...">
       </div>
+    </div>
+    <div class="editor-ayuda" style="max-width:700px">
+      <span class="editor-ayuda__texto">¿No sabés por dónde arrancar? Mirá la guía paso a paso.</span>
+      <button class="btn btn--ghost" data-abrir-guia style="padding:0.5em 1.2em">Abrir guía</button>
     </div>
   </div>
 </section>
@@ -122,7 +127,7 @@
       </div>
 
       <div class="alerta alerta--info" style="margin-bottom:1.5rem">
-        Pegá tus preguntas en <strong>formato Aiken</strong> (opción múltiple) o en el <strong>formato extendido</strong> (todos los tipos). La app detecta automáticamente cuál usaste.
+        Pegá tus preguntas en <strong>formato Aiken</strong> (opción múltiple) o en el <strong>formato extendido</strong> (todos los tipos). La app detecta automáticamente cuál usaste. ¿Dudas con el formato? <a href="#" data-abrir-guia="formatos">Abrí la guía de formatos</a>.
       </div>
 
       <!-- Referencia Aiken -->
@@ -392,6 +397,7 @@ Explicá qué es un circuito en serie.</pre>
 </footer>
 
 <script src="js/tema.js"></script>
+<script src="js/guia.js"></script>
 <script src="js/templatemo-axis-script.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script type="module" src="js/app.js"></script>

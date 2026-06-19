@@ -1313,3 +1313,358 @@ body.tema-hca .stack__card:nth-child(4) {
     max-height: 90vh;
   }
 }
+
+/* ====== GUÍA DE USO — MODAL ====== */
+.guia-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.guia-overlay[hidden] {
+  display: none;
+}
+
+.guia-modal {
+  background: var(--base);
+  border: var(--border);
+  box-shadow: 14px 14px 0px var(--ink);
+  width: 100%;
+  max-width: 880px;
+  height: min(82vh, 720px);
+  display: flex;
+  flex-direction: column;
+}
+
+.guia-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.1rem 1.4rem;
+  border-bottom: var(--border);
+  flex-shrink: 0;
+}
+
+.guia-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  opacity: 0.45;
+  margin-bottom: 0.3rem;
+}
+
+.guia-titulo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.guia-cerrar {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--ink);
+  background: var(--base);
+  color: var(--ink);
+  font-size: 0.85rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.guia-cerrar:hover {
+  background: var(--safety);
+  border-color: var(--safety);
+  color: var(--base);
+}
+
+.guia-cuerpo {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.guia-nav {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  flex-shrink: 0;
+  border-right: var(--border);
+  overflow-y: auto;
+}
+
+.guia-tab {
+  text-align: left;
+  padding: 0.85rem 1.2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: none;
+  border-bottom: var(--border-hair);
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: none;
+}
+
+.guia-tab:hover {
+  opacity: 0.85;
+  background: var(--surface);
+}
+
+.guia-tab--activa {
+  opacity: 1;
+  border-left-color: var(--safety);
+  background: var(--surface);
+  font-weight: 500;
+}
+
+.guia-contenido {
+  flex: 1;
+  overflow-y: auto;
+  padding: clamp(1.2rem, 3vw, 2rem);
+}
+
+.guia-pane {
+  display: none;
+}
+
+.guia-pane--activa {
+  display: block;
+}
+
+.guia-p {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  opacity: 0.85;
+}
+
+.guia-h {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 1.4rem 0 0.6rem;
+}
+
+.guia-pane > .guia-h:first-child {
+  margin-top: 0;
+}
+
+.guia-pasos,
+.guia-lista {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  line-height: 1.7;
+  padding-left: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.guia-pasos li,
+.guia-lista li {
+  margin-bottom: 0.5rem;
+  opacity: 0.85;
+}
+
+.guia-aviso {
+  border-left: 3px solid var(--safety);
+  background: var(--surface);
+  padding: 0.8rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  line-height: 1.6;
+  margin: 1rem 0;
+}
+
+.guia-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.15em 0.5em;
+  border: 1px solid var(--safety);
+  color: var(--safety);
+  vertical-align: middle;
+}
+
+.guia-tag--ghost {
+  border-color: var(--ink);
+  color: var(--ink);
+  opacity: 0.5;
+}
+
+.guia-pre {
+  background: var(--term-bg);
+  color: var(--base);
+  padding: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 0.8rem;
+}
+
+.guia-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  margin-bottom: 1rem;
+}
+
+.guia-tabla th {
+  text-align: left;
+  padding: 0.5rem 0.7rem;
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: var(--border-thin);
+  opacity: 0.5;
+}
+
+.guia-tabla td {
+  padding: 0.5rem 0.7rem;
+  border-bottom: var(--border-hair);
+  line-height: 1.6;
+  vertical-align: top;
+}
+
+.guia-tabla td:first-child {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .guia-modal {
+    height: 90vh;
+    max-width: 100%;
+  }
+  .guia-cuerpo {
+    flex-direction: column;
+  }
+  .guia-nav {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: var(--border);
+  }
+  .guia-tab {
+    border-bottom: none;
+    border-left: none;
+    border-top: 3px solid transparent;
+    white-space: nowrap;
+  }
+  .guia-tab--activa {
+    border-left-color: transparent;
+    border-top-color: var(--safety);
+  }
+}
+
+/* ====== BOTÓN AYUDA EN HEADER ====== */
+.header__nav a.header__ayuda {
+  color: var(--safety);
+}
+
+.header__nav a.header__ayuda:hover {
+  background: var(--safety);
+  color: var(--base);
+}
+
+/* ====== LANDING — PRIMEROS PASOS / CTA ====== */
+.primeros-pasos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.paso-rapido {
+  border: var(--border);
+  box-shadow: var(--shadow);
+  background: var(--base);
+  padding: clamp(1.2rem, 2.5vw, 1.8rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.paso-rapido__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.15em;
+  color: var(--safety);
+}
+
+.paso-rapido__titulo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.paso-rapido__texto {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  line-height: 1.6;
+  opacity: 0.6;
+}
+
+.cta-guia {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  border: var(--border);
+  background: var(--surface);
+  padding: clamp(1.2rem, 3vw, 1.8rem) clamp(1.2rem, 3vw, 2rem);
+}
+
+.cta-guia__texto {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  line-height: 1.6;
+  max-width: 540px;
+}
+
+.cta-guia__texto strong {
+  font-family: 'Space Grotesk', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Acceso a la guía dentro del editor */
+.editor-ayuda {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border: var(--border-thin);
+  background: var(--surface);
+  padding: 0.7rem 1rem;
+  margin-top: 1.2rem;
+}
+
+.editor-ayuda__texto {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  line-height: 1.5;
+  opacity: 0.75;
+}
