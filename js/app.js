@@ -10,6 +10,7 @@ import { generarGIFT } from './export/gift.js';
 import { generarMoodleXML } from './export/moodlexml.js';
 import { generarAppsScript } from './export/appsscript.js';
 import { exportarJSON, importarJSON } from './export/json.js';
+import { abrirVistaPrevia } from './preview-plataforma.js';
 
 // ====== ESTADO GLOBAL ======
 let preguntas = [];
@@ -404,6 +405,15 @@ document.querySelectorAll('[data-plataforma]').forEach(btn => {
     if (!preguntas.length) { toast('Primero cargá al menos una pregunta.'); return; }
     toast(cfg.msg);
     cfg.fn();
+  });
+});
+
+// Vista previa por plataforma
+document.querySelectorAll('[data-preview]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!preguntas.length) { toast('Primero cargá al menos una pregunta.'); return; }
+    abrirVistaPrevia(btn.dataset.preview, preguntas, tituloQuiz);
+    toast('Vista previa abierta en una nueva pestaña.');
   });
 });
 
