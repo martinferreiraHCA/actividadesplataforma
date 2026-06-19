@@ -115,6 +115,8 @@ export class EditorVisual {
 
         ${this.renderCuerpoTipo(p, idx)}
 
+        ${this.renderImagen(p, idx)}
+
         <div class="campo" style="margin-top:1rem;margin-bottom:0">
           <label class="campo__etiqueta">Retroalimentación (opcional)</label>
           <input class="campo__input ve-retro" type="text" value="${escapeHtml(p.retro)}" placeholder="Explicación que ve el alumno después de responder...">
@@ -127,6 +129,30 @@ export class EditorVisual {
     });
 
     this.onUpdate(this.preguntas);
+  }
+
+  renderImagen(p, idx) {
+    if (p.imagen && p.imagen.dataUrl) {
+      return `
+        <div class="campo ve-imagen-campo" style="margin-top:1rem">
+          <label class="campo__etiqueta">Imagen de la pregunta</label>
+          <div class="ve-imagen-preview">
+            <img src="${p.imagen.dataUrl}" alt="${escapeHtml(p.imagen.nombre || '')}">
+            <div class="ve-imagen-info">
+              <span class="ve-imagen-nombre">${escapeHtml(p.imagen.nombre || 'imagen')}</span>
+              <button class="btn btn--ghost ve-btn-quitar-imagen" type="button" style="padding:0.4em 1em;font-size:0.65rem">Quitar imagen</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="campo ve-imagen-campo" style="margin-top:1rem">
+        <label class="campo__etiqueta">Imagen (opcional)</label>
+        <button class="btn btn--ghost ve-btn-agregar-imagen" type="button" style="padding:0.4em 1em;font-size:0.65rem">+ Agregar imagen</button>
+        <input type="file" class="ve-input-imagen" accept="image/*" style="display:none">
+      </div>
+    `;
   }
 
   renderCuerpoTipo(p, idx) {
@@ -255,6 +281,35 @@ export class EditorVisual {
     // Retro
     card.querySelector('.ve-retro')?.addEventListener('input', (e) => {
       p.retro = e.target.value;
+    });
+
+    // Imagen de la pregunta (una por pregunta, opcional)
+    const btnAgregarImg = card.querySelector('.ve-btn-agregar-imagen');
+    const inputImg = card.querySelector('.ve-input-imagen');
+    if (btnAgregarImg && inputImg) {
+      btnAgregarImg.addEventListener('click', () => inputImg.click());
+      inputImg.addEventListener('change', () => {
+        const file = inputImg.files && inputImg.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          alert('Elegí un archivo de imagen (PNG, JPG, WebP, SVG o GIF).');
+          return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          alert('La imagen pesa más de 10 MB. Probá con una más liviana.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          p.imagen = { nombre: file.name, dataUrl: reader.result, tipo: file.type };
+          this.render();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    card.querySelector('.ve-btn-quitar-imagen')?.addEventListener('click', () => {
+      p.imagen = null;
+      this.render();
     });
 
     // Acciones de card

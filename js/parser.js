@@ -94,7 +94,7 @@ export function parsearExtendido(texto) {
         numero: num, tipo: tipo || "opcion_multiple", puntaje,
         enunciado: "", opciones: [], respuestaCorrecta: null,
         respuestasAceptadas: [], tolerancia: 0, pares: [],
-        retro: "", imagenes: [], _lineaInicio: numLinea
+        retro: "", imagenes: [], imagen: null, _lineaInicio: numLinea
       };
       continue;
     }
@@ -255,7 +255,8 @@ export function parsearAiken(texto) {
       tolerancia: 0,
       pares: [],
       retro: "",
-      imagenes: []
+      imagenes: [],
+      imagen: null
     });
   });
 
@@ -310,6 +311,7 @@ export function crearPreguntaVacia(tipo, numero) {
       ? [{ izquierda: "", derecha: "" }]
       : [],
     retro: "",
-    imagenes: []
+    imagenes: [],
+    imagen: null
   };
 }

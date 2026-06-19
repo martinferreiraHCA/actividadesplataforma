@@ -286,19 +286,66 @@ if (dropZone && inputImagenes) {
   });
 }
 
+// ====== VALIDACIÓN PRE-DESCARGA ======
+// Evita que se exporten preguntas incompletas (la causa típica de que
+// Schoology "no muestre las opciones": opciones vacías que se filtran).
+function validarPreguntas() {
+  const problemas = [];
+  preguntas.forEach((p, i) => {
+    const n = p.numero || (i + 1);
+    if (!p.enunciado || !p.enunciado.trim()) {
+      problemas.push(`P${n}: falta el enunciado.`);
+    }
+    if (p.tipo === 'opcion_multiple') {
+      const ops = (p.opciones || []).filter(o => (o.texto || '').trim() !== '');
+      if (ops.length < 2) {
+        problemas.push(`P${n} (opción múltiple): escribí al menos 2 opciones con texto.`);
+      } else if (!ops.some(o => o.correcta)) {
+        problemas.push(`P${n} (opción múltiple): marcá cuál es la opción correcta.`);
+      }
+    }
+    if (p.tipo === 'respuesta_corta') {
+      const rs = (p.respuestasAceptadas || []).filter(r => (r || '').trim() !== '');
+      if (rs.length === 0) problemas.push(`P${n} (respuesta corta): agregá al menos una respuesta aceptada.`);
+    }
+    if (p.tipo === 'numerica' && (p.respuestaCorrecta === null || p.respuestaCorrecta === undefined || p.respuestaCorrecta === '')) {
+      problemas.push(`P${n} (numérica): falta la respuesta correcta.`);
+    }
+    if (p.tipo === 'emparejamiento') {
+      const pares = (p.pares || []).filter(par => (par.izquierda || '').trim() && (par.derecha || '').trim());
+      if (pares.length < 2) problemas.push(`P${n} (emparejamiento): completá al menos 2 pares.`);
+    }
+  });
+  return problemas;
+}
+
+function confirmarExport() {
+  const problemas = validarPreguntas();
+  if (problemas.length === 0) return true;
+  return confirm('Antes de descargar, revisá estos puntos:\n\n• ' + problemas.join('\n• ') + '\n\n¿Querés descargar igual?');
+}
+
 // ====== DESCARGAS ======
 function actualizarDescargas() {
   const seccion = document.getElementById('seccionDescargas');
   if (preguntas.length > 0) {
     seccion.style.display = 'block';
+    // Panel de tokens [IMG: ...] — sólo aparece si el texto importado los trae.
+    // Las imágenes que se suben desde el editor visual se manejan por pregunta.
     gestorImg.setTokens(preguntas);
-    document.getElementById('panelImagenes').style.display = 'block';
-    gestorImg.renderPanel(document.getElementById('listaTokensImg'));
+    const panel = document.getElementById('panelImagenes');
+    if (gestorImg.tokens.length > 0) {
+      panel.style.display = 'block';
+      gestorImg.renderPanel(document.getElementById('listaTokensImg'));
+    } else {
+      panel.style.display = 'none';
+    }
   }
 }
 
 document.getElementById('btnImscc')?.addEventListener('click', async () => {
   if (!preguntas.length) return;
+  if (!confirmarExport()) return;
   try {
     const blob = await generarIMSCC(preguntas, tituloQuiz, gestorImg);
     descargar(blob, `${nombreArchivo()}.imscc`);
@@ -310,18 +357,21 @@ document.getElementById('btnImscc')?.addEventListener('click', async () => {
 
 document.getElementById('btnGift')?.addEventListener('click', () => {
   if (!preguntas.length) return;
+  if (!confirmarExport()) return;
   descargar(new Blob([generarGIFT(preguntas, tituloQuiz)], { type: 'text/plain;charset=utf-8' }), `${nombreArchivo()}.gift.txt`);
   toast('¡Archivo GIFT descargado!');
 });
 
 document.getElementById('btnMoodleXml')?.addEventListener('click', () => {
   if (!preguntas.length) return;
+  if (!confirmarExport()) return;
   descargar(new Blob([generarMoodleXML(preguntas, tituloQuiz)], { type: 'application/xml;charset=utf-8' }), `${nombreArchivo()}_moodle.xml`);
   toast('¡Archivo Moodle XML descargado!');
 });
 
 document.getElementById('btnAppsScript')?.addEventListener('click', () => {
   if (!preguntas.length) return;
+  if (!confirmarExport()) return;
   descargar(new Blob([generarAppsScript(preguntas, tituloQuiz)], { type: 'text/javascript;charset=utf-8' }), `${nombreArchivo()}_classroom.gs`);
   toast('¡Script descargado!');
 });

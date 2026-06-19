@@ -17,7 +17,8 @@ export function exportarJSON(preguntas, titulo, nivel) {
       tolerancia: p.tolerancia,
       pares: p.pares,
       retro: p.retro,
-      imagenes: p.imagenes
+      imagenes: p.imagenes,
+      imagen: p.imagen || null
     }))
   };
   return JSON.stringify(data, null, 2);
