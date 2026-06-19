@@ -417,4 +417,122 @@ export class EditorVisual {
       this.render();
     });
   }
+
+  abrirOrdenador() {
+    if (this.preguntas.length < 2) return;
+    const overlay = document.createElement('div');
+    overlay.className = 've-ordenar-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 've-ordenar-modal';
+
+    const titulo = document.createElement('div');
+    titulo.className = 've-ordenar-titulo';
+    titulo.textContent = 'Ordenar preguntas';
+    modal.appendChild(titulo);
+
+    const lista = document.createElement('div');
+    lista.className = 've-ordenar-lista';
+
+    let dragIdx = null;
+
+    const crearItem = (p, idx) => {
+      const item = document.createElement('div');
+      item.className = 've-ordenar-item';
+      item.draggable = true;
+      item.dataset.idx = idx;
+
+      const handle = document.createElement('span');
+      handle.className = 've-ordenar-handle';
+      handle.textContent = '⠿';
+
+      const label = document.createElement('span');
+      label.className = 've-ordenar-label';
+      const preview = (p.enunciado || '').trim().substring(0, 45);
+      label.textContent = `P${p.numero}: ${preview || '(sin enunciado)'}`;
+      if (preview.length < (p.enunciado || '').trim().length) label.textContent += '...';
+
+      const badge = document.createElement('span');
+      badge.className = 've-ordenar-badge';
+      badge.textContent = (TIPOS_PREGUNTA[p.tipo] || p.tipo);
+
+      item.appendChild(handle);
+      item.appendChild(label);
+      item.appendChild(badge);
+
+      item.addEventListener('dragstart', (e) => {
+        dragIdx = idx;
+        item.classList.add('ve-ordenar-item--dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      item.addEventListener('dragend', () => {
+        item.classList.remove('ve-ordenar-item--dragging');
+        dragIdx = null;
+        lista.querySelectorAll('.ve-ordenar-item--over').forEach(el =>
+          el.classList.remove('ve-ordenar-item--over')
+        );
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (parseInt(item.dataset.idx) !== dragIdx) {
+          item.classList.add('ve-ordenar-item--over');
+        }
+      });
+
+      item.addEventListener('dragleave', () => {
+        item.classList.remove('ve-ordenar-item--over');
+      });
+
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        item.classList.remove('ve-ordenar-item--over');
+        const dropIdx = parseInt(item.dataset.idx);
+        if (dragIdx === null || dragIdx === dropIdx) return;
+
+        const items = Array.from(lista.children);
+        const order = items.map(it => parseInt(it.dataset.idx));
+        const moved = order.splice(dragIdx, 1)[0];
+        order.splice(dropIdx, 0, moved);
+
+        const reordered = order.map(i => this.preguntas[i]);
+        this.preguntas = reordered;
+        this.renumerar();
+
+        lista.innerHTML = '';
+        this.preguntas.forEach((pr, i) => lista.appendChild(crearItem(pr, i)));
+      });
+
+      return item;
+    };
+
+    this.preguntas.forEach((p, i) => lista.appendChild(crearItem(p, i)));
+    modal.appendChild(lista);
+
+    const acciones = document.createElement('div');
+    acciones.className = 've-ordenar-acciones';
+
+    const btnCerrar = document.createElement('button');
+    btnCerrar.className = 'btn btn--primary';
+    btnCerrar.textContent = 'Listo';
+    btnCerrar.addEventListener('click', () => {
+      overlay.remove();
+      this.render();
+    });
+
+    acciones.appendChild(btnCerrar);
+    modal.appendChild(acciones);
+    overlay.appendChild(modal);
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        this.render();
+      }
+    });
+
+    document.body.appendChild(overlay);
+  }
 }

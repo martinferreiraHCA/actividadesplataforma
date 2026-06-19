@@ -1196,3 +1196,120 @@ body.tema-hca .stack__card:nth-child(4) {
   font-size: clamp(1.4rem, 3vw, 2.2rem);
   line-height: 1;
 }
+
+/* ====== BARRA SEPARADOR ====== */
+.ve-barra-sep {
+  width: 1px;
+  height: 24px;
+  background: var(--ink);
+  opacity: 0.15;
+  margin: 0 0.3rem;
+}
+
+/* ====== ORDENAR PREGUNTAS — MODAL ====== */
+.ve-ordenar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.ve-ordenar-modal {
+  background: var(--base);
+  border: var(--border);
+  box-shadow: 12px 12px 0px var(--ink);
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ve-ordenar-titulo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem 1.2rem;
+  border-bottom: var(--border);
+}
+
+.ve-ordenar-lista {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.6rem;
+}
+
+.ve-ordenar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 4px;
+  border: 2px solid transparent;
+  background: var(--surface);
+  cursor: grab;
+  user-select: none;
+  transition: none;
+}
+
+.ve-ordenar-item:active {
+  cursor: grabbing;
+}
+
+.ve-ordenar-item--dragging {
+  opacity: 0.4;
+}
+
+.ve-ordenar-item--over {
+  border-color: var(--safety);
+  background: rgba(255, 62, 0, 0.04);
+}
+
+.ve-ordenar-handle {
+  font-size: 1.1rem;
+  opacity: 0.3;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.ve-ordenar-label {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ve-ordenar-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.2em 0.5em;
+  border: 1px solid var(--ink);
+  opacity: 0.5;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.ve-ordenar-acciones {
+  padding: 0.8rem 1.2rem;
+  border-top: var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 480px) {
+  .ve-ordenar-modal {
+    max-height: 90vh;
+  }
+}
