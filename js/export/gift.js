@@ -74,6 +74,16 @@ export function generarGIFT(preguntas, titulo) {
         break;
       }
 
+      case 'ordenamiento': {
+        // GIFT no tiene tipo "ordenar": lo expresamos como emparejar elemento → posición.
+        const items = (p.items || []).filter(t => (t ?? '').trim() !== '');
+        const filas = items.map((t, i) =>
+          `  =${escapeGift(t)} -> ${i + 1}`
+        ).join('\n');
+        gift += `::P${p.numero}::${enunciado} (ordená: asociá cada elemento con su posición) {\n${filas}\n}\n\n`;
+        break;
+      }
+
       case 'ensayo': {
         gift += `::P${p.numero}::${enunciado} {}\n\n`;
         break;

@@ -314,6 +314,17 @@ export function generarQTI(preguntas, titulo, gestorImg) {
       case 'respuesta_corta': return generarItemRespuestaCorta(p, gestorImg);
       case 'numerica': return generarItemNumerica(p, gestorImg);
       case 'emparejamiento': return generarItemEmparejamiento(p, gestorImg);
+      case 'ordenamiento': {
+        // QTI 1.2 (perfil CC) no tiene "ordenar": lo damos como emparejar
+        // elemento → posición, reutilizando el ítem de emparejamiento.
+        const items = (p.items || []).filter(t => (t ?? '').trim() !== '');
+        const comoPares = {
+          ...p,
+          enunciado: (p.enunciado || '') + ' (ordená: asociá cada elemento con su posición)',
+          pares: items.map((t, i) => ({ izquierda: t, derecha: `Posición ${i + 1}` }))
+        };
+        return generarItemEmparejamiento(comoPares, gestorImg);
+      }
       case 'ensayo': return generarItemEnsayo(p, gestorImg);
       default: return generarItemOpcionMultiple(p, gestorImg);
     }

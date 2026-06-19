@@ -827,10 +827,26 @@
 
 .ve-opciones-lista,
 .ve-respuestas-lista,
-.ve-pares-lista {
+.ve-pares-lista,
+.ve-orden-lista {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+}
+
+.ve-orden-num {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--ink);
+  background: var(--safety, #FF3E00);
+  color: var(--base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .ve-opcion {

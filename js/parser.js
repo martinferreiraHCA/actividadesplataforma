@@ -8,7 +8,7 @@ function normalizar(str) {
 
 const TIPOS_VALIDOS = [
   "opcion_multiple", "verdadero_falso", "respuesta_corta",
-  "numerica", "emparejamiento", "ensayo"
+  "numerica", "emparejamiento", "ordenamiento", "ensayo"
 ];
 
 function detectarTipo(raw) {
@@ -27,6 +27,10 @@ function detectarTipo(raw) {
     "numerical": "numerica",
     "emparejamiento": "emparejamiento",
     "matching": "emparejamiento",
+    "ordenamiento": "ordenamiento",
+    "ordering": "ordenamiento",
+    "orden": "ordenamiento",
+    "secuencia": "ordenamiento",
     "ensayo": "ensayo",
     "essay": "ensayo"
   };
@@ -93,7 +97,7 @@ export function parsearExtendido(texto) {
       preguntaActual = {
         numero: num, tipo: tipo || "opcion_multiple", puntaje,
         enunciado: "", opciones: [], respuestaCorrecta: null,
-        respuestasAceptadas: [], tolerancia: 0, pares: [],
+        respuestasAceptadas: [], tolerancia: 0, pares: [], items: [],
         retro: "", imagenes: [], imagen: null, _lineaInicio: numLinea
       };
       continue;
@@ -142,6 +146,13 @@ export function parsearExtendido(texto) {
     const matchPar = trimmed.match(/^[-*]\s*(.+?)\s*=\s*(.+)/);
     if (matchPar && preguntaActual.tipo === "emparejamiento") {
       preguntaActual.pares.push({ izquierda: matchPar[1].trim(), derecha: matchPar[2].trim() });
+      continue;
+    }
+
+    // Ordenamiento: lista numerada en el orden correcto ("1. paso", "2. paso").
+    const matchOrden = trimmed.match(/^\d+\s*[.)]\s*(.+)/);
+    if (matchOrden && preguntaActual.tipo === "ordenamiento") {
+      preguntaActual.items.push(matchOrden[1].trim());
       continue;
     }
 
@@ -311,6 +322,9 @@ export function crearPreguntaVacia(tipo, numero) {
     tolerancia: 0,
     pares: tipo === "emparejamiento"
       ? [{ izquierda: "", derecha: "" }]
+      : [],
+    items: tipo === "ordenamiento"
+      ? ["", ""]
       : [],
     retro: "",
     imagenes: [],

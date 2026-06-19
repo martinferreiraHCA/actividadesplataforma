@@ -220,6 +220,8 @@ export class EditorVisual {
         return this.renderNumerica(p, idx);
       case 'emparejamiento':
         return this.renderEmparejamiento(p, idx);
+      case 'ordenamiento':
+        return this.renderOrdenamiento(p, idx);
       case 'ensayo':
         return `<div class="alerta alerta--aviso" style="margin:0">Pregunta de desarrollo — corrección manual.</div>`;
       default:
@@ -313,6 +315,26 @@ export class EditorVisual {
         <div class="ve-pares-lista">${pares}</div>
         <button class="ve-btn-agregar-par btn btn--ghost" style="margin-top:0.5rem;padding:0.4em 1em;font-size:0.65rem">
           + Agregar par
+        </button>
+      </div>
+    `;
+  }
+
+  renderOrdenamiento(p, idx) {
+    const items = (p.items || []).map((it, ii) => `
+      <div class="ve-orden-item" style="display:grid;grid-template-columns:auto 1fr auto;gap:0.5rem;align-items:center;margin-bottom:0.4rem" data-ii="${ii}">
+        <span class="ve-orden-num">${ii + 1}</span>
+        <input type="text" class="campo__input ve-orden-texto" value="${escapeHtml(it)}" placeholder="Elemento ${ii + 1}...">
+        <button class="ve-btn ve-btn-quitar-orden" title="Quitar" ${(p.items || []).length <= 2 ? 'disabled' : ''}>✕</button>
+      </div>
+    `).join('');
+
+    return `
+      <div class="campo">
+        <label class="campo__etiqueta">Elementos en el orden correcto (el alumno los recibe mezclados)</label>
+        <div class="ve-orden-lista">${items}</div>
+        <button class="ve-btn-agregar-orden btn btn--ghost" style="margin-top:0.5rem;padding:0.4em 1em;font-size:0.65rem">
+          + Agregar elemento
         </button>
       </div>
     `;
@@ -506,6 +528,26 @@ export class EditorVisual {
 
     card.querySelector('.ve-btn-agregar-par')?.addEventListener('click', () => {
       p.pares.push({ izquierda: "", derecha: "" });
+      this.render();
+    });
+
+    // Ordenamiento
+    card.querySelectorAll('.ve-orden-texto').forEach((input, ii) => {
+      input.addEventListener('input', () => { p.items[ii] = input.value; });
+    });
+
+    card.querySelectorAll('.ve-btn-quitar-orden').forEach((btn, ii) => {
+      btn.addEventListener('click', () => {
+        if ((p.items || []).length > 2) {
+          p.items.splice(ii, 1);
+          this.render();
+        }
+      });
+    });
+
+    card.querySelector('.ve-btn-agregar-orden')?.addEventListener('click', () => {
+      if (!p.items) p.items = [];
+      p.items.push("");
       this.render();
     });
   }

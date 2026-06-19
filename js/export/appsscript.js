@@ -116,6 +116,20 @@ function crearQuiz() {
         break;
       }
 
+      case 'ordenamiento': {
+        // Google Forms no tiene "ordenar": grilla elemento → posición.
+        const items = (p.items || []).filter(t => (t ?? '').trim() !== '');
+        script += `  // Pregunta ${p.numero} — Ordenamiento (como grilla elemento → posición)\n`;
+        script += `  var item${p.numero} = form.addGridItem();\n`;
+        script += `  item${p.numero}.setTitle('${enunciado} (ordená: elegí la posición de cada elemento)');\n`;
+        const filasO = items.map(t => `'${escapeJS(t)}'`);
+        const columnasO = items.map((_, i) => `'${i + 1}'`);
+        script += `  item${p.numero}.setRows([${filasO.join(', ')}]);\n`;
+        script += `  item${p.numero}.setColumns([${columnasO.join(', ')}]);\n`;
+        script += '\n';
+        break;
+      }
+
       case 'ensayo': {
         script += `  // Pregunta ${p.numero} — Ensayo\n`;
         script += `  var item${p.numero} = form.addParagraphTextItem();\n`;

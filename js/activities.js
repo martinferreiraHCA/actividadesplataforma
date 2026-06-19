@@ -9,6 +9,7 @@ export const ACTIVITIES = {
       "respuesta_corta",
       "numerica",
       "emparejamiento",
+      "ordenamiento",
       "ensayo"
     ],
     promptHints: "Incluí una mezcla variada de tipos de pregunta."
@@ -49,5 +50,6 @@ export const TIPOS_PREGUNTA = {
   respuesta_corta: "Respuesta corta",
   numerica: "Numérica",
   emparejamiento: "Emparejamiento",
+  ordenamiento: "Ordenamiento",
   ensayo: "Ensayo"
 };

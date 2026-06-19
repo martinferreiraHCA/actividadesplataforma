@@ -64,7 +64,13 @@ Asociá cada elemento con su par:
 - Elemento B = Par B
 - Elemento C = Par C
 
-## P6 :: ensayo
+## P6 :: ordenamiento :: 2pt
+Ordená cronológicamente los siguientes eventos (listalos en el orden CORRECTO):
+1. Primer evento
+2. Segundo evento
+3. Tercer evento
+
+## P7 :: ensayo
 Pregunta abierta para que el alumno desarrolle.
 
 ## REGLAS

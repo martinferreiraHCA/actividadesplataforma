@@ -10,6 +10,7 @@ import { generarGIFT } from './export/gift.js';
 import { generarMoodleXML } from './export/moodlexml.js';
 import { generarAppsScript } from './export/appsscript.js';
 import { exportarJSON, importarJSON } from './export/json.js';
+import { generarQTI21Zip } from './export/qti21package.js';
 import { abrirVistaPrevia } from './preview-plataforma.js';
 
 // ====== ESTADO GLOBAL ======
@@ -321,6 +322,10 @@ function validarPreguntas() {
       const pares = (p.pares || []).filter(par => (par.izquierda || '').trim() && (par.derecha || '').trim());
       if (pares.length < 2) problemas.push(`P${n} (emparejamiento): completá al menos 2 pares.`);
     }
+    if (p.tipo === 'ordenamiento') {
+      const items = (p.items || []).filter(t => (t || '').trim());
+      if (items.length < 2) problemas.push(`P${n} (ordenamiento): cargá al menos 2 elementos.`);
+    }
   });
   return problemas;
 }
@@ -384,6 +389,18 @@ function exportarAppsScript() {
   toast('¡Script descargado!');
 }
 
+async function exportarQti21() {
+  if (!preguntas.length) return;
+  if (!confirmarExport()) return;
+  try {
+    const blob = await generarQTI21Zip(preguntas, tituloQuiz, gestorImg);
+    descargar(blob, `${nombreArchivo()}_qti21.zip`);
+    toast('¡Paquete QTI 2.1 descargado!');
+  } catch (err) {
+    toast('Error: ' + err.message);
+  }
+}
+
 function exportarBorrador() {
   if (!preguntas.length) return;
   descargar(new Blob([exportarJSON(preguntas, tituloQuiz, nivelQuiz)], { type: 'application/json;charset=utf-8' }), `${nombreArchivo()}_borrador.json`);
@@ -425,6 +442,7 @@ document.querySelectorAll('[data-preview]').forEach(btn => {
 document.getElementById('btnImscc')?.addEventListener('click', exportarImscc);
 document.getElementById('btnGift')?.addEventListener('click', exportarGift);
 document.getElementById('btnMoodleXml')?.addEventListener('click', exportarMoodleXml);
+document.getElementById('btnQti21')?.addEventListener('click', exportarQti21);
 document.getElementById('btnAppsScript')?.addEventListener('click', exportarAppsScript);
 document.getElementById('btnJson')?.addEventListener('click', exportarBorrador);
 

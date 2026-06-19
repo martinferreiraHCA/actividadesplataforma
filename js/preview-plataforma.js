@@ -7,6 +7,7 @@ const TIPOS_LABEL = {
   respuesta_corta: 'Respuesta corta',
   numerica: 'Numérica',
   emparejamiento: 'Emparejamiento',
+  ordenamiento: 'Ordenamiento',
   ensayo: 'Ensayo / Desarrollo'
 };
 
@@ -41,6 +42,14 @@ function renderOpciones(p, platform) {
     ).join('\n')}</div>`;
   }
 
+  if (p.tipo === 'ordenamiento') {
+    // Mostramos los elementos "mezclados" como los vería el alumno.
+    const items = mezclar((p.items || []).filter(t => (t ?? '').trim() !== ''));
+    return `<div class="orden-lista">${items.map((t, i) =>
+      `<div class="orden-fila"><span class="orden-handle">⠿</span><span class="orden-pos">${i + 1}</span><span class="orden-texto">${esc(t)}</span></div>`
+    ).join('\n')}<div class="orden-nota">El alumno arrastra los elementos hasta dejarlos en el orden correcto.</div></div>`;
+  }
+
   if (p.tipo === 'ensayo') {
     if (platform === 'classroom') return `<div class="gc-input"><textarea rows="4" placeholder="Tu respuesta" disabled></textarea></div>`;
     if (platform === 'moodle') return `<div class="mo-textarea"><textarea rows="5" disabled></textarea></div>`;
@@ -50,12 +59,34 @@ function renderOpciones(p, platform) {
   return '';
 }
 
+// Mezcla simple (Fisher-Yates) para simular el orden alterado que ve el alumno.
+function mezclar(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function esc(s) {
   if (!s) return '';
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ── CSS por plataforma ──
+
+// Estilos compartidos para la interacción de ordenamiento.
+function cssOrden() {
+  return `
+    .orden-lista { display: flex; flex-direction: column; gap: 8px; }
+    .orden-fila { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid #cfcfcf; border-radius: 6px; background: #fafafa; font-size: 14px; }
+    .orden-handle { color: #999; font-size: 16px; cursor: grab; }
+    .orden-pos { width: 24px; height: 24px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+    .orden-texto { flex: 1; }
+    .orden-nota { font-size: 12px; color: #888; font-style: italic; margin-top: 4px; }
+  `;
+}
 
 function cssSchoology() {
   return `
@@ -169,7 +200,7 @@ function htmlSchoology(preguntas, titulo) {
   `).join('\n');
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(titulo)} — Schoology</title><style>${cssSchoology()}</style></head><body>
+<title>${esc(titulo)} — Schoology</title><style>${cssSchoology()}${cssOrden()}</style></head><body>
 <div class="sc-header"><span class="logo">S</span><span class="course">Mis cursos &gt; ${esc(titulo)}</span></div>
 <div class="sc-wrap">
   <h1 class="sc-quiz-title">${esc(titulo)}</h1>
@@ -197,7 +228,7 @@ function htmlMoodle(preguntas, titulo) {
   `).join('\n');
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(titulo)} — Moodle</title><style>${cssMoodle()}</style></head><body>
+<title>${esc(titulo)} — Moodle</title><style>${cssMoodle()}${cssOrden()}</style></head><body>
 <div class="mo-navbar"><span class="logo">M</span><span class="breadcrumb">Inicio / Mis cursos / ${esc(titulo)} / Cuestionario</span></div>
 <div class="mo-wrap">
   <div class="mo-quiz-header">
@@ -224,7 +255,7 @@ function htmlClassroom(preguntas, titulo) {
   `).join('\n');
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(titulo)} — Google Forms</title><style>${cssClassroom()}</style></head><body>
+<title>${esc(titulo)} — Google Forms</title><style>${cssClassroom()}${cssOrden()}</style></head><body>
 <div class="gc-wrap">
   <div class="gc-title-card">
     <div class="gc-title">${esc(titulo)}</div>
