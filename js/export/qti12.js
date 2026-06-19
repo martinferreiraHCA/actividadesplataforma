@@ -27,15 +27,19 @@ function htmlMaterial(texto) {
 }
 
 // Enunciado de una pregunta: texto + tokens [IMG:] + imagen adjunta (inline).
-function materialEnunciado(p) {
+function materialEnunciado(p, gestorImg) {
   let cuerpo = escapeXml(p.enunciado || '');
-  // Tokens [IMG: archivo.png] dentro del texto → <img>
+  // Tokens [IMG: archivo.png] dentro del texto → <img> SÓLO si se subió la imagen.
+  // Si no hay archivo asociado, sacamos el token para no mostrar el nombre crudo.
   cuerpo = cuerpo.replace(/\[IMG:\s*([^\]]+)\]/gi, (match, token) => {
     token = token.trim();
+    const tieneArchivo = gestorImg && typeof gestorImg.obtenerArchivo === 'function' && gestorImg.obtenerArchivo(token);
+    if (!tieneArchivo) return '';
     const src = `images/${token}`;
     return `&lt;br/&gt;&lt;img src="${escapeXml(src)}" alt="${escapeXml(token)}"/&gt;`;
   });
-  cuerpo = cuerpo.replace(/\n/g, '&lt;br/&gt;');
+  // Espacios sobrantes que pudo dejar un token quitado al inicio.
+  cuerpo = cuerpo.replace(/^(\s|&lt;br\/&gt;)+/, '').replace(/\n/g, '&lt;br/&gt;');
   // Imagen adjunta desde el editor visual (una por pregunta).
   if (p.imagen && p.imagen.exportName) {
     const src = `images/${p.imagen.exportName}`;
@@ -108,7 +112,7 @@ ${partes}
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
 ${bloqueMetadata(tipo, p)}
       <presentation>
-        <material><mattext texttype="text/html">${materialEnunciado(p)}</mattext></material>
+        <material><mattext texttype="text/html">${materialEnunciado(p, gestorImg)}</mattext></material>
         <response_lid ident="${respIdent}" rcardinality="${rcardinality}">
           <render_choice>
 ${choicesXml}
@@ -138,7 +142,7 @@ function generarItemVF(p, gestorImg) {
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
 ${bloqueMetadata('true_false_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${materialEnunciado(p)}</mattext></material>
+        <material><mattext texttype="text/html">${materialEnunciado(p, gestorImg)}</mattext></material>
         <response_lid ident="${respIdent}" rcardinality="Single">
           <render_choice>
             <response_label ident="${trueId}">
@@ -180,7 +184,7 @@ function generarItemRespuestaCorta(p, gestorImg) {
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
 ${bloqueMetadata('short_answer_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${materialEnunciado(p)}</mattext></material>
+        <material><mattext texttype="text/html">${materialEnunciado(p, gestorImg)}</mattext></material>
         <response_str ident="${respIdent}" rcardinality="Single">
           <render_fib>
             <response_label ident="${uid('ans')}"/>
@@ -206,7 +210,7 @@ function generarItemNumerica(p, gestorImg) {
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
 ${bloqueMetadata('numerical_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${materialEnunciado(p)}</mattext></material>
+        <material><mattext texttype="text/html">${materialEnunciado(p, gestorImg)}</mattext></material>
         <response_str ident="${respIdent}" rcardinality="Single">
           <render_fib fibtype="Decimal">
             <response_label ident="${uid('ans')}"/>
@@ -268,7 +272,7 @@ ${poolXml}
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
 ${bloqueMetadata('matching_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${materialEnunciado(p)}</mattext></material>
+        <material><mattext texttype="text/html">${materialEnunciado(p, gestorImg)}</mattext></material>
 ${responsesXml}
       </presentation>
       <resprocessing>
@@ -286,7 +290,7 @@ function generarItemEnsayo(p, gestorImg) {
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
 ${bloqueMetadata('essay_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${materialEnunciado(p)}</mattext></material>
+        <material><mattext texttype="text/html">${materialEnunciado(p, gestorImg)}</mattext></material>
         <response_str ident="${respIdent}" rcardinality="Single">
           <render_fib>
             <response_label ident="${uid('ans')}" rshuffle="No"/>

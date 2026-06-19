@@ -101,7 +101,9 @@ export function parsearExtendido(texto) {
 
     if (!preguntaActual) continue;
 
-    const matchOpcion = trimmed.match(/^-\s*\[([ xX*])\]\s*(.+)/);
+    // Opciones: aceptamos viñeta "-" o "*" (las IA usan cualquiera de las dos).
+    // Ej: "- [x] texto", "* [ ] texto", "* [x] texto".
+    const matchOpcion = trimmed.match(/^[-*]\s*\[([ xX*])\]\s*(.+)/);
     if (matchOpcion) {
       preguntaActual.opciones.push({
         texto: matchOpcion[2].trim(),
@@ -137,7 +139,7 @@ export function parsearExtendido(texto) {
       continue;
     }
 
-    const matchPar = trimmed.match(/^-\s*(.+?)\s*=\s*(.+)/);
+    const matchPar = trimmed.match(/^[-*]\s*(.+?)\s*=\s*(.+)/);
     if (matchPar && preguntaActual.tipo === "emparejamiento") {
       preguntaActual.pares.push({ izquierda: matchPar[1].trim(), derecha: matchPar[2].trim() });
       continue;
