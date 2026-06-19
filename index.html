@@ -30,6 +30,7 @@
     <nav class="header__nav" id="headerNav">
       <a href="index.html" class="active">Inicio</a>
       <a href="editor.html?tipo=cuestionario">Editor</a>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
     </nav>
     <div class="header__right">
       <div class="tema-switcher" id="temaSwitcher">
@@ -56,6 +57,43 @@
   <p class="hero__desc reveal">
     Armá cuestionarios a mano o con ayuda de IA, y exportalos a Schoology, Moodle y Google Classroom. Sin instalar nada, desde el navegador.
   </p>
+</section>
+
+
+<!-- ====== PRIMEROS PASOS ====== -->
+<section class="section section--surface" id="primeros-pasos">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Primeros pasos</div>
+      <h2 class="section__title">Cómo<br>Empezar<span class="accent">.</span></h2>
+    </div>
+    <div class="primeros-pasos reveal">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Elegí el tipo</span>
+        <span class="paso-rapido__texto">Seleccioná abajo qué actividad querés crear: cuestionario, opción múltiple, V/F y más.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Cargá preguntas</span>
+        <span class="paso-rapido__texto">A mano con el editor visual, pegando texto, o con ayuda de una IA. Lo que elijas.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Descargá</span>
+        <span class="paso-rapido__texto">Bajá el archivo en el formato de tu plataforma. La app revisa que esté todo completo.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 04</span>
+        <span class="paso-rapido__titulo">Subilo</span>
+        <span class="paso-rapido__texto">Importalo a Schoology, Moodle o Google Classroom y ya quedó listo para tus alumnos.</span>
+      </div>
+    </div>
+    <div class="cta-guia reveal">
+      <p class="cta-guia__texto"><strong>¿Es tu primera vez?</strong><br>La guía de uso explica cada paso, los formatos de texto y a qué archivo exportar según tu plataforma.</p>
+      <button class="btn btn--primary" data-abrir-guia>Abrir la guía</button>
+    </div>
+  </div>
 </section>
 
 
@@ -138,6 +176,7 @@
       <div class="footer__links">
         <a href="index.html">Inicio</a>
         <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
     <span class="footer__copy">Generador de Actividades — HCA. Hecho para docentes.</span>
@@ -145,6 +184,7 @@
 </footer>
 
 <script src="js/tema.js"></script>
+<script src="js/guia.js"></script>
 <script src="js/templatemo-axis-script.js"></script>
 <script type="module">
   import { ACTIVITIES } from './js/activities.js';
