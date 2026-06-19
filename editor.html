@@ -37,29 +37,209 @@
 </header>
 
 
-<!-- ====== PASO 1: GENERAR PROMPT ====== -->
-<section class="editor-section" id="paso1">
+<!-- ====== TÍTULO Y DATOS DE LA ACTIVIDAD ====== -->
+<section class="editor-section">
   <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Nueva actividad</div>
+      <h2 class="section__title">Armá tu<br>Cuestionario<span class="accent">.</span></h2>
+    </div>
+    <div class="campo-grid" style="max-width:700px">
+      <div class="campo">
+        <label class="campo__etiqueta" for="veTitulo">Título de la actividad</label>
+        <input class="campo__input" type="text" id="veTitulo" placeholder="Ej: Corriente eléctrica, Rev. Artiguista...">
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="veNivel">Nivel / Grupo</label>
+        <input class="campo__input" type="text" id="veNivel" placeholder="Ej: 3° BD, 9° EBI...">
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== TABS DE MODO ====== -->
+<section class="editor-section editor-section--surface" style="padding-top:0;padding-bottom:0">
+  <div class="container">
+    <div class="tabs-modo">
+      <button class="tab-modo active" data-modo="visual">
+        <span class="tab-modo__icono">◎</span> Editor Visual
+      </button>
+      <button class="tab-modo" data-modo="texto">
+        <span class="tab-modo__icono">≡</span> Importar Texto
+      </button>
+      <button class="tab-modo" data-modo="ia">
+        <span class="tab-modo__icono">✦</span> Asistente IA
+      </button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PANEL: EDITOR VISUAL ====== -->
+<section class="editor-section panel-modo" id="panel-visual">
+  <div class="container">
+
+    <!-- Barra de agregar preguntas -->
+    <div class="ve-barra-agregar">
+      <span class="ve-barra-label">Agregar pregunta:</span>
+      <button class="tag tag--filled ve-agregar-tipo" data-tipo="opcion_multiple">+ Opción Múltiple</button>
+      <button class="tag tag--filled ve-agregar-tipo" data-tipo="verdadero_falso">+ V/F</button>
+      <button class="tag tag--filled ve-agregar-tipo" data-tipo="respuesta_corta">+ Resp. Corta</button>
+      <button class="tag tag--filled ve-agregar-tipo" data-tipo="numerica">+ Numérica</button>
+      <button class="tag tag--filled ve-agregar-tipo" data-tipo="emparejamiento">+ Emparejamiento</button>
+      <button class="tag tag--filled ve-agregar-tipo" data-tipo="ensayo">+ Ensayo</button>
+    </div>
+
+    <!-- Contenedor de preguntas del editor visual -->
+    <div id="vePreguntas"></div>
+
+    <!-- Importar borrador -->
+    <div style="margin-top:2rem;display:flex;gap:1rem;flex-wrap:wrap">
+      <button class="btn btn--ghost" id="btnImportarJson">Importar borrador .json</button>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PANEL: IMPORTAR TEXTO ====== -->
+<section class="editor-section panel-modo" id="panel-texto" style="display:none">
+  <div class="container">
+
     <div class="paso-card">
       <div class="paso-card__cabecera">
-        <div class="paso-card__numero">01</div>
-        <h2 class="paso-card__titulo">Generá el Prompt<br>para tu IA</h2>
+        <div class="paso-card__numero">≡</div>
+        <h2 class="paso-card__titulo">Importar desde<br>Texto</h2>
       </div>
 
+      <div class="alerta alerta--info" style="margin-bottom:1.5rem">
+        Pegá tus preguntas en <strong>formato Aiken</strong> (opción múltiple) o en el <strong>formato extendido</strong> (todos los tipos). La app detecta automáticamente cuál usaste.
+      </div>
+
+      <!-- Referencia Aiken -->
+      <details class="formato-ayuda">
+        <summary class="formato-ayuda__titulo">📖 Formato Aiken (opción múltiple)</summary>
+        <div class="formato-ayuda__contenido">
+<pre class="formato-ejemplo">¿Cuál es la capital de Uruguay?
+A. Buenos Aires
+B. Montevideo
+C. Santiago
+D. Asunción
+ANSWER: B
+
+¿En qué año se juró la primera Constitución?
+A. 1825
+B. 1828
+C. 1830
+D. 1835
+ANSWER: C</pre>
+          <p style="margin-top:0.8rem;font-size:var(--fs-data);opacity:0.6">Cada pregunta: enunciado, opciones (A. B. C. D.), línea ANSWER: con la letra correcta. Separá preguntas con una línea en blanco.</p>
+        </div>
+      </details>
+
+      <!-- Referencia extendida -->
+      <details class="formato-ayuda">
+        <summary class="formato-ayuda__titulo">📖 Formato extendido (todos los tipos)</summary>
+        <div class="formato-ayuda__contenido">
+<pre class="formato-ejemplo">## P1 :: opcion_multiple :: 1pt
+¿Cuál es la unidad de corriente?
+- [ ] Voltio
+- [x] Amperio
+- [ ] Ohmio
+- [ ] Vatio
+> Retro: El amperio (A) es la unidad de corriente.
+
+## P2 :: verdadero_falso :: 1pt
+Uruguay tiene costa sobre el Océano Pacífico.
+**Respuesta:** Falso
+
+## P3 :: respuesta_corta :: 1pt
+Nombrá la ley de Ohm.
+**Respuestas aceptadas:** Ley de Ohm | Ohm
+
+## P4 :: numerica :: 1pt
+Si V=12 e I=2, ¿cuánto vale R?
+**Respuesta:** 6 ± 0.1
+
+## P5 :: emparejamiento :: 2pt
+Asociá:
+- Tensión = Voltio
+- Corriente = Amperio
+
+## P6 :: ensayo
+Explicá qué es un circuito en serie.</pre>
+        </div>
+      </details>
+
+      <div class="campo" style="margin-top:1.5rem">
+        <label class="campo__etiqueta">Pegá o escribí tus preguntas</label>
+        <textarea class="campo__textarea campo__textarea--grande" id="textareaTexto"
+          placeholder="Pegá acá tus preguntas en formato Aiken o extendido..."></textarea>
+      </div>
+
+      <button class="btn btn--primary" id="btnProcesarTexto">Procesar Texto</button>
+
+      <div id="advertenciasTexto" style="margin-top:1.5rem"></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PANEL: ASISTENTE IA ====== -->
+<section class="editor-section panel-modo" id="panel-ia" style="display:none">
+  <div class="container">
+
+    <!-- Tutorial -->
+    <div class="paso-card" style="margin-bottom:var(--gap)">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">✦</div>
+        <h2 class="paso-card__titulo">Asistente IA<br><span style="font-size:0.6em;opacity:0.5;text-transform:none">(Opcional)</span></h2>
+      </div>
+
+      <div class="alerta alerta--info" style="margin-bottom:1.5rem">
+        <strong>¿Cómo funciona?</strong> Completá el formulario, generá un prompt optimizado, copialo a tu IA favorita (ChatGPT, Claude, Gemini, etc.), y pegá la respuesta. La app la convierte en preguntas editables.
+      </div>
+
+      <details class="formato-ayuda" style="margin-bottom:1.5rem">
+        <summary class="formato-ayuda__titulo">📖 Tutorial: Usar IA para generar preguntas</summary>
+        <div class="formato-ayuda__contenido">
+          <ol style="padding-left:1.5rem;font-size:var(--fs-data);line-height:2">
+            <li><strong>Completá el formulario</strong> de abajo con el tema, nivel, cantidad y tipos de pregunta.</li>
+            <li>Hacé clic en <strong>"Generá el Prompt"</strong>. Se genera un texto especial que le dice a la IA exactamente qué formato usar.</li>
+            <li><strong>Copiá el prompt</strong> con el botón de copiar.</li>
+            <li>Abrí tu IA preferida:
+              <ul style="padding-left:1rem;margin:0.3rem 0">
+                <li><a href="https://chat.openai.com" target="_blank" rel="noopener">ChatGPT</a></li>
+                <li><a href="https://claude.ai" target="_blank" rel="noopener">Claude</a></li>
+                <li><a href="https://gemini.google.com" target="_blank" rel="noopener">Gemini</a></li>
+              </ul>
+            </li>
+            <li><strong>Pegá el prompt</strong> en la IA y esperá la respuesta.</li>
+            <li><strong>Copiá la respuesta</strong> completa de la IA.</li>
+            <li>Volvé acá, <strong>pegala</strong> en el área "Respuesta de la IA" y hacé clic en <strong>"Procesar"</strong>.</li>
+            <li>Las preguntas aparecen en el <strong>Editor Visual</strong> donde podés editarlas y descargar.</li>
+          </ol>
+          <p style="margin-top:1rem;opacity:0.6">💡 Si la IA no respeta el formato, podés editar su respuesta antes de procesar, o personalizar el prompt.</p>
+        </div>
+      </details>
+
+      <!-- Formulario del prompt -->
       <form id="formPrompt" autocomplete="off">
         <div class="campo">
-          <label class="campo__etiqueta" for="tema">Tema o contenido</label>
-          <input class="campo__input" type="text" id="tema" placeholder="Ej: Corriente eléctrica, Revolución artiguista..." required>
+          <label class="campo__etiqueta" for="iaTema">Tema o contenido</label>
+          <input class="campo__input" type="text" id="iaTema" placeholder="Ej: Corriente eléctrica..." required>
         </div>
 
         <div class="campo-grid">
           <div class="campo">
-            <label class="campo__etiqueta" for="nivel">Nivel / Grupo</label>
-            <input class="campo__input" type="text" id="nivel" placeholder="Ej: 3° BD, 9° EBI...">
+            <label class="campo__etiqueta" for="iaNivel">Nivel / Grupo</label>
+            <input class="campo__input" type="text" id="iaNivel" placeholder="Ej: 3° BD...">
           </div>
           <div class="campo">
-            <label class="campo__etiqueta" for="cantidad">Cantidad de preguntas</label>
-            <input class="campo__input" type="number" id="cantidad" value="10" min="1" max="100">
+            <label class="campo__etiqueta" for="iaCantidad">Cantidad</label>
+            <input class="campo__input" type="number" id="iaCantidad" value="10" min="1" max="100">
           </div>
         </div>
 
@@ -70,8 +250,8 @@
 
         <div class="campo-grid">
           <div class="campo">
-            <label class="campo__etiqueta" for="dificultad">Dificultad</label>
-            <select class="campo__select" id="dificultad">
+            <label class="campo__etiqueta" for="iaDificultad">Dificultad</label>
+            <select class="campo__select" id="iaDificultad">
               <option value="facil">Fácil</option>
               <option value="medio" selected>Medio</option>
               <option value="dificil">Difícil</option>
@@ -79,8 +259,8 @@
             </select>
           </div>
           <div class="campo">
-            <label class="campo__etiqueta" for="idioma">Idioma</label>
-            <select class="campo__select" id="idioma">
+            <label class="campo__etiqueta" for="iaIdioma">Idioma</label>
+            <select class="campo__select" id="iaIdioma">
               <option value="español" selected>Español</option>
               <option value="inglés">Inglés</option>
               <option value="portugués">Portugués</option>
@@ -89,18 +269,18 @@
         </div>
 
         <div class="campo">
-          <label class="campo__etiqueta" for="contexto">Contexto curricular (opcional)</label>
-          <input class="campo__input" type="text" id="contexto" placeholder="Ej: Currículo ANEP, contexto uruguayo, plan HCA...">
+          <label class="campo__etiqueta" for="iaContexto">Contexto curricular (opcional)</label>
+          <input class="campo__input" type="text" id="iaContexto" placeholder="Ej: Currículo ANEP, plan HCA...">
         </div>
 
         <div class="campo">
-          <label class="campo__etiqueta" for="notas">Notas extra para la IA (opcional)</label>
-          <textarea class="campo__textarea" id="notas" rows="2" placeholder="Instrucciones adicionales, estilo, enfoque..."></textarea>
+          <label class="campo__etiqueta" for="iaNotas">Notas extra (opcional)</label>
+          <textarea class="campo__textarea" id="iaNotas" rows="2" placeholder="Instrucciones adicionales..."></textarea>
         </div>
 
         <div style="display:flex;gap:1rem;flex-wrap:wrap">
-          <button type="submit" class="btn btn--primary" id="btnGenerarPrompt">Generá el Prompt</button>
-          <button type="button" class="btn btn--ghost" id="btnModoPersonalizado">Personalizar Prompt</button>
+          <button type="submit" class="btn btn--primary">Generá el Prompt</button>
+          <button type="button" class="btn btn--ghost" id="btnModoPersonalizado">Personalizar</button>
         </div>
       </form>
 
@@ -108,95 +288,78 @@
       <div class="caja-prompt" id="cajaPrompt"></div>
       <div class="caja-prompt__acciones" id="accionesPrompt" style="display:none">
         <button class="btn btn--primary" id="btnCopiarPrompt">Copiar Prompt</button>
-        <p class="caja-prompt__ayuda">
-          Pegalo en ChatGPT, Claude, Gemini o la IA que uses, y traé de vuelta lo que te devuelva.
-        </p>
+        <p class="caja-prompt__ayuda">Pegalo en tu IA y traé de vuelta la respuesta.</p>
       </div>
 
-      <!-- Modo personalizado -->
       <div class="prompt-personalizado" id="promptPersonalizado">
         <div class="campo">
-          <label class="campo__etiqueta" for="textareaPromptCustom">Editá el prompt a tu gusto</label>
+          <label class="campo__etiqueta" for="textareaPromptCustom">Editá a tu gusto</label>
           <textarea class="campo__textarea campo__textarea--grande" id="textareaPromptCustom"></textarea>
         </div>
-        <button class="btn btn--primary" id="btnCopiarCustom">Copiar Prompt Personalizado</button>
+        <button class="btn btn--primary" id="btnCopiarCustom">Copiar Personalizado</button>
       </div>
     </div>
-  </div>
-</section>
 
-
-<!-- ====== PASO 2: PEGAR RESPUESTA ====== -->
-<section class="editor-section editor-section--surface" id="paso2">
-  <div class="container">
+    <!-- Pegar respuesta de la IA -->
     <div class="paso-card">
       <div class="paso-card__cabecera">
         <div class="paso-card__numero">02</div>
-        <h2 class="paso-card__titulo">Pegá lo que<br>te dio la IA</h2>
+        <h2 class="paso-card__titulo">Respuesta<br>de la IA</h2>
       </div>
 
       <div class="campo">
-        <textarea class="campo__textarea campo__textarea--grande" id="textareaRespuesta"
-          placeholder="Pegá acá el texto que te devolvió la IA..."></textarea>
+        <label class="campo__etiqueta">Pegá lo que te devolvió la IA</label>
+        <textarea class="campo__textarea campo__textarea--grande" id="textareaRespuestaIA"
+          placeholder="Pegá acá la respuesta de la IA..."></textarea>
       </div>
 
-      <button class="btn btn--primary" id="btnProcesar">Procesar</button>
+      <button class="btn btn--primary" id="btnProcesarIA">Procesar</button>
 
-      <div id="advertencias" style="margin-top:1.5rem"></div>
+      <div id="advertenciasIA" style="margin-top:1.5rem"></div>
     </div>
+
   </div>
 </section>
 
 
-<!-- ====== PASO 3: PREVIEW + DESCARGA ====== -->
-<section class="editor-section" id="paso3" style="display:none">
+<!-- ====== IMÁGENES + DESCARGAS ====== -->
+<section class="editor-section" id="seccionDescargas" style="display:none">
   <div class="container">
-    <div class="paso-card">
-      <div class="paso-card__cabecera">
-        <div class="paso-card__numero">03</div>
-        <h2 class="paso-card__titulo">Revisá, Sumá<br>Imágenes y Descargá</h2>
-      </div>
 
-      <!-- Preview de preguntas -->
-      <div id="previewPreguntas"></div>
-
-      <!-- Panel de imágenes -->
-      <div id="panelImagenes" style="display:none;margin-top:2rem">
-        <div class="section__eyebrow" style="margin-bottom:1rem">// Imágenes detectadas</div>
-        <div class="panel-imagenes" id="dropZone">
-          <p class="panel-imagenes__titulo">Arrastrá tus imágenes acá</p>
-          <p class="panel-imagenes__sub">PNG, JPG, WebP, SVG, GIF — Se asocian automáticamente por nombre</p>
-          <input type="file" id="inputImagenes" multiple accept="image/*" style="display:none">
-        </div>
-        <div class="panel-imagenes__lista" id="listaTokensImg"></div>
+    <!-- Panel de imágenes -->
+    <div id="panelImagenes" style="display:none;margin-bottom:2.5rem">
+      <div class="section__eyebrow" style="margin-bottom:1rem">// Imágenes detectadas</div>
+      <div class="panel-imagenes" id="dropZone">
+        <p class="panel-imagenes__titulo">Arrastrá tus imágenes acá</p>
+        <p class="panel-imagenes__sub">PNG, JPG, WebP, SVG, GIF — Se asocian automáticamente por nombre</p>
+        <input type="file" id="inputImagenes" multiple accept="image/*" style="display:none">
       </div>
+      <div class="panel-imagenes__lista" id="listaTokensImg"></div>
+    </div>
 
-      <!-- Botones de descarga -->
-      <div style="margin-top:2.5rem">
-        <div class="section__eyebrow" style="margin-bottom:1rem">// Descargá tu actividad</div>
-        <div class="descargas__grid">
-          <button class="btn--descarga" id="btnImscc">
-            <div class="btn__etiqueta">.imscc — Schoology y Moodle</div>
-            <div class="btn__subtexto">Common Cartridge + QTI 1.2</div>
-          </button>
-          <button class="btn--descarga" id="btnGift">
-            <div class="btn__etiqueta">GIFT .txt — Moodle</div>
-            <div class="btn__subtexto">Formato nativo de Moodle</div>
-          </button>
-          <button class="btn--descarga" id="btnMoodleXml">
-            <div class="btn__etiqueta">Moodle XML — Moodle</div>
-            <div class="btn__subtexto">El formato más completo</div>
-          </button>
-          <button class="btn--descarga" id="btnAppsScript">
-            <div class="btn__etiqueta">Apps Script — Google Classroom</div>
-            <div class="btn__subtexto">Script listo para crear un Google Form</div>
-          </button>
-          <button class="btn--descarga" id="btnJson">
-            <div class="btn__etiqueta">Guardar borrador .json</div>
-            <div class="btn__subtexto">Para reeditar después</div>
-          </button>
-        </div>
-      </div>
+    <!-- Botones de descarga -->
+    <div class="section__eyebrow" style="margin-bottom:1rem">// Descargá tu actividad</div>
+    <div class="descargas__grid">
+      <button class="btn--descarga" id="btnImscc">
+        <div class="btn__etiqueta">.imscc — Schoology y Moodle</div>
+        <div class="btn__subtexto">Common Cartridge + QTI 1.2</div>
+      </button>
+      <button class="btn--descarga" id="btnGift">
+        <div class="btn__etiqueta">GIFT .txt — Moodle</div>
+        <div class="btn__subtexto">Formato nativo de Moodle</div>
+      </button>
+      <button class="btn--descarga" id="btnMoodleXml">
+        <div class="btn__etiqueta">Moodle XML — Moodle</div>
+        <div class="btn__subtexto">El formato más completo</div>
+      </button>
+      <button class="btn--descarga" id="btnAppsScript">
+        <div class="btn__etiqueta">Apps Script — Google Classroom</div>
+        <div class="btn__subtexto">Script listo para crear un Google Form</div>
+      </button>
+      <button class="btn--descarga" id="btnJson">
+        <div class="btn__etiqueta">Guardar borrador .json</div>
+        <div class="btn__subtexto">Para reeditar después</div>
+      </button>
     </div>
   </div>
 </section>
@@ -211,9 +374,7 @@
   <div class="footer__inner">
     <div class="footer__left">
       <span class="footer__logo font-display">HCA<span class="accent">.</span></span>
-      <div class="footer__links">
-        <a href="index.html">Inicio</a>
-      </div>
+      <div class="footer__links"><a href="index.html">Inicio</a></div>
     </div>
     <span class="footer__copy">Generador de Actividades — HCA</span>
   </div>

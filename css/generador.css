@@ -612,6 +612,213 @@
   background: rgba(255, 62, 0, 0.04);
 }
 
+/* ====== TABS DE MODO ====== */
+.tabs-modo {
+  display: flex;
+  gap: 0;
+  border-bottom: var(--border);
+}
+
+.tab-modo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1em 1.2em;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  opacity: 0.4;
+  cursor: pointer;
+  transition: none;
+}
+
+.tab-modo:hover {
+  opacity: 0.7;
+  background: var(--surface);
+}
+
+.tab-modo.active {
+  opacity: 1;
+  border-bottom-color: var(--safety);
+  background: var(--base);
+}
+
+.tab-modo__icono {
+  font-size: 1rem;
+}
+
+/* ====== VISUAL EDITOR — BARRA AGREGAR ====== */
+.ve-barra-agregar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border: var(--border);
+  background: var(--surface);
+}
+
+.ve-barra-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  opacity: 0.5;
+  margin-right: 0.5rem;
+}
+
+/* ====== VISUAL EDITOR — CARDS ====== */
+.ve-card {
+  margin-bottom: var(--gap);
+}
+
+.ve-acciones {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.ve-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 0.75rem;
+  border: 2px solid var(--ink);
+  background: var(--base);
+  color: var(--ink);
+  cursor: pointer;
+  transition: none;
+}
+
+.ve-btn:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--base);
+}
+
+.ve-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.ve-btn-eliminar:hover:not(:disabled) {
+  background: var(--safety);
+  border-color: var(--safety);
+  color: var(--base);
+}
+
+.ve-enunciado {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  line-height: 1.7;
+}
+
+.ve-puntaje {
+  width: 45px;
+  padding: 0.2em 0.3em;
+  border: 1px solid var(--ink);
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  background: var(--base);
+}
+
+.ve-retro {
+  font-size: var(--fs-data);
+}
+
+.ve-opciones-lista,
+.ve-respuestas-lista,
+.ve-pares-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ve-opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: var(--border-thin);
+}
+
+.ve-opcion.opcion-item--correcta {
+  border-color: var(--term-green);
+  border-width: 2px;
+  background: rgba(0, 255, 102, 0.04);
+}
+
+.ve-btn-quitar-opcion,
+.ve-btn-quitar-respuesta,
+.ve-btn-quitar-par {
+  width: 24px;
+  height: 24px;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+/* ====== FORMATO AYUDA (details/summary) ====== */
+.formato-ayuda {
+  border: var(--border-thin);
+  margin-bottom: 0.8rem;
+}
+
+.formato-ayuda__titulo {
+  padding: 0.7em 1em;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  list-style: none;
+}
+
+.formato-ayuda__titulo::-webkit-details-marker {
+  display: none;
+}
+
+.formato-ayuda__titulo::before {
+  content: '▸ ';
+  font-size: 0.8em;
+}
+
+.formato-ayuda[open] .formato-ayuda__titulo::before {
+  content: '▾ ';
+}
+
+.formato-ayuda__titulo:hover {
+  background: var(--surface);
+}
+
+.formato-ayuda__contenido {
+  padding: 1rem;
+  border-top: var(--border-hair);
+}
+
+.formato-ejemplo {
+  background: var(--term-bg);
+  color: var(--base);
+  padding: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* ====== RESPONSIVE ====== */
 @media (max-width: 768px) {
   .actividades__grid {
@@ -632,6 +839,26 @@
   }
 
   .caja-prompt__acciones {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tabs-modo {
+    flex-direction: column;
+  }
+
+  .tab-modo {
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    justify-content: flex-start;
+  }
+
+  .tab-modo.active {
+    border-left-color: var(--safety);
+    border-bottom-color: transparent;
+  }
+
+  .ve-barra-agregar {
     flex-direction: column;
     align-items: flex-start;
   }
