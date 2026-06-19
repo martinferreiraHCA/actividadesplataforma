@@ -412,8 +412,12 @@ document.querySelectorAll('[data-plataforma]').forEach(btn => {
 document.querySelectorAll('[data-preview]').forEach(btn => {
   btn.addEventListener('click', () => {
     if (!preguntas.length) { toast('Primero cargá al menos una pregunta.'); return; }
-    abrirVistaPrevia(btn.dataset.preview, preguntas, tituloQuiz);
-    toast('Vista previa abierta en una nueva pestaña.');
+    const ok = abrirVistaPrevia(btn.dataset.preview, preguntas, tituloQuiz);
+    if (ok) {
+      toast('Vista previa abierta en una nueva pestaña.');
+    } else {
+      toast('El navegador bloqueó la pestaña. Permití las ventanas emergentes para este sitio.');
+    }
   });
 });
 

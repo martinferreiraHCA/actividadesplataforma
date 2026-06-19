@@ -259,12 +259,26 @@ const PLATFORM_NAMES = {
 
 export function abrirVistaPrevia(plataforma, preguntas, titulo) {
   const renderer = RENDERERS[plataforma];
-  if (!renderer) return;
+  if (!renderer) return false;
   const html = renderer(preguntas, titulo || 'Cuestionario sin título');
+
+  // Abrimos la ventana de forma sincrónica (dentro del gesto del usuario)
+  // y le escribimos el HTML directamente. Es más confiable que un blob:
+  // como URL, que algunos navegadores bloquean como popup.
+  const win = window.open('', '_blank');
+  if (win && win.document) {
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    return true;
+  }
+
+  // Si el navegador bloqueó la ventana, caemos a una descarga/abrir por blob.
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  const win2 = window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return !!win2;
 }
 
 export { PLATFORM_NAMES };
