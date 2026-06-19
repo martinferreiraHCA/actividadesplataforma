@@ -11,7 +11,7 @@
       titulo: "Empezar",
       html: `
         <p class="guia-p">Esta herramienta arma <strong>cuestionarios y actividades</strong> y te los
-        descarga listos para subir a <strong>Schoology, Moodle o Google Classroom</strong>.
+        descarga listos para subir a <strong>CREA de Ceibal, Schoology, Moodle o Google Classroom</strong>.
         Todo pasa en tu navegador: no se instala nada y tus datos no salen de tu compu.</p>
 
         <h4 class="guia-h">Los 3 pasos</h4>
@@ -118,13 +118,15 @@ Si V=12 e I=2, ¿cuánto vale R?
         <table class="guia-tabla">
           <thead><tr><th>Descargá</th><th>Para</th></tr></thead>
           <tbody>
-            <tr><td><strong>.imscc</strong></td><td>Schoology y Moodle (Common Cartridge + QTI 1.2). La opción más universal.</td></tr>
+            <tr><td><strong>.imscc</strong></td><td>CREA (Ceibal), Schoology y Moodle (Common Cartridge + QTI 1.2). La opción más universal.</td></tr>
             <tr><td><strong>GIFT .txt</strong></td><td>Moodle — formato nativo, rápido de importar.</td></tr>
             <tr><td><strong>Moodle XML</strong></td><td>Moodle — el formato más completo.</td></tr>
             <tr><td><strong>Apps Script</strong></td><td>Google Classroom — script que crea un Google Form.</td></tr>
             <tr><td><strong>.json</strong></td><td>Guardar el borrador para seguir editándolo después acá mismo.</td></tr>
           </tbody>
         </table>
+        <div class="guia-aviso"><strong>CREA de Ceibal</strong> está basada en Schoology, así que
+        importás el mismo archivo <code>.imscc</code> desde "Importar" en tu curso.</div>
         <div class="guia-aviso">Antes de bajar, la app revisa que ninguna pregunta esté incompleta
         (opciones vacías, falta marcar la correcta, etc.) y te avisa.</div>
 
@@ -132,6 +134,7 @@ Si V=12 e I=2, ¿cuánto vale R?
         <p class="guia-p">Abrí la plataforma donde vas a importar el archivo (se abre en una pestaña nueva):</p>
         <div class="ia-accesos">
           <span class="ia-accesos__label">Ir a:</span>
+          <a class="ia-acceso" href="https://crea2.ceibal.edu.uy/" target="_blank" rel="noopener">CREA Ceibal ↗</a>
           <a class="ia-acceso" href="https://app.schoology.com/" target="_blank" rel="noopener">Schoology ↗</a>
           <a class="ia-acceso" href="https://moodle.org/" target="_blank" rel="noopener">Moodle ↗</a>
           <a class="ia-acceso" href="https://classroom.google.com/" target="_blank" rel="noopener">Google Classroom ↗</a>

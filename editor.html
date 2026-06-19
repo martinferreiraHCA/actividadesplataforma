@@ -362,30 +362,58 @@ Explicá qué es un circuito en serie.</pre>
       <div class="panel-imagenes__lista" id="listaTokensImg"></div>
     </div>
 
-    <!-- Botones de descarga -->
-    <div class="section__eyebrow" style="margin-bottom:1rem">// Descargá tu actividad</div>
+    <!-- Exportar: primero elegís la plataforma, el sistema te da el formato correcto -->
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Exportá tu actividad</div>
+    <p class="exportar-intro">¿A qué plataforma la vas a subir? Elegí y te la damos en el formato correcto.</p>
     <div class="descargas__grid">
-      <button class="btn--descarga" id="btnImscc">
-        <div class="btn__etiqueta">.imscc — Schoology y Moodle</div>
-        <div class="btn__subtexto">Common Cartridge + QTI 1.2</div>
+      <button class="btn--descarga" data-plataforma="crea">
+        <div class="btn__etiqueta">CREA de Ceibal</div>
+        <div class="btn__subtexto">Te damos el paquete .imscc</div>
       </button>
-      <button class="btn--descarga" id="btnGift">
-        <div class="btn__etiqueta">GIFT .txt — Moodle</div>
-        <div class="btn__subtexto">Formato nativo de Moodle</div>
+      <button class="btn--descarga" data-plataforma="schoology">
+        <div class="btn__etiqueta">Schoology</div>
+        <div class="btn__subtexto">Te damos el paquete .imscc</div>
       </button>
-      <button class="btn--descarga" id="btnMoodleXml">
-        <div class="btn__etiqueta">Moodle XML — Moodle</div>
-        <div class="btn__subtexto">El formato más completo</div>
+      <button class="btn--descarga" data-plataforma="moodle">
+        <div class="btn__etiqueta">Moodle</div>
+        <div class="btn__subtexto">Te damos el Moodle XML</div>
       </button>
-      <button class="btn--descarga" id="btnAppsScript">
-        <div class="btn__etiqueta">Apps Script — Google Classroom</div>
-        <div class="btn__subtexto">Script listo para crear un Google Form</div>
-      </button>
-      <button class="btn--descarga" id="btnJson">
-        <div class="btn__etiqueta">Guardar borrador .json</div>
-        <div class="btn__subtexto">Para reeditar después</div>
+      <button class="btn--descarga" data-plataforma="classroom">
+        <div class="btn__etiqueta">Google Classroom</div>
+        <div class="btn__subtexto">Te damos el script Apps Script</div>
       </button>
     </div>
+
+    <!-- Guardar borrador (siempre disponible) -->
+    <div style="margin-top:1.2rem">
+      <button class="btn btn--ghost" id="btnJson">Guardar borrador .json (para reeditar después)</button>
+    </div>
+
+    <!-- Formatos avanzados (manual) -->
+    <details class="formato-ayuda" style="margin-top:1.5rem">
+      <summary class="formato-ayuda__titulo">Otras opciones y formatos (avanzado)</summary>
+      <div class="formato-ayuda__contenido">
+        <p class="exportar-intro" style="margin-top:0">Si sabés qué formato necesitás, descargalo directo:</p>
+        <div class="descargas__grid">
+          <button class="btn--descarga" id="btnImscc">
+            <div class="btn__etiqueta">.imscc — CREA, Schoology y Moodle</div>
+            <div class="btn__subtexto">Common Cartridge + QTI 1.2</div>
+          </button>
+          <button class="btn--descarga" id="btnGift">
+            <div class="btn__etiqueta">GIFT .txt — Moodle</div>
+            <div class="btn__subtexto">Formato nativo de Moodle</div>
+          </button>
+          <button class="btn--descarga" id="btnMoodleXml">
+            <div class="btn__etiqueta">Moodle XML — Moodle</div>
+            <div class="btn__subtexto">El formato más completo</div>
+          </button>
+          <button class="btn--descarga" id="btnAppsScript">
+            <div class="btn__etiqueta">Apps Script — Google Classroom</div>
+            <div class="btn__subtexto">Script listo para crear un Google Form</div>
+          </button>
+        </div>
+      </div>
+    </details>
   </div>
 </section>
 

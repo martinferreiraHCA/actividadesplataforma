@@ -348,7 +348,9 @@ function actualizarDescargas() {
   }
 }
 
-document.getElementById('btnImscc')?.addEventListener('click', async () => {
+// Funciones de exportación reutilizables (las usan tanto el selector de
+// plataforma como los botones de "formatos avanzados").
+async function exportarImscc() {
   if (!preguntas.length) return;
   if (!confirmarExport()) return;
   try {
@@ -358,34 +360,59 @@ document.getElementById('btnImscc')?.addEventListener('click', async () => {
   } catch (err) {
     toast('Error: ' + err.message);
   }
-});
+}
 
-document.getElementById('btnGift')?.addEventListener('click', () => {
+function exportarGift() {
   if (!preguntas.length) return;
   if (!confirmarExport()) return;
   descargar(new Blob([generarGIFT(preguntas, tituloQuiz)], { type: 'text/plain;charset=utf-8' }), `${nombreArchivo()}.gift.txt`);
   toast('¡Archivo GIFT descargado!');
-});
+}
 
-document.getElementById('btnMoodleXml')?.addEventListener('click', () => {
+function exportarMoodleXml() {
   if (!preguntas.length) return;
   if (!confirmarExport()) return;
   descargar(new Blob([generarMoodleXML(preguntas, tituloQuiz)], { type: 'application/xml;charset=utf-8' }), `${nombreArchivo()}_moodle.xml`);
   toast('¡Archivo Moodle XML descargado!');
-});
+}
 
-document.getElementById('btnAppsScript')?.addEventListener('click', () => {
+function exportarAppsScript() {
   if (!preguntas.length) return;
   if (!confirmarExport()) return;
   descargar(new Blob([generarAppsScript(preguntas, tituloQuiz)], { type: 'text/javascript;charset=utf-8' }), `${nombreArchivo()}_classroom.gs`);
   toast('¡Script descargado!');
-});
+}
 
-document.getElementById('btnJson')?.addEventListener('click', () => {
+function exportarBorrador() {
   if (!preguntas.length) return;
   descargar(new Blob([exportarJSON(preguntas, tituloQuiz, nivelQuiz)], { type: 'application/json;charset=utf-8' }), `${nombreArchivo()}_borrador.json`);
   toast('¡Borrador JSON guardado!');
+}
+
+// Cada plataforma se mapea al formato correcto.
+const EXPORT_POR_PLATAFORMA = {
+  crea: { fn: exportarImscc, msg: 'CREA usa el paquete .imscc (Common Cartridge). Importalo desde tu curso → Importar.' },
+  schoology: { fn: exportarImscc, msg: 'Schoology usa el paquete .imscc. Importalo desde Course Options → Import.' },
+  moodle: { fn: exportarMoodleXml, msg: 'Para Moodle te damos el XML (el más completo). Importalo en Banco de preguntas → Importar.' },
+  classroom: { fn: exportarAppsScript, msg: 'Para Google Classroom te damos un script Apps Script que crea el Google Form.' }
+};
+
+document.querySelectorAll('[data-plataforma]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cfg = EXPORT_POR_PLATAFORMA[btn.dataset.plataforma];
+    if (!cfg) return;
+    if (!preguntas.length) { toast('Primero cargá al menos una pregunta.'); return; }
+    toast(cfg.msg);
+    cfg.fn();
+  });
 });
+
+// Botones de formatos avanzados (opcionales)
+document.getElementById('btnImscc')?.addEventListener('click', exportarImscc);
+document.getElementById('btnGift')?.addEventListener('click', exportarGift);
+document.getElementById('btnMoodleXml')?.addEventListener('click', exportarMoodleXml);
+document.getElementById('btnAppsScript')?.addEventListener('click', exportarAppsScript);
+document.getElementById('btnJson')?.addEventListener('click', exportarBorrador);
 
 // Importar JSON
 document.getElementById('btnImportarJson')?.addEventListener('click', () => {

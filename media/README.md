@@ -4,7 +4,7 @@ Acá va el **video tutorial** que se muestra en la Guía de uso (sección "Video
 
 ## Cómo subir el video
 
-1. Grabá el tutorial de cómo subir los cuestionarios a tu plataforma (Schoology, Moodle o Google Classroom).
+1. Grabá el tutorial de cómo subir los cuestionarios a tu plataforma (CREA de Ceibal, Schoology, Moodle o Google Classroom).
 2. Exportalo en formato **`.mp4`** (recomendado: H.264 + AAC, para máxima compatibilidad en navegadores).
 3. Subí el archivo a esta carpeta con este nombre exacto:
 
