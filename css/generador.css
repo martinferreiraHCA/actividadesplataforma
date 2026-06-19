@@ -249,6 +249,44 @@
   line-height: 1.6;
 }
 
+/* Accesos directos a las IAs recomendadas */
+.ia-accesos {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ia-accesos__label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.5;
+  margin-right: 0.2rem;
+}
+
+.ia-acceso {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.45em 0.9em;
+  border: 2px solid var(--ink);
+  background: var(--base);
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: none;
+}
+
+.ia-acceso:hover {
+  background: var(--ink);
+  color: var(--base);
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px var(--safety);
+}
+
 /* Prompt personalizado */
 .prompt-personalizado {
   margin-top: 1.5rem;

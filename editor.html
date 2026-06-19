@@ -301,7 +301,13 @@ Explicá qué es un circuito en serie.</pre>
       <div class="caja-prompt" id="cajaPrompt"></div>
       <div class="caja-prompt__acciones" id="accionesPrompt" style="display:none">
         <button class="btn btn--primary" id="btnCopiarPrompt">Copiar Prompt</button>
-        <p class="caja-prompt__ayuda">Pegalo en tu IA y traé de vuelta la respuesta.</p>
+        <div class="ia-accesos">
+          <span class="ia-accesos__label">Abrí tu IA:</span>
+          <a class="ia-acceso" href="https://chat.openai.com/" target="_blank" rel="noopener">ChatGPT ↗</a>
+          <a class="ia-acceso" href="https://claude.ai/new" target="_blank" rel="noopener">Claude ↗</a>
+          <a class="ia-acceso" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini ↗</a>
+        </div>
+        <p class="caja-prompt__ayuda">Copiá el prompt, abrí tu IA, pegalo y traé de vuelta la respuesta.</p>
       </div>
 
       <div class="prompt-personalizado" id="promptPersonalizado">
@@ -309,7 +315,15 @@ Explicá qué es un circuito en serie.</pre>
           <label class="campo__etiqueta" for="textareaPromptCustom">Editá a tu gusto</label>
           <textarea class="campo__textarea campo__textarea--grande" id="textareaPromptCustom"></textarea>
         </div>
-        <button class="btn btn--primary" id="btnCopiarCustom">Copiar Personalizado</button>
+        <div class="caja-prompt__acciones">
+          <button class="btn btn--primary" id="btnCopiarCustom">Copiar Personalizado</button>
+          <div class="ia-accesos">
+            <span class="ia-accesos__label">Abrí tu IA:</span>
+            <a class="ia-acceso" href="https://chat.openai.com/" target="_blank" rel="noopener">ChatGPT ↗</a>
+            <a class="ia-acceso" href="https://claude.ai/new" target="_blank" rel="noopener">Claude ↗</a>
+            <a class="ia-acceso" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini ↗</a>
+          </div>
+        </div>
       </div>
     </div>
 

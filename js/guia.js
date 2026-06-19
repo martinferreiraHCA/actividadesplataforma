@@ -44,6 +44,12 @@
         <h4 class="guia-h">3. Asistente IA <span class="guia-tag guia-tag--ghost">Opcional</span></h4>
         <p class="guia-p">Completás un formulario y la app te arma un <strong>prompt</strong>. Lo copiás a
         ChatGPT, Claude o Gemini, traés la respuesta de vuelta, y se convierte en preguntas editables.</p>
+        <div class="ia-accesos">
+          <span class="ia-accesos__label">Abrí tu IA:</span>
+          <a class="ia-acceso" href="https://chat.openai.com/" target="_blank" rel="noopener">ChatGPT ↗</a>
+          <a class="ia-acceso" href="https://claude.ai/new" target="_blank" rel="noopener">Claude ↗</a>
+          <a class="ia-acceso" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini ↗</a>
+        </div>
       `
     },
     {
