@@ -1,88 +1,102 @@
-// Genera ítems QTI 1.2 por tipo de pregunta (perfil Common Cartridge)
+// Genera ítems QTI 1.2 por tipo de pregunta (perfil Common Cartridge / Canvas)
+// Este es el dialecto que Schoology, Canvas, Moodle y Blackboard importan de forma fiable.
 
 function escapeXml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-function uid() {
-  return 'id_' + Math.random().toString(36).substring(2, 15);
+let _seq = 0;
+function uid(prefix = 'id') {
+  _seq += 1;
+  return `${prefix}_${Date.now().toString(36)}_${_seq}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function enunciadoConImagenes(texto, imagenes, gestorImg) {
-  let html = escapeXml(texto);
-  html = html.replace(/\[IMG:\s*([^\]]+)\]/gi, (match, token) => {
+// Puntaje siempre como decimal (Canvas usa "1.0", "2.0", etc.)
+function puntos(p) {
+  const n = Number(p.puntaje);
+  return (Number.isFinite(n) ? n : 1).toFixed(1);
+}
+
+// Construye el contenido HTML escapado para texttype="text/html".
+// Canvas envuelve el enunciado en <div> — varios importadores lo necesitan.
+function htmlMaterial(texto, imagenes, gestorImg) {
+  let cuerpo = escapeXml(texto || '');
+  // Tokens [IMG: archivo.png] → <img>
+  cuerpo = cuerpo.replace(/\[IMG:\s*([^\]]+)\]/gi, (match, token) => {
     token = token.trim();
-    const archivo = gestorImg?.obtenerArchivo(token);
-    const src = archivo ? `images/${token}` : `images/${token}`;
-    return `&lt;br/&gt;&lt;img src="${escapeXml(src)}" alt="${escapeXml(token)}"/&gt;&lt;br/&gt;`;
+    const src = `images/${token}`;
+    return `&lt;br/&gt;&lt;img src="${escapeXml(src)}" alt="${escapeXml(token)}"/&gt;`;
   });
-  html = html.replace(/\n/g, '&lt;br/&gt;');
-  return html;
+  cuerpo = cuerpo.replace(/\n/g, '&lt;br/&gt;');
+  return `&lt;div&gt;&lt;p&gt;${cuerpo}&lt;/p&gt;&lt;/div&gt;`;
 }
 
+function bloqueMetadata(tipo, p) {
+  return `      <itemmetadata>
+        <qtimetadata>
+          <qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>${tipo}</fieldentry></qtimetadatafield>
+          <qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>${puntos(p)}</fieldentry></qtimetadatafield>
+          <qtimetadatafield><fieldlabel>assessment_question_identifierref</fieldlabel><fieldentry>${uid('aq')}</fieldentry></qtimetadatafield>
+        </qtimetadata>
+      </itemmetadata>`;
+}
+
+function feedbackBloque(p) {
+  if (!p.retro) return '';
+  return `
+      <itemfeedback ident="general_fb">
+        <flow_mat><material><mattext texttype="text/html">${htmlMaterial(p.retro)}</mattext></material></flow_mat>
+      </itemfeedback>`;
+}
+
+function feedbackLink(p) {
+  return p.retro ? `
+          <displayfeedback feedbacktype="Response" linkrefid="general_fb"/>` : '';
+}
+
+// ====== OPCIÓN MÚLTIPLE (una o varias correctas) ======
 function generarItemOpcionMultiple(p, gestorImg) {
-  const ident = uid();
-  const respIdent = uid();
-  const correctas = p.opciones.filter(o => o.correcta);
+  const ident = uid('q');
+  const respIdent = 'response1';
+
+  // Filtrar opciones vacías para que no entren respuestas en blanco.
+  const opciones = (p.opciones || []).filter(o => (o.texto ?? '').trim() !== '');
+  const conCorrecta = opciones.some(o => o.correcta);
+  // Si por algún motivo no hay correcta marcada, marcamos la primera.
+  if (!conCorrecta && opciones.length) opciones[0].correcta = true;
+
+  const correctas = opciones.filter(o => o.correcta);
   const esMultiple = correctas.length > 1;
+  const tipo = esMultiple ? 'multiple_answers_question' : 'multiple_choice_question';
   const rcardinality = esMultiple ? 'Multiple' : 'Single';
 
-  const labels = p.opciones.map((op, i) => {
-    const labelId = `opt_${ident}_${i}`;
-    return { id: labelId, texto: op.texto, correcta: op.correcta };
-  });
+  const labels = opciones.map((op) => ({ id: uid('a'), texto: op.texto, correcta: op.correcta }));
 
   const choicesXml = labels.map(l =>
-    `          <response_label ident="${l.id}">
-            <material><mattext texttype="text/plain">${escapeXml(l.texto)}</mattext></material>
-          </response_label>`
+    `            <response_label ident="${l.id}">
+              <material><mattext texttype="text/plain">${escapeXml(l.texto)}</mattext></material>
+            </response_label>`
   ).join('\n');
 
-  let respconditions = '';
+  let conditionvar;
   if (esMultiple) {
-    const condCorrectaXml = labels.filter(l => l.correcta).map(l =>
-      `              <varequal respident="${respIdent}">${l.id}</varequal>`
+    const partes = labels.map(l => l.correcta
+      ? `              <varequal respident="${respIdent}">${l.id}</varequal>`
+      : `              <not><varequal respident="${respIdent}">${l.id}</varequal></not>`
     ).join('\n');
-    respconditions = `
-        <respcondition continue="No">
-          <conditionvar>
-            <and>
-${condCorrectaXml}
-            </and>
-          </conditionvar>
-          <setvar action="Set" varname="SCORE">100</setvar>${p.retro ? `
-          <displayfeedback feedbacktype="Response" linkrefid="feedback_correct"/>` : ''}
-        </respcondition>`;
+    conditionvar = `            <and>
+${partes}
+            </and>`;
   } else {
     const correctaId = labels.find(l => l.correcta)?.id;
-    respconditions = `
-        <respcondition continue="No">
-          <conditionvar>
-            <varequal respident="${respIdent}">${correctaId}</varequal>
-          </conditionvar>
-          <setvar action="Set" varname="SCORE">100</setvar>${p.retro ? `
-          <displayfeedback feedbacktype="Response" linkrefid="feedback_correct"/>` : ''}
-        </respcondition>`;
-  }
-
-  let feedbackXml = '';
-  if (p.retro) {
-    feedbackXml = `
-      <itemfeedback ident="feedback_correct">
-        <material><mattext texttype="text/plain">${escapeXml(p.retro)}</mattext></material>
-      </itemfeedback>`;
+    conditionvar = `            <varequal respident="${respIdent}">${correctaId}</varequal>`;
   }
 
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
-      <itemmetadata>
-        <qtimetadata>
-          <qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>multiple_choice_question</fieldentry></qtimetadatafield>
-          <qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>${p.puntaje}</fieldentry></qtimetadatafield>
-        </qtimetadata>
-      </itemmetadata>
+${bloqueMetadata(tipo, p)}
       <presentation>
-        <material><mattext texttype="text/html">${enunciadoConImagenes(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
+        <material><mattext texttype="text/html">${htmlMaterial(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
         <response_lid ident="${respIdent}" rcardinality="${rcardinality}">
           <render_choice>
 ${choicesXml}
@@ -90,35 +104,29 @@ ${choicesXml}
         </response_lid>
       </presentation>
       <resprocessing>
-        <outcomes><decvar maxvalue="100" minvalue="0" varname="SCORE" vartype="Decimal"/></outcomes>${respconditions}
-      </resprocessing>${feedbackXml}
+        <outcomes><decvar maxvalue="100" minvalue="0" varname="SCORE" vartype="Decimal"/></outcomes>
+        <respcondition continue="No">
+          <conditionvar>
+${conditionvar}
+          </conditionvar>
+          <setvar action="Set" varname="SCORE">100</setvar>${feedbackLink(p)}
+        </respcondition>
+      </resprocessing>${feedbackBloque(p)}
     </item>`;
 }
 
+// ====== VERDADERO / FALSO ======
 function generarItemVF(p, gestorImg) {
-  const ident = uid();
-  const respIdent = uid();
-  const trueId = `${ident}_true`;
-  const falseId = `${ident}_false`;
+  const ident = uid('q');
+  const respIdent = 'response1';
+  const trueId = uid('a');
+  const falseId = uid('a');
   const correctaId = p.respuestaCorrecta ? trueId : falseId;
 
-  let feedbackXml = '';
-  if (p.retro) {
-    feedbackXml = `
-      <itemfeedback ident="feedback_correct">
-        <material><mattext texttype="text/plain">${escapeXml(p.retro)}</mattext></material>
-      </itemfeedback>`;
-  }
-
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
-      <itemmetadata>
-        <qtimetadata>
-          <qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>true_false_question</fieldentry></qtimetadatafield>
-          <qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>${p.puntaje}</fieldentry></qtimetadatafield>
-        </qtimetadata>
-      </itemmetadata>
+${bloqueMetadata('true_false_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${enunciadoConImagenes(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
+        <material><mattext texttype="text/html">${htmlMaterial(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
         <response_lid ident="${respIdent}" rcardinality="Single">
           <render_choice>
             <response_label ident="${trueId}">
@@ -136,18 +144,19 @@ function generarItemVF(p, gestorImg) {
           <conditionvar>
             <varequal respident="${respIdent}">${correctaId}</varequal>
           </conditionvar>
-          <setvar action="Set" varname="SCORE">100</setvar>${p.retro ? `
-          <displayfeedback feedbacktype="Response" linkrefid="feedback_correct"/>` : ''}
+          <setvar action="Set" varname="SCORE">100</setvar>${feedbackLink(p)}
         </respcondition>
-      </resprocessing>${feedbackXml}
+      </resprocessing>${feedbackBloque(p)}
     </item>`;
 }
 
+// ====== RESPUESTA CORTA ======
 function generarItemRespuestaCorta(p, gestorImg) {
-  const ident = uid();
-  const respIdent = uid();
+  const ident = uid('q');
+  const respIdent = 'response1';
 
-  const condiciones = p.respuestasAceptadas.map(r =>
+  const respuestas = (p.respuestasAceptadas || []).filter(r => (r ?? '').trim() !== '');
+  const condiciones = respuestas.map(r =>
     `        <respcondition continue="No">
           <conditionvar>
             <varequal respident="${respIdent}" case="No">${escapeXml(r)}</varequal>
@@ -157,124 +166,127 @@ function generarItemRespuestaCorta(p, gestorImg) {
   ).join('\n');
 
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
-      <itemmetadata>
-        <qtimetadata>
-          <qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>short_answer_question</fieldentry></qtimetadatafield>
-          <qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>${p.puntaje}</fieldentry></qtimetadatafield>
-        </qtimetadata>
-      </itemmetadata>
+${bloqueMetadata('short_answer_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${enunciadoConImagenes(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
+        <material><mattext texttype="text/html">${htmlMaterial(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
         <response_str ident="${respIdent}" rcardinality="Single">
-          <render_fib><response_label ident="answer"/></render_fib>
+          <render_fib>
+            <response_label ident="${uid('ans')}"/>
+          </render_fib>
         </response_str>
       </presentation>
       <resprocessing>
         <outcomes><decvar maxvalue="100" minvalue="0" varname="SCORE" vartype="Decimal"/></outcomes>
 ${condiciones}
-      </resprocessing>
+      </resprocessing>${feedbackBloque(p)}
     </item>`;
 }
 
+// ====== NUMÉRICA ======
 function generarItemNumerica(p, gestorImg) {
-  const ident = uid();
-  const respIdent = uid();
-  const min = p.respuestaCorrecta - p.tolerancia;
-  const max = p.respuestaCorrecta + p.tolerancia;
+  const ident = uid('q');
+  const respIdent = 'response1';
+  const valor = Number(p.respuestaCorrecta) || 0;
+  const tol = Number(p.tolerancia) || 0;
+  const min = valor - tol;
+  const max = valor + tol;
 
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
-      <itemmetadata>
-        <qtimetadata>
-          <qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>numerical_question</fieldentry></qtimetadatafield>
-          <qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>${p.puntaje}</fieldentry></qtimetadatafield>
-        </qtimetadata>
-      </itemmetadata>
+${bloqueMetadata('numerical_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${enunciadoConImagenes(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
+        <material><mattext texttype="text/html">${htmlMaterial(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
         <response_str ident="${respIdent}" rcardinality="Single">
-          <render_fib><response_label ident="answer"/></render_fib>
+          <render_fib fibtype="Decimal">
+            <response_label ident="${uid('ans')}"/>
+          </render_fib>
         </response_str>
       </presentation>
       <resprocessing>
         <outcomes><decvar maxvalue="100" minvalue="0" varname="SCORE" vartype="Decimal"/></outcomes>
         <respcondition continue="No">
           <conditionvar>
-            <and>
-              <vargte respident="${respIdent}">${min}</vargte>
-              <varlte respident="${respIdent}">${max}</varlte>
-            </and>
+            <or>
+              <varequal respident="${respIdent}">${valor}</varequal>
+              <and>
+                <vargte respident="${respIdent}">${min}</vargte>
+                <varlte respident="${respIdent}">${max}</varlte>
+              </and>
+            </or>
           </conditionvar>
           <setvar action="Set" varname="SCORE">100</setvar>
         </respcondition>
-      </resprocessing>
+      </resprocessing>${feedbackBloque(p)}
     </item>`;
 }
 
+// ====== EMPAREJAMIENTO (formato Canvas: crédito parcial por par) ======
 function generarItemEmparejamiento(p, gestorImg) {
-  const ident = uid();
-  const items = p.pares.map((par, i) => {
-    const grpId = `grp_${i}`;
-    const matchId = `match_${i}`;
-    return { grpId, matchId, izq: par.izquierda, der: par.derecha };
-  });
+  const ident = uid('q');
+  const pares = (p.pares || []).filter(par => (par.izquierda ?? '').trim() !== '' && (par.derecha ?? '').trim() !== '');
 
-  const responsesXml = items.map(item => `
-        <response_lid ident="${item.grpId}">
-          <material><mattext texttype="text/plain">${escapeXml(item.izq)}</mattext></material>
+  // Cada par: un lado izquierdo (response_lid) y su respuesta correcta del pool.
+  const filas = pares.map((par) => ({
+    leftId: uid('l'),
+    rightId: uid('r'),
+    izq: par.izquierda,
+    der: par.derecha
+  }));
+
+  // Pool de respuestas = todas las opciones de la derecha (cada response_lid las lista todas).
+  const poolXml = filas.map(f => `            <response_label ident="${f.rightId}">
+              <material><mattext texttype="text/plain">${escapeXml(f.der)}</mattext></material>
+            </response_label>`).join('\n');
+
+  const responsesXml = filas.map(f => `        <response_lid ident="${f.leftId}">
+          <material><mattext texttype="text/plain">${escapeXml(f.izq)}</mattext></material>
           <render_choice>
-${items.map(m => `            <response_label ident="${m.matchId}">
-              <material><mattext texttype="text/plain">${escapeXml(m.der)}</mattext></material>
-            </response_label>`).join('\n')}
+${poolXml}
           </render_choice>
-        </response_lid>`
-  ).join('\n');
+        </response_lid>`).join('\n');
 
-  const condiciones = items.map(item =>
-    `            <varequal respident="${item.grpId}">${item.matchId}</varequal>`
-  ).join('\n');
+  // Crédito parcial: cada par correcto suma 100/n.
+  const credito = filas.length ? (100 / filas.length).toFixed(2) : '100';
+  const condiciones = filas.map(f => `        <respcondition continue="Yes">
+          <conditionvar>
+            <varequal respident="${f.leftId}">${f.rightId}</varequal>
+          </conditionvar>
+          <setvar action="Add" varname="SCORE">${credito}</setvar>
+        </respcondition>`).join('\n');
 
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
-      <itemmetadata>
-        <qtimetadata>
-          <qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>matching_question</fieldentry></qtimetadatafield>
-          <qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>${p.puntaje}</fieldentry></qtimetadatafield>
-        </qtimetadata>
-      </itemmetadata>
+${bloqueMetadata('matching_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${enunciadoConImagenes(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
+        <material><mattext texttype="text/html">${htmlMaterial(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
 ${responsesXml}
       </presentation>
       <resprocessing>
         <outcomes><decvar maxvalue="100" minvalue="0" varname="SCORE" vartype="Decimal"/></outcomes>
-        <respcondition continue="No">
-          <conditionvar>
-            <and>
 ${condiciones}
-            </and>
-          </conditionvar>
-          <setvar action="Set" varname="SCORE">100</setvar>
-        </respcondition>
-      </resprocessing>
+      </resprocessing>${feedbackBloque(p)}
     </item>`;
 }
 
+// ====== ENSAYO (corrección manual) ======
 function generarItemEnsayo(p, gestorImg) {
-  const ident = uid();
-  const respIdent = uid();
+  const ident = uid('q');
+  const respIdent = 'response1';
 
   return `    <item ident="${ident}" title="Pregunta ${p.numero}">
-      <itemmetadata>
-        <qtimetadata>
-          <qtimetadatafield><fieldlabel>question_type</fieldlabel><fieldentry>essay_question</fieldentry></qtimetadatafield>
-          <qtimetadatafield><fieldlabel>points_possible</fieldlabel><fieldentry>${p.puntaje}</fieldentry></qtimetadatafield>
-        </qtimetadata>
-      </itemmetadata>
+${bloqueMetadata('essay_question', p)}
       <presentation>
-        <material><mattext texttype="text/html">${enunciadoConImagenes(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
+        <material><mattext texttype="text/html">${htmlMaterial(p.enunciado, p.imagenes, gestorImg)}</mattext></material>
         <response_str ident="${respIdent}" rcardinality="Single">
-          <render_fib><response_label ident="answer" rshuffle="No"/></render_fib>
+          <render_fib>
+            <response_label ident="${uid('ans')}" rshuffle="No"/>
+          </render_fib>
         </response_str>
       </presentation>
+      <resprocessing>
+        <outcomes><decvar maxvalue="100" minvalue="0" varname="SCORE" vartype="Decimal"/></outcomes>
+        <respcondition continue="No">
+          <conditionvar><other/></conditionvar>
+        </respcondition>
+      </resprocessing>${feedbackBloque(p)}
     </item>`;
 }
 
@@ -291,12 +303,17 @@ export function generarQTI(preguntas, titulo, gestorImg) {
     }
   }).join('\n');
 
-  const quizId = uid();
+  const quizId = uid('quiz');
   return {
     quizId,
     xml: `<?xml version="1.0" encoding="UTF-8"?>
-<questestinterop xmlns="http://www.imsglobal.org/xsd/ims_qtiasiv1p2">
+<questestinterop xmlns="http://www.imsglobal.org/xsd/ims_qtiasiv1p2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.imsglobal.org/xsd/ims_qtiasiv1p2 http://www.imsglobal.org/profile/cc/ccv1p1/ccv1p1_qtiasiv1p2p1_v1p0.xsd">
   <assessment ident="${quizId}" title="${escapeXml(titulo || 'Cuestionario')}">
+    <qtimetadata>
+      <qtimetadatafield><fieldlabel>cc_maxattempts</fieldlabel><fieldentry>1</fieldentry></qtimetadatafield>
+    </qtimetadata>
     <section ident="root_section">
 ${items}
     </section>

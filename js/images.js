@@ -83,6 +83,24 @@ export class GestorImagenes {
 
   renderPanel(contenedor) {
     contenedor.innerHTML = '';
+
+    // Adjuntar el listener de cambio una sola vez (evita acumular listeners).
+    if (!contenedor.dataset.bound) {
+      contenedor.dataset.bound = '1';
+      contenedor.addEventListener('change', (e) => {
+        if (e.target.tagName === 'SELECT') {
+          const token = e.target.dataset.token;
+          const val = e.target.value;
+          if (val) {
+            this.asignarManual(token, val);
+          } else {
+            this.asociaciones.delete(token);
+          }
+          this.renderPanel(contenedor);
+        }
+      });
+    }
+
     if (this.tokens.length === 0) return;
 
     const archivosDisponibles = Array.from(this.archivos.keys());
@@ -94,7 +112,7 @@ export class GestorImagenes {
 
       let selectHtml = '';
       if (archivosDisponibles.length > 0) {
-        selectHtml = `<select data-token="${token}" style="font-size:0.7rem;padding:2px;border-radius:4px;border:1px solid var(--color-borde)">
+        selectHtml = `<select data-token="${token}" style="font-size:0.7rem;padding:2px 4px;border:2px solid var(--ink);background:var(--base);color:var(--ink);font-family:'JetBrains Mono',monospace">
           <option value="">— Elegí —</option>
           ${archivosDisponibles.map(n => `<option value="${n}" ${n === asociado ? 'selected' : ''}>${n}</option>`).join('')}
         </select>`;
@@ -102,19 +120,6 @@ export class GestorImagenes {
 
       chip.innerHTML = `🖼️ ${token} ${asociado ? '✅' : '⚠️'} ${selectHtml}`;
       contenedor.appendChild(chip);
-    });
-
-    contenedor.addEventListener('change', (e) => {
-      if (e.target.tagName === 'SELECT') {
-        const token = e.target.dataset.token;
-        const val = e.target.value;
-        if (val) {
-          this.asignarManual(token, val);
-        } else {
-          this.asociaciones.delete(token);
-        }
-        this.renderPanel(contenedor);
-      }
     });
   }
 }
