@@ -1,0 +1,32 @@
+# Cuestionario: Corriente eléctrica
+# Nivel: 9° EBI
+
+## P1 :: opcion_multiple :: 1pt
+¿Cuál es la unidad de intensidad de corriente eléctrica?
+- [ ] Voltio
+- [x] Amperio
+- [ ] Ohmio
+- [ ] Vatio
+> Retro: El amperio (A) es la unidad de intensidad en el SI.
+
+## P2 :: verdadero_falso :: 1pt
+La matriz eléctrica de Uruguay es aproximadamente 98% renovable.
+**Respuesta:** Verdadero
+> Retro: En años de buena hidrología el porcentaje renovable supera el 98%.
+
+## P3 :: respuesta_corta :: 1pt
+Nombrá la ley que relaciona tensión, corriente y resistencia.
+**Respuestas aceptadas:** Ley de Ohm | Ohm | ley de ohm
+
+## P4 :: numerica :: 1pt
+Si V = 12 V e I = 2 A, ¿cuánto vale R en ohmios?
+**Respuesta:** 6 ± 0.1
+
+## P5 :: emparejamiento :: 2pt
+Asociá cada magnitud con su unidad:
+- Tensión = Voltio
+- Corriente = Amperio
+- Resistencia = Ohmio
+
+## P6 :: ensayo
+Explicá con tus palabras qué es un circuito en serie y poné un ejemplo.
