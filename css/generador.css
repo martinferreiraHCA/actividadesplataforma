@@ -797,6 +797,48 @@
   flex-shrink: 0;
 }
 
+/* ====== IMAGEN POR PREGUNTA (editor visual) ====== */
+.ve-imagen-preview {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  border: var(--border-thin);
+  padding: 0.6rem;
+  background: var(--surface);
+}
+
+.ve-imagen-preview img {
+  max-width: 220px;
+  max-height: 160px;
+  width: auto;
+  height: auto;
+  border: 2px solid var(--ink);
+  background: var(--base);
+}
+
+.ve-imagen-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.ve-imagen-nombre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-data);
+  word-break: break-all;
+  opacity: 0.7;
+}
+
+@media (max-width: 480px) {
+  .ve-imagen-preview {
+    flex-direction: column;
+  }
+  .ve-imagen-preview img {
+    max-width: 100%;
+  }
+}
+
 /* ====== FORMATO AYUDA (details/summary) ====== */
 .formato-ayuda {
   border: var(--border-thin);
