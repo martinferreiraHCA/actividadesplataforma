@@ -94,6 +94,11 @@ document.querySelectorAll('.ve-agregar-tipo').forEach(btn => {
   });
 });
 
+// Botón ordenar preguntas
+document.getElementById('btnOrdenar')?.addEventListener('click', () => {
+  editorVisual.abrirOrdenador();
+});
+
 // Título y nivel del editor visual
 document.getElementById('veTitulo')?.addEventListener('input', (e) => {
   tituloQuiz = e.target.value.trim();
