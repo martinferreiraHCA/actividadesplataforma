@@ -1,7 +1,20 @@
 // Export formato GIFT para Moodle
+import { parsearPlantilla } from '../cloze.js';
 
 function escapeGift(str) {
   return str.replace(/[~=#{}:]/g, '\\$&');
+}
+
+// Cuerpo GIFT con huecos embebidos a partir de la plantilla [[...]].
+function cuerpoCloze(p) {
+  return parsearPlantilla(p.plantilla || '').map(s => {
+    if (!s.hueco) return escapeGift(s.texto.replace(/\n/g, ' '));
+    if (p.tipo === 'seleccion_inline') {
+      const ops = s.partes.map((op, i) => `${i === 0 ? '=' : '~'}${escapeGift(op)}`).join(' ');
+      return `{${ops}}`;
+    }
+    return `{=${escapeGift(s.partes[0])}}`;
+  }).join('');
 }
 
 function limpiarEnunciado(texto) {
@@ -81,6 +94,15 @@ export function generarGIFT(preguntas, titulo) {
           `  =${escapeGift(t)} -> ${i + 1}`
         ).join('\n');
         gift += `::P${p.numero}::${enunciado} (ordená: asociá cada elemento con su posición) {\n${filas}\n}\n\n`;
+        break;
+      }
+
+      case 'completar':
+      case 'seleccion_inline': {
+        // GIFT soporta huecos embebidos (cloze) — auto-evaluable en Moodle.
+        const consigna = (p.enunciado || '').trim();
+        const cuerpo = (consigna ? escapeGift(consigna) + ' ' : '') + cuerpoCloze(p);
+        gift += `::P${p.numero}::${cuerpo}\n\n`;
         break;
       }
 

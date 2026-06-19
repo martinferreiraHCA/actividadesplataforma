@@ -1,4 +1,26 @@
 // Export formato Moodle XML
+import { parsearPlantilla } from '../cloze.js';
+
+// Escapa caracteres especiales del formato cloze de Moodle dentro de las opciones.
+function escClozeOpcion(s) {
+  return String(s ?? '').replace(/([\\{}#~=*])/g, '\\$1');
+}
+
+// Construye el cuerpo cloze de Moodle a partir de la plantilla [[...]].
+function cuerpoCloze(p) {
+  const peso = 1;
+  return parsearPlantilla(p.plantilla || '').map(s => {
+    if (!s.hueco) return escapeXml(s.texto).replace(/\n/g, '<br/>');
+    if (p.tipo === 'seleccion_inline') {
+      const opciones = s.partes.map((op, i) =>
+        `${i === 0 ? '=' : ''}${escClozeOpcion(op)}`
+      ).join('~');
+      return `{${peso}:MULTICHOICE:${opciones}}`;
+    }
+    // completar → respuesta escrita (SHORTANSWER, no distingue mayúsculas)
+    return `{${peso}:SHORTANSWER:=${escClozeOpcion(s.partes[0])}}`;
+  }).join('');
+}
 
 function escapeXml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -110,6 +132,19 @@ export function generarMoodleXML(preguntas, titulo) {
         items.forEach((t, i) => {
           xml += `    <subquestion format="html"><text>${cdata(escapeXml(t))}</text><answer><text>${cdata('Posición ' + (i + 1))}</text></answer></subquestion>\n`;
         });
+        xml += `  </question>\n\n`;
+        break;
+      }
+
+      case 'completar':
+      case 'seleccion_inline': {
+        // Moodle tiene cloze nativo (embedded answers) — encaja perfecto.
+        const consigna = (p.enunciado || '').trim();
+        const cuerpo = (consigna ? enunciadoHtml(consigna) + '<br/>' : '') + cuerpoCloze(p);
+        xml += `  <question type="cloze">\n`;
+        xml += `    <name><text>${escapeXml(`P${p.numero}`)}</text></name>\n`;
+        xml += `    <questiontext format="html"><text>${cdata(cuerpo)}</text></questiontext>\n`;
+        xml += `    <defaultgrade>${p.puntaje}</defaultgrade>\n`;
         xml += `  </question>\n\n`;
         break;
       }

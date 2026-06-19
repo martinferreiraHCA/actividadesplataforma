@@ -70,7 +70,16 @@ Ordená cronológicamente los siguientes eventos (listalos en el orden CORRECTO)
 2. Segundo evento
 3. Tercer evento
 
-## P7 :: ensayo
+## P7 :: completar :: 2pt
+Completá el texto (marcá las palabras correctas entre [[ ]]):
+**Texto:** El agua hierve a [[100]] grados y se congela a [[0]] grados.
+**Distractores:** 50 | 90
+
+## P8 :: seleccion_inline :: 1pt
+Elegí la opción correcta en cada desplegable (la 1ª opción es la correcta):
+**Texto:** El Sol es una [[estrella|planeta|galaxia]] del [[sistema solar|universo]].
+
+## P9 :: ensayo
 Pregunta abierta para que el alumno desarrolle.
 
 ## REGLAS

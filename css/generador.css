@@ -849,6 +849,31 @@
   flex-shrink: 0;
 }
 
+.ve-cloze-preview {
+  margin-top: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border: var(--border-thin);
+  background: var(--surface);
+  font-size: 0.85rem;
+  line-height: 2;
+}
+
+.ve-cloze-chip {
+  display: inline-block;
+  padding: 0.1em 0.5em;
+  margin: 0 0.1em;
+  border: 2px solid var(--safety, #FF3E00);
+  background: var(--base);
+  color: var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.ve-cloze-chip--sel {
+  border-style: dashed;
+}
+
 .ve-opcion {
   display: flex;
   align-items: center;

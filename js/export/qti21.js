@@ -3,6 +3,8 @@
 // gapMatch, inlineChoice). Acá cubrimos los 6 tipos clásicos + ordenamiento.
 // Lo importan CREA de Ceibal, Schoology y Moodle.
 
+import { parsearPlantilla, respuestasCompletar, bancoCompletar } from '../cloze.js';
+
 const QTI21_NS = 'http://www.imsglobal.org/xsd/imsqti_v2p1';
 
 function escapeXml(str) {
@@ -247,6 +249,97 @@ ${choices}
   return envoltura(p, body, responseDecl, rpMatchExacto(), gestorImg);
 }
 
+// ====== COMPLETAR HUECOS (gapMatchInteraction) ======
+function itemCompletar(p, gestorImg) {
+  const segmentos = parsearPlantilla(p.plantilla || '');
+  const respuestas = respuestasCompletar(p.plantilla || '');
+  const banco = bancoCompletar(p.plantilla || '', p.distractores);
+
+  // Un gapText por cada palabra del banco. Si una palabra se repite como
+  // respuesta de varios huecos, igual basta un gapText (matchMax alto).
+  const gapTextIds = new Map(); // palabra → id
+  banco.forEach(palabra => { if (!gapTextIds.has(palabra)) gapTextIds.set(palabra, uid('gt')); });
+
+  const usoPorPalabra = {};
+  respuestas.forEach(r => { usoPorPalabra[r] = (usoPorPalabra[r] || 0) + 1; });
+
+  const gapTextsXml = banco.map(palabra =>
+    `      <gapText identifier="${gapTextIds.get(palabra)}" matchMax="${usoPorPalabra[palabra] || 1}">${escapeXml(palabra)}</gapText>`
+  ).join('\n');
+
+  // Construir el cuerpo con <gap> en cada hueco.
+  let huecoIdx = 0;
+  const gapIds = [];
+  const cuerpo = segmentos.map(s => {
+    if (!s.hueco) return escapeXml(s.texto).replace(/\n/g, '<br/>');
+    const gid = uid('gap');
+    gapIds.push({ gid, respuesta: s.partes[0] });
+    huecoIdx++;
+    return `<gap identifier="${gid}"/>`;
+  }).join('');
+
+  const valor = gapIds.length ? (maxScore(p) / gapIds.length) : maxScore(p);
+  const correctPairs = gapIds.map(g => `      <value>${gapTextIds.get(g.respuesta)} ${g.gid}</value>`).join('\n');
+  const mapEntries = gapIds.map(g => `      <mapEntry mapKey="${gapTextIds.get(g.respuesta)} ${g.gid}" mappedValue="${valor}"/>`).join('\n');
+
+  const responseDecl = `  <responseDeclaration identifier="RESPONSE" cardinality="multiple" baseType="directedPair">
+    <correctResponse>
+${correctPairs}
+    </correctResponse>
+    <mapping defaultValue="0" lowerBound="0" upperBound="${maxScore(p)}">
+${mapEntries}
+    </mapping>
+  </responseDeclaration>`;
+
+  const consigna = (p.enunciado || '').trim();
+  const body = `${consigna ? `<p>${escapeXml(consigna)}</p>\n    ` : ''}<gapMatchInteraction responseIdentifier="RESPONSE" shuffle="true">
+${gapTextsXml}
+      <p>${cuerpo}</p>
+    </gapMatchInteraction>`;
+  return envoltura(p, body, responseDecl, rpMapResponse(), gestorImg);
+}
+
+// ====== SELECCIÓN INLINE (inlineChoiceInteraction, un desplegable por hueco) ======
+function itemSeleccionInline(p, gestorImg) {
+  const segmentos = parsearPlantilla(p.plantilla || '');
+  const huecos = [];
+
+  const cuerpo = segmentos.map(s => {
+    if (!s.hueco) return escapeXml(s.texto).replace(/\n/g, '<br/>');
+    const respId = `RESPONSE${huecos.length + 1}`;
+    const choices = s.partes.map(op => ({ id: uid('ic'), texto: op }));
+    huecos.push({ respId, choices, correctId: choices[0].id });
+    const inner = choices.map(c => `<inlineChoice identifier="${c.id}">${escapeXml(c.texto)}</inlineChoice>`).join('');
+    return `<inlineChoiceInteraction responseIdentifier="${respId}" shuffle="true">${inner}</inlineChoiceInteraction>`;
+  }).join('');
+
+  const responseDecls = huecos.map(h =>
+    `  <responseDeclaration identifier="${h.respId}" cardinality="single" baseType="identifier">
+    <correctResponse><value>${h.correctId}</value></correctResponse>
+  </responseDeclaration>`
+  ).join('\n');
+
+  // Suma MAXSCORE/n por cada desplegable acertado.
+  const valor = huecos.length ? (maxScore(p) / huecos.length) : maxScore(p);
+  const condiciones = huecos.map(h =>
+    `    <responseCondition>
+      <responseIf>
+        <match><variable identifier="${h.respId}"/><correct identifier="${h.respId}"/></match>
+        <setOutcomeValue identifier="SCORE">
+          <sum><variable identifier="SCORE"/><baseValue baseType="float">${valor}</baseValue></sum>
+        </setOutcomeValue>
+      </responseIf>
+    </responseCondition>`
+  ).join('\n');
+  const responseProc = `  <responseProcessing>
+${condiciones}
+  </responseProcessing>`;
+
+  const consigna = (p.enunciado || '').trim();
+  const body = `${consigna ? `<p>${escapeXml(consigna)}</p>\n    ` : ''}<p>${cuerpo}</p>`;
+  return envoltura(p, body, responseDecls, responseProc, gestorImg);
+}
+
 // ====== ENSAYO (corrección manual, sin responseProcessing automático) ======
 function itemEnsayo(p, gestorImg) {
   const responseDecl = `  <responseDeclaration identifier="RESPONSE" cardinality="single" baseType="string"/>`;
@@ -265,6 +358,8 @@ export function generarItemsQTI21(preguntas, gestorImg) {
       case 'numerica': return itemNumerica(p, gestorImg);
       case 'emparejamiento': return itemEmparejamiento(p, gestorImg);
       case 'ordenamiento': return itemOrdenamiento(p, gestorImg);
+      case 'completar': return itemCompletar(p, gestorImg);
+      case 'seleccion_inline': return itemSeleccionInline(p, gestorImg);
       case 'ensayo': return itemEnsayo(p, gestorImg);
       default: return itemOpcionMultiple(p, gestorImg);
     }
