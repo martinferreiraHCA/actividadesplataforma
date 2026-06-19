@@ -588,6 +588,19 @@
   opacity: 0.65;
 }
 
+.btn--descarga-preview {
+  border-style: dashed;
+  border-color: var(--safety, #FF3E00);
+}
+.btn--descarga-preview:hover {
+  background: var(--safety, #FF3E00);
+  color: var(--base);
+  box-shadow: 12px 12px 0px var(--safety, #FF3E00);
+}
+.btn--descarga-preview:active {
+  box-shadow: 0 0 0 var(--safety, #FF3E00);
+}
+
 /* ====== TOAST ====== */
 .toast {
   position: fixed;
