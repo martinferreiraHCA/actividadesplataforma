@@ -2,6 +2,7 @@
 // Permite crear y editar preguntas de forma interactiva sin escribir código
 import { TIPOS_PREGUNTA } from './activities.js';
 import { crearPreguntaVacia } from './parser.js';
+import { PRESETS_TAMANO, redimensionarDataUrl, medirImagen, pesoKbDataUrl } from './image-resize.js';
 
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -63,6 +64,14 @@ export class EditorVisual {
 
   cargarPreguntas(preguntas) {
     this.preguntas = preguntas;
+    // Compatibilidad: borradores viejos no guardan el dataUrl original.
+    // Sin él, redimensionar partiría de la versión ya reducida; usamos
+    // el dataUrl actual como original para que el selector siga funcionando.
+    this.preguntas.forEach(p => {
+      if (p.imagen && p.imagen.dataUrl && !p.imagen.original) {
+        p.imagen.original = p.imagen.dataUrl;
+      }
+    });
     this.renumerar();
     this.render();
   }
@@ -131,15 +140,59 @@ export class EditorVisual {
     this.onUpdate(this.preguntas);
   }
 
+  // Redimensiona la imagen de la pregunta a un ancho objetivo (0 = original)
+  // re-codificándola desde el dataUrl original para no perder calidad.
+  async aplicarTamanoImagen(p, ancho) {
+    if (!p.imagen || !p.imagen.original) return;
+    try {
+      p.imagen.dataUrl = await redimensionarDataUrl(p.imagen.original, ancho, p.imagen.tipo);
+      p.imagen.ancho = ancho || 0;
+      this.onUpdate(this.preguntas);
+      this.render();
+    } catch (err) {
+      alert('No se pudo redimensionar la imagen: ' + err.message);
+    }
+  }
+
   renderImagen(p, idx) {
     if (p.imagen && p.imagen.dataUrl) {
+      const img = p.imagen;
+      const esSvg = img.tipo === 'image/svg+xml';
+      const anchoActual = img.ancho || 0;
+      const dims = (img.anchoOriginal && img.altoOriginal)
+        ? `${img.anchoOriginal}×${img.altoOriginal}px original`
+        : '';
+      const pesoTxt = img.dataUrl ? `${pesoKbDataUrl(img.dataUrl)} KB` : '';
+
+      // Detecta si el ancho actual coincide con un preset; si no, es "custom".
+      const presetActivo = PRESETS_TAMANO.find(pr => pr.ancho === anchoActual);
+      const opciones = PRESETS_TAMANO.map(pr =>
+        `<option value="${pr.ancho}" ${pr.ancho === anchoActual ? 'selected' : ''}>${pr.label}</option>`
+      ).join('');
+      const customSel = presetActivo ? '' : 'selected';
+
+      const selectorTamano = esSvg ? `<span class="ve-imagen-svg-nota">SVG (vectorial, no se redimensiona)</span>` : `
+        <div class="ve-imagen-tamano">
+          <label class="ve-imagen-tamano__label">Tamaño:</label>
+          <select class="ve-imagen-preset">
+            ${opciones}
+            <option value="custom" ${customSel}>Personalizado…</option>
+          </select>
+          <span class="ve-imagen-custom" style="${presetActivo ? 'display:none' : ''}">
+            <input type="number" class="ve-imagen-ancho" min="50" max="4000" step="10"
+              value="${anchoActual || (img.anchoOriginal || '')}" placeholder="ancho"> px
+          </span>
+        </div>`;
+
       return `
         <div class="campo ve-imagen-campo" style="margin-top:1rem">
           <label class="campo__etiqueta">Imagen de la pregunta</label>
           <div class="ve-imagen-preview">
-            <img src="${p.imagen.dataUrl}" alt="${escapeHtml(p.imagen.nombre || '')}">
+            <img src="${img.dataUrl}" alt="${escapeHtml(img.nombre || '')}">
             <div class="ve-imagen-info">
-              <span class="ve-imagen-nombre">${escapeHtml(p.imagen.nombre || 'imagen')}</span>
+              <span class="ve-imagen-nombre">${escapeHtml(img.nombre || 'imagen')}</span>
+              <span class="ve-imagen-meta">${dims}${dims && pesoTxt ? ' · ' : ''}${pesoTxt}</span>
+              ${selectorTamano}
               <button class="btn btn--ghost ve-btn-quitar-imagen" type="button" style="padding:0.4em 1em;font-size:0.65rem">Quitar imagen</button>
             </div>
           </div>
@@ -300,13 +353,52 @@ export class EditorVisual {
           return;
         }
         const reader = new FileReader();
-        reader.onload = () => {
-          p.imagen = { nombre: file.name, dataUrl: reader.result, tipo: file.type };
+        reader.onload = async () => {
+          const dataUrl = reader.result;
+          let anchoOriginal = 0, altoOriginal = 0;
+          try {
+            const dim = await medirImagen(dataUrl);
+            anchoOriginal = dim.ancho;
+            altoOriginal = dim.alto;
+          } catch (_) { /* SVG sin viewBox u otros: seguimos sin dimensiones */ }
+          p.imagen = {
+            nombre: file.name,
+            tipo: file.type,
+            original: dataUrl,   // se conserva intacto para redimensionar sin perder calidad
+            dataUrl: dataUrl,    // versión mostrada y exportada
+            anchoOriginal,
+            altoOriginal,
+            ancho: 0             // 0 = tamaño original
+          };
           this.render();
         };
         reader.readAsDataURL(file);
       });
     }
+
+    // Redimensionado de imagen
+    const preset = card.querySelector('.ve-imagen-preset');
+    const customWrap = card.querySelector('.ve-imagen-custom');
+    const inputAncho = card.querySelector('.ve-imagen-ancho');
+    if (preset) {
+      preset.addEventListener('change', async () => {
+        if (preset.value === 'custom') {
+          if (customWrap) customWrap.style.display = '';
+          if (inputAncho) inputAncho.focus();
+          return;
+        }
+        if (customWrap) customWrap.style.display = 'none';
+        await this.aplicarTamanoImagen(p, parseInt(preset.value, 10) || 0);
+      });
+    }
+    if (inputAncho) {
+      inputAncho.addEventListener('change', async () => {
+        const v = parseInt(inputAncho.value, 10);
+        if (!v || v < 50) return;
+        await this.aplicarTamanoImagen(p, v);
+      });
+    }
+
     card.querySelector('.ve-btn-quitar-imagen')?.addEventListener('click', () => {
       p.imagen = null;
       this.render();
