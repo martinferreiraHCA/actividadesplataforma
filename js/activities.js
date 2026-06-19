@@ -2,7 +2,6 @@
 export const ACTIVITIES = {
   cuestionario: {
     nombre: "Cuestionario",
-    icono: "📝",
     descripcion: "Mezclá tipos de pregunta en una sola evaluación.",
     tiposPreguntaPermitidos: [
       "opcion_multiple",
@@ -16,28 +15,24 @@ export const ACTIVITIES = {
   },
   verdadero_falso: {
     nombre: "Verdadero / Falso",
-    icono: "✅",
     descripcion: "Preguntas rápidas de verdadero o falso.",
     tiposPreguntaPermitidos: ["verdadero_falso"],
     promptHints: "Todas las preguntas deben ser de tipo verdadero_falso."
   },
   opcion_multiple: {
     nombre: "Opción múltiple",
-    icono: "🔘",
     descripcion: "Preguntas con opciones para elegir la correcta.",
     tiposPreguntaPermitidos: ["opcion_multiple"],
     promptHints: "Todas las preguntas deben ser de tipo opcion_multiple con 4 opciones cada una."
   },
   respuesta_corta: {
     nombre: "Respuestas cortas / Glosario",
-    icono: "✍️",
     descripcion: "El alumno escribe la respuesta en pocas palabras.",
     tiposPreguntaPermitidos: ["respuesta_corta"],
     promptHints: "Todas las preguntas deben ser de tipo respuesta_corta. Incluí al menos 2 respuestas aceptadas por pregunta."
   },
   con_imagenes: {
     nombre: "Actividad con imágenes",
-    icono: "🖼️",
     descripcion: "Ítems que incluyen figuras o diagramas.",
     tiposPreguntaPermitidos: [
       "opcion_multiple",

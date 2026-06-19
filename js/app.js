@@ -122,7 +122,7 @@ document.getElementById('btnProcesarTexto')?.addEventListener('click', () => {
     resultado.advertencias.forEach(adv => {
       const div = document.createElement('div');
       div.className = 'alerta alerta--aviso';
-      div.innerHTML = `⚠️ ${adv.mensaje}`;
+      div.innerHTML = adv.mensaje;
       advDiv.appendChild(div);
     });
   }
@@ -138,7 +138,7 @@ document.getElementById('btnProcesarTexto')?.addEventListener('click', () => {
   const fmt = resultado.formato === 'aiken' ? 'Aiken' : 'extendido';
   const exito = document.createElement('div');
   exito.className = 'alerta alerta--exito';
-  exito.textContent = `✅ ${preguntas.length} pregunta${preguntas.length > 1 ? 's' : ''} detectadas (formato ${fmt}). ¡Revisalas abajo!`;
+  exito.textContent = `${preguntas.length} pregunta${preguntas.length > 1 ? 's' : ''} detectadas (formato ${fmt}). Revisalas abajo.`;
   advDiv.insertBefore(exito, advDiv.firstChild);
 
   // Cargar en editor visual para edición
@@ -236,7 +236,7 @@ document.getElementById('btnProcesarIA')?.addEventListener('click', () => {
   resultado.advertencias.forEach(adv => {
     const div = document.createElement('div');
     div.className = 'alerta alerta--aviso';
-    div.innerHTML = `⚠️ ${adv.mensaje}`;
+    div.innerHTML = adv.mensaje;
     advDiv.appendChild(div);
   });
 
@@ -250,7 +250,7 @@ document.getElementById('btnProcesarIA')?.addEventListener('click', () => {
 
   const exito = document.createElement('div');
   exito.className = 'alerta alerta--exito';
-  exito.textContent = `✅ ${preguntas.length} pregunta${preguntas.length > 1 ? 's' : ''} importadas. ¡Revisalas en el editor visual!`;
+  exito.textContent = `${preguntas.length} pregunta${preguntas.length > 1 ? 's' : ''} importadas. Revisalas en el editor visual.`;
   advDiv.insertBefore(exito, advDiv.firstChild);
 
   editorVisual.cargarPreguntas(preguntas);
@@ -292,10 +292,8 @@ function actualizarDescargas() {
   if (preguntas.length > 0) {
     seccion.style.display = 'block';
     gestorImg.setTokens(preguntas);
-    if (gestorImg.tokens.length > 0) {
-      document.getElementById('panelImagenes').style.display = 'block';
-      gestorImg.renderPanel(document.getElementById('listaTokensImg'));
-    }
+    document.getElementById('panelImagenes').style.display = 'block';
+    gestorImg.renderPanel(document.getElementById('listaTokensImg'));
   }
 }
 
