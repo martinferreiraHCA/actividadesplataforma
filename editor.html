@@ -23,7 +23,8 @@
     </nav>
     <div class="tema-switcher" id="temaSwitcher">
       <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
-      <button class="tema-btn active" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn active" data-tema="sereno" title="Sereno (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
       <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
       <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
       <button class="tema-btn" data-tema="hca" title="HCA"><span class="tema-btn__dot"></span></button>
@@ -126,6 +127,8 @@
       <details class="formato-ayuda">
         <summary class="formato-ayuda__titulo">Formato Aiken (opción múltiple)</summary>
         <div class="formato-ayuda__contenido">
+<div class="formato-ejemplo-wrap">
+<button class="formato-copiar" type="button" data-copiar-ejemplo>Copiar</button>
 <pre class="formato-ejemplo">¿Cuál es la capital de Uruguay?
 A. Buenos Aires
 B. Montevideo
@@ -139,6 +142,7 @@ B. 1828
 C. 1830
 D. 1835
 ANSWER: C</pre>
+</div>
           <p style="margin-top:0.8rem;font-size:var(--fs-data);opacity:0.6">Cada pregunta: enunciado, opciones (A. B. C. D.), línea ANSWER: con la letra correcta. Separá preguntas con una línea en blanco.</p>
         </div>
       </details>
@@ -147,6 +151,8 @@ ANSWER: C</pre>
       <details class="formato-ayuda">
         <summary class="formato-ayuda__titulo">Formato extendido (todos los tipos)</summary>
         <div class="formato-ayuda__contenido">
+<div class="formato-ejemplo-wrap">
+<button class="formato-copiar" type="button" data-copiar-ejemplo>Copiar</button>
 <pre class="formato-ejemplo">## P1 :: opcion_multiple :: 1pt
 ¿Cuál es la unidad de corriente?
 - [ ] Voltio
@@ -187,6 +193,7 @@ Ordená los pasos de la Ley de Ohm (en el orden correcto):
 
 ## P9 :: ensayo
 Explicá qué es un circuito en serie.</pre>
+</div>
         </div>
       </details>
 
@@ -475,6 +482,7 @@ Explicá qué es un circuito en serie.</pre>
 <script src="js/templatemo-axis-script.js"></script>
 <script src="vendor/jszip.min.js"></script>
 <script src="js/ia-panel.js"></script>
+<script src="js/copiar-ejemplos.js"></script>
 <script type="module" src="js/app.js"></script>
 
 </body>

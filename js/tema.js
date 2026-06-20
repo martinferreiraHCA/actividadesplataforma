@@ -1,7 +1,8 @@
 (function () {
   'use strict';
-  var TEMAS = ['', 'nocturno', 'amigable', 'hca'];
+  var TEMAS = ['', 'sereno', 'nocturno', 'amigable', 'hca'];
   var KEY = 'hca_tema';
+  var DEFECTO = 'sereno';
 
   function aplicar(tema) {
     document.body.className = document.body.className
@@ -14,9 +15,11 @@
     });
   }
 
-  var guardado = '';
-  try { guardado = localStorage.getItem(KEY) || ''; } catch (e) {}
-  if (TEMAS.indexOf(guardado) === -1) guardado = '';
+  var guardado = null;
+  try { guardado = localStorage.getItem(KEY); } catch (e) {}
+  // Si nunca eligió tema, arranca con el tema por defecto (amigable a la vista)
+  if (guardado === null) guardado = DEFECTO;
+  if (TEMAS.indexOf(guardado) === -1) guardado = DEFECTO;
   aplicar(guardado);
 
   document.addEventListener('click', function (e) {

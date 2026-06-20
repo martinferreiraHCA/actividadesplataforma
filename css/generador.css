@@ -1183,16 +1183,49 @@ button.ia-btn {
   border-top: var(--border-hair);
 }
 
+.formato-ejemplo-wrap {
+  position: relative;
+}
+
 .formato-ejemplo {
   background: var(--term-bg);
-  color: var(--base);
+  color: #FFFFFF;
   padding: 1rem;
+  padding-top: 2.8rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
   line-height: 1.8;
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.formato-copiar {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 2;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.4em 0.9em;
+  border: 2px solid var(--safety);
+  background: var(--safety);
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: none;
+}
+
+.formato-copiar:hover {
+  background: transparent;
+  color: var(--safety);
+}
+
+.formato-copiar--ok {
+  background: var(--term-green);
+  border-color: var(--term-green);
+  color: #08080A;
 }
 
 /* ====== RESPONSIVE ====== */
@@ -1252,6 +1285,63 @@ button.ia-btn {
 
 
 /* ====== THEME SYSTEM ====== */
+
+/* -- Theme: Sereno (Eye-friendly default) --
+   Paleta estudiada para bajo cansancio visual: fondo verde-neutro suave
+   (sin brillo de blanco puro), texto carbón profundo con alto contraste
+   (~12:1, muy legible) y acento teal sereno. Cómoda en cualquier pantalla. */
+body.tema-sereno {
+  --base: #EAEFE9;
+  --ink: #25332D;
+  --surface: #DBE3D9;
+  --muted: #586860;
+  --safety: #157F6E;
+  --term-bg: #1B2723;
+  --term-green: #6FCF97;
+  --term-amber: #E0A458;
+  --border: 4px solid var(--ink);
+  --border-thin: 1px solid var(--ink);
+  --border-hair: 1px solid rgba(37,51,45,0.12);
+  --shadow: 8px 8px 0px var(--ink);
+  --shadow-safety: 8px 8px 0px var(--safety);
+  --shadow-hover: 4px 4px 0px var(--ink);
+}
+
+body.tema-sereno .header,
+body.tema-sereno .ticker,
+body.tema-sereno .footer {
+  background: #1B2723;
+}
+
+body.tema-sereno .actividad-card:hover {
+  background: var(--safety);
+  color: #FFFFFF;
+  box-shadow: 12px 12px 0px var(--safety);
+}
+
+body.tema-sereno .btn--descarga:hover {
+  background: var(--safety);
+  color: #FFFFFF;
+  box-shadow: 10px 10px 0px var(--safety);
+}
+
+body.tema-sereno ::selection {
+  background: var(--safety);
+  color: #FFFFFF;
+}
+
+body.tema-sereno .stack__card:nth-child(2) {
+  background: var(--surface);
+}
+
+body.tema-sereno .stack__card:nth-child(3) {
+  background: var(--safety);
+  color: #FFFFFF;
+}
+
+body.tema-sereno .stack__card:nth-child(4) {
+  background: #CBD6C7;
+}
 
 /* -- Theme: Nocturno (Dark) -- */
 body.tema-nocturno {
@@ -1486,6 +1576,7 @@ body.tema-hca .stack__card:nth-child(4) {
   display: block;
 }
 
+.tema-btn[data-tema="sereno"] .tema-btn__dot { background: #157F6E; }
 .tema-btn[data-tema=""] .tema-btn__dot { background: #FFFFFF; }
 .tema-btn[data-tema="nocturno"] .tema-btn__dot { background: #161618; border: 1px solid rgba(255,255,255,0.3); }
 .tema-btn[data-tema="amigable"] .tema-btn__dot { background: #FBF7F0; }
