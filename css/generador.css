@@ -1286,22 +1286,23 @@ button.ia-btn {
 
 /* ====== THEME SYSTEM ====== */
 
-/* -- Theme: Sereno (Eye-friendly default) --
-   Paleta estudiada para bajo cansancio visual: fondo verde-neutro suave
-   (sin brillo de blanco puro), texto carbón profundo con alto contraste
-   (~12:1, muy legible) y acento teal sereno. Cómoda en cualquier pantalla. */
+/* -- Theme: Crema (Eye-friendly default) --
+   Paleta estudiada para bajo cansancio visual: fondo crema cálido (sin el
+   brillo agresivo del blanco puro), texto negro suave de altísimo contraste
+   (~15:1, muy legible) y acento terracota que combina con el crema y es
+   descansado a la vista. Cómoda en cualquier pantalla. */
 body.tema-sereno {
-  --base: #EAEFE9;
-  --ink: #25332D;
-  --surface: #DBE3D9;
-  --muted: #586860;
-  --safety: #157F6E;
-  --term-bg: #1B2723;
-  --term-green: #6FCF97;
-  --term-amber: #E0A458;
+  --base: #F8F3E7;
+  --ink: #1E1A14;
+  --surface: #EFE7D5;
+  --muted: #6B6253;
+  --safety: #B5532E;
+  --term-bg: #2A2118;
+  --term-green: #5FA86A;
+  --term-amber: #D89A3C;
   --border: 4px solid var(--ink);
   --border-thin: 1px solid var(--ink);
-  --border-hair: 1px solid rgba(37,51,45,0.12);
+  --border-hair: 1px solid rgba(30,26,20,0.12);
   --shadow: 8px 8px 0px var(--ink);
   --shadow-safety: 8px 8px 0px var(--safety);
   --shadow-hover: 4px 4px 0px var(--ink);
@@ -1310,7 +1311,7 @@ body.tema-sereno {
 body.tema-sereno .header,
 body.tema-sereno .ticker,
 body.tema-sereno .footer {
-  background: #1B2723;
+  background: #2A2118;
 }
 
 body.tema-sereno .actividad-card:hover {
@@ -1340,7 +1341,7 @@ body.tema-sereno .stack__card:nth-child(3) {
 }
 
 body.tema-sereno .stack__card:nth-child(4) {
-  background: #CBD6C7;
+  background: #E4D9C2;
 }
 
 /* -- Theme: Nocturno (Dark) -- */
@@ -1576,7 +1577,7 @@ body.tema-hca .stack__card:nth-child(4) {
   display: block;
 }
 
-.tema-btn[data-tema="sereno"] .tema-btn__dot { background: #157F6E; }
+.tema-btn[data-tema="sereno"] .tema-btn__dot { background: #F8F3E7; border: 1px solid #B5532E; }
 .tema-btn[data-tema=""] .tema-btn__dot { background: #FFFFFF; }
 .tema-btn[data-tema="nocturno"] .tema-btn__dot { background: #161618; border: 1px solid rgba(255,255,255,0.3); }
 .tema-btn[data-tema="amigable"] .tema-btn__dot { background: #FBF7F0; }
