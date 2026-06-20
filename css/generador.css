@@ -1289,14 +1289,14 @@ button.ia-btn {
 /* -- Theme: Crema (Eye-friendly default) --
    Paleta estudiada para bajo cansancio visual: fondo crema cálido (sin el
    brillo agresivo del blanco puro), texto negro suave de altísimo contraste
-   (~15:1, muy legible) y acento terracota que combina con el crema y es
-   descansado a la vista. Cómoda en cualquier pantalla. */
+   (~15:1, muy legible) y acento azul denim apagado que combina con el crema
+   y es descansado a la vista. Cómoda en cualquier pantalla. */
 body.tema-sereno {
   --base: #F8F3E7;
   --ink: #1E1A14;
   --surface: #EFE7D5;
   --muted: #6B6253;
-  --safety: #B5532E;
+  --safety: #2F5E8C;
   --term-bg: #2A2118;
   --term-green: #5FA86A;
   --term-amber: #D89A3C;
@@ -1577,7 +1577,7 @@ body.tema-hca .stack__card:nth-child(4) {
   display: block;
 }
 
-.tema-btn[data-tema="sereno"] .tema-btn__dot { background: #F8F3E7; border: 1px solid #B5532E; }
+.tema-btn[data-tema="sereno"] .tema-btn__dot { background: #F8F3E7; border: 1px solid #2F5E8C; }
 .tema-btn[data-tema=""] .tema-btn__dot { background: #FFFFFF; }
 .tema-btn[data-tema="nocturno"] .tema-btn__dot { background: #161618; border: 1px solid rgba(255,255,255,0.3); }
 .tema-btn[data-tema="amigable"] .tema-btn__dot { background: #FBF7F0; }
