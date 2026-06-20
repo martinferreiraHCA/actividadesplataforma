@@ -1,4 +1,5 @@
 // Genera un Google Apps Script (FormApp) para crear un Google Form como quiz
+import { plantillaConRayas, bancoCompletar, huecosDe } from '../cloze.js';
 
 function escapeJS(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
@@ -126,6 +127,26 @@ function crearQuiz() {
         const columnasO = items.map((_, i) => `'${i + 1}'`);
         script += `  item${p.numero}.setRows([${filasO.join(', ')}]);\n`;
         script += `  item${p.numero}.setColumns([${columnasO.join(', ')}]);\n`;
+        script += '\n';
+        break;
+      }
+
+      case 'completar':
+      case 'seleccion_inline': {
+        // Google Forms no tiene cloze: lo mostramos como texto con huecos.
+        let detalle = (p.enunciado ? p.enunciado + '\n' : '') + plantillaConRayas(p.plantilla || '');
+        if (p.tipo === 'completar') {
+          const banco = bancoCompletar(p.plantilla || '', p.distractores);
+          if (banco.length) detalle += '\n\nBanco de palabras: ' + banco.join(' · ');
+        } else {
+          huecosDe(p.plantilla || '').forEach((h, i) => {
+            detalle += `\nHueco ${i + 1}: ${h.partes.join(' / ')}`;
+          });
+        }
+        script += `  // Pregunta ${p.numero} — ${p.tipo === 'completar' ? 'Completar huecos' : 'Selección inline'}\n`;
+        script += `  var item${p.numero} = form.addParagraphTextItem();\n`;
+        script += `  item${p.numero}.setTitle('${escapeJS(detalle)}');\n`;
+        script += `  item${p.numero}.setPoints(${p.puntaje});\n`;
         script += '\n';
         break;
       }

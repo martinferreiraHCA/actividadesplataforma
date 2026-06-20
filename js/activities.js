@@ -10,6 +10,8 @@ export const ACTIVITIES = {
       "numerica",
       "emparejamiento",
       "ordenamiento",
+      "completar",
+      "seleccion_inline",
       "ensayo"
     ],
     promptHints: "Incluí una mezcla variada de tipos de pregunta."
@@ -51,5 +53,7 @@ export const TIPOS_PREGUNTA = {
   numerica: "Numérica",
   emparejamiento: "Emparejamiento",
   ordenamiento: "Ordenamiento",
+  completar: "Completar huecos",
+  seleccion_inline: "Selección inline",
   ensayo: "Ensayo"
 };

@@ -1,5 +1,6 @@
 // Genera ítems QTI 1.2 por tipo de pregunta (perfil Common Cartridge / Canvas)
 // Este es el dialecto que Schoology, Canvas, Moodle y Blackboard importan de forma fiable.
+import { plantillaConRayas, bancoCompletar, huecosDe } from '../cloze.js';
 
 function escapeXml(str) {
   return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -324,6 +325,21 @@ export function generarQTI(preguntas, titulo, gestorImg) {
           pares: items.map((t, i) => ({ izquierda: t, derecha: `Posición ${i + 1}` }))
         };
         return generarItemEmparejamiento(comoPares, gestorImg);
+      }
+      case 'completar':
+      case 'seleccion_inline': {
+        // QTI 1.2 (perfil CC) no tiene cloze/inline: lo degradamos a ensayo
+        // mostrando el texto con huecos como "______" y el banco de palabras.
+        let texto = (p.enunciado ? p.enunciado + '\n' : '') + plantillaConRayas(p.plantilla || '');
+        if (p.tipo === 'completar') {
+          const banco = bancoCompletar(p.plantilla || '', p.distractores);
+          if (banco.length) texto += `\nBanco de palabras: ${banco.join(' · ')}`;
+        } else {
+          huecosDe(p.plantilla || '').forEach((h, i) => {
+            texto += `\nHueco ${i + 1}: ${h.partes.join(' / ')}`;
+          });
+        }
+        return generarItemEnsayo({ ...p, enunciado: texto }, gestorImg);
       }
       case 'ensayo': return generarItemEnsayo(p, gestorImg);
       default: return generarItemOpcionMultiple(p, gestorImg);

@@ -326,6 +326,13 @@ function validarPreguntas() {
       const items = (p.items || []).filter(t => (t || '').trim());
       if (items.length < 2) problemas.push(`P${n} (ordenamiento): cargá al menos 2 elementos.`);
     }
+    if (p.tipo === 'completar' || p.tipo === 'seleccion_inline') {
+      const huecos = (p.plantilla || '').match(/\[\[[^\]]+\]\]/g) || [];
+      if (huecos.length === 0) problemas.push(`P${n} (${p.tipo === 'completar' ? 'completar' : 'selección inline'}): marcá al menos un hueco con [[...]].`);
+      if (p.tipo === 'seleccion_inline' && huecos.some(h => !h.includes('|'))) {
+        problemas.push(`P${n} (selección inline): cada hueco necesita al menos 2 opciones separadas por |.`);
+      }
+    }
   });
   return problemas;
 }

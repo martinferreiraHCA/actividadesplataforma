@@ -8,7 +8,8 @@ function normalizar(str) {
 
 const TIPOS_VALIDOS = [
   "opcion_multiple", "verdadero_falso", "respuesta_corta",
-  "numerica", "emparejamiento", "ordenamiento", "ensayo"
+  "numerica", "emparejamiento", "ordenamiento",
+  "completar", "seleccion_inline", "ensayo"
 ];
 
 function detectarTipo(raw) {
@@ -31,6 +32,14 @@ function detectarTipo(raw) {
     "ordering": "ordenamiento",
     "orden": "ordenamiento",
     "secuencia": "ordenamiento",
+    "completar": "completar",
+    "completar_huecos": "completar",
+    "cloze": "completar",
+    "gapmatch": "completar",
+    "seleccion_inline": "seleccion_inline",
+    "inline": "seleccion_inline",
+    "inline_choice": "seleccion_inline",
+    "desplegable": "seleccion_inline",
     "ensayo": "ensayo",
     "essay": "ensayo"
   };
@@ -98,6 +107,7 @@ export function parsearExtendido(texto) {
         numero: num, tipo: tipo || "opcion_multiple", puntaje,
         enunciado: "", opciones: [], respuestaCorrecta: null,
         respuestasAceptadas: [], tolerancia: 0, pares: [], items: [],
+        plantilla: "", distractores: [],
         retro: "", imagenes: [], imagen: null, _lineaInicio: numLinea
       };
       continue;
@@ -153,6 +163,24 @@ export function parsearExtendido(texto) {
     const matchOrden = trimmed.match(/^\d+\s*[.)]\s*(.+)/);
     if (matchOrden && preguntaActual.tipo === "ordenamiento") {
       preguntaActual.items.push(matchOrden[1].trim());
+      continue;
+    }
+
+    // Completar / Selección inline: distractores y la plantilla con [[...]].
+    const esCloze = preguntaActual.tipo === "completar" || preguntaActual.tipo === "seleccion_inline";
+    const matchDistr = trimmed.match(/^\*\*Distractores?\*?\*?\s*:\s*\*?\*?\s*(.+)/i);
+    if (matchDistr && esCloze) {
+      preguntaActual.distractores = matchDistr[1].split("|").map(d => d.trim()).filter(Boolean);
+      continue;
+    }
+    const matchTexto = trimmed.match(/^\*\*Texto\*?\*?\s*:\s*\*?\*?\s*(.+)/i);
+    if (matchTexto && esCloze) {
+      preguntaActual.plantilla = matchTexto[1].trim();
+      continue;
+    }
+    if (esCloze && trimmed.includes("[[")) {
+      // Una línea suelta con huecos también se toma como plantilla.
+      preguntaActual.plantilla += (preguntaActual.plantilla ? "\n" : "") + trimmed;
       continue;
     }
 
@@ -326,6 +354,12 @@ export function crearPreguntaVacia(tipo, numero) {
     items: tipo === "ordenamiento"
       ? ["", ""]
       : [],
+    plantilla: tipo === "completar"
+      ? "La capital de Uruguay es [[Montevideo]]."
+      : tipo === "seleccion_inline"
+      ? "La capital de Uruguay es [[Montevideo|Salto|Paysandú]]."
+      : "",
+    distractores: [],
     retro: "",
     imagenes: [],
     imagen: null

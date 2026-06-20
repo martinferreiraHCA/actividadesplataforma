@@ -1,5 +1,6 @@
 // Simulador de vista previa — muestra cómo vería el estudiante el cuestionario
 // en cada plataforma (CREA/Schoology, Moodle, Google Classroom/Forms).
+import { parsearPlantilla, bancoCompletar } from './cloze.js';
 
 const TIPOS_LABEL = {
   opcion_multiple: 'Opción múltiple',
@@ -50,6 +51,25 @@ function renderOpciones(p, platform) {
     ).join('\n')}<div class="orden-nota">El alumno arrastra los elementos hasta dejarlos en el orden correcto.</div></div>`;
   }
 
+  if (p.tipo === 'completar') {
+    const cuerpo = parsearPlantilla(p.plantilla || '').map(s =>
+      s.hueco ? `<span class="cloze-gap"></span>` : esc(s.texto)
+    ).join('');
+    const banco = mezclar(bancoCompletar(p.plantilla || '', p.distractores));
+    return `<div class="cloze-texto">${cuerpo}</div>
+      <div class="cloze-banco">${banco.map(w => `<span class="cloze-chip">${esc(w)}</span>`).join('')}</div>
+      <div class="orden-nota">El alumno arrastra cada palabra del banco al hueco correcto.</div>`;
+  }
+
+  if (p.tipo === 'seleccion_inline') {
+    const cuerpo = parsearPlantilla(p.plantilla || '').map(s => {
+      if (!s.hueco) return esc(s.texto);
+      const ops = mezclar(s.partes);
+      return `<select class="cloze-select" disabled><option>—</option>${ops.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
+    }).join('');
+    return `<div class="cloze-texto">${cuerpo}</div>`;
+  }
+
   if (p.tipo === 'ensayo') {
     if (platform === 'classroom') return `<div class="gc-input"><textarea rows="4" placeholder="Tu respuesta" disabled></textarea></div>`;
     if (platform === 'moodle') return `<div class="mo-textarea"><textarea rows="5" disabled></textarea></div>`;
@@ -85,6 +105,11 @@ function cssOrden() {
     .orden-pos { width: 24px; height: 24px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
     .orden-texto { flex: 1; }
     .orden-nota { font-size: 12px; color: #888; font-style: italic; margin-top: 4px; }
+    .cloze-texto { font-size: 15px; line-height: 2.2; }
+    .cloze-gap { display: inline-block; min-width: 90px; border-bottom: 2px solid #888; margin: 0 4px; vertical-align: middle; }
+    .cloze-banco { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .cloze-chip { padding: 5px 12px; border: 1px solid #bbb; border-radius: 16px; background: #f3f3f3; font-size: 13px; cursor: grab; }
+    .cloze-select { padding: 4px 8px; border: 1px solid #aaa; border-radius: 4px; font-size: 14px; margin: 0 3px; background: #fff; }
   `;
 }
 

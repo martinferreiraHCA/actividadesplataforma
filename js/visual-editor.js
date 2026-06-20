@@ -3,6 +3,7 @@
 import { TIPOS_PREGUNTA } from './activities.js';
 import { crearPreguntaVacia } from './parser.js';
 import { PRESETS_TAMANO, redimensionarDataUrl, medirImagen, pesoKbDataUrl } from './image-resize.js';
+import { parsearPlantilla, huecosDe } from './cloze.js';
 
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -222,6 +223,10 @@ export class EditorVisual {
         return this.renderEmparejamiento(p, idx);
       case 'ordenamiento':
         return this.renderOrdenamiento(p, idx);
+      case 'completar':
+        return this.renderCompletar(p, idx);
+      case 'seleccion_inline':
+        return this.renderSeleccionInline(p, idx);
       case 'ensayo':
         return `<div class="alerta alerta--aviso" style="margin:0">Pregunta de desarrollo — corrección manual.</div>`;
       default:
@@ -337,6 +342,51 @@ export class EditorVisual {
           + Agregar elemento
         </button>
       </div>
+    `;
+  }
+
+  // Vista previa en vivo de los huecos detectados en la plantilla.
+  previewCloze(p) {
+    const segs = parsearPlantilla(p.plantilla || '');
+    if (!segs.some(s => s.hueco)) {
+      return `<span style="opacity:0.5">Escribí el texto y marcá los huecos con [[...]].</span>`;
+    }
+    let n = 0;
+    return segs.map(s => {
+      if (!s.hueco) return escapeHtml(s.texto);
+      n++;
+      if (p.tipo === 'seleccion_inline') {
+        return `<span class="ve-cloze-chip ve-cloze-chip--sel" title="Opciones: ${escapeHtml(s.partes.join(', '))}">▼ ${escapeHtml(s.partes[0])}</span>`;
+      }
+      return `<span class="ve-cloze-chip" title="Hueco ${n}">${escapeHtml(s.partes[0])}</span>`;
+    }).join('');
+  }
+
+  renderCompletar(p, idx) {
+    const huecos = huecosDe(p.plantilla || '');
+    return `
+      <div class="campo">
+        <label class="campo__etiqueta">Texto con huecos — marcá la palabra correcta entre [[ ]]</label>
+        <textarea class="campo__textarea ve-cloze-plantilla" rows="3" placeholder="Ej: La fórmula del agua es [[H2O]] y la de la sal es [[NaCl]].">${escapeHtml(p.plantilla || '')}</textarea>
+        <div class="ve-cloze-preview">${this.previewCloze(p)}</div>
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta">Distractores (palabras de más para el banco, separadas por |) — opcional</label>
+        <input type="text" class="campo__input ve-cloze-distractores" value="${escapeHtml((p.distractores || []).join(' | '))}" placeholder="Ej: CO2 | O2 | KCl">
+      </div>
+      <div class="alerta alerta--aviso" style="margin:0.5rem 0 0;font-size:0.7rem">${huecos.length} hueco(s). El alumno arrastra las palabras del banco a cada hueco.</div>
+    `;
+  }
+
+  renderSeleccionInline(p, idx) {
+    const huecos = huecosDe(p.plantilla || '');
+    return `
+      <div class="campo">
+        <label class="campo__etiqueta">Texto con desplegables — entre [[ ]] poné las opciones separadas por | (la 1ª es la correcta)</label>
+        <textarea class="campo__textarea ve-cloze-plantilla" rows="3" placeholder="Ej: El Sol es una [[estrella|planeta|galaxia]] del sistema solar.">${escapeHtml(p.plantilla || '')}</textarea>
+        <div class="ve-cloze-preview">${this.previewCloze(p)}</div>
+      </div>
+      <div class="alerta alerta--aviso" style="margin:0.5rem 0 0;font-size:0.7rem">${huecos.length} desplegable(s). En cada uno la 1ª opción es la correcta; las demás son distractores.</div>
     `;
   }
 
@@ -550,6 +600,24 @@ export class EditorVisual {
       p.items.push("");
       this.render();
     });
+
+    // Completar / Selección inline
+    const plantilla = card.querySelector('.ve-cloze-plantilla');
+    if (plantilla) {
+      plantilla.addEventListener('input', () => {
+        p.plantilla = plantilla.value;
+        // Refrescar sólo la vista previa de huecos sin re-renderizar todo
+        // (así no se pierde el foco mientras se escribe).
+        const prev = card.querySelector('.ve-cloze-preview');
+        if (prev) prev.innerHTML = this.previewCloze(p);
+      });
+    }
+    const distractores = card.querySelector('.ve-cloze-distractores');
+    if (distractores) {
+      distractores.addEventListener('input', () => {
+        p.distractores = distractores.value.split('|').map(d => d.trim()).filter(Boolean);
+      });
+    }
   }
 
   abrirOrdenador() {
