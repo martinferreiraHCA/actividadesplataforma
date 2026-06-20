@@ -93,17 +93,24 @@ export function abrirIA(id) {
   const top = Math.floor((screen.availHeight - alto) / 2);
 
   copiarPromptSiDisponible().then(copiado => {
-    if (copiado) mostrarToast('Prompt copiado al portapapeles — pegalo en la IA');
+    if (copiado) mostrarToast('Prompt copiado — pegalo en la IA con Ctrl+V');
   });
 
+  // Intento 1: ventana lateral tipo "sidebar"
   ventanaIA = window.open(
     ia.url,
     'ia_sidebar',
     `width=${ancho},height=${alto},left=${left},top=${top},menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes`
   );
 
-  if (!ventanaIA || ventanaIA.closed) {
-    mostrarToast('El navegador bloqueó la ventana — deshabilitá el bloqueador de popups');
+  // Intento 2: si el bloqueador de popups lo frenó, abrimos pestaña normal
+  if (!ventanaIA || ventanaIA.closed || typeof ventanaIA.closed === 'undefined') {
+    ventanaIA = window.open(ia.url, '_blank');
+  }
+
+  // Si aún así falló, avisamos con enlace manual
+  if (!ventanaIA || ventanaIA.closed || typeof ventanaIA.closed === 'undefined') {
+    mostrarAvisoBloqueo(ia);
     return;
   }
 
@@ -120,6 +127,32 @@ export function abrirIA(id) {
       actualizarBotones();
     }
   }, 1000);
+}
+
+function mostrarAvisoBloqueo(ia) {
+  let aviso = document.getElementById('iaAvisoBloqueo');
+  if (!aviso) {
+    aviso = document.createElement('div');
+    aviso.id = 'iaAvisoBloqueo';
+    aviso.className = 'ia-aviso-bloqueo';
+    document.body.appendChild(aviso);
+  }
+  aviso.innerHTML = `
+    <div class="ia-aviso-bloqueo__caja">
+      <strong>El navegador bloqueó la ventana</strong>
+      <p>Tu bloqueador de popups frenó la apertura. Permití los popups para este sitio,
+      o abrí ${ia.nombre} manualmente:</p>
+      <a class="ia-aviso-bloqueo__link" href="${ia.url}" target="_blank" rel="noopener">Abrir ${ia.nombre} ↗</a>
+      <button class="ia-aviso-bloqueo__cerrar" type="button">Cerrar</button>
+    </div>
+  `;
+  aviso.classList.add('ia-aviso-bloqueo--visible');
+  aviso.querySelector('.ia-aviso-bloqueo__cerrar').addEventListener('click', () => {
+    aviso.classList.remove('ia-aviso-bloqueo--visible');
+  });
+  aviso.querySelector('.ia-aviso-bloqueo__link').addEventListener('click', () => {
+    aviso.classList.remove('ia-aviso-bloqueo--visible');
+  });
 }
 
 function mostrarToast(mensaje) {
