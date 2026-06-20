@@ -6,7 +6,7 @@
 /* ====== HERO — LANDING ====== */
 .hero--generador {
   min-height: auto;
-  padding: clamp(6rem, 12vw, 10rem) clamp(1rem, 4vw, 4rem) clamp(3rem, 6vw, 5rem);
+  padding: clamp(3rem, 6vw, 5rem) clamp(1rem, 4vw, 4rem) clamp(2rem, 4vw, 3rem);
   text-align: center;
   border-bottom: var(--border);
 }
@@ -51,7 +51,7 @@
 }
 
 .actividad-card__id {
-  font-size: 0.55rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   opacity: 0.3;
@@ -187,7 +187,7 @@
   align-items: center;
   gap: 0.4rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   padding: 0.3em 0.7em;
@@ -220,7 +220,7 @@
   color: var(--base);
   padding: 1.5rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   line-height: 1.8;
   white-space: pre-wrap;
   word-break: break-word;
@@ -268,7 +268,7 @@
 
 .ia-acceso {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 0.45em 0.9em;
@@ -660,7 +660,7 @@ button.ia-btn {
   align-items: center;
   gap: 0.4rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: 0.3em 0.7em;
@@ -695,7 +695,7 @@ button.ia-btn {
 
 .btn--descarga {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 1.2em 1.5em;
@@ -762,7 +762,7 @@ button.ia-btn {
   color: var(--base);
   border: 2px solid var(--safety);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   z-index: 1000;
@@ -888,7 +888,7 @@ button.ia-btn {
 /* ====== VISUAL EDITOR — ESTADO VACÍO ====== */
 .ve-vacio {
   text-align: center;
-  padding: clamp(2.5rem, 6vw, 4.5rem) 1.5rem;
+  padding: clamp(1.5rem, 3vw, 2.5rem) 1.5rem;
   border: 4px dashed rgba(0, 0, 0, 0.15);
   background: var(--surface);
 }
@@ -1044,7 +1044,7 @@ button.ia-btn {
 .ve-btn-quitar-par {
   width: 24px;
   height: 24px;
-  font-size: 0.65rem;
+  font-size: 0.78rem;
   flex-shrink: 0;
 }
 
@@ -1083,7 +1083,7 @@ button.ia-btn {
 
 .ve-imagen-meta {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   opacity: 0.5;
   letter-spacing: 0.04em;
 }
@@ -1130,7 +1130,7 @@ button.ia-btn {
 
 .ve-imagen-svg-nota {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   opacity: 0.55;
   font-style: italic;
 }
@@ -1153,7 +1153,7 @@ button.ia-btn {
 .formato-ayuda__titulo {
   padding: 0.7em 1em;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1188,7 +1188,7 @@ button.ia-btn {
   color: var(--base);
   padding: 1rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.8;
   overflow-x: auto;
   white-space: pre-wrap;
@@ -1445,13 +1445,22 @@ body.tema-hca .stack__card:nth-child(4) {
 .tema-switcher {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   margin-left: 0.5rem;
 }
 
+.tema-switcher__label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.5);
+  margin-right: 0.3rem;
+  white-space: nowrap;
+}
+
 .tema-btn {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border: 2px solid rgba(255,255,255,0.2);
   background: transparent;
   cursor: pointer;
@@ -1472,8 +1481,8 @@ body.tema-hca .stack__card:nth-child(4) {
 }
 
 .tema-btn__dot {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   display: block;
 }
 
@@ -1488,6 +1497,9 @@ body.tema-hca .stack__card:nth-child(4) {
     right: 56px;
     top: 50%;
     transform: translateY(-50%);
+  }
+  .tema-switcher__label {
+    display: none;
   }
 }
 
@@ -1586,7 +1598,7 @@ body.tema-hca .stack__card:nth-child(4) {
 .ve-ordenar-label {
   flex: 1;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   min-width: 0;
   overflow: hidden;
@@ -1596,7 +1608,7 @@ body.tema-hca .stack__card:nth-child(4) {
 
 .ve-ordenar-badge {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: 0.2em 0.5em;
@@ -1709,7 +1721,7 @@ body.tema-hca .stack__card:nth-child(4) {
   text-align: left;
   padding: 0.85rem 1.2rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border: none;
@@ -1796,7 +1808,7 @@ body.tema-hca .stack__card:nth-child(4) {
 
 .guia-tag {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: 0.15em 0.5em;
@@ -1816,7 +1828,7 @@ body.tema-hca .stack__card:nth-child(4) {
   color: var(--base);
   padding: 1rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.66rem;
+  font-size: 0.78rem;
   line-height: 1.7;
   overflow-x: auto;
   white-space: pre-wrap;
