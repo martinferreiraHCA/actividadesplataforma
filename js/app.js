@@ -12,6 +12,7 @@ import { generarAppsScript } from './export/appsscript.js';
 import { exportarJSON, importarJSON } from './export/json.js';
 import { generarQTI21Zip } from './export/qti21package.js';
 import { abrirVistaPrevia } from './preview-plataforma.js';
+import { initIAPanel } from './ia-panel.js';
 
 // ====== ESTADO GLOBAL ======
 let preguntas = [];
@@ -476,3 +477,6 @@ document.getElementById('btnImportarJson')?.addEventListener('click', () => {
   });
   input.click();
 });
+
+// Initialize AI side-panel
+initIAPanel();
