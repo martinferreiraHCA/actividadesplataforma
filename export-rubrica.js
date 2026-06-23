@@ -1,4 +1,4 @@
-// Exportación de rúbricas a CSV, HTML y JSON
+// Exportación de rúbricas a CSV, HTML, JSON, Moodle XML y Apps Script
 
 export function exportarRubricaCSV(rubrica, titulo) {
   const rows = [];
@@ -74,6 +74,104 @@ export function importarRubricaJSON(texto) {
     throw new Error('El archivo no contiene una rúbrica válida.');
   }
   return { rubrica: data.rubrica, titulo: data.titulo || '' };
+}
+
+export function exportarRubricaMoodleXML(rubrica, titulo) {
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<rubric>\n`;
+  xml += `  <name>${esc(titulo || 'Rúbrica')}</name>\n`;
+  xml += `  <description>Rúbrica generada con el Generador de Actividades</description>\n`;
+  xml += `  <criteria>\n`;
+
+  rubrica.criterios.forEach((crit, ci) => {
+    xml += `    <criterion>\n`;
+    xml += `      <shortname>${esc(crit.nombre)}</shortname>\n`;
+    xml += `      <description>${esc(crit.nombre)}</description>\n`;
+    xml += `      <sortorder>${ci}</sortorder>\n`;
+    xml += `      <levels>\n`;
+    rubrica.niveles.forEach((niv, ni) => {
+      const desc = crit.descripciones[ni] || '';
+      const pts = niv.puntos * (crit.peso || 1);
+      xml += `        <level>\n`;
+      xml += `          <score>${pts}</score>\n`;
+      xml += `          <definition>${esc(desc || niv.nombre)}</definition>\n`;
+      xml += `          <sortorder>${ni}</sortorder>\n`;
+      xml += `        </level>\n`;
+    });
+    xml += `      </levels>\n`;
+    xml += `    </criterion>\n`;
+  });
+
+  xml += `  </criteria>\n`;
+  xml += `</rubric>`;
+  return xml;
+}
+
+export function exportarRubricaAppsScript(rubrica, titulo) {
+  const t = escJS(titulo || 'Rúbrica');
+  let script = `// Google Apps Script — Crea una rúbrica en Google Classroom
+// Instrucciones:
+// 1. Abrí script.google.com y creá un nuevo proyecto
+// 2. Pegá este código y ejecutá la función crearRubrica()
+// 3. Autorizá los permisos cuando te lo pida
+// 4. La rúbrica se crea como un Google Sheet con formato de tabla
+
+function crearRubrica() {
+  var ss = SpreadsheetApp.create('${t}');
+  var sheet = ss.getActiveSheet();
+  sheet.setName('Rúbrica');
+
+  // Encabezados
+  var headers = ['Criterio', 'Peso'`;
+
+  rubrica.niveles.forEach(n => {
+    script += `, '${escJS(n.nombre)} (${n.puntos} pts)'`;
+  });
+
+  script += `];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length)
+    .setBackground('#1a1a1a')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold');
+
+  // Datos
+  var datos = [\n`;
+
+  rubrica.criterios.forEach((crit, ci) => {
+    script += `    ['${escJS(crit.nombre)}', ${crit.peso}`;
+    crit.descripciones.forEach(d => {
+      script += `, '${escJS(d)}'`;
+    });
+    script += `]${ci < rubrica.criterios.length - 1 ? ',' : ''}\n`;
+  });
+
+  script += `  ];
+  if (datos.length > 0) {
+    sheet.getRange(2, 1, datos.length, headers.length).setValues(datos);
+  }
+
+  // Formato
+  sheet.getRange(2, 1, datos.length, 1).setFontWeight('bold');
+  sheet.getRange(2, 2, datos.length, 1).setHorizontalAlignment('center');
+  sheet.setColumnWidth(1, 160);
+  sheet.setColumnWidth(2, 60);
+  for (var i = 3; i <= headers.length; i++) {
+    sheet.setColumnWidth(i, 220);
+  }
+  sheet.getRange(1, 1, datos.length + 1, headers.length)
+    .setBorder(true, true, true, true, true, true);
+  sheet.getRange(2, 1, datos.length, headers.length).setWrap(true);
+
+  Logger.log('Rúbrica creada: ' + ss.getUrl());
+  SpreadsheetApp.getUi().alert('Rúbrica creada.\\nAbrila desde Google Drive o con este link:\\n' + ss.getUrl());
+}`;
+
+  return script;
+}
+
+function escJS(str) {
+  return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
 }
 
 function csvEsc(val) {

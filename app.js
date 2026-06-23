@@ -13,7 +13,8 @@ import { exportarJSON, importarJSON } from './export-json.js';
 import { generarQTI21Zip } from './export-qti21package.js';
 import { abrirVistaPrevia } from './preview-plataforma.js';
 import { EditorRubrica, parsearRubricaTexto } from './rubric-editor.js';
-import { exportarRubricaCSV, exportarRubricaHTML, exportarRubricaJSON, importarRubricaJSON } from './export-rubrica.js';
+import { exportarRubricaCSV, exportarRubricaHTML, exportarRubricaJSON, importarRubricaJSON, exportarRubricaMoodleXML, exportarRubricaAppsScript } from './export-rubrica.js';
+import { generarPromptRubrica } from './prompt-rubrica.js';
 
 // ====== ESTADO GLOBAL ======
 let preguntas = [];
@@ -532,35 +533,118 @@ if (esRubrica) {
       document.querySelectorAll('.rub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.rubtab === 'visual'));
     });
 
-    // Tabs visual / texto
+    // Tabs visual / texto / ia
+    const rubTabs = { visual: 'rubTabVisual', texto: 'rubTabTexto', ia: 'rubTabIA' };
     document.querySelectorAll('.rub-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.rubtab;
         document.querySelectorAll('.rub-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
-        document.getElementById('rubTabVisual').style.display = tab === 'visual' ? 'block' : 'none';
-        document.getElementById('rubTabTexto').style.display = tab === 'texto' ? 'block' : 'none';
+        Object.entries(rubTabs).forEach(([k, id]) => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = k === tab ? 'block' : 'none';
+        });
       });
     });
 
-    // Descargas rúbrica
+    // IA para rúbricas
+    let ultimoPromptRub = '';
+
+    document.getElementById('formPromptRubrica')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      ultimoPromptRub = generarPromptRubrica({
+        tema: document.getElementById('rubIATema').value.trim(),
+        nivel: document.getElementById('rubIANivel').value.trim(),
+        cantidadCriterios: document.getElementById('rubIACriterios').value,
+        cantidadNiveles: document.getElementById('rubIANiveles').value,
+        idioma: document.getElementById('rubIAIdioma').value,
+        contexto: document.getElementById('rubIAContexto').value.trim(),
+        notas: document.getElementById('rubIANotas').value.trim()
+      });
+      const caja = document.getElementById('cajaPromptRub');
+      caja.textContent = ultimoPromptRub;
+      caja.classList.add('caja-prompt--visible');
+      document.getElementById('accionesPromptRub').style.display = 'flex';
+    });
+
+    document.getElementById('btnCopiarPromptRub')?.addEventListener('click', () => copiar(ultimoPromptRub));
+
+    document.getElementById('btnProcesarIARub')?.addEventListener('click', () => {
+      const texto = document.getElementById('textareaRespuestaIARub').value.trim();
+      if (!texto) { toast('Pegá primero lo que te devolvió la IA.'); return; }
+      const res = parsearRubricaTexto(texto);
+      const advDiv = document.getElementById('advertenciasIARub');
+      advDiv.innerHTML = '';
+      res.advertencias.forEach(adv => {
+        const div = document.createElement('div');
+        div.className = 'alerta alerta--aviso';
+        div.textContent = adv.mensaje;
+        advDiv.appendChild(div);
+      });
+      if (res.rubrica.criterios.length === 0) {
+        const div = document.createElement('div');
+        div.className = 'alerta alerta--error';
+        div.textContent = 'No se detectaron criterios en la respuesta. Revisá que la IA haya usado el formato pedido.';
+        advDiv.appendChild(div);
+        return;
+      }
+      editorRub.cargar(res.rubrica);
+      const exito = document.createElement('div');
+      exito.className = 'alerta alerta--exito';
+      exito.textContent = `Rúbrica importada: ${res.rubrica.criterios.length} criterios × ${res.rubrica.niveles.length} niveles. Revisala en el editor visual.`;
+      advDiv.insertBefore(exito, advDiv.firstChild);
+      // Cambiar a tab visual
+      document.querySelectorAll('.rub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.rubtab === 'visual'));
+      Object.entries(rubTabs).forEach(([k, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = k === 'visual' ? 'block' : 'none';
+      });
+    });
+
+    // Helper para nombre de archivo
+    function rubNombreArchivo() {
+      return (document.getElementById('veTitulo')?.value.trim() || 'rubrica').replace(/\s+/g, '_');
+    }
+
+    // Descargas por plataforma
+    document.getElementById('btnRubCrea')?.addEventListener('click', () => {
+      const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
+      const csv = exportarRubricaCSV(editorRub.obtener(), t);
+      descargar(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${rubNombreArchivo()}.csv`);
+      toast('CSV descargado. Importalo en CREA desde la sección Rúbricas de tu curso.');
+    });
+
+    document.getElementById('btnRubMoodle')?.addEventListener('click', () => {
+      const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
+      const xml = exportarRubricaMoodleXML(editorRub.obtener(), t);
+      descargar(new Blob([xml], { type: 'application/xml;charset=utf-8' }), `${rubNombreArchivo()}_moodle_rubrica.xml`);
+      toast('XML descargado para Moodle.');
+    });
+
+    document.getElementById('btnRubClassroom')?.addEventListener('click', () => {
+      const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
+      const gs = exportarRubricaAppsScript(editorRub.obtener(), t);
+      descargar(new Blob([gs], { type: 'text/javascript;charset=utf-8' }), `${rubNombreArchivo()}_classroom.gs`);
+      toast('Script descargado. Ejecutalo en script.google.com para crear la rúbrica como Sheets.');
+    });
+
     document.getElementById('btnRubCSV')?.addEventListener('click', () => {
       const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
       const csv = exportarRubricaCSV(editorRub.obtener(), t);
-      descargar(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${(t || 'rubrica').replace(/\s+/g, '_')}.csv`);
+      descargar(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${rubNombreArchivo()}.csv`);
       toast('¡CSV descargado!');
     });
 
     document.getElementById('btnRubHTML')?.addEventListener('click', () => {
       const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
       const html = exportarRubricaHTML(editorRub.obtener(), t);
-      descargar(new Blob([html], { type: 'text/html;charset=utf-8' }), `${(t || 'rubrica').replace(/\s+/g, '_')}.html`);
+      descargar(new Blob([html], { type: 'text/html;charset=utf-8' }), `${rubNombreArchivo()}.html`);
       toast('¡HTML descargado!');
     });
 
     document.getElementById('btnRubJSON')?.addEventListener('click', () => {
       const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
       const json = exportarRubricaJSON(editorRub.obtener(), t);
-      descargar(new Blob([json], { type: 'application/json;charset=utf-8' }), `${(t || 'rubrica').replace(/\s+/g, '_')}_rubrica.json`);
+      descargar(new Blob([json], { type: 'application/json;charset=utf-8' }), `${rubNombreArchivo()}_rubrica.json`);
       toast('¡JSON guardado!');
     });
 

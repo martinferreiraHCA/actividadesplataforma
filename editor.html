@@ -367,13 +367,16 @@ Explicá qué es un circuito en serie.</pre>
 <section class="editor-section" id="panelRubrica" style="display:none">
   <div class="container">
 
-    <!-- Tabs rúbrica: visual / texto -->
+    <!-- Tabs rúbrica: visual / texto / ia -->
     <div class="tabs-modo" style="margin-bottom:1.5rem">
       <button class="rub-tab-btn tab-modo active" data-rubtab="visual">
         <span class="tab-modo__icono">◎</span> Editor Visual
       </button>
       <button class="rub-tab-btn tab-modo" data-rubtab="texto">
         <span class="tab-modo__icono">≡</span> Importar Texto
+      </button>
+      <button class="rub-tab-btn tab-modo" data-rubtab="ia">
+        <span class="tab-modo__icono">✦</span> Asistente IA
       </button>
     </div>
 
@@ -436,6 +439,98 @@ Explicá qué es un circuito en serie.</pre>
       </div>
     </div>
 
+    <!-- Tab IA -->
+    <div id="rubTabIA" style="display:none">
+      <div class="paso-card" style="margin-bottom:var(--gap)">
+        <div class="paso-card__cabecera">
+          <div class="paso-card__numero">✦</div>
+          <h2 class="paso-card__titulo">Asistente IA<br><span style="font-size:0.6em;opacity:0.5;text-transform:none">para Rúbricas</span></h2>
+        </div>
+
+        <div class="alerta alerta--info" style="margin-bottom:1.2rem">
+          <strong>¿Cómo funciona?</strong> Completá el formulario, generá el prompt, copialo a tu IA favorita (ChatGPT, Claude o Gemini), pegá la respuesta y listo. La app la convierte en una rúbrica editable.
+        </div>
+
+        <div class="ia-accesos" style="margin-bottom:1.5rem">
+          <span class="ia-accesos__label">Abrí tu IA aquí:</span>
+          <button class="ia-acceso ia-btn" data-ia-abrir="chatgpt">ChatGPT</button>
+          <button class="ia-acceso ia-btn" data-ia-abrir="claude">Claude</button>
+          <button class="ia-acceso ia-btn" data-ia-abrir="gemini">Gemini</button>
+        </div>
+
+        <form id="formPromptRubrica" autocomplete="off">
+          <div class="campo">
+            <label class="campo__etiqueta" for="rubIATema">Actividad o tema a evaluar</label>
+            <input class="campo__input" type="text" id="rubIATema" placeholder="Ej: Ensayo argumentativo, Presentación oral, Proyecto de ciencias..." required>
+          </div>
+
+          <div class="campo-grid">
+            <div class="campo">
+              <label class="campo__etiqueta" for="rubIANivel">Nivel / Grupo</label>
+              <input class="campo__input" type="text" id="rubIANivel" placeholder="Ej: 3° BD...">
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="rubIACriterios">Criterios</label>
+              <input class="campo__input" type="number" id="rubIACriterios" value="4" min="2" max="10">
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="rubIANiveles">Niveles</label>
+              <input class="campo__input" type="number" id="rubIANiveles" value="4" min="2" max="6">
+            </div>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="rubIAIdioma">Idioma</label>
+            <select class="campo__select" id="rubIAIdioma">
+              <option value="español" selected>Español</option>
+              <option value="inglés">Inglés</option>
+              <option value="portugués">Portugués</option>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="rubIAContexto">Contexto curricular (opcional)</label>
+            <input class="campo__input" type="text" id="rubIAContexto" placeholder="Ej: Currículo ANEP...">
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="rubIANotas">Notas extra (opcional)</label>
+            <textarea class="campo__textarea" id="rubIANotas" rows="2" placeholder="Ej: Incluir criterio de trabajo en equipo, evaluar uso de fuentes..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn--primary">Generá el Prompt</button>
+        </form>
+
+        <div class="caja-prompt" id="cajaPromptRub"></div>
+        <div class="caja-prompt__acciones" id="accionesPromptRub" style="display:none">
+          <button class="btn btn--primary" id="btnCopiarPromptRub">Copiar Prompt</button>
+          <div class="ia-accesos">
+            <span class="ia-accesos__label">Abrí tu IA aquí:</span>
+            <button class="ia-acceso ia-btn" data-ia-abrir="chatgpt">ChatGPT</button>
+            <button class="ia-acceso ia-btn" data-ia-abrir="claude">Claude</button>
+            <button class="ia-acceso ia-btn" data-ia-abrir="gemini">Gemini</button>
+          </div>
+          <p class="caja-prompt__ayuda">Se abre al lado — pegá el prompt, copiá la respuesta y volvé.</p>
+        </div>
+      </div>
+
+      <div class="paso-card">
+        <div class="paso-card__cabecera">
+          <div class="paso-card__numero">02</div>
+          <h2 class="paso-card__titulo">Respuesta<br>de la IA</h2>
+        </div>
+
+        <div class="campo">
+          <label class="campo__etiqueta">Pegá lo que te devolvió la IA</label>
+          <textarea class="campo__textarea campo__textarea--grande" id="textareaRespuestaIARub"
+            placeholder="Pegá acá la rúbrica que generó la IA..."></textarea>
+        </div>
+
+        <button class="btn btn--primary" id="btnProcesarIARub">Procesar</button>
+        <div id="advertenciasIARub" style="margin-top:1.5rem"></div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -444,19 +539,40 @@ Explicá qué es un circuito en serie.</pre>
 <section class="editor-section" id="seccionDescargasRubrica" style="display:none">
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:0.6rem">// Exportá tu rúbrica</div>
-    <p class="exportar-intro">Descargá la rúbrica en el formato que necesites.</p>
+    <p class="exportar-intro">¿A qué plataforma la vas a subir? Elegí y te la damos en el formato correcto.</p>
     <div class="descargas__grid">
-      <button class="btn--descarga" id="btnRubCSV">
-        <div class="btn__etiqueta">CSV — Excel / Sheets</div>
-        <div class="btn__subtexto">Para abrir en planilla de cálculo</div>
+      <button class="btn--descarga" id="btnRubCrea">
+        <div class="btn__etiqueta">CREA de Ceibal / Schoology</div>
+        <div class="btn__subtexto">Te damos un CSV para importar</div>
       </button>
-      <button class="btn--descarga" id="btnRubHTML">
-        <div class="btn__etiqueta">HTML — Imprimir</div>
-        <div class="btn__subtexto">Tabla lista para imprimir</div>
+      <button class="btn--descarga" id="btnRubMoodle">
+        <div class="btn__etiqueta">Moodle</div>
+        <div class="btn__subtexto">Te damos el XML de rúbrica</div>
+      </button>
+      <button class="btn--descarga" id="btnRubClassroom">
+        <div class="btn__etiqueta">Google Classroom</div>
+        <div class="btn__subtexto">Script que crea un Sheets con la rúbrica</div>
       </button>
     </div>
+
+    <details class="formato-ayuda" style="margin-top:1.5rem">
+      <summary class="formato-ayuda__titulo">Otros formatos</summary>
+      <div class="formato-ayuda__contenido">
+        <div class="descargas__grid">
+          <button class="btn--descarga" id="btnRubCSV">
+            <div class="btn__etiqueta">CSV — Excel / Sheets</div>
+            <div class="btn__subtexto">Para abrir en planilla de cálculo</div>
+          </button>
+          <button class="btn--descarga" id="btnRubHTML">
+            <div class="btn__etiqueta">HTML — Imprimir</div>
+            <div class="btn__subtexto">Tabla lista para imprimir</div>
+          </button>
+        </div>
+      </div>
+    </details>
+
     <div style="margin-top:1.2rem;display:flex;gap:1rem;flex-wrap:wrap">
-      <button class="btn btn--ghost" id="btnRubJSON">Guardar borrador .json</button>
+      <button class="btn btn--ghost" id="btnRubJSON">Guardar borrador .json (para reeditar después)</button>
     </div>
   </div>
 </section>
