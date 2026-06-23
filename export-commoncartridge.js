@@ -1,5 +1,5 @@
 // Arma el imsmanifest.xml + empaqueta el .imscc (Common Cartridge 1.1)
-import { generarQTI } from './qti12.js';
+import { generarQTI } from './export-qti12.js';
 
 function uid() {
   return 'cc_' + Math.random().toString(36).substring(2, 15);

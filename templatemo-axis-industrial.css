@@ -54,16 +54,16 @@ https://templatemo.com/tm-619-axis-industrial
     --fs-h1: clamp(2.4rem, 5vw, 5rem);
     --fs-h2: clamp(1.6rem, 3vw, 3rem);
     --fs-h3: clamp(1.1rem, 1.6vw, 1.5rem);
-    --fs-body: clamp(0.9rem, 1.1vw, 1.1rem);
-    --fs-data: clamp(0.78rem, 0.9vw, 0.95rem);
-    --fs-micro: 0.62rem;
+    --fs-body: clamp(1rem, 1.2vw, 1.2rem);
+    --fs-data: clamp(0.88rem, 1vw, 1.05rem);
+    --fs-micro: 0.72rem;
     --fs-ticker: clamp(1.4rem, 2.5vw, 2.5rem);
     --fs-stat: clamp(2.4rem, 5vw, 4.5rem);
     --fs-spec-val: clamp(2rem, 4vw, 3.5rem);
 
     /* Spacing */
-    --gap: clamp(1rem, 2vw, 2rem);
-    --section-pad: clamp(4rem, 10vw, 10rem) clamp(1rem, 4vw, 4rem);
+    --gap: clamp(1rem, 2vw, 1.8rem);
+    --section-pad: clamp(2rem, 5vw, 4rem) clamp(1rem, 4vw, 4rem);
 
     /* Layout */
     --cols: 12;
@@ -125,7 +125,7 @@ h1, h2, h3, h4, h5, h6,
 .tag {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
+    font-size: 0.78rem;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.15em;
@@ -155,7 +155,7 @@ h1, h2, h3, h4, h5, h6,
 /* ----- 4. BUTTONS ----- */
 .btn {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -389,7 +389,7 @@ h1, h2, h3, h4, h5, h6,
 
 .hero__label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.22em;
     color: var(--safety);
@@ -466,7 +466,7 @@ h1, h2, h3, h4, h5, h6,
 
 .hero__stat-label,
 .hero__kpi-label {
-    font-size: 0.65rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
     opacity: 0.35;
@@ -478,7 +478,7 @@ h1, h2, h3, h4, h5, h6,
     right: clamp(1rem, 2vw, 4rem);
     bottom: clamp(2rem, 4vw, 4rem);
     writing-mode: vertical-rl;
-    font-size: 0.65rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.2em;
     opacity: 0.4;
@@ -513,7 +513,7 @@ h1, h2, h3, h4, h5, h6,
 
 .section__eyebrow {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.22em;
     color: var(--safety);
@@ -525,7 +525,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .section__header {
-    margin-bottom: clamp(2.5rem, 5vw, 5rem);
+    margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 
@@ -570,7 +570,7 @@ h1, h2, h3, h4, h5, h6,
 .bento-card__number {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     opacity: 0.3;
@@ -807,7 +807,7 @@ h1, h2, h3, h4, h5, h6,
 
 .footer__col-title {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.18em;
     color: var(--safety);
@@ -838,7 +838,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .footer__copy {
-    font-size: 0.65rem;
+    font-size: 0.78rem;
     color: rgba(255,255,255,0.35);
     letter-spacing: 0.05em;
 }
@@ -854,7 +854,7 @@ h1, h2, h3, h4, h5, h6,
 
 .footer__back-top {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
     opacity: 0.4;

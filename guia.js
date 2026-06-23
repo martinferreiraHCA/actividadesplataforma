@@ -148,13 +148,13 @@ Si V=12 e I=2, ¿cuánto vale R?
         <p class="guia-p">Mirá el paso a paso de cómo subir los cuestionarios a tu plataforma.</p>
         <div class="guia-video">
           <video controls preload="metadata" playsinline>
-            <source src="media/tutorial-subir-cuestionarios.mp4" type="video/mp4">
+            <source src="tutorial-subir-cuestionarios.mp4" type="video/mp4">
             Tu navegador no puede reproducir el video. Podés
-            <a href="media/tutorial-subir-cuestionarios.mp4" target="_blank" rel="noopener">descargarlo acá</a>.
+            <a href="tutorial-subir-cuestionarios.mp4" target="_blank" rel="noopener">descargarlo acá</a>.
           </video>
         </div>
         <p class="guia-p" style="opacity:0.55">¿No se ve el video? Todavía no fue subido al repositorio.
-        Colocá tu archivo <code>.mp4</code> en la carpeta <code>media/</code> con el nombre
+        Colocá tu archivo <code>.mp4</code> con el nombre
         <code>tutorial-subir-cuestionarios.mp4</code> y va a aparecer acá automáticamente.</p>
       `
     },

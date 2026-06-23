@@ -1,6 +1,6 @@
 // Empaqueta un Content Package QTI v2.1: imsmanifest.xml + test.xml +
 // un archivo por ítem en items/ + imágenes en images/.
-import { generarItemsQTI21 } from './qti21.js';
+import { generarItemsQTI21 } from './export-qti21.js';
 
 function uid(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 11)}`;

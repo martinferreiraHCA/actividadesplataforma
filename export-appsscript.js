@@ -1,5 +1,5 @@
 // Genera un Google Apps Script (FormApp) para crear un Google Form como quiz
-import { plantillaConRayas, bancoCompletar, huecosDe } from '../cloze.js';
+import { plantillaConRayas, bancoCompletar, huecosDe } from './cloze.js';
 
 function escapeJS(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');

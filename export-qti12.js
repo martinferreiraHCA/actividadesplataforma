@@ -1,6 +1,6 @@
 // Genera ítems QTI 1.2 por tipo de pregunta (perfil Common Cartridge / Canvas)
 // Este es el dialecto que Schoology, Canvas, Moodle y Blackboard importan de forma fiable.
-import { plantillaConRayas, bancoCompletar, huecosDe } from '../cloze.js';
+import { plantillaConRayas, bancoCompletar, huecosDe } from './cloze.js';
 
 function escapeXml(str) {
   return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')

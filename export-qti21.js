@@ -3,7 +3,7 @@
 // gapMatch, inlineChoice). Acá cubrimos los 6 tipos clásicos + ordenamiento.
 // Lo importan CREA de Ceibal, Schoology y Moodle.
 
-import { parsearPlantilla, respuestasCompletar, bancoCompletar } from '../cloze.js';
+import { parsearPlantilla, respuestasCompletar, bancoCompletar } from './cloze.js';
 
 const QTI21_NS = 'http://www.imsglobal.org/xsd/imsqti_v2p1';
 

@@ -1,5 +1,5 @@
 // Export formato GIFT para Moodle
-import { parsearPlantilla } from '../cloze.js';
+import { parsearPlantilla } from './cloze.js';
 
 function escapeGift(str) {
   return str.replace(/[~=#{}:]/g, '\\$&');

@@ -1,5 +1,5 @@
 // Export formato Moodle XML
-import { parsearPlantilla } from '../cloze.js';
+import { parsearPlantilla } from './cloze.js';
 
 // Escapa caracteres especiales del formato cloze de Moodle dentro de las opciones.
 function escClozeOpcion(s) {
