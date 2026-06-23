@@ -43,6 +43,13 @@ export const ACTIVITIES = {
       "respuesta_corta"
     ],
     promptHints: "Cada pregunta DEBE incluir un token [IMG: descripcion_relevante.png] en el enunciado. Usá nombres descriptivos para las imágenes."
+  },
+  rubrica: {
+    nombre: "Rúbrica",
+    descripcion: "Tabla de criterios y niveles de desempeño para evaluar.",
+    esRubrica: true,
+    tiposPreguntaPermitidos: [],
+    promptHints: ""
   }
 };
 

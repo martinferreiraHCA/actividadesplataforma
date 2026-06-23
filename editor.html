@@ -363,6 +363,105 @@ Explicá qué es un circuito en serie.</pre>
 </section>
 
 
+<!-- ====== PANEL: EDITOR RÚBRICA ====== -->
+<section class="editor-section" id="panelRubrica" style="display:none">
+  <div class="container">
+
+    <!-- Tabs rúbrica: visual / texto -->
+    <div class="tabs-modo" style="margin-bottom:1.5rem">
+      <button class="rub-tab-btn tab-modo active" data-rubtab="visual">
+        <span class="tab-modo__icono">◎</span> Editor Visual
+      </button>
+      <button class="rub-tab-btn tab-modo" data-rubtab="texto">
+        <span class="tab-modo__icono">≡</span> Importar Texto
+      </button>
+    </div>
+
+    <!-- Tab visual -->
+    <div id="rubTabVisual">
+      <div id="rubEditor"></div>
+      <div style="margin-top:1.5rem">
+        <button class="btn btn--ghost" id="btnRubImportarJson">Importar rúbrica .json</button>
+      </div>
+    </div>
+
+    <!-- Tab texto -->
+    <div id="rubTabTexto" style="display:none">
+      <div class="paso-card">
+        <div class="paso-card__cabecera">
+          <div class="paso-card__numero">≡</div>
+          <h2 class="paso-card__titulo">Importar Rúbrica<br>desde Texto</h2>
+        </div>
+
+        <div class="alerta alerta--info" style="margin-bottom:1.2rem">
+          Pegá tu rúbrica en formato de texto. Usá <code>NIVELES:</code> para definir columnas y <code>###</code> o <code>Criterio:</code> para cada fila.
+        </div>
+
+        <details class="formato-ayuda">
+          <summary class="formato-ayuda__titulo">Formato de texto para rúbricas</summary>
+          <div class="formato-ayuda__contenido">
+<div class="formato-ejemplo-wrap">
+<button class="formato-copiar" type="button" data-copiar-ejemplo>Copiar</button>
+<pre class="formato-ejemplo">NIVELES: Excelente (4) | Bueno (3) | Suficiente (2) | Insuficiente (1)
+
+### Contenido
+- Domina completamente el tema con evidencia amplia y relevante
+- Demuestra buen conocimiento del tema con ejemplos adecuados
+- Conocimiento parcial, faltan algunos conceptos clave
+- No demuestra comprensión del tema
+
+### Organización
+- Estructura lógica, coherente y fácil de seguir
+- Mayormente organizado con algunas digresiones
+- Algo desorganizado, le cuesta seguir un hilo conductor
+- Sin estructura clara ni orden lógico
+
+### Redacción
+- Escritura clara, precisa y sin errores gramaticales
+- Buena redacción con errores menores
+- Redacción aceptable pero con errores frecuentes
+- Redacción confusa y con muchos errores</pre>
+</div>
+          </div>
+        </details>
+
+        <div class="campo" style="margin-top:1.5rem">
+          <label class="campo__etiqueta">Pegá o escribí tu rúbrica</label>
+          <textarea class="campo__textarea campo__textarea--grande" id="textareaRubTexto"
+            placeholder="NIVELES: Excelente (4) | Bueno (3) | ...&#10;&#10;### Criterio&#10;- Descripción nivel 1&#10;- Descripción nivel 2&#10;..."></textarea>
+        </div>
+
+        <button class="btn btn--primary" id="btnProcesarRubTexto">Procesar Texto</button>
+        <div id="advertenciasRubTexto" style="margin-top:1.5rem"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== DESCARGAS RÚBRICA ====== -->
+<section class="editor-section" id="seccionDescargasRubrica" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Exportá tu rúbrica</div>
+    <p class="exportar-intro">Descargá la rúbrica en el formato que necesites.</p>
+    <div class="descargas__grid">
+      <button class="btn--descarga" id="btnRubCSV">
+        <div class="btn__etiqueta">CSV — Excel / Sheets</div>
+        <div class="btn__subtexto">Para abrir en planilla de cálculo</div>
+      </button>
+      <button class="btn--descarga" id="btnRubHTML">
+        <div class="btn__etiqueta">HTML — Imprimir</div>
+        <div class="btn__subtexto">Tabla lista para imprimir</div>
+      </button>
+    </div>
+    <div style="margin-top:1.2rem;display:flex;gap:1rem;flex-wrap:wrap">
+      <button class="btn btn--ghost" id="btnRubJSON">Guardar borrador .json</button>
+    </div>
+  </div>
+</section>
+
+
 <!-- ====== IMÁGENES + DESCARGAS ====== -->
 <section class="editor-section" id="seccionDescargas" style="display:none">
   <div class="container">

@@ -12,6 +12,8 @@ import { generarAppsScript } from './export-appsscript.js';
 import { exportarJSON, importarJSON } from './export-json.js';
 import { generarQTI21Zip } from './export-qti21package.js';
 import { abrirVistaPrevia } from './preview-plataforma.js';
+import { EditorRubrica, parsearRubricaTexto } from './rubric-editor.js';
+import { exportarRubricaCSV, exportarRubricaHTML, exportarRubricaJSON, importarRubricaJSON } from './export-rubrica.js';
 
 // ====== ESTADO GLOBAL ======
 let preguntas = [];
@@ -24,6 +26,14 @@ const params = new URLSearchParams(window.location.search);
 const tipoActividad = params.get('tipo') || 'cuestionario';
 const actividad = ACTIVITIES[tipoActividad] || ACTIVITIES.cuestionario;
 document.title = `${actividad.nombre} — Generador de Actividades`;
+const esRubrica = !!actividad.esRubrica;
+
+const tituloEditor = document.getElementById('tituloEditor');
+if (tituloEditor) {
+  tituloEditor.innerHTML = esRubrica
+    ? 'Armá tu Rúbrica<span class="accent">.</span>'
+    : `Armá tu ${actividad.nombre}<span class="accent">.</span>`;
+}
 
 // ====== UTILIDADES ======
 function toast(msg) {
@@ -476,3 +486,102 @@ document.getElementById('btnImportarJson')?.addEventListener('click', () => {
   });
   input.click();
 });
+
+// ====== MODO RÚBRICA ======
+if (esRubrica) {
+  document.querySelectorAll('.panel-modo, .tabs-modo, .ve-barra-agregar, #seccionDescargas').forEach(el => {
+    if (el) el.style.display = 'none';
+  });
+
+  const rubContainer = document.getElementById('panelRubrica');
+  const rubDescargas = document.getElementById('seccionDescargasRubrica');
+  if (rubContainer) {
+    rubContainer.style.display = 'block';
+    const editorRub = new EditorRubrica(
+      document.getElementById('rubEditor'),
+      () => {
+        if (rubDescargas) rubDescargas.style.display = 'block';
+      }
+    );
+    editorRub.render();
+
+    // Importar texto de rúbrica
+    document.getElementById('btnProcesarRubTexto')?.addEventListener('click', () => {
+      const texto = document.getElementById('textareaRubTexto').value.trim();
+      if (!texto) { toast('Pegá o escribí el texto de la rúbrica primero.'); return; }
+      const res = parsearRubricaTexto(texto);
+      const advDiv = document.getElementById('advertenciasRubTexto');
+      advDiv.innerHTML = '';
+      res.advertencias.forEach(adv => {
+        const div = document.createElement('div');
+        div.className = 'alerta alerta--aviso';
+        div.textContent = adv.mensaje;
+        advDiv.appendChild(div);
+      });
+      if (res.rubrica.criterios.length === 0) {
+        const div = document.createElement('div');
+        div.className = 'alerta alerta--error';
+        div.textContent = 'No se detectaron criterios. Revisá el formato.';
+        advDiv.appendChild(div);
+        return;
+      }
+      editorRub.cargar(res.rubrica);
+      toast(`Rúbrica importada: ${res.rubrica.criterios.length} criterios.`);
+      document.getElementById('rubTabTexto').style.display = 'none';
+      document.getElementById('rubTabVisual').style.display = 'block';
+      document.querySelectorAll('.rub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.rubtab === 'visual'));
+    });
+
+    // Tabs visual / texto
+    document.querySelectorAll('.rub-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.rubtab;
+        document.querySelectorAll('.rub-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+        document.getElementById('rubTabVisual').style.display = tab === 'visual' ? 'block' : 'none';
+        document.getElementById('rubTabTexto').style.display = tab === 'texto' ? 'block' : 'none';
+      });
+    });
+
+    // Descargas rúbrica
+    document.getElementById('btnRubCSV')?.addEventListener('click', () => {
+      const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
+      const csv = exportarRubricaCSV(editorRub.obtener(), t);
+      descargar(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${(t || 'rubrica').replace(/\s+/g, '_')}.csv`);
+      toast('¡CSV descargado!');
+    });
+
+    document.getElementById('btnRubHTML')?.addEventListener('click', () => {
+      const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
+      const html = exportarRubricaHTML(editorRub.obtener(), t);
+      descargar(new Blob([html], { type: 'text/html;charset=utf-8' }), `${(t || 'rubrica').replace(/\s+/g, '_')}.html`);
+      toast('¡HTML descargado!');
+    });
+
+    document.getElementById('btnRubJSON')?.addEventListener('click', () => {
+      const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
+      const json = exportarRubricaJSON(editorRub.obtener(), t);
+      descargar(new Blob([json], { type: 'application/json;charset=utf-8' }), `${(t || 'rubrica').replace(/\s+/g, '_')}_rubrica.json`);
+      toast('¡JSON guardado!');
+    });
+
+    document.getElementById('btnRubImportarJson')?.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.addEventListener('change', async () => {
+        try {
+          const texto = await input.files[0].text();
+          const data = importarRubricaJSON(texto);
+          editorRub.cargar(data.rubrica);
+          if (data.titulo && document.getElementById('veTitulo')) {
+            document.getElementById('veTitulo').value = data.titulo;
+          }
+          toast('¡Rúbrica cargada!');
+        } catch (err) {
+          toast('Error: ' + err.message);
+        }
+      });
+      input.click();
+    });
+  }
+}

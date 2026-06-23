@@ -2117,3 +2117,156 @@ body.tema-hca .stack__card:nth-child(4) {
   line-height: 1.5;
   opacity: 0.75;
 }
+
+
+/* ====== EDITOR DE RÚBRICAS ====== */
+.rub-controles {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.rub-btn {
+  cursor: pointer;
+}
+.rub-tabla-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: var(--bw) solid var(--ink);
+}
+.rub-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-data);
+  min-width: 600px;
+}
+.rub-tabla th,
+.rub-tabla td {
+  border: 1px solid var(--muted);
+  padding: 0.6rem;
+  vertical-align: top;
+  text-align: left;
+}
+.rub-tabla thead {
+  background: var(--ink);
+  color: var(--base);
+}
+.rub-th-criterio {
+  min-width: 130px;
+  font-weight: 700;
+}
+.rub-th-peso {
+  min-width: 60px;
+  text-align: center !important;
+  font-weight: 700;
+}
+.rub-th-nivel {
+  min-width: 140px;
+  position: relative;
+}
+.rub-td-criterio {
+  background: var(--surface);
+  font-weight: 600;
+  position: relative;
+}
+.rub-td-peso {
+  text-align: center;
+  background: var(--surface);
+  width: 60px;
+}
+.rub-td-desc {
+  background: var(--base);
+}
+.rub-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed currentColor;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  width: 100%;
+  padding: 0.2rem 0;
+  outline: none;
+}
+.rub-input:focus {
+  border-bottom-style: solid;
+  border-bottom-color: var(--safety);
+}
+.rub-input--nivel {
+  font-weight: 700;
+  font-size: 0.95em;
+}
+.rub-input--criterio {
+  font-weight: 600;
+  color: var(--ink);
+}
+.rub-input--pts {
+  width: 50px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+.rub-pts-wrap {
+  font-size: 0.85em;
+  margin-top: 0.3rem;
+  opacity: 0.8;
+}
+.rub-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
+}
+.rub-textarea:focus {
+  border-color: var(--safety);
+  background: color-mix(in srgb, var(--safety) 5%, transparent);
+}
+.rub-textarea::placeholder {
+  opacity: 0.4;
+}
+.rub-btn-x {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+  opacity: 0.4;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+}
+.rub-btn-x:hover {
+  opacity: 1;
+  color: #c0392b;
+}
+.rub-resumen {
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  background: var(--surface);
+  border: var(--bw) solid var(--ink);
+  font-size: var(--fs-data);
+}
+.rub-resumen__texto strong {
+  color: var(--safety);
+}
+
+@media (max-width: 600px) {
+  .rub-tabla {
+    font-size: 0.82rem;
+  }
+  .rub-th-nivel {
+    min-width: 110px;
+  }
+  .rub-textarea {
+    min-height: 45px;
+  }
+}
