@@ -14,6 +14,7 @@ import { generarQTI21Zip } from './export-qti21package.js';
 import { abrirVistaPrevia } from './preview-plataforma.js';
 import { EditorRubrica, parsearRubricaTexto } from './rubric-editor.js';
 import { exportarRubricaCSV, exportarRubricaHTML, exportarRubricaJSON, importarRubricaJSON, exportarRubricaMoodleXML, exportarRubricaAppsScript } from './export-rubrica.js';
+import { generarRubricaIMSCC, generarRubricaMBZ } from './export-rubrica-schoology.js';
 import { generarPromptRubrica } from './prompt-rubrica.js';
 
 // ====== ESTADO GLOBAL ======
@@ -490,8 +491,13 @@ document.getElementById('btnImportarJson')?.addEventListener('click', () => {
 
 // ====== MODO RÚBRICA ======
 if (esRubrica) {
-  document.querySelectorAll('.panel-modo, .tabs-modo, .ve-barra-agregar, #seccionDescargas').forEach(el => {
+  // Ocultar la UI de preguntas, pero NO las pestañas internas de la rúbrica
+  // (que también usan .tabs-modo dentro de #panelRubrica).
+  document.querySelectorAll('.panel-modo, .ve-barra-agregar, #seccionDescargas').forEach(el => {
     if (el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.tabs-modo').forEach(el => {
+    if (el && !el.closest('#panelRubrica')) el.style.display = 'none';
   });
 
   const rubContainer = document.getElementById('panelRubrica');
@@ -606,11 +612,26 @@ if (esRubrica) {
     }
 
     // Descargas por plataforma
-    document.getElementById('btnRubCrea')?.addEventListener('click', () => {
+    document.getElementById('btnRubImscc')?.addEventListener('click', async () => {
       const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
-      const csv = exportarRubricaCSV(editorRub.obtener(), t);
-      descargar(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${rubNombreArchivo()}.csv`);
-      toast('CSV descargado. Importalo en CREA desde la sección Rúbricas de tu curso.');
+      try {
+        const blob = await generarRubricaIMSCC(editorRub.obtener(), t);
+        descargar(blob, `${rubNombreArchivo()}.imscc`);
+        toast('Common Cartridge descargado. Importalo en Schoology desde Common Cartridge.');
+      } catch (err) {
+        toast('Error: ' + err.message);
+      }
+    });
+
+    document.getElementById('btnRubMbz')?.addEventListener('click', async () => {
+      const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
+      try {
+        const blob = await generarRubricaMBZ(editorRub.obtener(), t);
+        descargar(blob, `${rubNombreArchivo()}.mbz`);
+        toast('Backup de Moodle descargado. Importalo desde Moodle (ZIP or MBZ).');
+      } catch (err) {
+        toast('Error: ' + err.message);
+      }
     });
 
     document.getElementById('btnRubMoodle')?.addEventListener('click', () => {

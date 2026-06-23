@@ -540,14 +540,19 @@ Explicá qué es un circuito en serie.</pre>
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:0.6rem">// Exportá tu rúbrica</div>
     <p class="exportar-intro">¿A qué plataforma la vas a subir? Elegí y te la damos en el formato correcto.</p>
+
+    <div class="alerta alerta--aviso" style="margin-bottom:1.2rem">
+      <strong>Importante sobre Schoology y CREA:</strong> Schoology no tiene importación directa de rúbricas; sus rúbricas se arman a mano en el editor. Te damos dos paquetes para que pruebes cuál entra mejor en tu cuenta: el <strong>Common Cartridge</strong> (la rúbrica queda como página del curso) y el <strong>backup de Moodle</strong> (intenta meterla como rúbrica de una tarea). Probá los dos y quedate con el que te sirva.
+    </div>
+
     <div class="descargas__grid">
-      <button class="btn--descarga" id="btnRubCrea">
-        <div class="btn__etiqueta">CREA de Ceibal / Schoology</div>
-        <div class="btn__subtexto">Te damos un CSV para importar</div>
+      <button class="btn--descarga" id="btnRubImscc">
+        <div class="btn__etiqueta">Schoology / CREA — Common Cartridge</div>
+        <div class="btn__subtexto">.imscc — entra como página del curso</div>
       </button>
-      <button class="btn--descarga" id="btnRubMoodle">
-        <div class="btn__etiqueta">Moodle</div>
-        <div class="btn__subtexto">Te damos el XML de rúbrica</div>
+      <button class="btn--descarga" id="btnRubMbz">
+        <div class="btn__etiqueta">Schoology / CREA / Moodle — Backup</div>
+        <div class="btn__subtexto">.mbz (ZIP) — intenta rúbrica en una tarea</div>
       </button>
       <button class="btn--descarga" id="btnRubClassroom">
         <div class="btn__etiqueta">Google Classroom</div>
@@ -556,7 +561,7 @@ Explicá qué es un circuito en serie.</pre>
     </div>
 
     <details class="formato-ayuda" style="margin-top:1.5rem">
-      <summary class="formato-ayuda__titulo">Otros formatos</summary>
+      <summary class="formato-ayuda__titulo">Otros formatos (CSV, HTML, XML de Moodle)</summary>
       <div class="formato-ayuda__contenido">
         <div class="descargas__grid">
           <button class="btn--descarga" id="btnRubCSV">
@@ -566,6 +571,10 @@ Explicá qué es un circuito en serie.</pre>
           <button class="btn--descarga" id="btnRubHTML">
             <div class="btn__etiqueta">HTML — Imprimir</div>
             <div class="btn__subtexto">Tabla lista para imprimir</div>
+          </button>
+          <button class="btn--descarga" id="btnRubMoodle">
+            <div class="btn__etiqueta">XML de rúbrica (Moodle)</div>
+            <div class="btn__subtexto">Definición suelta de la rúbrica</div>
           </button>
         </div>
       </div>
