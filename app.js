@@ -13,7 +13,7 @@ import { exportarJSON, importarJSON } from './export-json.js';
 import { generarQTI21Zip } from './export-qti21package.js';
 import { abrirVistaPrevia } from './preview-plataforma.js';
 import { EditorRubrica, parsearRubricaTexto } from './rubric-editor.js';
-import { exportarRubricaCSV, exportarRubricaHTML, exportarRubricaJSON, importarRubricaJSON, exportarRubricaMoodleXML, exportarRubricaAppsScript } from './export-rubrica.js';
+import { rubricaComoTexto, exportarRubricaCSV, exportarRubricaHTML, exportarRubricaJSON, importarRubricaJSON, exportarRubricaMoodleXML, exportarRubricaAppsScript } from './export-rubrica.js';
 import { generarRubricaIMSCC, generarRubricaMBZ } from './export-rubrica-schoology.js';
 import { generarPromptRubrica } from './prompt-rubrica.js';
 
@@ -610,6 +610,13 @@ if (esRubrica) {
     function rubNombreArchivo() {
       return (document.getElementById('veTitulo')?.value.trim() || 'rubrica').replace(/\s+/g, '_');
     }
+
+    // Copiar rúbrica como texto para pegar en Schoology/CREA
+    document.getElementById('btnRubCopiarTexto')?.addEventListener('click', () => {
+      const t = document.getElementById('veTitulo')?.value.trim() || 'Rúbrica';
+      const texto = rubricaComoTexto(editorRub.obtener(), t);
+      copiar(texto);
+    });
 
     // Descargas por plataforma
     document.getElementById('btnRubImscc')?.addEventListener('click', async () => {

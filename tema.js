@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   var TEMAS = ['', 'sereno', 'nocturno', 'amigable', 'hca'];
-  var KEY = 'hca_tema';
+  var KEY = 'gen_tema';
   var DEFECTO = 'sereno';
 
   function aplicar(tema) {
