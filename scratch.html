@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fichas Scratch y micro:bit — Generador de Actividades</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<meta name="description" content="Creá fichas didácticas con bloques de Scratch y micro:bit a partir de texto plano. Exportalas en PDF o Word.">
+<meta name="description" content="Creá fichas didácticas con bloques de Scratch y micro:bit a partir de texto plano. Con plantillas, importación en lote y asistente IA. Exportalas en PDF o Word.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
@@ -22,7 +22,7 @@
     <nav class="header__nav" id="headerNav">
       <a href="index.html">Inicio</a>
       <a href="editor.html?tipo=cuestionario">Editor</a>
-      <a href="scratch.html" class="active">Fichas Scratch</a>
+      <a href="scratch.html" class="active">Fichas Scratch · micro:bit</a>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
     </nav>
     <div class="tema-switcher" id="temaSwitcher">
@@ -38,18 +38,48 @@
 </header>
 
 
-<!-- ====== TÍTULO Y DATOS DEL DOCUMENTO ====== -->
+<!-- ====== INTRO ====== -->
 <section class="editor-section">
   <div class="container">
     <div class="section__header reveal">
-      <div class="section__eyebrow">// Fichas didácticas</div>
+      <div class="section__eyebrow">// Fichas didácticas de programación</div>
       <h2 class="section__title">Fichas de Scratch<br>y micro:bit<span class="accent">.</span></h2>
     </div>
     <p class="scratch-intro">
-      Escribí el código como texto plano y se dibuja como bloques de colores. Para Scratch podés elegir la versión
-      (Scratch 3, Scratch 2 o alto contraste, cada una con su paleta oficial); para micro:bit el código JavaScript de MakeCode
-      se convierte en bloques automáticamente. Armá fichas con consigna, código e imagen opcional, y descargalas en PDF o Word.
+      Escribí el código como texto plano y se dibuja como bloques de colores: <strong>Scratch</strong> en la versión que elijas
+      (Scratch 3, Scratch 2 o alto contraste, cada una con su paleta oficial) y <strong>micro:bit</strong> convirtiendo el código
+      JavaScript de MakeCode en bloques automáticamente. Cada ficha lleva consigna, código, imagen opcional y notas,
+      y el documento final se descarga en <strong>PDF o Word</strong> listo para repartir en clase.
     </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Datos del documento</span>
+        <span class="paso-rapido__texto">Poné título y grupo, y elegí cómo se ve el documento: numeración, bordes, una ficha por página.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Creá las fichas</span>
+        <span class="paso-rapido__texto">A mano, desde una plantilla, pegando texto (varias de una vez) o con ayuda de una IA. Todo se edita después.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Descargá</span>
+        <span class="paso-rapido__texto">PDF para imprimir o Word para seguir editando. También podés guardar un borrador y retomarlo otro día.</span>
+      </div>
+    </div>
+    <div class="cta-guia" style="margin-top:1.5rem">
+      <p class="cta-guia__texto"><strong>¿Primera vez con las fichas?</strong><br>La guía explica la sintaxis de los bloques, el formato de texto para crear fichas en lote y cómo usar la IA.</p>
+      <button class="btn btn--primary" data-abrir-guia="fichas">Abrir la guía</button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 1: DATOS DEL DOCUMENTO ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — Datos del documento</div>
     <div class="campo-grid" style="max-width:700px">
       <div class="campo">
         <label class="campo__etiqueta" for="fdTitulo">Título del documento</label>
@@ -60,40 +90,8 @@
         <input class="campo__input" type="text" id="fdSubtitulo" placeholder="Ej: 6° año, 1° CB Informática...">
       </div>
     </div>
-    <details class="scratch-como">
-      <summary>¿Cómo se escribe el código? Ver ejemplos</summary>
-      <div class="scratch-como__cuerpo">
-        <p>Escribí cada bloque en una línea, en español o inglés, tal como se lee en Scratch. Ejemplos:</p>
-        <pre class="scratch-como__pre">al presionar bandera verde
-por siempre
-  mover (10) pasos
-  si &lt;¿tocando un borde?&gt; entonces
-    girar (180) grados
-  fin
-fin</pre>
-        <ul class="scratch-como__lista">
-          <li><code>(10)</code> — números y valores redondeados van entre paréntesis</li>
-          <li><code>&lt;condición&gt;</code> — los bloques de condición (hexágono) van entre <code>&lt; &gt;</code></li>
-          <li><code>[hola]</code> — los textos van entre corchetes; <code>[v]</code> al final marca un desplegable: <code>fijar tamaño a (100) % [v]</code></li>
-          <li><code>fin</code> — cierra los bloques «si», «por siempre», «repetir»</li>
-          <li>Podés separar dos pilas de bloques con una línea en blanco</li>
-        </ul>
-        <p><strong>Fichas de micro:bit:</strong> escribí el código JavaScript de MakeCode (el mismo que ves en la pestaña
-        JavaScript de <a href="https://makecode.microbit.org" target="_blank" rel="noopener">makecode.microbit.org</a>) y los
-        bloques se dibujan solos con el servicio oficial de MakeCode — necesita conexión a internet. Podés elegir si la ficha
-        muestra los bloques, el código o ambos. Si escribís en Python, se muestra el código tal cual.</p>
-        <p>También podés pedirle el código a una IA con el botón <strong>«Prompt para IA»</strong> de cada ficha.</p>
-      </div>
-    </details>
-  </div>
-</section>
-
-
-<!-- ====== OPCIONES GLOBALES ====== -->
-<section class="editor-section editor-section--surface" style="padding-top:1.5rem;padding-bottom:1.5rem">
-  <div class="container">
-    <div class="scratch-opciones">
-      <span class="scratch-opciones__label">Opciones del documento:</span>
+    <div class="scratch-opciones" style="margin-top:1rem">
+      <span class="scratch-opciones__label">Presentación:</span>
       <label class="scratch-check"><input type="checkbox" id="fdNumerar" checked> Numerar fichas</label>
       <label class="scratch-check"><input type="checkbox" id="fdBordes" checked> Borde alrededor de cada ficha</label>
       <label class="scratch-check"><input type="checkbox" id="fdSalto"> Una ficha por página</label>
@@ -102,24 +100,201 @@ fin</pre>
 </section>
 
 
-<!-- ====== FICHAS ====== -->
-<section class="editor-section">
+<!-- ====== PASO 2: TABS DE MODO ====== -->
+<section class="editor-section" style="padding-bottom:0">
   <div class="container">
-    <div id="listaFichas"></div>
-    <div class="scratch-agregar">
-      <button class="btn btn--primary" id="btnAgregarFicha">+ Ficha Scratch</button>
-      <button class="btn btn--primary" id="btnAgregarFichaMicrobit">+ Ficha micro:bit</button>
-      <button class="btn btn--ghost" id="btnImportarFichasJson">Importar borrador .json</button>
-      <input type="file" id="inputFichasJson" accept=".json" style="display:none">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Creá tus fichas</div>
+    <div class="tabs-modo">
+      <button class="tab-modo active" data-modo="visual">
+        <span class="tab-modo__icono">◎</span> Editor Visual
+      </button>
+      <button class="tab-modo" data-modo="texto">
+        <span class="tab-modo__icono">≡</span> Importar Texto
+      </button>
+      <button class="tab-modo" data-modo="ia">
+        <span class="tab-modo__icono">✦</span> Asistente IA
+      </button>
     </div>
   </div>
 </section>
 
 
-<!-- ====== DESCARGAS ====== -->
+<!-- ====== PANEL: EDITOR VISUAL ====== -->
+<section class="editor-section panel-modo" id="panel-fichas-visual">
+  <div class="container">
+
+    <div class="ve-barra-agregar">
+      <span class="ve-barra-label">Agregar ficha:</span>
+      <button class="tag tag--filled" id="btnAgregarFicha">+ Ficha Scratch</button>
+      <button class="tag tag--filled" id="btnAgregarFichaMicrobit">+ Ficha micro:bit</button>
+      <span class="ve-barra-sep"></span>
+      <span class="ve-barra-label">O empezá con una plantilla:</span>
+      <span id="barraPlantillas"></span>
+    </div>
+
+    <div id="listaFichas" style="margin-top:1.5rem"></div>
+
+    <div class="scratch-agregar">
+      <button class="btn btn--primary" id="btnAgregarFichaAbajo">+ Agregar ficha</button>
+      <button class="btn btn--ghost" id="btnImportarFichasJson">Importar borrador .json</button>
+      <input type="file" id="inputFichasJson" accept=".json" style="display:none">
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PANEL: IMPORTAR TEXTO ====== -->
+<section class="editor-section panel-modo" id="panel-fichas-texto" style="display:none">
+  <div class="container">
+
+    <div class="paso-card">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">≡</div>
+        <h2 class="paso-card__titulo">Fichas en lote<br>desde Texto</h2>
+      </div>
+
+      <div class="alerta alerta--info" style="margin-bottom:1.2rem">
+        <strong>Para crear muchas fichas de una vez.</strong> Escribí (o generá con una IA) un solo texto con todas
+        las fichas y pegalo acá. Cada ficha empieza con <code>=== FICHA: Título ===</code>. También sirve para
+        editar rápido: con «Copiar como texto» (en Descargar) bajás las fichas actuales, las retocás en cualquier
+        editor y las volvés a pegar.
+      </div>
+
+      <details class="formato-ayuda" style="margin-bottom:1.5rem">
+        <summary class="formato-ayuda__titulo">Ver el formato completo (referencia)</summary>
+        <div class="formato-ayuda__contenido">
+          <p style="margin-bottom:0.8rem">Líneas que entiende cada ficha (solo <code>codigo:</code> es obligatoria para que se dibuje algo):</p>
+          <ul class="scratch-como__lista">
+            <li><code>=== FICHA: Título ===</code> — empieza una ficha nueva</li>
+            <li><code>tipo:</code> <code>scratch</code> (por defecto) o <code>microbit</code></li>
+            <li><code>version:</code> solo Scratch — <code>scratch3</code>, <code>scratch2</code> o <code>alto contraste</code></li>
+            <li><code>lenguaje:</code> solo micro:bit — <code>javascript</code> o <code>python</code></li>
+            <li><code>muestra:</code> solo micro:bit — <code>bloques</code>, <code>codigo</code> o <code>ambos</code></li>
+            <li><code>consigna:</code> el enunciado para el alumno (puede seguir en varias líneas)</li>
+            <li><code>codigo:</code> — y el código en las líneas siguientes</li>
+            <li><code>notas:</code> pista o aclaración que va al pie de la ficha</li>
+          </ul>
+          <p style="margin-top:0.8rem">Antes de la primera ficha podés poner <code>titulo:</code> y <code>nivel:</code> para el documento.</p>
+        </div>
+      </details>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="textareaFichasTexto">Pegá acá tus fichas</label>
+        <textarea class="campo__textarea campo__textarea--grande" id="textareaFichasTexto"
+          placeholder="titulo: Práctico — Bucles&#10;&#10;=== FICHA: El gato rebota ===&#10;consigna: Leé el programa y explicá qué hace.&#10;codigo:&#10;al presionar bandera verde&#10;por siempre&#10;  mover (10) pasos&#10;fin"></textarea>
+      </div>
+
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
+        <button class="btn btn--ghost" id="btnEjemploFichasTexto" style="padding:0.5em 1.2em">Cargar un ejemplo</button>
+        <label class="scratch-check"><input type="checkbox" id="chkReemplazarFichas"> Reemplazar las fichas actuales (si no, se agregan al final)</label>
+      </div>
+
+      <button class="btn btn--primary" id="btnProcesarFichasTexto">Procesar y cargar fichas</button>
+      <div id="avisosFichasTexto" style="margin-top:1.5rem"></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PANEL: ASISTENTE IA ====== -->
+<section class="editor-section panel-modo" id="panel-fichas-ia" style="display:none">
+  <div class="container">
+
+    <div class="paso-card" style="margin-bottom:var(--gap)">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">✦</div>
+        <h2 class="paso-card__titulo">Asistente IA<br><span style="font-size:0.6em;opacity:0.5;text-transform:none">para Fichas</span></h2>
+      </div>
+
+      <div class="alerta alerta--info" style="margin-bottom:1.2rem">
+        <strong>¿Cómo funciona?</strong> Completá el formulario, generá el prompt, abrí tu IA favorita al costado
+        (el prompt se copia solo), pegá la respuesta abajo y se convierte en fichas editables.
+      </div>
+
+      <div class="ia-accesos" style="margin-bottom:1.5rem">
+        <span class="ia-accesos__label">Abrí tu IA aquí:</span>
+        <button class="ia-acceso ia-btn" data-ia-abrir="chatgpt">ChatGPT</button>
+        <button class="ia-acceso ia-btn" data-ia-abrir="claude">Claude</button>
+        <button class="ia-acceso ia-btn" data-ia-abrir="gemini">Gemini</button>
+      </div>
+
+      <form id="formPromptFichas" autocomplete="off">
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaFichasTema">Tema o contenido</label>
+          <input class="campo__input" type="text" id="iaFichasTema" placeholder="Ej: bucles y repetición, sensores del micro:bit, coordenadas..." required>
+        </div>
+
+        <div class="campo-grid">
+          <div class="campo">
+            <label class="campo__etiqueta" for="iaFichasCantidad">Cantidad de fichas</label>
+            <input class="campo__input" type="number" id="iaFichasCantidad" value="4" min="1" max="20">
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="iaFichasPlataforma">Plataforma</label>
+            <select class="campo__input" id="iaFichasPlataforma">
+              <option value="scratch">Scratch</option>
+              <option value="microbit">micro:bit (MakeCode)</option>
+              <option value="mixto">Mezcla de ambas</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="campo-grid">
+          <div class="campo">
+            <label class="campo__etiqueta" for="iaFichasEnfoque">Tipo de actividad</label>
+            <select class="campo__input" id="iaFichasEnfoque">
+              <option value="mixto">Variado (recomendado)</option>
+              <option value="lectura">Leer y predecir</option>
+              <option value="error">Encontrar el error</option>
+              <option value="completar">Completar el programa</option>
+              <option value="crear">Desafíos de creación</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="iaFichasNotas">Indicaciones extra (opcional)</label>
+            <input class="campo__input" type="text" id="iaFichasNotas" placeholder="Ej: personajes de animales, sin variables...">
+          </div>
+        </div>
+
+        <button class="btn btn--primary" type="submit">Generá el Prompt</button>
+      </form>
+
+      <div class="caja-prompt" id="cajaPrompt"></div>
+      <div class="caja-prompt__acciones" id="accionesPromptFichas" style="display:none">
+        <button class="btn btn--primary" id="btnCopiarPromptFichas">Copiar Prompt</button>
+        <p class="caja-prompt__ayuda">Copiá el prompt, pegalo en tu IA y traé la respuesta al paso 02.</p>
+      </div>
+    </div>
+
+    <div class="paso-card">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">02</div>
+        <h2 class="paso-card__titulo">Respuesta<br>de la IA</h2>
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="textareaRespuestaIAFichas">Pegá lo que te devolvió la IA</label>
+        <textarea class="campo__textarea campo__textarea--grande" id="textareaRespuestaIAFichas"
+          placeholder="Pegá acá las fichas que generó la IA..."></textarea>
+      </div>
+
+      <label class="scratch-check" style="margin-bottom:1.2rem"><input type="checkbox" id="chkReemplazarFichasIA"> Reemplazar las fichas actuales</label>
+      <div>
+        <button class="btn btn--primary" id="btnProcesarIAFichas">Procesar</button>
+      </div>
+      <div id="avisosFichasIA" style="margin-top:1.5rem"></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PASO 3: DESCARGAS ====== -->
 <section class="editor-section editor-section--surface" id="seccionExportFichas">
   <div class="container">
-    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Descargar</div>
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 3 — Descargar</div>
     <p class="exportar-intro">Descargá tus fichas listas para repartir. El PDF sale de la vista de impresión del navegador; el Word lleva los bloques como imágenes y se puede seguir editando.</p>
 
     <div class="descargas__grid">
@@ -138,6 +313,7 @@ fin</pre>
     </div>
 
     <div style="margin-top:1.2rem;display:flex;gap:1rem;flex-wrap:wrap">
+      <button class="btn btn--ghost" id="btnFichasCopiarTexto">Copiar como texto (para editar en lote y reimportar)</button>
       <button class="btn btn--ghost" id="btnFichasJSON">Guardar borrador .json (para reeditar después)</button>
     </div>
     <p class="scratch-export-nota" id="notaExportFichas" style="display:none"></p>
@@ -157,7 +333,7 @@ fin</pre>
       <div class="footer__links">
         <a href="index.html">Inicio</a>
         <a href="editor.html?tipo=cuestionario">Editor</a>
-        <a href="scratch.html">Fichas Scratch</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
@@ -169,6 +345,7 @@ fin</pre>
 
 <script src="tema.js"></script>
 <script src="guia.js"></script>
+<script src="ia-panel.js"></script>
 <script src="templatemo-axis-script.js"></script>
 <script src="scratchblocks.min.js"></script>
 <script src="scratchblocks-translations.js"></script>

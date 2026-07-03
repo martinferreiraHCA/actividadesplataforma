@@ -1,6 +1,7 @@
 // Editor de fichas didácticas con bloques de Scratch (scratchblocks) y micro:bit (MakeCode)
 import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
+import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
 
 const STORAGE_KEY = 'gen_fichas_scratch';
 const sb = window.scratchblocks;
@@ -29,6 +30,52 @@ const ESTILOS_SCRATCH = [
   ['scratch3-high-contrast', 'Scratch 3 — alto contraste']
 ];
 
+// Plantillas de ficha listas para usar: un clic y queda una ficha completa para retocar
+const PLANTILLAS = [
+  {
+    id: 'leer', nombre: '📖 Leer y predecir', tipo: 'scratch',
+    titulo: '¿Qué hace este programa?',
+    consigna: 'Leé el programa con atención y escribí, paso a paso, qué hace el personaje.',
+    codigo: 'al presionar bandera verde\ndecir [¡Allá voy!] por (2) segundos\nrepetir (3)\n  mover (50) pasos\n  esperar (1) segundos\nfin',
+    notas: ''
+  },
+  {
+    id: 'error', nombre: '🐞 Encontrar el error', tipo: 'scratch',
+    titulo: '¿Dónde está el error?',
+    consigna: 'Este programa debería hacer que el personaje dibuje un cuadrado, pero tiene UN error. Encontralo y explicá cómo arreglarlo.',
+    codigo: 'al presionar bandera verde\nrepetir (4)\n  mover (100) pasos\n  girar (45) grados\nfin',
+    notas: 'Para el docente: el giro debe ser de (90) grados, no (45).'
+  },
+  {
+    id: 'completar', nombre: '✏️ Completar', tipo: 'scratch',
+    titulo: 'Completá el programa',
+    consigna: 'Este programa cuenta de 1 a 10, pero le faltan valores. Copialo en Scratch y completá los espacios para que funcione.',
+    codigo: 'al presionar bandera verde\ndar a [contador v] el valor (1)\nrepetir (10)\n  decir (contador) por (1) segundos\n  cambiar [contador v] por (1)\nfin',
+    notas: ''
+  },
+  {
+    id: 'desafio', nombre: '🚀 Desafío', tipo: 'scratch',
+    titulo: 'Desafío: tu turno',
+    consigna: 'Creá un programa donde el personaje salude al hacer clic sobre él. Este es un ejemplo del resultado esperado:',
+    codigo: 'al hacer clic en este objeto\ndecir [¡Hola!] por (2) segundos\ntocar sonido [Miau v]',
+    notas: 'Cuando lo logres, probá que salude con tu nombre.'
+  },
+  {
+    id: 'mb-leer', nombre: '📖 Leer micro:bit', tipo: 'microbit',
+    titulo: '¿Qué muestra el micro:bit?',
+    consigna: 'Leé el programa y explicá qué se ve en la pantalla del micro:bit y cuándo.',
+    codigo: 'input.onButtonPressed(Button.A, function () {\n    basic.showString("Hola")\n})\nbasic.forever(function () {\n    basic.showIcon(IconNames.Heart)\n    basic.pause(500)\n    basic.clearScreen()\n    basic.pause(500)\n})',
+    notas: ''
+  },
+  {
+    id: 'mb-desafio', nombre: '🚀 Desafío micro:bit', tipo: 'microbit',
+    titulo: 'Desafío: contador de saltos',
+    consigna: 'Programá el micro:bit para que cuente cuántas veces lo sacudís y muestre el número al apretar el botón B. Punto de partida:',
+    codigo: 'let saltos = 0\ninput.onGesture(Gesture.Shake, function () {\n    saltos += 1\n})\ninput.onButtonPressed(Button.B, function () {\n    basic.showNumber(saltos)\n})',
+    notas: ''
+  }
+];
+
 let state = {
   titulo: '',
   subtitulo: '',
@@ -52,7 +99,8 @@ function nuevaFicha(codigo, tipo) {
     imagen: null,            // { data: dataURL, nombre }
     imgPos: 'derecha',       // derecha | izquierda | arriba | abajo
     imgAncho: 40,            // % del ancho de la ficha
-    epigrafe: ''
+    epigrafe: '',
+    plegada: false           // tarjeta plegada en el editor (no afecta la exportación)
   };
 }
 
@@ -259,8 +307,10 @@ function construirTarjeta(ficha, i) {
   const top = document.createElement('div');
   top.className = 'ficha-card__top';
   const etiquetaTipo = ficha.tipo === 'microbit' ? 'MICRO:BIT' : 'SCRATCH';
-  top.innerHTML = `<span class="ficha-card__num">FICHA ${i + 1} / ${state.fichas.length}</span><span class="ficha-card__tipo ficha-card__tipo--${ficha.tipo}">${etiquetaTipo}</span><span class="ficha-card__top-sep"></span>`;
+  const tituloResumen = ficha.titulo.trim() ? `<span class="ficha-card__resumen">${escHtml(ficha.titulo)}</span>` : '';
+  top.innerHTML = `<span class="ficha-card__num">FICHA ${i + 1} / ${state.fichas.length}</span><span class="ficha-card__tipo ficha-card__tipo--${ficha.tipo}">${etiquetaTipo}</span>${tituloResumen}<span class="ficha-card__top-sep"></span>`;
   const acciones = [
+    [ficha.plegada ? '▸ Desplegar' : '▾ Plegar', () => { ficha.plegada = !ficha.plegada; renderLista(); guardarLuego(); }, false],
     ['↑ Subir', () => mover(i, -1), i === 0],
     ['↓ Bajar', () => mover(i, 1), i === state.fichas.length - 1],
     ['⧉ Duplicar', () => duplicar(i), false],
@@ -277,6 +327,8 @@ function construirTarjeta(ficha, i) {
     top.appendChild(b);
   });
   card.appendChild(top);
+
+  if (ficha.plegada) return card; // tarjeta plegada: solo la barra superior
 
   const grid = document.createElement('div');
   grid.className = 'ficha-card__grid';
@@ -355,12 +407,18 @@ function construirTarjeta(ficha, i) {
   return card;
 }
 
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // re-dibuja SOLO la vista previa de una tarjeta (con debounce) y guarda
 const debounces = {};
 function refrescar(card, ficha, i) {
   guardarLuego();
   clearTimeout(debounces[ficha.id]);
   debounces[ficha.id] = setTimeout(() => {
+    const resumen = card.querySelector('.ficha-card__resumen');
+    if (resumen) resumen.textContent = ficha.titulo;
     const prev = card.querySelector('.ficha-card__preview');
     if (!prev) return;
     const viejo = prev.querySelector('.ficha-view');
@@ -945,17 +1003,127 @@ function init() {
     });
   });
 
+  function scrollUltimaFicha() {
+    const cards = lista.querySelectorAll('.ficha-card');
+    cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function agregarFicha(tipo) {
     const primeraDeTipo = !state.fichas.some(f => f.tipo === tipo);
     const ejemplo = tipo === 'microbit' ? CODIGO_EJEMPLO_MICROBIT : CODIGO_EJEMPLO;
     state.fichas.push(nuevaFicha(primeraDeTipo ? ejemplo : '', tipo));
     renderLista();
     guardarLuego();
-    const cards = lista.querySelectorAll('.ficha-card');
-    cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollUltimaFicha();
   }
   document.getElementById('btnAgregarFicha').addEventListener('click', () => agregarFicha('scratch'));
   document.getElementById('btnAgregarFichaMicrobit').addEventListener('click', () => agregarFicha('microbit'));
+  document.getElementById('btnAgregarFichaAbajo')?.addEventListener('click', () => agregarFicha('scratch'));
+
+  // ---- pestañas de modo (visual / texto / ia) ----
+  document.querySelectorAll('.tab-modo').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-modo').forEach(t => t.classList.toggle('active', t === tab));
+      const modo = tab.dataset.modo;
+      document.getElementById('panel-fichas-visual').style.display = modo === 'visual' ? '' : 'none';
+      document.getElementById('panel-fichas-texto').style.display = modo === 'texto' ? '' : 'none';
+      document.getElementById('panel-fichas-ia').style.display = modo === 'ia' ? '' : 'none';
+    });
+  });
+  function irAlEditorVisual() {
+    document.querySelector('.tab-modo[data-modo="visual"]')?.click();
+  }
+
+  // ---- plantillas ----
+  const barra = document.getElementById('barraPlantillas');
+  PLANTILLAS.forEach(p => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tag';
+    b.textContent = p.nombre;
+    b.title = p.consigna;
+    b.addEventListener('click', () => {
+      const f = Object.assign(nuevaFicha('', p.tipo), {
+        titulo: p.titulo, consigna: p.consigna, codigo: p.codigo, notas: p.notas
+      });
+      if (p.tipo === 'microbit') f.vista = 'ambos';
+      state.fichas.push(f);
+      renderLista();
+      guardarLuego();
+      scrollUltimaFicha();
+      toast('Plantilla agregada: editala a tu gusto.');
+    });
+    barra.appendChild(b);
+  });
+
+  // ---- importar fichas desde texto ----
+  function mostrarAvisos(contId, avisos) {
+    const cont = document.getElementById(contId);
+    cont.innerHTML = '';
+    if (!avisos.length) return;
+    const div = document.createElement('div');
+    div.className = 'alerta alerta--info';
+    div.innerHTML = '<strong>Avisos:</strong><br>' + avisos.map(escHtml).join('<br>');
+    cont.appendChild(div);
+  }
+
+  function cargarFichasParseadas(res, reemplazar, avisosId) {
+    mostrarAvisos(avisosId, res.avisos);
+    if (!res.fichas.length) {
+      toast('No se encontraron fichas en el texto.');
+      return;
+    }
+    if (res.titulo && (reemplazar || !state.titulo.trim())) state.titulo = res.titulo;
+    if (res.subtitulo && (reemplazar || !state.subtitulo.trim())) state.subtitulo = res.subtitulo;
+    const nuevas = res.fichas.map(f => Object.assign(nuevaFicha(), f));
+    state.fichas = reemplazar ? nuevas : state.fichas.concat(nuevas);
+    sincronizarCampos();
+    renderLista();
+    guardarLuego();
+    toast(`Se ${reemplazar ? 'cargaron' : 'agregaron'} ${nuevas.length} ficha(s). Revisalas en el Editor Visual.`);
+    irAlEditorVisual();
+  }
+
+  document.getElementById('btnEjemploFichasTexto').addEventListener('click', () => {
+    document.getElementById('textareaFichasTexto').value = EJEMPLO_FICHAS_TEXTO;
+  });
+  document.getElementById('btnProcesarFichasTexto').addEventListener('click', () => {
+    const texto = document.getElementById('textareaFichasTexto').value;
+    if (!texto.trim()) { toast('Pegá primero el texto con las fichas.'); return; }
+    cargarFichasParseadas(parsearFichasTexto(texto), document.getElementById('chkReemplazarFichas').checked, 'avisosFichasTexto');
+  });
+
+  // ---- asistente IA ----
+  document.getElementById('formPromptFichas').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const prompt = generarPromptFichas({
+      tema: document.getElementById('iaFichasTema').value.trim(),
+      nivel: state.subtitulo,
+      cantidad: parseInt(document.getElementById('iaFichasCantidad').value, 10) || 4,
+      plataforma: document.getElementById('iaFichasPlataforma').value,
+      enfoque: document.getElementById('iaFichasEnfoque').value,
+      notas: document.getElementById('iaFichasNotas').value.trim()
+    });
+    const caja = document.getElementById('cajaPrompt');
+    caja.textContent = prompt;
+    caja.classList.add('caja-prompt--visible');
+    document.getElementById('accionesPromptFichas').style.display = 'flex';
+  });
+  document.getElementById('btnCopiarPromptFichas').addEventListener('click', () => {
+    const t = document.getElementById('cajaPrompt').textContent;
+    if (t.trim()) copiarTexto(t, 'Prompt copiado. Pegalo en tu IA y traé la respuesta.');
+  });
+  document.getElementById('btnProcesarIAFichas').addEventListener('click', () => {
+    const texto = document.getElementById('textareaRespuestaIAFichas').value;
+    if (!texto.trim()) { toast('Pegá primero la respuesta de la IA.'); return; }
+    cargarFichasParseadas(parsearFichasTexto(texto), document.getElementById('chkReemplazarFichasIA').checked, 'avisosFichasIA');
+  });
+
+  // ---- copiar fichas como texto (para editar en lote y reimportar) ----
+  document.getElementById('btnFichasCopiarTexto').addEventListener('click', () => {
+    if (!hayFichasConContenido()) return;
+    copiarTexto(fichasComoTexto(state), 'Fichas copiadas como texto. Editalas donde quieras y volvé a pegarlas en «Importar Texto».');
+  });
 
   document.getElementById('btnImportarFichasJson').addEventListener('click', () => document.getElementById('inputFichasJson').click());
   document.getElementById('inputFichasJson').addEventListener('change', e => {

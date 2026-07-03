@@ -110,6 +110,15 @@
 }
 .ficha-card__tipo--scratch { color: #855CD6; }
 .ficha-card__tipo--microbit { color: #00750c; }
+.ficha-card__resumen {
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.75;
+  max-width: 30ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .ficha-card__accion {
   background: none;
   border: var(--border-thin);

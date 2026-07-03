@@ -7,7 +7,7 @@
 
 const ORIGEN = 'https://makecode.microbit.org';
 const URL_RENDER = ORIGEN + '/--docs?render=1';
-const TIMEOUT_MS = 45000;
+const TIMEOUT_MS = 30000;
 
 let iframe = null;
 let listo = false;
