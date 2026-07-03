@@ -254,7 +254,12 @@ Escribí el código en sintaxis "scratchblocks" en español, un bloque por líne
 - Números entre paréntesis: mover (10) pasos. Textos entre corchetes: decir [¡Hola!]. Desplegables con [v]: al presionar tecla [espacio v]
 - Condiciones entre ángulos: si <¿tocando [borde v]?> entonces
 - Los bloques "si", "repetir", "por siempre" cierran con una línea "fin"
-- Bloques típicos: al presionar bandera verde / mover (10) pasos / girar a la derecha (15) grados / decir [Hola] durante (2) segundos / esperar (1) segundos / repetir (10) / por siempre / sumar a [puntaje v] (1)
+- Usá EXACTAMENTE estas redacciones (un texto distinto se dibuja como bloque rojo inválido):
+  al presionar bandera verde / al presionar tecla [espacio v] / al hacer clic en este objeto
+  mover (10) pasos / girar a la derecha (15) grados / apuntar en dirección (90) / ir a x: (0) y: (0) / si toca un borde, rebotar
+  decir [Hola] durante (2) segundos / pensar [Hmm...] durante (2) segundos / cambiar disfraz a [disfraz2 v] / esconder / mostrar
+  iniciar sonido [Miau v] / esperar (1) segundos / repetir (10) / por siempre / si <¿tocando [borde v]?> entonces
+  dar a [puntaje v] el valor (0) / sumar a [puntaje v] (1) / número aleatorio entre (1) y (10) / preguntar [...] y esperar / respuesta
 
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)
 Escribí JavaScript de MakeCode que compile en makecode.microbit.org:
