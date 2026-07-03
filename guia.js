@@ -142,6 +142,65 @@ Si V=12 e I=2, ¿cuánto vale R?
       `
     },
     {
+      id: "fichas",
+      titulo: "Fichas Scratch · micro:bit",
+      html: `
+        <p class="guia-p">La página <strong>Fichas Scratch · micro:bit</strong> arma fichas de trabajo
+        imprimibles: escribís el código como texto y se dibuja como <strong>bloques de colores</strong>.
+        Cada ficha lleva consigna, código, imagen opcional y notas al pie, y el documento sale en
+        <strong>PDF o Word</strong>.</p>
+
+        <h4 class="guia-h">4 formas de crear fichas</h4>
+        <ul class="guia-lista">
+          <li><strong>A mano</strong> — "+ Ficha Scratch" o "+ Ficha micro:bit" y completás los campos.</li>
+          <li><strong>Con plantilla</strong> — un clic en "Leer y predecir", "Encontrar el error", "Completar" o "Desafío" y queda una ficha entera para retocar.</li>
+          <li><strong>En lote desde texto</strong> — pegás un solo texto con todas las fichas (pestaña <em>Importar Texto</em>). Ideal para crear 5 o 10 fichas de una vez.</li>
+          <li><strong>Con IA</strong> — completás tema, cantidad y tipo de actividad; la app genera el prompt, y la respuesta de la IA se convierte en fichas editables.</li>
+        </ul>
+
+        <h4 class="guia-h">Cómo se escribe el código Scratch</h4>
+        <pre class="guia-pre">al presionar bandera verde
+por siempre
+  mover (10) pasos
+  si &lt;¿tocando un borde?&gt; entonces
+    girar (180) grados
+  fin
+fin</pre>
+        <ul class="guia-lista">
+          <li><code>(10)</code> — números entre paréntesis; <code>[hola]</code> — textos entre corchetes; <code>[v]</code> marca un desplegable.</li>
+          <li><code>&lt;condición&gt;</code> — los bloques hexagonales van entre <code>&lt; &gt;</code>.</li>
+          <li><code>fin</code> — cierra "si", "repetir" y "por siempre". Una línea en blanco separa dos pilas.</li>
+          <li>Se puede escribir en español o inglés, y elegir la <strong>versión de Scratch</strong> (3, 2 o alto contraste): cada una se dibuja con su paleta oficial.</li>
+        </ul>
+
+        <h4 class="guia-h">Fichas de micro:bit</h4>
+        <p class="guia-p">Escribí el <strong>JavaScript de MakeCode</strong> (el de la pestaña JavaScript de
+        makecode.microbit.org) y los bloques se dibujan solos con el servicio oficial de MakeCode
+        (necesita internet). Elegís si la ficha muestra <strong>bloques, código o ambos</strong>.
+        En Python se muestra el código tal cual.</p>
+
+        <h4 class="guia-h">Formato de texto para el lote</h4>
+        <pre class="guia-pre">titulo: Práctico — Bucles
+nivel: 6° año
+
+=== FICHA: El gato rebota ===
+consigna: Explicá qué hace el gato.
+codigo:
+al presionar bandera verde
+mover (10) pasos
+notas: Pista para el alumno.
+
+=== FICHA: Corazón ===
+tipo: microbit
+muestra: ambos
+codigo:
+basic.showIcon(IconNames.Heart)</pre>
+        <div class="guia-aviso">Consejo: el botón <strong>"Copiar como texto"</strong> (en Descargar) baja
+        tus fichas actuales en este mismo formato — las editás en cualquier editor y las volvés a pegar.
+        Con eso podés mantener bancos de fichas reutilizables.</div>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `
