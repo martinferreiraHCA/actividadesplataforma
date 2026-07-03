@@ -9,8 +9,8 @@ const sb = window.scratchblocks;
 const CODIGO_EJEMPLO = `al presionar bandera verde
 por siempre
   mover (10) pasos
-  si <¿tocando un borde?> entonces
-    girar (180) grados
+  si <¿tocando [borde v]?> entonces
+    girar a la derecha (180) grados
   fin
 fin`;
 
@@ -36,28 +36,28 @@ const PLANTILLAS = [
     id: 'leer', nombre: '📖 Leer y predecir', tipo: 'scratch',
     titulo: '¿Qué hace este programa?',
     consigna: 'Leé el programa con atención y escribí, paso a paso, qué hace el personaje.',
-    codigo: 'al presionar bandera verde\ndecir [¡Allá voy!] por (2) segundos\nrepetir (3)\n  mover (50) pasos\n  esperar (1) segundos\nfin',
+    codigo: 'al presionar bandera verde\ndecir [¡Allá voy!] durante (2) segundos\nrepetir (3)\n  mover (50) pasos\n  esperar (1) segundos\nfin',
     notas: ''
   },
   {
     id: 'error', nombre: '🐞 Encontrar el error', tipo: 'scratch',
     titulo: '¿Dónde está el error?',
     consigna: 'Este programa debería hacer que el personaje dibuje un cuadrado, pero tiene UN error. Encontralo y explicá cómo arreglarlo.',
-    codigo: 'al presionar bandera verde\nrepetir (4)\n  mover (100) pasos\n  girar (45) grados\nfin',
+    codigo: 'al presionar bandera verde\nrepetir (4)\n  mover (100) pasos\n  girar a la derecha (45) grados\nfin',
     notas: 'Para el docente: el giro debe ser de (90) grados, no (45).'
   },
   {
     id: 'completar', nombre: '✏️ Completar', tipo: 'scratch',
     titulo: 'Completá el programa',
     consigna: 'Este programa cuenta de 1 a 10, pero le faltan valores. Copialo en Scratch y completá los espacios para que funcione.',
-    codigo: 'al presionar bandera verde\ndar a [contador v] el valor (1)\nrepetir (10)\n  decir (contador) por (1) segundos\n  cambiar [contador v] por (1)\nfin',
+    codigo: 'al presionar bandera verde\ndar a [contador v] el valor (1)\nrepetir (10)\n  decir (contador) durante (1) segundos\n  sumar a [contador v] (1)\nfin',
     notas: ''
   },
   {
     id: 'desafio', nombre: '🚀 Desafío', tipo: 'scratch',
     titulo: 'Desafío: tu turno',
     consigna: 'Creá un programa donde el personaje salude al hacer clic sobre él. Este es un ejemplo del resultado esperado:',
-    codigo: 'al hacer clic en este objeto\ndecir [¡Hola!] por (2) segundos\ntocar sonido [Miau v]',
+    codigo: 'al hacer clic en este objeto\ndecir [¡Hola!] durante (2) segundos\niniciar sonido [Miau v]',
     notas: 'Cuando lo logres, probá que salude con tu nombre.'
   },
   {
@@ -401,6 +401,7 @@ function construirTarjeta(ficha, i) {
   lbl.textContent = '// Así queda la ficha';
   prev.appendChild(lbl);
   prev.appendChild(construirFichaView(ficha, i + 1, state.opciones));
+  if (ficha.tipo === 'scratch') avisarBloquesRojos(prev);
   grid.appendChild(prev);
 
   card.appendChild(grid);
@@ -409,6 +410,20 @@ function construirTarjeta(ficha, i) {
 
 function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Si algún bloque quedó rojo (scratchblocks no reconoció el texto), avisamos
+// en el editor para que el docente corrija la redacción. Solo en la vista
+// previa: no aparece en el PDF ni en el Word.
+function avisarBloquesRojos(prev) {
+  const viejo = prev.querySelector('.ficha-card__aviso-rojo');
+  if (viejo) viejo.remove();
+  const hayRojos = prev.querySelector('.ficha-view svg .sb3-obsolete, .ficha-view svg .sb2-obsolete');
+  if (!hayRojos) return;
+  const nota = document.createElement('div');
+  nota.className = 'ficha-card__aviso-rojo';
+  nota.innerHTML = '⚠ Hay bloques <strong>rojos</strong>: ese texto no coincide con ningún bloque real de Scratch. Revisá la redacción (ej: <code>girar a la derecha (90) grados</code>, <code>decir [Hola] durante (2) segundos</code>, <code>¿tocando [borde v]?</code>).';
+  prev.appendChild(nota);
 }
 
 // re-dibuja SOLO la vista previa de una tarjeta (con debounce) y guarda
@@ -424,6 +439,7 @@ function refrescar(card, ficha, i) {
     const viejo = prev.querySelector('.ficha-view');
     const nuevo = construirFichaView(ficha, i + 1, state.opciones);
     if (viejo) viejo.replaceWith(nuevo); else prev.appendChild(nuevo);
+    if (ficha.tipo === 'scratch') avisarBloquesRojos(prev);
   }, 350);
 }
 
@@ -879,9 +895,9 @@ Respondé SOLO con el código.`;
 ${tema}
 
 REGLAS DE LA SINTAXIS:
-- Un bloque por línea, escrito en español tal como se lee en Scratch (ej: "al presionar bandera verde", "mover (10) pasos", "decir [¡Hola!] por (2) segundos").
+- Un bloque por línea, escrito en español tal como se lee en Scratch (ej: "al presionar bandera verde", "mover (10) pasos", "decir [¡Hola!] durante (2) segundos").
 - Números y valores entre paréntesis: (10). Textos entre corchetes: [hola]. Desplegables con [v] al final: "al presionar tecla [espacio v]".
-- Condiciones entre ángulos: <¿tocando un borde?>, <(x) > (50)>.
+- Condiciones entre ángulos: <¿tocando [borde v]?>, <(x) > (50)>.
 - Los bloques "si ... entonces", "repetir", "por siempre" se cierran con una línea "fin".
 - Separá pilas de bloques distintas con una línea en blanco.
 - No uses numeración, viñetas ni bloques de código markdown.

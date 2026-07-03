@@ -162,8 +162,8 @@ Si V=12 e I=2, ¿cuánto vale R?
         <pre class="guia-pre">al presionar bandera verde
 por siempre
   mover (10) pasos
-  si &lt;¿tocando un borde?&gt; entonces
-    girar (180) grados
+  si &lt;¿tocando [borde v]?&gt; entonces
+    girar a la derecha (180) grados
   fin
 fin</pre>
         <ul class="guia-lista">
