@@ -181,8 +181,8 @@ codigo:
 al presionar bandera verde
 por siempre
   mover (10) pasos
-  si <¿tocando un borde?> entonces
-    girar (180) grados
+  si <¿tocando [borde v]?> entonces
+    girar a la derecha (180) grados
   fin
 fin
 notas: Pista: fijate qué pasa cuando llega al borde.
@@ -252,9 +252,9 @@ codigo:
 ## REGLAS DEL CÓDIGO SCRATCH (tipo: scratch)
 Escribí el código en sintaxis "scratchblocks" en español, un bloque por línea, tal como se lee en Scratch:
 - Números entre paréntesis: mover (10) pasos. Textos entre corchetes: decir [¡Hola!]. Desplegables con [v]: al presionar tecla [espacio v]
-- Condiciones entre ángulos: si <¿tocando un borde?> entonces
+- Condiciones entre ángulos: si <¿tocando [borde v]?> entonces
 - Los bloques "si", "repetir", "por siempre" cierran con una línea "fin"
-- Bloques típicos: al presionar bandera verde / mover (10) pasos / girar (15) grados / decir [Hola] por (2) segundos / esperar (1) segundos / repetir (10) / por siempre / cambiar [puntaje v] por (1)
+- Bloques típicos: al presionar bandera verde / mover (10) pasos / girar a la derecha (15) grados / decir [Hola] durante (2) segundos / esperar (1) segundos / repetir (10) / por siempre / sumar a [puntaje v] (1)
 
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)
 Escribí JavaScript de MakeCode que compile en makecode.microbit.org:
