@@ -22,6 +22,7 @@
     <nav class="header__nav" id="headerNav">
       <a href="index.html" class="active">Inicio</a>
       <a href="editor.html?tipo=cuestionario">Editor</a>
+      <a href="scratch.html">Fichas Scratch</a>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
     </nav>
     <div class="tema-switcher" id="temaSwitcher">
@@ -169,6 +170,7 @@
       <div class="footer__links">
         <a href="index.html">Inicio</a>
         <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
@@ -200,6 +202,19 @@
     nuevasCards.push(card);
     idx++;
   });
+
+  // Ficha especial: editor de fichas Scratch (página propia, no usa el editor de preguntas)
+  const cardScratch = document.createElement('a');
+  cardScratch.href = 'scratch.html';
+  cardScratch.className = 'actividad-card reveal';
+  cardScratch.setAttribute('role', 'listitem');
+  cardScratch.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Fichas Scratch</h3>
+    <p class="actividad-card__desc">Fichas didácticas con bloques de Scratch dibujados desde texto plano. Con imagen opcional, exportables a PDF o Word.</p>
+  `;
+  grid.appendChild(cardScratch);
+  nuevasCards.push(cardScratch);
 
   // Las tarjetas se crean por JS DESPUÉS de que el observer del template ya
   // capturó su lista estática de .reveal, así que las animamos nosotros mismos.

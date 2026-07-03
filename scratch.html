@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fichas Scratch — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Creá fichas didácticas con bloques de Scratch a partir de texto plano. Exportalas en PDF o Word.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <a href="scratch.html" class="active">Fichas Scratch</a>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== TÍTULO Y DATOS DEL DOCUMENTO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Fichas didácticas</div>
+      <h2 class="section__title">Fichas con bloques<br>de Scratch<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Escribí el código de Scratch como texto plano y se dibuja como bloques de colores, igual que en el editor de Scratch.
+      Armá fichas con consigna, código e imagen opcional, y descargalas en PDF o Word para repartir en clase.
+    </p>
+    <div class="campo-grid" style="max-width:700px">
+      <div class="campo">
+        <label class="campo__etiqueta" for="fdTitulo">Título del documento</label>
+        <input class="campo__input" type="text" id="fdTitulo" placeholder="Ej: Práctico 3 — Movimiento y bucles">
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="fdSubtitulo">Nivel / Grupo (opcional)</label>
+        <input class="campo__input" type="text" id="fdSubtitulo" placeholder="Ej: 6° año, 1° CB Informática...">
+      </div>
+    </div>
+    <details class="scratch-como">
+      <summary>¿Cómo se escribe el código? Ver ejemplos</summary>
+      <div class="scratch-como__cuerpo">
+        <p>Escribí cada bloque en una línea, en español o inglés, tal como se lee en Scratch. Ejemplos:</p>
+        <pre class="scratch-como__pre">al presionar bandera verde
+por siempre
+  mover (10) pasos
+  si &lt;¿tocando un borde?&gt; entonces
+    girar (180) grados
+  fin
+fin</pre>
+        <ul class="scratch-como__lista">
+          <li><code>(10)</code> — números y valores redondeados van entre paréntesis</li>
+          <li><code>&lt;condición&gt;</code> — los bloques de condición (hexágono) van entre <code>&lt; &gt;</code></li>
+          <li><code>[hola]</code> — los textos van entre corchetes; <code>[v]</code> al final marca un desplegable: <code>fijar tamaño a (100) % [v]</code></li>
+          <li><code>fin</code> — cierra los bloques «si», «por siempre», «repetir»</li>
+          <li>Podés separar dos pilas de bloques con una línea en blanco</li>
+        </ul>
+        <p>También podés pedirle el código a una IA con el botón <strong>«Prompt para IA»</strong> de cada ficha.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+
+<!-- ====== OPCIONES GLOBALES ====== -->
+<section class="editor-section editor-section--surface" style="padding-top:1.5rem;padding-bottom:1.5rem">
+  <div class="container">
+    <div class="scratch-opciones">
+      <span class="scratch-opciones__label">Opciones del documento:</span>
+      <label class="scratch-check"><input type="checkbox" id="fdNumerar" checked> Numerar fichas</label>
+      <label class="scratch-check"><input type="checkbox" id="fdBordes" checked> Borde alrededor de cada ficha</label>
+      <label class="scratch-check"><input type="checkbox" id="fdSalto"> Una ficha por página</label>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== FICHAS ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div id="listaFichas"></div>
+    <div class="scratch-agregar">
+      <button class="btn btn--primary" id="btnAgregarFicha">+ Agregar ficha</button>
+      <button class="btn btn--ghost" id="btnImportarFichasJson">Importar borrador .json</button>
+      <input type="file" id="inputFichasJson" accept=".json" style="display:none">
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== DESCARGAS ====== -->
+<section class="editor-section editor-section--surface" id="seccionExportFichas">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Descargar</div>
+    <p class="exportar-intro">Descargá tus fichas listas para repartir. El PDF sale de la vista de impresión del navegador; el Word lleva los bloques como imágenes y se puede seguir editando.</p>
+
+    <div class="descargas__grid">
+      <button class="btn--descarga" id="btnFichasPDF">
+        <div class="btn__etiqueta">PDF — Imprimir</div>
+        <div class="btn__subtexto">Abre la impresión del navegador: elegí «Guardar como PDF»</div>
+      </button>
+      <button class="btn--descarga" id="btnFichasDOCX">
+        <div class="btn__etiqueta">Word .docx</div>
+        <div class="btn__subtexto">Documento editable con los bloques como imágenes</div>
+      </button>
+      <button class="btn--descarga" id="btnFichasPreguntas">
+        <div class="btn__etiqueta">Preguntas para CREA</div>
+        <div class="btn__subtexto">Copia un prompt de IA para armar preguntas sobre tus fichas</div>
+      </button>
+    </div>
+
+    <div style="margin-top:1.2rem;display:flex;gap:1rem;flex-wrap:wrap">
+      <button class="btn btn--ghost" id="btnFichasJSON">Guardar borrador .json (para reeditar después)</button>
+    </div>
+    <p class="scratch-export-nota" id="notaExportFichas" style="display:none"></p>
+  </div>
+</section>
+
+
+<!-- ====== ÁREA DE IMPRESIÓN (solo visible al imprimir) ====== -->
+<div id="areaImpresion" class="fichas-impresion" aria-hidden="true"></div>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch</a>
+        <a href="#" data-abrir-guia>Guía</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Bloques dibujados con <a href="https://scratchblocks.github.io/" target="_blank" rel="noopener">scratchblocks</a> (MIT).</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script src="scratchblocks.min.js"></script>
+<script src="scratchblocks-translations.js"></script>
+<script src="docx.iife.js"></script>
+<script type="module" src="scratch-fichas.js"></script>
+
+</body>
+</html>
