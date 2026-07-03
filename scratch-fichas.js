@@ -1,5 +1,6 @@
-// Editor de fichas didácticas con bloques de Scratch (scratchblocks)
+// Editor de fichas didácticas con bloques de Scratch (scratchblocks) y micro:bit (MakeCode)
 import { exportarFichasDOCX } from './export-fichas-docx.js';
+import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 
 const STORAGE_KEY = 'gen_fichas_scratch';
 const sb = window.scratchblocks;
@@ -12,6 +13,22 @@ por siempre
   fin
 fin`;
 
+const CODIGO_EJEMPLO_MICROBIT = `input.onButtonPressed(Button.A, function () {
+    basic.showString("Hola")
+})
+basic.forever(function () {
+    basic.showIcon(IconNames.Heart)
+    basic.pause(500)
+    basic.clearScreen()
+})`;
+
+// Estilos de bloques: scratchblocks trae la paleta oficial exacta de cada versión
+const ESTILOS_SCRATCH = [
+  ['scratch3', 'Scratch 3 (colores actuales)'],
+  ['scratch2', 'Scratch 2 (colores clásicos)'],
+  ['scratch3-high-contrast', 'Scratch 3 — alto contraste']
+];
+
 let state = {
   titulo: '',
   subtitulo: '',
@@ -20,17 +37,21 @@ let state = {
 };
 
 let uid = 1;
-function nuevaFicha(codigo) {
+function nuevaFicha(codigo, tipo) {
   return {
     id: 'f' + (uid++) + '_' + state.fichas.length,
+    tipo: tipo || 'scratch', // scratch | microbit
     titulo: '',
     consigna: '',
     codigo: codigo || '',
     escala: 1,
+    estilo: 'scratch3',      // versión de Scratch: scratch3 | scratch2 | scratch3-high-contrast
+    vista: 'bloques',        // micro:bit: bloques | codigo | ambos
+    lenguaje: 'javascript',  // micro:bit: javascript | python
     notas: '',
-    imagen: null,          // { data: dataURL, nombre }
-    imgPos: 'derecha',     // derecha | izquierda | arriba | abajo
-    imgAncho: 40,          // % del ancho de la ficha
+    imagen: null,            // { data: dataURL, nombre }
+    imgPos: 'derecha',       // derecha | izquierda | arriba | abajo
+    imgAncho: 40,            // % del ancho de la ficha
     epigrafe: ''
   };
 }
@@ -38,11 +59,11 @@ function nuevaFicha(codigo) {
 // ============================================================
 // Render de bloques
 // ============================================================
-function renderBloques(codigo, escala) {
+function renderBloques(codigo, escala, estilo) {
   if (!sb || !codigo.trim()) return null;
   try {
     const doc = sb.parse(codigo, { languages: ['en', 'es'] });
-    const view = sb.newView(doc, { style: 'scratch3', scale: escala || 1 });
+    const view = sb.newView(doc, { style: estilo || 'scratch3', scale: escala || 1 });
     const svg = view.render();
     return { svg, view };
   } catch (e) {
@@ -51,7 +72,7 @@ function renderBloques(codigo, escala) {
 }
 
 function svgStringDeFicha(ficha) {
-  const r = renderBloques(ficha.codigo, ficha.escala);
+  const r = renderBloques(ficha.codigo, ficha.escala, ficha.estilo);
   if (!r || r.error || !r.view) return null;
   try {
     return { svg: r.view.exportSVGString(), width: r.svg.width.baseVal.value, height: r.svg.height.baseVal.value };
@@ -95,19 +116,23 @@ export function construirFichaView(ficha, numero, opciones) {
 
   const zonaCodigo = document.createElement('div');
   zonaCodigo.className = 'ficha-view__codigo';
-  const r = renderBloques(ficha.codigo, ficha.escala);
-  if (r && r.svg) {
-    zonaCodigo.appendChild(r.svg);
-  } else if (r && r.error) {
-    const err = document.createElement('span');
-    err.className = 'ficha-view__vacio';
-    err.textContent = 'No se pudo dibujar el código: ' + r.error;
-    zonaCodigo.appendChild(err);
-  } else {
+  if (ficha.tipo === 'microbit') {
+    llenarZonaMicrobit(zonaCodigo, ficha);
+  } else if (!ficha.codigo.trim()) {
     const vacio = document.createElement('span');
     vacio.className = 'ficha-view__vacio';
     vacio.textContent = '(sin código todavía)';
     zonaCodigo.appendChild(vacio);
+  } else {
+    const r = renderBloques(ficha.codigo, ficha.escala, ficha.estilo);
+    if (r && r.svg) {
+      zonaCodigo.appendChild(r.svg);
+    } else {
+      const err = document.createElement('span');
+      err.className = 'ficha-view__vacio';
+      err.textContent = 'No se pudo dibujar el código' + (r && r.error ? ': ' + r.error : '');
+      zonaCodigo.appendChild(err);
+    }
   }
   cuerpo.appendChild(zonaCodigo);
 
@@ -138,6 +163,76 @@ export function construirFichaView(ficha, numero, opciones) {
   return view;
 }
 
+// ¿la ficha micro:bit muestra bloques? (en Python los bloques no se pueden
+// dibujar automáticamente: se muestra el código)
+function microbitMuestraBloques(ficha) {
+  return ficha.lenguaje !== 'python' && ficha.vista !== 'codigo';
+}
+function microbitMuestraCodigo(ficha) {
+  return ficha.lenguaje === 'python' || ficha.vista !== 'bloques';
+}
+
+function preCodigo(ficha) {
+  const pre = document.createElement('pre');
+  pre.className = 'ficha-view__pre';
+  pre.textContent = ficha.codigo;
+  return pre;
+}
+
+function llenarZonaMicrobit(zona, ficha) {
+  if (!ficha.codigo.trim()) {
+    const vacio = document.createElement('span');
+    vacio.className = 'ficha-view__vacio';
+    vacio.textContent = '(sin código todavía)';
+    zona.appendChild(vacio);
+    return;
+  }
+  const conBloques = microbitMuestraBloques(ficha);
+  const conCodigo = microbitMuestraCodigo(ficha);
+
+  if (conBloques) {
+    const cont = document.createElement('div');
+    cont.className = 'ficha-view__mb';
+    zona.appendChild(cont);
+
+    const pintarImg = (info) => {
+      cont.innerHTML = '';
+      const img = document.createElement('img');
+      img.className = 'ficha-view__mbimg';
+      img.src = info.uri;
+      img.alt = 'Bloques de MakeCode';
+      if (info.width) img.style.width = Math.round(info.width * (ficha.escala || 1)) + 'px';
+      cont.appendChild(img);
+    };
+    const pintarError = (err) => {
+      cont.innerHTML = '';
+      const nota = document.createElement('div');
+      nota.className = 'ficha-view__mb-nota';
+      nota.textContent = 'No se pudieron dibujar los bloques (' + (err && err.message ? err.message : 'sin conexión') + ').' + (conCodigo ? '' : ' Se muestra el código:');
+      cont.appendChild(nota);
+      if (!conCodigo) cont.appendChild(preCodigo(ficha));
+    };
+
+    const cacheado = bloquesMicrobitEnCache(ficha.codigo);
+    if (cacheado && cacheado.estado === 'ok') {
+      pintarImg(cacheado.valor);
+    } else if (cacheado && cacheado.estado === 'error') {
+      pintarError(cacheado.valor instanceof Error ? cacheado.valor : null);
+    } else {
+      cont.innerHTML = '<div class="ficha-view__mb-cargando">Dibujando bloques con MakeCode…</div>';
+      const codigoPedido = ficha.codigo;
+      obtenerBloquesMicrobit(codigoPedido).then(
+        info => { if (ficha.codigo === codigoPedido) pintarImg(info); },
+        err => { if (ficha.codigo === codigoPedido) pintarError(err); }
+      );
+    }
+  }
+
+  if (conCodigo) {
+    zona.appendChild(preCodigo(ficha));
+  }
+}
+
 // ============================================================
 // Tarjetas del editor
 // ============================================================
@@ -163,7 +258,8 @@ function construirTarjeta(ficha, i) {
   // ---- barra superior ----
   const top = document.createElement('div');
   top.className = 'ficha-card__top';
-  top.innerHTML = `<span class="ficha-card__num">FICHA ${i + 1} / ${state.fichas.length}</span><span class="ficha-card__top-sep"></span>`;
+  const etiquetaTipo = ficha.tipo === 'microbit' ? 'MICRO:BIT' : 'SCRATCH';
+  top.innerHTML = `<span class="ficha-card__num">FICHA ${i + 1} / ${state.fichas.length}</span><span class="ficha-card__tipo ficha-card__tipo--${ficha.tipo}">${etiquetaTipo}</span><span class="ficha-card__top-sep"></span>`;
   const acciones = [
     ['↑ Subir', () => mover(i, -1), i === 0],
     ['↓ Bajar', () => mover(i, 1), i === state.fichas.length - 1],
@@ -192,13 +288,40 @@ function construirTarjeta(ficha, i) {
   form.appendChild(campoTexto('Título de la ficha (opcional)', ficha.titulo, 'Ej: El gato rebota en los bordes', v => { ficha.titulo = v; refrescar(card, ficha, i); }));
   form.appendChild(campoArea('Consigna / explicación (opcional)', ficha.consigna, 'Ej: Leé el programa y explicá qué hace el gato...', 2, v => { ficha.consigna = v; refrescar(card, ficha, i); }));
 
-  const campoCod = campoArea('Código Scratch (texto plano)', ficha.codigo, CODIGO_EJEMPLO, 7, v => { ficha.codigo = v; refrescar(card, ficha, i); });
+  const esMicrobit = ficha.tipo === 'microbit';
+  const etiquetaCodigo = esMicrobit
+    ? (ficha.lenguaje === 'python' ? 'Código MakeCode — Python' : 'Código MakeCode — JavaScript')
+    : 'Código Scratch (texto plano)';
+  const campoCod = campoArea(etiquetaCodigo, ficha.codigo, esMicrobit ? CODIGO_EJEMPLO_MICROBIT : CODIGO_EJEMPLO, 7, v => { ficha.codigo = v; refrescar(card, ficha, i); });
   campoCod.querySelector('textarea').classList.add('ficha-card__codigo');
   form.appendChild(campoCod);
 
-  // escala
+  // controles según el tipo de ficha
   const filaEscala = document.createElement('div');
   filaEscala.className = 'ficha-card__fila';
+
+  if (esMicrobit) {
+    // lenguaje del código
+    filaEscala.appendChild(campoSelect('Lenguaje', ficha.lenguaje, [
+      ['javascript', 'JavaScript (bloques automáticos)'],
+      ['python', 'Python (solo código)']
+    ], v => {
+      ficha.lenguaje = v;
+      renderLista(); // cambia la etiqueta del código y las vistas disponibles
+      guardarLuego();
+    }));
+    // qué se muestra en la ficha
+    if (ficha.lenguaje !== 'python') {
+      filaEscala.appendChild(campoSelect('La ficha muestra', ficha.vista, [
+        ['bloques', 'Solo bloques'],
+        ['codigo', 'Solo código'],
+        ['ambos', 'Bloques + código']
+      ], v => { ficha.vista = v; refrescar(card, ficha, i); }));
+    }
+  } else {
+    // versión de Scratch (cada una con su paleta oficial de colores)
+    filaEscala.appendChild(campoSelect('Versión de Scratch', ficha.estilo, ESTILOS_SCRATCH, v => { ficha.estilo = v; refrescar(card, ficha, i); }));
+  }
   filaEscala.appendChild(campoRango('Tamaño de los bloques', ficha.escala, 0.6, 1.6, 0.1, v => `×${v}`, v => { ficha.escala = v; refrescar(card, ficha, i); }));
   form.appendChild(filaEscala);
 
@@ -297,6 +420,25 @@ function campoRango(etiqueta, valor, min, max, paso, fmt, onInput) {
     onInput(v);
   });
   div.append(lbl, inp);
+  return div;
+}
+
+function campoSelect(etiqueta, valor, opciones, onChange) {
+  const div = document.createElement('div');
+  div.className = 'campo';
+  const lbl = document.createElement('span');
+  lbl.className = 'ficha-card__mini-label';
+  lbl.textContent = etiqueta;
+  const sel = document.createElement('select');
+  sel.className = 'campo__input';
+  opciones.forEach(([v, t]) => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = t;
+    if (valor === v) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', () => onChange(sel.value));
+  div.append(lbl, sel);
   return div;
 }
 
@@ -472,6 +614,8 @@ function cargar() {
     if (data && Array.isArray(data.fichas)) {
       state = Object.assign(state, data);
       state.opciones = Object.assign({ numerar: true, bordes: true, salto: false }, data.opciones);
+      // borradores viejos: completar campos que no existían (tipo, estilo, vista...)
+      state.fichas = state.fichas.map(f => Object.assign(nuevaFicha(), f));
     }
   } catch (e) { /* borrador corrupto: arrancamos de cero */ }
 }
@@ -503,9 +647,25 @@ function hayFichasConContenido() {
   return ok;
 }
 
+// espera a que estén dibujados los bloques micro:bit que se van a mostrar
+function esperarBloquesMicrobit() {
+  const pedidos = state.fichas
+    .filter(f => f.tipo === 'microbit' && f.codigo.trim() && microbitMuestraBloques(f))
+    .map(f => obtenerBloquesMicrobit(f.codigo).catch(() => null));
+  return Promise.all(pedidos);
+}
+
 // --- PDF (impresión del navegador) ---
-function exportarPDF() {
+async function exportarPDF() {
   if (!hayFichasConContenido()) return;
+  const nota = document.getElementById('notaExportFichas');
+  if (state.fichas.some(f => f.tipo === 'microbit' && f.codigo.trim() && microbitMuestraBloques(f))) {
+    nota.style.display = 'block';
+    nota.textContent = 'Dibujando los bloques de micro:bit con MakeCode…';
+    await esperarBloquesMicrobit();
+    nota.textContent = '';
+    nota.style.display = 'none';
+  }
   const area = document.getElementById('areaImpresion');
   area.innerHTML = '';
   if (state.titulo.trim()) {
@@ -541,9 +701,18 @@ async function exportarDOCX() {
     for (let i = 0; i < state.fichas.length; i++) {
       const f = state.fichas[i];
       let bloques = null;
-      const svgInfo = svgStringDeFicha(f);
-      if (svgInfo) {
-        bloques = await svgAPng(svgInfo.svg, svgInfo.width, svgInfo.height);
+      if (f.tipo === 'microbit') {
+        if (f.codigo.trim() && microbitMuestraBloques(f)) {
+          nota.textContent = 'Dibujando los bloques de micro:bit con MakeCode…';
+          bloques = await obtenerBloquesMicrobit(f.codigo)
+            .then(info => ({ dataUrl: info.uri, width: info.width, height: info.height }))
+            .catch(() => null); // sin conexión: el Word lleva el código como texto
+        }
+      } else {
+        const svgInfo = svgStringDeFicha(f);
+        if (svgInfo) {
+          bloques = await svgAPng(svgInfo.svg, svgInfo.width, svgInfo.height);
+        }
       }
       let imagen = null;
       if (f.imagen) {
@@ -631,6 +800,22 @@ function importarJSON(texto) {
 // --- Prompt para que la IA escriba código scratchblocks ---
 function copiarPromptCodigo(ficha) {
   const tema = ficha.titulo.trim() || ficha.consigna.trim() || '[describí acá qué tiene que hacer el programa]';
+  if (ficha.tipo === 'microbit') {
+    const lenguaje = ficha.lenguaje === 'python' ? 'Python de MakeCode (micro:bit)' : 'JavaScript de MakeCode (micro:bit)';
+    const prompt = `Escribí un programa en ${lenguaje} para esto:
+
+${tema}
+
+REGLAS:
+- Usá SOLO la API de MakeCode para micro:bit (basic, input, music, led, radio, pins...).
+- Ejemplos de la API: basic.showString("..."), basic.showIcon(IconNames.Heart), input.onButtonPressed(Button.A, ...), basic.forever(...), basic.pause(500).
+- Código completo y que compile en makecode.microbit.org.
+- No uses bloques de código markdown ni explicaciones.
+
+Respondé SOLO con el código.`;
+    copiarTexto(prompt, 'Prompt copiado. Pegalo en ChatGPT, Claude o Gemini y traé el código.');
+    return;
+  }
   const prompt = `Escribí un programa de Scratch en sintaxis "scratchblocks" (texto plano) para esto:
 
 ${tema}
@@ -655,7 +840,12 @@ function copiarPromptPreguntas() {
     .map((f, i) => {
       let t = `FICHA ${i + 1}${f.titulo.trim() ? ' — ' + f.titulo : ''}`;
       if (f.consigna.trim()) t += `\nConsigna: ${f.consigna}`;
-      if (f.codigo.trim()) t += `\nCódigo Scratch:\n${f.codigo}`;
+      if (f.codigo.trim()) {
+        const etiqueta = f.tipo === 'microbit'
+          ? `Código MakeCode para micro:bit (${f.lenguaje === 'python' ? 'Python' : 'JavaScript'})`
+          : 'Código Scratch';
+        t += `\n${etiqueta}:\n${f.codigo}`;
+      }
       return t;
     }).join('\n\n---\n\n');
 
@@ -755,13 +945,17 @@ function init() {
     });
   });
 
-  document.getElementById('btnAgregarFicha').addEventListener('click', () => {
-    state.fichas.push(nuevaFicha(state.fichas.length ? '' : CODIGO_EJEMPLO));
+  function agregarFicha(tipo) {
+    const primeraDeTipo = !state.fichas.some(f => f.tipo === tipo);
+    const ejemplo = tipo === 'microbit' ? CODIGO_EJEMPLO_MICROBIT : CODIGO_EJEMPLO;
+    state.fichas.push(nuevaFicha(primeraDeTipo ? ejemplo : '', tipo));
     renderLista();
     guardarLuego();
     const cards = lista.querySelectorAll('.ficha-card');
     cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  }
+  document.getElementById('btnAgregarFicha').addEventListener('click', () => agregarFicha('scratch'));
+  document.getElementById('btnAgregarFichaMicrobit').addEventListener('click', () => agregarFicha('microbit'));
 
   document.getElementById('btnImportarFichasJson').addEventListener('click', () => document.getElementById('inputFichasJson').click());
   document.getElementById('inputFichasJson').addEventListener('change', e => {

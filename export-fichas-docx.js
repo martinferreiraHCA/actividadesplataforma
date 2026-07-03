@@ -86,7 +86,7 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
   if (imgLado) {
     const anchoImg = Math.round(anchoInterior * ficha.imgAncho / 100) - 12;
     const anchoCod = anchoInterior - anchoImg - 24;
-    const celdaCodigo = celdaSinBorde(d, bloquesComoParrafos(d, bloques, anchoCod), 100 - ficha.imgAncho);
+    const celdaCodigo = celdaSinBorde(d, zonaCodigoDocx(d, ficha, bloques, anchoCod), 100 - ficha.imgAncho);
     const celdaImagen = celdaSinBorde(d, imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe), ficha.imgAncho);
     const celdas = ficha.imgPos === 'derecha' ? [celdaCodigo, celdaImagen] : [celdaImagen, celdaCodigo];
     out.push(new d.Table({
@@ -99,7 +99,7 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
     if (imagen && ficha.imgPos === 'arriba') {
       out.push(...imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe, true));
     }
-    out.push(...bloquesComoParrafos(d, bloques, anchoInterior));
+    out.push(...zonaCodigoDocx(d, ficha, bloques, anchoInterior));
     if (imagen && ficha.imgPos === 'abajo') {
       out.push(...imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe, true));
     }
@@ -118,13 +118,31 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
   return out;
 }
 
-function bloquesComoParrafos(d, bloques, anchoMax) {
-  if (!bloques) {
-    return [new d.Paragraph({
-      children: [new d.TextRun({ text: '(sin código)', italics: true, color: '999999', size: 20 })]
-    })];
+// zona de código de una ficha: bloques (imagen) y/o código como texto
+function zonaCodigoDocx(d, ficha, bloques, anchoMax) {
+  const out = [];
+  if (bloques) {
+    // en micro:bit la escala no viene aplicada en la imagen: se aplica acá
+    const escalaExtra = ficha.tipo === 'microbit' ? (ficha.escala || 1) : 1;
+    out.push(...bloquesComoParrafos(d, bloques, anchoMax, escalaExtra));
   }
-  const k = Math.min(1, anchoMax / bloques.width);
+  const esMicrobit = ficha.tipo === 'microbit';
+  const quiereCodigoTexto = esMicrobit && ficha.codigo.trim() &&
+    (ficha.lenguaje === 'python' || ficha.vista !== 'bloques' || !bloques);
+  if (quiereCodigoTexto) {
+    out.push(...codigoComoParrafos(d, ficha.codigo));
+  }
+  if (!out.length) {
+    out.push(new d.Paragraph({
+      children: [new d.TextRun({ text: '(sin código)', italics: true, color: '999999', size: 20 })]
+    }));
+  }
+  return out;
+}
+
+function bloquesComoParrafos(d, bloques, anchoMax, escalaExtra) {
+  const deseado = bloques.width * (escalaExtra || 1);
+  const k = Math.min(deseado, anchoMax) / bloques.width;
   return [new d.Paragraph({
     children: [new d.ImageRun({
       type: 'png',
@@ -136,6 +154,16 @@ function bloquesComoParrafos(d, bloques, anchoMax) {
     })],
     spacing: { after: 80 }
   })];
+}
+
+// código fuente como párrafos monoespaciados con fondo gris
+function codigoComoParrafos(d, codigo) {
+  const lineas = codigo.replace(/\t/g, '    ').split('\n');
+  return lineas.map((linea, i) => new d.Paragraph({
+    children: [new d.TextRun({ text: linea || ' ', font: 'Consolas', size: 18 })],
+    shading: { type: d.ShadingType.CLEAR, fill: 'F2F2F0' },
+    spacing: { before: i === 0 ? 80 : 0, after: i === lineas.length - 1 ? 120 : 0, line: 240 }
+  }));
 }
 
 function imagenComoParrafos(d, imagen, anchoMax, epigrafe, centrar) {

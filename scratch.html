@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fichas Scratch — Generador de Actividades</title>
+<title>Fichas Scratch y micro:bit — Generador de Actividades</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<meta name="description" content="Creá fichas didácticas con bloques de Scratch a partir de texto plano. Exportalas en PDF o Word.">
+<meta name="description" content="Creá fichas didácticas con bloques de Scratch y micro:bit a partir de texto plano. Exportalas en PDF o Word.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
@@ -43,11 +43,12 @@
   <div class="container">
     <div class="section__header reveal">
       <div class="section__eyebrow">// Fichas didácticas</div>
-      <h2 class="section__title">Fichas con bloques<br>de Scratch<span class="accent">.</span></h2>
+      <h2 class="section__title">Fichas de Scratch<br>y micro:bit<span class="accent">.</span></h2>
     </div>
     <p class="scratch-intro">
-      Escribí el código de Scratch como texto plano y se dibuja como bloques de colores, igual que en el editor de Scratch.
-      Armá fichas con consigna, código e imagen opcional, y descargalas en PDF o Word para repartir en clase.
+      Escribí el código como texto plano y se dibuja como bloques de colores. Para Scratch podés elegir la versión
+      (Scratch 3, Scratch 2 o alto contraste, cada una con su paleta oficial); para micro:bit el código JavaScript de MakeCode
+      se convierte en bloques automáticamente. Armá fichas con consigna, código e imagen opcional, y descargalas en PDF o Word.
     </p>
     <div class="campo-grid" style="max-width:700px">
       <div class="campo">
@@ -77,6 +78,10 @@ fin</pre>
           <li><code>fin</code> — cierra los bloques «si», «por siempre», «repetir»</li>
           <li>Podés separar dos pilas de bloques con una línea en blanco</li>
         </ul>
+        <p><strong>Fichas de micro:bit:</strong> escribí el código JavaScript de MakeCode (el mismo que ves en la pestaña
+        JavaScript de <a href="https://makecode.microbit.org" target="_blank" rel="noopener">makecode.microbit.org</a>) y los
+        bloques se dibujan solos con el servicio oficial de MakeCode — necesita conexión a internet. Podés elegir si la ficha
+        muestra los bloques, el código o ambos. Si escribís en Python, se muestra el código tal cual.</p>
         <p>También podés pedirle el código a una IA con el botón <strong>«Prompt para IA»</strong> de cada ficha.</p>
       </div>
     </details>
@@ -102,7 +107,8 @@ fin</pre>
   <div class="container">
     <div id="listaFichas"></div>
     <div class="scratch-agregar">
-      <button class="btn btn--primary" id="btnAgregarFicha">+ Agregar ficha</button>
+      <button class="btn btn--primary" id="btnAgregarFicha">+ Ficha Scratch</button>
+      <button class="btn btn--primary" id="btnAgregarFichaMicrobit">+ Ficha micro:bit</button>
       <button class="btn btn--ghost" id="btnImportarFichasJson">Importar borrador .json</button>
       <input type="file" id="inputFichasJson" accept=".json" style="display:none">
     </div>
@@ -155,7 +161,7 @@ fin</pre>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
-    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Bloques dibujados con <a href="https://scratchblocks.github.io/" target="_blank" rel="noopener">scratchblocks</a> (MIT).</span>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Bloques dibujados con <a href="https://scratchblocks.github.io/" target="_blank" rel="noopener">scratchblocks</a> (MIT) y <a href="https://makecode.microbit.org" target="_blank" rel="noopener">MakeCode</a>.</span>
   </div>
 </footer>
 
