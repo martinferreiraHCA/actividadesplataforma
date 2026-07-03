@@ -1,5 +1,32 @@
 // Exportación de rúbricas a CSV, HTML, JSON, Moodle XML y Apps Script
 
+export function rubricaComoTexto(rubrica, titulo) {
+  const lines = [];
+  if (titulo) lines.push(titulo);
+  lines.push('');
+
+  const maxNombre = Math.max(12, ...rubrica.criterios.map(c => c.nombre.length));
+  const colW = 30;
+
+  const header = 'Criterio'.padEnd(maxNombre) + '  Peso  ' +
+    rubrica.niveles.map(n => `${n.nombre} (${n.puntos}pts)`).join('  |  ');
+  lines.push(header);
+  lines.push('-'.repeat(header.length));
+
+  rubrica.criterios.forEach(c => {
+    const row = c.nombre.padEnd(maxNombre) + '  ' + String(c.peso).padStart(4) + '  ';
+    const descs = c.descripciones.map(d => d || '—');
+    lines.push(row + descs.join('  |  '));
+  });
+
+  lines.push('');
+  const maxPts = Math.max(...rubrica.niveles.map(n => n.puntos));
+  const total = rubrica.criterios.reduce((s, c) => s + c.peso * maxPts, 0);
+  lines.push(`Puntaje máximo: ${total}`);
+
+  return lines.join('\n');
+}
+
 export function exportarRubricaCSV(rubrica, titulo) {
   const rows = [];
   const header = ['Criterio', 'Peso', ...rubrica.niveles.map(n => `${n.nombre} (${n.puntos} pts)`)];

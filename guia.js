@@ -175,7 +175,7 @@ Si V=12 e I=2, ¿cuánto vale R?
         ChatGPT, Claude o Gemini. También podés cargar todo a mano.</p>
 
         <h4 class="guia-h">¿Puedo cambiar los colores?</h4>
-        <p class="guia-p">Sí, con el selector de temas arriba a la derecha (claro, nocturno, amigable, HCA).</p>
+        <p class="guia-p">Sí, con el selector de temas arriba a la derecha (crema, claro, nocturno, amigable, azul).</p>
       `
     }
   ];
