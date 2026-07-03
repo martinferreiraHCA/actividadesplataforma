@@ -170,8 +170,86 @@ fin</pre>
           <li><code>(10)</code> — números entre paréntesis; <code>[hola]</code> — textos entre corchetes; <code>[v]</code> marca un desplegable.</li>
           <li><code>&lt;condición&gt;</code> — los bloques hexagonales van entre <code>&lt; &gt;</code>.</li>
           <li><code>fin</code> — cierra "si", "repetir" y "por siempre". Una línea en blanco separa dos pilas.</li>
-          <li>Se puede escribir en español o inglés, y elegir la <strong>versión de Scratch</strong> (3, 2 o alto contraste): cada una se dibuja con su paleta oficial.</li>
+          <li>Se puede escribir en español o inglés, y elegir la <strong>versión de Scratch</strong> (3, 2 o alto contraste): cada una se dibuja con su paleta oficial de colores.</li>
         </ul>
+
+        <h4 class="guia-h">¿Un bloque quedó rojo?</h4>
+        <p class="guia-p">Si un bloque se dibuja <strong>rojo</strong>, el texto no coincide con ningún bloque
+        real de Scratch. El editor lo detecta y te <strong>sugiere la corrección con un botón "Aplicar"</strong>.
+        Los errores más comunes:</p>
+        <table class="guia-tabla">
+          <thead><tr><th>Se suele escribir…</th><th>El bloque real es…</th></tr></thead>
+          <tbody>
+            <tr><td><code>girar (90) grados</code></td><td><code>girar a la derecha (90) grados</code></td></tr>
+            <tr><td><code>decir [Hola] por (2) segundos</code></td><td><code>decir [Hola] durante (2) segundos</code></td></tr>
+            <tr><td><code>cambiar [puntos v] por (1)</code></td><td><code>sumar a [puntos v] (1)</code></td></tr>
+            <tr><td><code>fijar [puntos v] a (0)</code></td><td><code>dar a [puntos v] el valor (0)</code></td></tr>
+            <tr><td><code>tocar sonido [Miau v]</code></td><td><code>iniciar sonido [Miau v]</code></td></tr>
+            <tr><td><code>¿tocando un borde?</code></td><td><code>¿tocando [borde v]?</code></td></tr>
+            <tr><td><code>rebotar si toca un borde</code></td><td><code>si toca un borde, rebotar</code></td></tr>
+          </tbody>
+        </table>
+
+        <h4 class="guia-h">Chuletario: bloques frecuentes (redacción exacta)</h4>
+        <p class="guia-p"><strong>Eventos</strong> (amarillo #FFBF00)</p>
+        <pre class="guia-pre">al presionar bandera verde
+al presionar tecla [espacio v]
+al hacer clic en este objeto
+al recibir [mensaje1 v]
+enviar [mensaje1 v]</pre>
+        <p class="guia-p"><strong>Movimiento</strong> (azul #4C97FF)</p>
+        <pre class="guia-pre">mover (10) pasos
+girar a la derecha (15) grados
+girar a la izquierda (15) grados
+apuntar en dirección (90)
+ir a x: (0) y: (0)
+ir a [posición aleatoria v]
+deslizar en (1) segs a x: (0) y: (0)
+si toca un borde, rebotar</pre>
+        <p class="guia-p"><strong>Apariencia</strong> (violeta #9966FF)</p>
+        <pre class="guia-pre">decir [¡Hola!] durante (2) segundos
+decir [¡Hola!]
+pensar [Hmm...] durante (2) segundos
+cambiar disfraz a [disfraz2 v]
+siguiente disfraz
+cambiar fondo a [fondo1 v]
+fijar tamaño al (100) %
+sumar al efecto [color v] (25)
+esconder
+mostrar</pre>
+        <p class="guia-p"><strong>Sonido</strong> (fucsia #CF63CF)</p>
+        <pre class="guia-pre">iniciar sonido [Miau v]
+tocar sonido [Miau v] hasta que termine</pre>
+        <p class="guia-p"><strong>Control</strong> (naranja #FFAB19)</p>
+        <pre class="guia-pre">esperar (1) segundos
+repetir (10)
+por siempre
+si &lt;&gt; entonces
+si no
+esperar hasta que &lt;&gt;
+repetir hasta que &lt;&gt;
+detener [todos v]
+crear clon de [mí mismo v]
+al comenzar como clon
+eliminar este clon
+fin</pre>
+        <p class="guia-p"><strong>Sensores</strong> (celeste #5CB1D6)</p>
+        <pre class="guia-pre">¿tocando [borde v]?
+¿tocando el color [#ff0000]?
+¿tecla [espacio v] presionada?
+preguntar [¿Cómo te llamás?] y esperar
+respuesta</pre>
+        <p class="guia-p"><strong>Operadores</strong> (verde #59C059) · <strong>Variables</strong> (naranja #FF8C1A) · <strong>Listas</strong> (#FF661A) · <strong>Lápiz</strong> (extensión)</p>
+        <pre class="guia-pre">número aleatorio entre (1) y (10)
+unir [manzana ] [banana ]
+dar a [variable v] el valor (0)
+sumar a [variable v] (1)
+mostrar variable [variable v]
+añadir [cosa] a [lista v]
+bajar lápiz
+subir lápiz
+borrar todo
+sellar</pre>
 
         <h4 class="guia-h">Fichas de micro:bit</h4>
         <p class="guia-p">Escribí el <strong>JavaScript de MakeCode</strong> (el de la pestaña JavaScript de
@@ -319,11 +397,12 @@ basic.showIcon(IconNames.Heart)</pre>
   });
 
   function init() {
-    document.querySelectorAll("[data-abrir-guia]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        abrir(btn.getAttribute("data-abrir-guia") || null);
-      });
+    // Delegación: funciona también para botones/enlaces agregados dinámicamente
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-abrir-guia]");
+      if (!btn) return;
+      e.preventDefault();
+      abrir(btn.getAttribute("data-abrir-guia") || null);
     });
   }
 

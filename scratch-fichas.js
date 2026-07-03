@@ -2,6 +2,7 @@
 import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
+import { sugerirCorreccion } from './scratch-correcciones.js';
 
 const STORAGE_KEY = 'gen_fichas_scratch';
 const sb = window.scratchblocks;
@@ -401,7 +402,7 @@ function construirTarjeta(ficha, i) {
   lbl.textContent = '// Así queda la ficha';
   prev.appendChild(lbl);
   prev.appendChild(construirFichaView(ficha, i + 1, state.opciones));
-  if (ficha.tipo === 'scratch') avisarBloquesRojos(prev);
+  if (ficha.tipo === 'scratch') avisarBloquesRojos(prev, ficha, card, i);
   grid.appendChild(prev);
 
   card.appendChild(grid);
@@ -412,17 +413,80 @@ function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Si algún bloque quedó rojo (scratchblocks no reconoció el texto), avisamos
-// en el editor para que el docente corrija la redacción. Solo en la vista
+// ¿esta línea, dibujada sola, tiene bloques rojos (texto no reconocido)?
+function lineaEsRoja(linea) {
+  const r = renderBloques(linea.trim(), 1, 'scratch3');
+  return !!(r && r.svg && r.svg.querySelector('.sb3-obsolete'));
+}
+
+// Si algún bloque quedó rojo, avisamos en el editor y proponemos la
+// redacción correcta con un botón "Aplicar" por línea. Solo en la vista
 // previa: no aparece en el PDF ni en el Word.
-function avisarBloquesRojos(prev) {
+function avisarBloquesRojos(prev, ficha, card, i) {
   const viejo = prev.querySelector('.ficha-card__aviso-rojo');
   if (viejo) viejo.remove();
   const hayRojos = prev.querySelector('.ficha-view svg .sb3-obsolete, .ficha-view svg .sb2-obsolete');
   if (!hayRojos) return;
+
+  // detectar qué líneas fallan y buscar una corrección para cada una
+  const sugerencias = [];
+  ficha.codigo.split('\n').forEach((l, idx) => {
+    if (!l.trim() || !lineaEsRoja(l)) return;
+    const propuesta = sugerirCorreccion(l);
+    sugerencias.push({ idx, original: l.trim(), propuesta: propuesta && propuesta.trim() !== l.trim() ? propuesta : null });
+  });
+
   const nota = document.createElement('div');
   nota.className = 'ficha-card__aviso-rojo';
-  nota.innerHTML = '⚠ Hay bloques <strong>rojos</strong>: ese texto no coincide con ningún bloque real de Scratch. Revisá la redacción (ej: <code>girar a la derecha (90) grados</code>, <code>decir [Hola] durante (2) segundos</code>, <code>¿tocando [borde v]?</code>).';
+  const titulo = document.createElement('div');
+  titulo.innerHTML = '⚠ Hay bloques <strong>rojos</strong>: ese texto no coincide con ningún bloque real de Scratch.';
+  nota.appendChild(titulo);
+
+  const aplicar = (cambios) => {
+    const ls = ficha.codigo.split('\n');
+    cambios.forEach(({ idx, propuesta }) => { ls[idx] = propuesta; });
+    ficha.codigo = ls.join('\n');
+    const ta = card.querySelector('textarea.ficha-card__codigo');
+    if (ta) ta.value = ficha.codigo;
+    refrescar(card, ficha, i);
+    toast('Corrección aplicada.');
+  };
+
+  const conPropuesta = sugerencias.filter(s => s.propuesta);
+  conPropuesta.forEach(s => {
+    const fila = document.createElement('div');
+    fila.className = 'ficha-card__sugerencia';
+    const texto = document.createElement('span');
+    texto.innerHTML = `<code>${escHtml(s.original)}</code> → <code>${escHtml(s.propuesta.trim())}</code>`;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ficha-card__accion';
+    btn.textContent = '✓ Aplicar';
+    btn.addEventListener('click', () => aplicar([s]));
+    fila.append(texto, btn);
+    nota.appendChild(fila);
+  });
+
+  if (conPropuesta.length > 1) {
+    const todas = document.createElement('button');
+    todas.type = 'button';
+    todas.className = 'ficha-card__accion';
+    todas.style.marginTop = '0.5rem';
+    todas.textContent = `✓✓ Aplicar las ${conPropuesta.length} correcciones`;
+    todas.addEventListener('click', () => aplicar(conPropuesta));
+    nota.appendChild(todas);
+  }
+
+  const sinPropuesta = sugerencias.filter(s => !s.propuesta);
+  if (sinPropuesta.length) {
+    const p = document.createElement('div');
+    p.className = 'ficha-card__sugerencia';
+    p.innerHTML = 'Sin sugerencia automática para: ' +
+      sinPropuesta.map(s => `<code>${escHtml(s.original)}</code>`).join(', ') +
+      '. Mirá la redacción exacta en el <a href="#" data-abrir-guia="fichas">chuletario de bloques de la guía</a>.';
+    nota.appendChild(p);
+  }
+
   prev.appendChild(nota);
 }
 
@@ -439,7 +503,7 @@ function refrescar(card, ficha, i) {
     const viejo = prev.querySelector('.ficha-view');
     const nuevo = construirFichaView(ficha, i + 1, state.opciones);
     if (viejo) viejo.replaceWith(nuevo); else prev.appendChild(nuevo);
-    if (ficha.tipo === 'scratch') avisarBloquesRojos(prev);
+    if (ficha.tipo === 'scratch') avisarBloquesRojos(prev, ficha, card, i);
   }, 350);
 }
 
@@ -900,6 +964,9 @@ REGLAS DE LA SINTAXIS:
 - Condiciones entre ángulos: <¿tocando [borde v]?>, <(x) > (50)>.
 - Los bloques "si ... entonces", "repetir", "por siempre" se cierran con una línea "fin".
 - Separá pilas de bloques distintas con una línea en blanco.
+- Usá EXACTAMENTE estas redacciones (un texto distinto se dibuja como bloque rojo inválido):
+  girar a la derecha (15) grados / decir [Hola] durante (2) segundos / iniciar sonido [Miau v]
+  dar a [puntaje v] el valor (0) / sumar a [puntaje v] (1) / si toca un borde, rebotar / ¿tocando [borde v]?
 - No uses numeración, viñetas ni bloques de código markdown.
 
 Respondé SOLO con el código scratchblocks, sin explicación.`;
