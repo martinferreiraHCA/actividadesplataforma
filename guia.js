@@ -276,6 +276,17 @@ basic.showIcon(IconNames.Heart)</pre>
         <div class="guia-aviso">Consejo: el botón <strong>"Copiar como texto"</strong> (en Descargar) baja
         tus fichas actuales en este mismo formato — las editás en cualquier editor y las volvés a pegar.
         Con eso podés mantener bancos de fichas reutilizables.</div>
+
+        <h4 class="guia-h">Convertir las fichas en cuestionario para CREA</h4>
+        <p class="guia-p">En el <strong>Paso 4</strong> de la página de fichas, tus fichas se convierten en un
+        cuestionario donde <strong>la imagen de los bloques es parte del enunciado</strong> de cada pregunta:</p>
+        <ul class="guia-lista">
+          <li><strong>Cuestionario automático</strong> — una pregunta de comprensión por ficha (imagen + consigna), se abre directo en el Editor.</li>
+          <li><strong>Preguntas variadas con IA</strong> — la IA arma opción múltiple, V/F, respuesta corta y ensayo citando las imágenes; pegás la respuesta y se abre en el Editor con todo asociado.</li>
+        </ul>
+        <p class="guia-p">En el Editor podés mezclar esas preguntas con otras tuyas, y al descargar el
+        <code>.imscc</code> las imágenes de bloques viajan adentro del paquete: en CREA, Schoology o Moodle
+        el alumno ve los bloques dentro de la pregunta.</p>
       `
     },
     {

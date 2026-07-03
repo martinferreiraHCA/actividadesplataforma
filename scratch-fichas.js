@@ -3,6 +3,7 @@ import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
 import { sugerirCorreccion } from './scratch-correcciones.js';
+import { parsear } from './parser.js';
 
 const STORAGE_KEY = 'gen_fichas_scratch';
 const sb = window.scratchblocks;
@@ -973,14 +974,112 @@ Respondé SOLO con el código scratchblocks, sin explicación.`;
   copiarTexto(prompt, 'Prompt copiado. Pegalo en ChatGPT, Claude o Gemini y traé el código.');
 }
 
-// --- Prompt de preguntas para CREA ---
-function copiarPromptPreguntas() {
+// ============================================================
+// Cuestionario para CREA: las fichas se convierten en preguntas
+// donde la imagen de los bloques es parte del enunciado.
+// ============================================================
+
+// Renderiza cada ficha a PNG y devuelve el mapa de imágenes para el cuestionario.
+// nombrePorFicha[i] = 'ficha_N.png' o null si la ficha no genera imagen.
+async function imagenesDeFichas(nota) {
+  const imagenes = {};
+  const nombrePorFicha = [];
+  for (let i = 0; i < state.fichas.length; i++) {
+    const f = state.fichas[i];
+    let dataUrl = null;
+    if (f.codigo.trim()) {
+      if (f.tipo === 'microbit') {
+        if (f.lenguaje !== 'python') {
+          if (nota) nota.textContent = `Dibujando los bloques de la ficha ${i + 1} con MakeCode…`;
+          dataUrl = await obtenerBloquesMicrobit(f.codigo).then(x => x.uri).catch(() => null);
+        }
+      } else {
+        const s = svgStringDeFicha(f);
+        if (s) dataUrl = (await svgAPng(s.svg, s.width, s.height)).dataUrl;
+      }
+    }
+    if (!dataUrl && f.imagen) dataUrl = f.imagen.data; // sin bloques: va la imagen subida
+    if (dataUrl) {
+      const nombre = `ficha_${i + 1}.png`;
+      imagenes[nombre] = dataUrl;
+      nombrePorFicha.push(nombre);
+    } else {
+      nombrePorFicha.push(null);
+    }
+  }
+  return { imagenes, nombrePorFicha };
+}
+
+// Manda el cuestionario al Editor por localStorage y navega.
+function abrirEnEditor(preguntas, imagenes) {
+  const payload = {
+    titulo: state.titulo.trim() || 'Fichas de programación',
+    nivel: state.subtitulo.trim(),
+    preguntas,
+    imagenes
+  };
+  try {
+    localStorage.setItem('gen_handoff_quiz', JSON.stringify(payload));
+  } catch (e) {
+    toast('El cuestionario es muy pesado para el traspaso automático (demasiadas imágenes). Probá con menos fichas.');
+    return;
+  }
+  window.location.href = 'editor.html?tipo=cuestionario';
+}
+
+function fichasConContenido() {
+  return state.fichas
+    .map((f, i) => ({ f, i }))
+    .filter(({ f }) => f.codigo.trim() || f.consigna.trim() || f.imagen);
+}
+
+// --- Cuestionario automático: 1 pregunta de comprensión por ficha ---
+async function generarCuestionarioAuto() {
   if (!hayFichasConContenido()) return;
-  const fichasTxt = state.fichas
-    .filter(f => f.codigo.trim() || f.consigna.trim())
-    .map((f, i) => {
-      let t = `FICHA ${i + 1}${f.titulo.trim() ? ' — ' + f.titulo : ''}`;
-      if (f.consigna.trim()) t += `\nConsigna: ${f.consigna}`;
+  const btn = document.getElementById('btnCreaAuto');
+  const nota = document.getElementById('notaCrea');
+  btn.disabled = true;
+  nota.style.display = 'block';
+  nota.textContent = 'Preparando las imágenes de los bloques…';
+  try {
+    const { imagenes, nombrePorFicha } = await imagenesDeFichas(nota);
+    const lineas = [
+      `# Cuestionario: ${state.titulo.trim() || 'Fichas de programación'}`,
+      `# Nivel: ${state.subtitulo.trim() || ''}`,
+      ''
+    ];
+    let n = 0;
+    fichasConContenido().forEach(({ f, i }) => {
+      n++;
+      lineas.push(`## P${n} :: ensayo`);
+      if (f.titulo.trim()) lineas.push(f.titulo.trim());
+      if (nombrePorFicha[i]) lineas.push(`[IMG: ${nombrePorFicha[i]}]`);
+      lineas.push(f.consigna.trim() || 'Observá el programa de la imagen y explicá con tus palabras qué hace, paso a paso.');
+      if (!nombrePorFicha[i] && f.codigo.trim()) {
+        // sin imagen (ej: micro:bit en Python sin conexión): el código va como texto
+        lineas.push('', f.codigo.trim());
+      }
+      lineas.push('');
+    });
+    const res = parsear(lineas.join('\n'));
+    if (!res.preguntas.length) throw new Error('no se pudo armar ninguna pregunta');
+    nota.textContent = 'Abriendo el Editor…';
+    abrirEnEditor(res.preguntas, imagenes);
+  } catch (e) {
+    console.error(e);
+    nota.textContent = 'Hubo un problema armando el cuestionario: ' + (e.message || e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// --- Prompt de IA: preguntas variadas que citan las imágenes de las fichas ---
+function copiarPromptCuestionarioIA() {
+  if (!hayFichasConContenido()) return;
+  const fichasTxt = fichasConContenido()
+    .map(({ f, i }) => {
+      let t = `FICHA ${i + 1}${f.titulo.trim() ? ' — ' + f.titulo : ''} (su imagen es [IMG: ficha_${i + 1}.png])`;
+      if (f.consigna.trim()) t += `\nConsigna original: ${f.consigna}`;
       if (f.codigo.trim()) {
         const etiqueta = f.tipo === 'microbit'
           ? `Código MakeCode para micro:bit (${f.lenguaje === 'python' ? 'Python' : 'JavaScript'})`
@@ -990,19 +1089,20 @@ function copiarPromptPreguntas() {
       return t;
     }).join('\n\n---\n\n');
 
-  const prompt = `Sos docente de programación con Scratch. A partir de estas fichas didácticas, generá un cuestionario de comprensión (entre 5 y 10 preguntas) sobre qué hacen los programas, qué bloques se usan y qué pasaría si se cambian valores.
+  const prompt = `Sos docente de programación. A partir de estas fichas didácticas (cada una tiene una imagen con los bloques del programa, que el alumno VE en la pregunta), generá un cuestionario de comprensión de entre 6 y 12 preguntas: qué hacen los programas, qué bloques se usan, qué pasaría si se cambian valores, encontrar errores, etc.
 
 ${fichasTxt}
 
-Respondé SOLO con el contenido en el formato indicado abajo, sin texto antes ni después, sin bloques de código.
+Respondé SOLO con el contenido en el formato indicado abajo, sin texto antes ni después, sin bloques de código markdown.
 
 ## FORMATO REQUERIDO
 
-# Cuestionario: ${state.titulo.trim() || 'Fichas de Scratch'}
+# Cuestionario: ${state.titulo.trim() || 'Fichas de programación'}
 # Nivel: ${state.subtitulo.trim() || '[nivel]'}
 
 ## P1 :: opcion_multiple :: 1pt
-¿Texto de la pregunta?
+[IMG: ficha_1.png]
+¿Qué hace este programa cuando el personaje toca un borde?
 - [ ] Opción incorrecta
 - [x] Opción correcta
 - [ ] Otra incorrecta
@@ -1010,25 +1110,65 @@ Respondé SOLO con el contenido en el formato indicado abajo, sin texto antes ni
 > Retro: Explicación breve de por qué es correcta.
 
 ## P2 :: verdadero_falso :: 1pt
-Afirmación para evaluar.
+[IMG: ficha_1.png]
+Afirmación sobre el programa de la imagen.
 **Respuesta:** Verdadero
 > Retro: Explicación.
 
 ## P3 :: respuesta_corta :: 1pt
+[IMG: ficha_2.png]
 ¿Pregunta donde el alumno escribe la respuesta?
 **Respuestas aceptadas:** Respuesta 1 | Respuesta 2
 
 ## P4 :: ensayo
+[IMG: ficha_2.png]
 Pregunta abierta para que el alumno desarrolle.
 
 ## REGLAS
 - Numerá las preguntas secuencialmente: P1, P2, P3...
 - Usá SOLO los tipos: opcion_multiple, verdadero_falso, respuesta_corta, ensayo.
+- MUY IMPORTANTE: cuando una pregunta refiera a una ficha, incluí su token de imagen en una línea propia al inicio del enunciado, ej: [IMG: ficha_1.png] — así el alumno ve los bloques en la pregunta. Usá SOLO los tokens listados arriba.
 - Marcá la opción correcta con [x] y las incorrectas con [ ].
-- Si citás bloques de Scratch en una pregunta, escribilos entre comillas, ej: "mover (10) pasos".
-- Incluí retroalimentación (> Retro:) en todas las preguntas que puedas.`;
+- Para opción múltiple, incluí 4 opciones por pregunta.
+- Si citás bloques en el texto, escribilos entre comillas, ej: "mover (10) pasos".
+- Incluí retroalimentación (> Retro:) en todas las preguntas que puedas.
+- Cubrí todas las fichas, con dificultad creciente.`;
 
-  copiarTexto(prompt, 'Prompt copiado. Pegá la respuesta de la IA en el Editor → Importar Texto, y de ahí exportás a CREA.');
+  copiarTexto(prompt, 'Prompt copiado. Pegá la respuesta de la IA acá abajo y se abre en el Editor con las imágenes.');
+}
+
+// --- Procesar la respuesta de la IA y abrir en el Editor ---
+async function procesarCuestionarioIA() {
+  const texto = document.getElementById('textareaRespuestaCreaIA').value;
+  if (!texto.trim()) { toast('Pegá primero la respuesta de la IA.'); return; }
+  const btn = document.getElementById('btnProcesarCreaIA');
+  const nota = document.getElementById('notaCrea');
+  const avisosCont = document.getElementById('avisosCreaIA');
+  avisosCont.innerHTML = '';
+  btn.disabled = true;
+  nota.style.display = 'block';
+  nota.textContent = 'Procesando las preguntas…';
+  try {
+    const res = parsear(texto);
+    if (!res.preguntas.length) {
+      throw new Error('no se encontraron preguntas en el texto. ¿Copiaste la respuesta completa de la IA?');
+    }
+    if (res.advertencias && res.advertencias.length) {
+      const div = document.createElement('div');
+      div.className = 'alerta alerta--info';
+      div.innerHTML = '<strong>Avisos del formato:</strong><br>' + res.advertencias.map(a => escHtml(typeof a === 'string' ? a : a.mensaje || JSON.stringify(a))).join('<br>');
+      avisosCont.appendChild(div);
+    }
+    nota.textContent = 'Preparando las imágenes de los bloques…';
+    const { imagenes } = await imagenesDeFichas(nota);
+    nota.textContent = 'Abriendo el Editor…';
+    abrirEnEditor(res.preguntas, imagenes);
+  } catch (e) {
+    console.error(e);
+    nota.textContent = 'Hubo un problema: ' + (e.message || e);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ============================================================
@@ -1224,7 +1364,9 @@ function init() {
   document.getElementById('btnFichasPDF').addEventListener('click', exportarPDF);
   document.getElementById('btnFichasDOCX').addEventListener('click', exportarDOCX);
   document.getElementById('btnFichasJSON').addEventListener('click', exportarJSON);
-  document.getElementById('btnFichasPreguntas').addEventListener('click', copiarPromptPreguntas);
+  document.getElementById('btnCreaAuto').addEventListener('click', generarCuestionarioAuto);
+  document.getElementById('btnCreaPromptIA').addEventListener('click', copiarPromptCuestionarioIA);
+  document.getElementById('btnProcesarCreaIA').addEventListener('click', procesarCuestionarioIA);
 }
 
 init();
