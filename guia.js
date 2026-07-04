@@ -257,6 +257,13 @@ sellar</pre>
         (necesita internet). Elegís si la ficha muestra <strong>bloques, código o ambos</strong>.
         En Python se muestra el código tal cual.</p>
 
+        <h4 class="guia-h">Fichas de código (Python, JavaScript, Java...)</h4>
+        <p class="guia-p">Con <strong>"+ Ficha Código"</strong> pegás código de cualquier lenguaje de texto
+        —Python, JavaScript, Java, C/C++, C#, HTML, CSS, SQL, PHP, Bash y más— y se colorea con
+        <strong>resaltado de sintaxis</strong>: cada lenguaje con sus colores. El lenguaje se
+        <strong>detecta automáticamente</strong> (o lo elegís a mano) y aparece etiquetado en la ficha.
+        En el Word y en las preguntas para CREA el código va como imagen coloreada, igual que los bloques.</p>
+
         <h4 class="guia-h">Formato de texto para el lote</h4>
         <pre class="guia-pre">titulo: Práctico — Bucles
 nivel: 6° año
@@ -276,6 +283,17 @@ basic.showIcon(IconNames.Heart)</pre>
         <div class="guia-aviso">Consejo: el botón <strong>"Copiar como texto"</strong> (en Descargar) baja
         tus fichas actuales en este mismo formato — las editás en cualquier editor y las volvés a pegar.
         Con eso podés mantener bancos de fichas reutilizables.</div>
+
+        <h4 class="guia-h">Convertir las fichas en cuestionario para CREA</h4>
+        <p class="guia-p">En el <strong>Paso 4</strong> de la página de fichas, tus fichas se convierten en un
+        cuestionario donde <strong>la imagen de los bloques es parte del enunciado</strong> de cada pregunta:</p>
+        <ul class="guia-lista">
+          <li><strong>Cuestionario automático</strong> — una pregunta de comprensión por ficha (imagen + consigna), se abre directo en el Editor.</li>
+          <li><strong>Preguntas variadas con IA</strong> — la IA arma opción múltiple, V/F, respuesta corta y ensayo citando las imágenes; pegás la respuesta y se abre en el Editor con todo asociado.</li>
+        </ul>
+        <p class="guia-p">En el Editor podés mezclar esas preguntas con otras tuyas, y al descargar el
+        <code>.imscc</code> las imágenes de bloques viajan adentro del paquete: en CREA, Schoology o Moodle
+        el alumno ve los bloques dentro de la pregunta.</p>
       `
     },
     {

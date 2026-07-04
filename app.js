@@ -697,3 +697,44 @@ if (esRubrica) {
     });
   }
 }
+
+// ====== TRASPASO DESDE FICHAS (scratch.html) ======
+// La página de fichas puede mandar un cuestionario ya armado (preguntas con
+// tokens [IMG: ficha_N.png] + las imágenes de bloques en dataURL) por
+// localStorage. Acá se carga, se registran las imágenes en el gestor y se
+// limpia la llave para que no se recargue dos veces.
+if (!esRubrica) {
+  (async () => {
+    let raw = null;
+    try { raw = localStorage.getItem('gen_handoff_quiz'); } catch { return; }
+    if (!raw) return;
+    try { localStorage.removeItem('gen_handoff_quiz'); } catch { /* sin permisos: seguimos */ }
+    try {
+      const data = JSON.parse(raw);
+      if (!data || !Array.isArray(data.preguntas) || !data.preguntas.length) return;
+      preguntas = data.preguntas;
+      tituloQuiz = data.titulo || '';
+      nivelQuiz = data.nivel || '';
+      if (document.getElementById('veTitulo')) document.getElementById('veTitulo').value = tituloQuiz;
+      if (document.getElementById('veNivel')) document.getElementById('veNivel').value = nivelQuiz;
+      editorVisual.cargarPreguntas(preguntas);
+
+      // registrar las imágenes de bloques como archivos subidos
+      if (data.imagenes && typeof data.imagenes === 'object') {
+        const files = [];
+        for (const [nombre, dataUrl] of Object.entries(data.imagenes)) {
+          try {
+            const blob = await (await fetch(dataUrl)).blob();
+            files.push(new File([blob], nombre, { type: blob.type || 'image/png' }));
+          } catch { /* imagen ilegible: la pregunta queda con el token pendiente */ }
+        }
+        if (files.length) await gestorImg.cargarArchivos(files);
+      }
+
+      actualizarDescargas();
+      toast(`Cuestionario cargado desde Fichas: ${preguntas.length} pregunta(s) con sus imágenes de bloques.`);
+    } catch (err) {
+      console.error('No se pudo cargar el cuestionario enviado desde Fichas:', err);
+    }
+  })();
+}

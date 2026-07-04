@@ -430,3 +430,49 @@ body.tema-nocturno .scratch-vacio { border-color: rgba(255,255,255,0.3); }
 body.tema-nocturno .scratch-como__pre,
 body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06); }
 /* la ficha en sí SIEMPRE se ve como papel (así sale impresa) */
+
+/* ---- Fichas de código en texto plano (resaltado de sintaxis) ---- */
+/* Paleta GitHub light — debe coincidir con COLOR_TOKEN en codigo-render.js */
+.ficha-view__pre--hl {
+  position: relative;
+  background: #f6f8fa;
+  color: #24292e;
+  padding-right: 5.5em;
+}
+.ficha-view__pre-lang {
+  position: absolute;
+  top: 0.45em;
+  right: 0.7em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.ficha-card__lang-hint {
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.65;
+  margin-top: 0.3rem;
+  min-height: 1em;
+}
+.ficha-view__pre--hl .hljs-keyword, .ficha-view__pre--hl .hljs-type,
+.ficha-view__pre--hl .hljs-operator, .ficha-view__pre--hl .hljs-doctag,
+.ficha-view__pre--hl .hljs-meta-keyword { color: #d73a49; }
+.ficha-view__pre--hl .hljs-literal, .ficha-view__pre--hl .hljs-symbol,
+.ficha-view__pre--hl .hljs-number, .ficha-view__pre--hl .hljs-built_in,
+.ficha-view__pre--hl .hljs-attr, .ficha-view__pre--hl .hljs-attribute,
+.ficha-view__pre--hl .hljs-property, .ficha-view__pre--hl .hljs-meta,
+.ficha-view__pre--hl .hljs-section, .ficha-view__pre--hl .hljs-selector-attr,
+.ficha-view__pre--hl .hljs-selector-pseudo { color: #005cc5; }
+.ficha-view__pre--hl .hljs-string, .ficha-view__pre--hl .hljs-regexp,
+.ficha-view__pre--hl .hljs-meta-string { color: #032f62; }
+.ficha-view__pre--hl .hljs-comment, .ficha-view__pre--hl .hljs-quote { color: #6a737d; font-style: italic; }
+.ficha-view__pre--hl .hljs-title { color: #6f42c1; }
+.ficha-view__pre--hl .hljs-tag, .ficha-view__pre--hl .hljs-name,
+.ficha-view__pre--hl .hljs-selector-tag, .ficha-view__pre--hl .hljs-addition { color: #22863a; }
+.ficha-view__pre--hl .hljs-variable, .ficha-view__pre--hl .hljs-template-variable { color: #e36209; }
+.ficha-view__pre--hl .hljs-selector-id, .ficha-view__pre--hl .hljs-selector-class { color: #6f42c1; }
+.ficha-view__pre--hl .hljs-bullet { color: #735c0f; }
+.ficha-view__pre--hl .hljs-deletion { color: #b31d28; }
+.ficha-view__pre--hl .hljs-subst, .ficha-view__pre--hl .hljs-params { color: #24292e; }

@@ -46,9 +46,7 @@
       <h2 class="section__title">Fichas de Scratch<br>y micro:bit<span class="accent">.</span></h2>
     </div>
     <p class="scratch-intro">
-      Escribí el código como texto plano y se dibuja como bloques de colores: <strong>Scratch</strong> en la versión que elijas
-      (Scratch 3, Scratch 2 o alto contraste, cada una con su paleta oficial) y <strong>micro:bit</strong> convirtiendo el código
-      JavaScript de MakeCode en bloques automáticamente. Cada ficha lleva consigna, código, imagen opcional y notas,
+      Escribí el código como texto plano y se dibuja con colores: <strong>Scratch</strong> como bloques en la versión que elijas (Scratch 3, Scratch 2 o alto contraste, cada una con su paleta oficial), <strong>micro:bit</strong> convirtiendo el código JavaScript de MakeCode en bloques automáticamente, y <strong>cualquier lenguaje de texto</strong> (Python, JavaScript, Java, C++, HTML, SQL...) con resaltado de sintaxis y detección automática del lenguaje. Cada ficha lleva consigna, código, imagen opcional y notas,
       y el documento final se descarga en <strong>PDF o Word</strong> listo para repartir en clase.
     </p>
     <div class="primeros-pasos">
@@ -64,8 +62,8 @@
       </div>
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 03</span>
-        <span class="paso-rapido__titulo">Descargá</span>
-        <span class="paso-rapido__texto">PDF para imprimir o Word para seguir editando. También podés guardar un borrador y retomarlo otro día.</span>
+        <span class="paso-rapido__titulo">Descargá o convertí</span>
+        <span class="paso-rapido__texto">PDF para imprimir, Word para editar — o convertí las fichas en un cuestionario para CREA con las imágenes de bloques en las preguntas.</span>
       </div>
     </div>
     <div class="cta-guia" style="margin-top:1.5rem">
@@ -127,6 +125,7 @@
       <span class="ve-barra-label">Agregar ficha:</span>
       <button class="tag tag--filled" id="btnAgregarFicha">+ Ficha Scratch</button>
       <button class="tag tag--filled" id="btnAgregarFichaMicrobit">+ Ficha micro:bit</button>
+      <button class="tag tag--filled" id="btnAgregarFichaCodigo">+ Ficha Código (Python, JS...)</button>
       <span class="ve-barra-sep"></span>
       <span class="ve-barra-label">O empezá con una plantilla:</span>
       <span id="barraPlantillas"></span>
@@ -236,7 +235,8 @@
             <select class="campo__input" id="iaFichasPlataforma">
               <option value="scratch">Scratch</option>
               <option value="microbit">micro:bit (MakeCode)</option>
-              <option value="mixto">Mezcla de ambas</option>
+              <option value="codigo">Código texto (Python, JS, Java...)</option>
+              <option value="mixto">Mezcla de todas</option>
             </select>
           </div>
         </div>
@@ -306,10 +306,6 @@
         <div class="btn__etiqueta">Word .docx</div>
         <div class="btn__subtexto">Documento editable con los bloques como imágenes</div>
       </button>
-      <button class="btn--descarga" id="btnFichasPreguntas">
-        <div class="btn__etiqueta">Preguntas para CREA</div>
-        <div class="btn__subtexto">Copia un prompt de IA para armar preguntas sobre tus fichas</div>
-      </button>
     </div>
 
     <div style="margin-top:1.2rem;display:flex;gap:1rem;flex-wrap:wrap">
@@ -317,6 +313,45 @@
       <button class="btn btn--ghost" id="btnFichasJSON">Guardar borrador .json (para reeditar después)</button>
     </div>
     <p class="scratch-export-nota" id="notaExportFichas" style="display:none"></p>
+  </div>
+</section>
+
+
+<!-- ====== PASO 4: CUESTIONARIO PARA CREA ====== -->
+<section class="editor-section" id="seccionCuestionarioCrea">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 4 (opcional) — Convertir en cuestionario para CREA</div>
+    <p class="exportar-intro">
+      Tus fichas también sirven como <strong>cuestionario para CREA, Schoology o Moodle</strong>: cada pregunta lleva la
+      <strong>imagen de los bloques como parte del enunciado</strong>. El cuestionario se abre en el Editor de siempre,
+      donde lo revisás, agregás o quitás preguntas y descargás el <code>.imscc</code> con las imágenes adentro.
+    </p>
+
+    <div class="descargas__grid">
+      <button class="btn--descarga" id="btnCreaAuto">
+        <div class="btn__etiqueta">⚡ Cuestionario automático</div>
+        <div class="btn__subtexto">1 pregunta por ficha: la imagen de los bloques + tu consigna. Se abre en el Editor listo para retocar</div>
+      </button>
+      <button class="btn--descarga" id="btnCreaPromptIA">
+        <div class="btn__etiqueta">✦ Preguntas variadas con IA</div>
+        <div class="btn__subtexto">Copia un prompt: la IA arma opción múltiple, V/F y más sobre tus fichas, citando las imágenes</div>
+      </button>
+    </div>
+
+    <div class="paso-card" style="margin-top:1.5rem">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">✦</div>
+        <h2 class="paso-card__titulo">Respuesta de la IA<br><span style="font-size:0.6em;opacity:0.5;text-transform:none">(si usaste el prompt de arriba)</span></h2>
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="textareaRespuestaCreaIA">Pegá lo que te devolvió la IA</label>
+        <textarea class="campo__textarea campo__textarea--grande" id="textareaRespuestaCreaIA"
+          placeholder="Pegá acá las preguntas que generó la IA (con los tokens [IMG: ficha_1.png])..."></textarea>
+      </div>
+      <button class="btn btn--primary" id="btnProcesarCreaIA">Procesar y abrir en el Editor</button>
+      <div id="avisosCreaIA" style="margin-top:1.5rem"></div>
+    </div>
+    <p class="scratch-export-nota" id="notaCrea" style="display:none"></p>
   </div>
 </section>
 
@@ -348,6 +383,7 @@
 <script src="ia-panel.js"></script>
 <script src="templatemo-axis-script.js"></script>
 <script src="scratchblocks.min.js"></script>
+<script src="highlight.min.js"></script>
 <script src="scratchblocks-translations.js"></script>
 <script src="docx.iife.js"></script>
 <script type="module" src="scratch-fichas.js"></script>
