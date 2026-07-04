@@ -257,6 +257,13 @@ sellar</pre>
         (necesita internet). Elegís si la ficha muestra <strong>bloques, código o ambos</strong>.
         En Python se muestra el código tal cual.</p>
 
+        <h4 class="guia-h">Fichas de código (Python, JavaScript, Java...)</h4>
+        <p class="guia-p">Con <strong>"+ Ficha Código"</strong> pegás código de cualquier lenguaje de texto
+        —Python, JavaScript, Java, C/C++, C#, HTML, CSS, SQL, PHP, Bash y más— y se colorea con
+        <strong>resaltado de sintaxis</strong>: cada lenguaje con sus colores. El lenguaje se
+        <strong>detecta automáticamente</strong> (o lo elegís a mano) y aparece etiquetado en la ficha.
+        En el Word y en las preguntas para CREA el código va como imagen coloreada, igual que los bloques.</p>
+
         <h4 class="guia-h">Formato de texto para el lote</h4>
         <pre class="guia-pre">titulo: Práctico — Bucles
 nivel: 6° año

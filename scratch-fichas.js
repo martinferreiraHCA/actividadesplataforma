@@ -4,6 +4,7 @@ import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-rende
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
 import { sugerirCorreccion } from './scratch-correcciones.js';
 import { parsear } from './parser.js';
+import { LENGUAJES_CODIGO, ACENTO_LENGUAJE, nombreLenguaje, lenguajeEfectivo, elementoCodigo, codigoAPng } from './codigo-render.js';
 
 const STORAGE_KEY = 'gen_fichas_scratch';
 const sb = window.scratchblocks;
@@ -24,6 +25,13 @@ basic.forever(function () {
     basic.pause(500)
     basic.clearScreen()
 })`;
+
+const CODIGO_EJEMPLO_CODIGO = `def tabla(numero):
+    """Imprime la tabla de multiplicar."""
+    for i in range(1, 11):
+        print(numero, "x", i, "=", numero * i)
+
+tabla(7)`;
 
 // Estilos de bloques: scratchblocks trae la paleta oficial exacta de cada versión
 const ESTILOS_SCRATCH = [
@@ -70,6 +78,13 @@ const PLANTILLAS = [
     notas: ''
   },
   {
+    id: 'py-leer', nombre: '📖 Leer Python', tipo: 'codigo',
+    titulo: '¿Qué imprime este programa?',
+    consigna: 'Leé el código con atención y escribí exactamente qué muestra en pantalla al ejecutarse.',
+    codigo: 'edad = 12\nfor anio in range(1, 4):\n    edad = edad + 1\n    print("En", anio, "años tendrás", edad)',
+    notas: 'Para el docente: imprime tres líneas, terminando en 15.'
+  },
+  {
     id: 'mb-desafio', nombre: '🚀 Desafío micro:bit', tipo: 'microbit',
     titulo: 'Desafío: contador de saltos',
     consigna: 'Programá el micro:bit para que cuente cuántas veces lo sacudís y muestre el número al apretar el botón B. Punto de partida:',
@@ -89,14 +104,14 @@ let uid = 1;
 function nuevaFicha(codigo, tipo) {
   return {
     id: 'f' + (uid++) + '_' + state.fichas.length,
-    tipo: tipo || 'scratch', // scratch | microbit
+    tipo: tipo || 'scratch', // scratch | microbit | codigo (texto plano con colores)
     titulo: '',
     consigna: '',
     codigo: codigo || '',
     escala: 1,
     estilo: 'scratch3',      // versión de Scratch: scratch3 | scratch2 | scratch3-high-contrast
     vista: 'bloques',        // micro:bit: bloques | codigo | ambos
-    lenguaje: 'javascript',  // micro:bit: javascript | python
+    lenguaje: tipo === 'codigo' ? 'auto' : 'javascript', // micro:bit: javascript|python — codigo: auto|python|java|...
     notas: '',
     imagen: null,            // { data: dataURL, nombre }
     imgPos: 'derecha',       // derecha | izquierda | arriba | abajo
@@ -168,6 +183,15 @@ export function construirFichaView(ficha, numero, opciones) {
   zonaCodigo.className = 'ficha-view__codigo';
   if (ficha.tipo === 'microbit') {
     llenarZonaMicrobit(zonaCodigo, ficha);
+  } else if (ficha.tipo === 'codigo') {
+    if (ficha.codigo.trim()) {
+      zonaCodigo.appendChild(elementoCodigo(ficha.codigo, ficha.lenguaje, ficha.escala));
+    } else {
+      const vacio = document.createElement('span');
+      vacio.className = 'ficha-view__vacio';
+      vacio.textContent = '(sin código todavía)';
+      zonaCodigo.appendChild(vacio);
+    }
   } else if (!ficha.codigo.trim()) {
     const vacio = document.createElement('span');
     vacio.className = 'ficha-view__vacio';
@@ -308,9 +332,9 @@ function construirTarjeta(ficha, i) {
   // ---- barra superior ----
   const top = document.createElement('div');
   top.className = 'ficha-card__top';
-  const etiquetaTipo = ficha.tipo === 'microbit' ? 'MICRO:BIT' : 'SCRATCH';
+  const etiquetaTipo = etiquetaDeTipo(ficha);
   const tituloResumen = ficha.titulo.trim() ? `<span class="ficha-card__resumen">${escHtml(ficha.titulo)}</span>` : '';
-  top.innerHTML = `<span class="ficha-card__num">FICHA ${i + 1} / ${state.fichas.length}</span><span class="ficha-card__tipo ficha-card__tipo--${ficha.tipo}">${etiquetaTipo}</span>${tituloResumen}<span class="ficha-card__top-sep"></span>`;
+  top.innerHTML = `<span class="ficha-card__num">FICHA ${i + 1} / ${state.fichas.length}</span><span class="ficha-card__tipo ficha-card__tipo--${ficha.tipo}"${estiloBadge(ficha)}>${etiquetaTipo}</span>${tituloResumen}<span class="ficha-card__top-sep"></span>`;
   const acciones = [
     [ficha.plegada ? '▸ Desplegar' : '▾ Plegar', () => { ficha.plegada = !ficha.plegada; renderLista(); guardarLuego(); }, false],
     ['↑ Subir', () => mover(i, -1), i === 0],
@@ -343,10 +367,12 @@ function construirTarjeta(ficha, i) {
   form.appendChild(campoArea('Consigna / explicación (opcional)', ficha.consigna, 'Ej: Leé el programa y explicá qué hace el gato...', 2, v => { ficha.consigna = v; refrescar(card, ficha, i); }));
 
   const esMicrobit = ficha.tipo === 'microbit';
+  const esCodigo = ficha.tipo === 'codigo';
   const etiquetaCodigo = esMicrobit
     ? (ficha.lenguaje === 'python' ? 'Código MakeCode — Python' : 'Código MakeCode — JavaScript')
-    : 'Código Scratch (texto plano)';
-  const campoCod = campoArea(etiquetaCodigo, ficha.codigo, esMicrobit ? CODIGO_EJEMPLO_MICROBIT : CODIGO_EJEMPLO, 7, v => { ficha.codigo = v; refrescar(card, ficha, i); });
+    : (esCodigo ? 'Código fuente (texto plano)' : 'Código Scratch (texto plano)');
+  const ejemploCod = esMicrobit ? CODIGO_EJEMPLO_MICROBIT : (esCodigo ? CODIGO_EJEMPLO_CODIGO : CODIGO_EJEMPLO);
+  const campoCod = campoArea(etiquetaCodigo, ficha.codigo, ejemploCod, 7, v => { ficha.codigo = v; refrescar(card, ficha, i); });
   campoCod.querySelector('textarea').classList.add('ficha-card__codigo');
   form.appendChild(campoCod);
 
@@ -354,7 +380,18 @@ function construirTarjeta(ficha, i) {
   const filaEscala = document.createElement('div');
   filaEscala.className = 'ficha-card__fila';
 
-  if (esMicrobit) {
+  if (esCodigo) {
+    // lenguaje: manual o detección automática (con aviso de qué se detectó)
+    const selLang = campoSelect('Lenguaje', ficha.lenguaje || 'auto', LENGUAJES_CODIGO, v => {
+      ficha.lenguaje = v;
+      refrescar(card, ficha, i);
+    });
+    const hint = document.createElement('div');
+    hint.className = 'ficha-card__lang-hint';
+    hint.dataset.langHint = '1';
+    selLang.appendChild(hint);
+    filaEscala.appendChild(selLang);
+  } else if (esMicrobit) {
     // lenguaje del código
     filaEscala.appendChild(campoSelect('Lenguaje', ficha.lenguaje, [
       ['javascript', 'JavaScript (bloques automáticos)'],
@@ -376,7 +413,7 @@ function construirTarjeta(ficha, i) {
     // versión de Scratch (cada una con su paleta oficial de colores)
     filaEscala.appendChild(campoSelect('Versión de Scratch', ficha.estilo, ESTILOS_SCRATCH, v => { ficha.estilo = v; refrescar(card, ficha, i); }));
   }
-  filaEscala.appendChild(campoRango('Tamaño de los bloques', ficha.escala, 0.6, 1.6, 0.1, v => `×${v}`, v => { ficha.escala = v; refrescar(card, ficha, i); }));
+  filaEscala.appendChild(campoRango(esCodigo ? 'Tamaño del texto' : 'Tamaño de los bloques', ficha.escala, 0.6, 1.6, 0.1, v => `×${v}`, v => { ficha.escala = v; refrescar(card, ficha, i); }));
   form.appendChild(filaEscala);
 
   // imagen
@@ -412,6 +449,21 @@ function construirTarjeta(ficha, i) {
 
 function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// etiqueta del badge: para fichas de código muestra el lenguaje (detectado o elegido)
+function etiquetaDeTipo(ficha) {
+  if (ficha.tipo === 'microbit') return 'MICRO:BIT';
+  if (ficha.tipo === 'codigo') {
+    const lang = lenguajeEfectivo(ficha.codigo, ficha.lenguaje);
+    return (ficha.codigo.trim() ? nombreLenguaje(lang) : 'Código').toUpperCase();
+  }
+  return 'SCRATCH';
+}
+function estiloBadge(ficha) {
+  if (ficha.tipo !== 'codigo') return '';
+  const lang = lenguajeEfectivo(ficha.codigo, ficha.lenguaje);
+  return ` style="color:${ACENTO_LENGUAJE[lang] || '#6a737d'}"`;
 }
 
 // ¿esta línea, dibujada sola, tiene bloques rojos (texto no reconocido)?
@@ -499,6 +551,21 @@ function refrescar(card, ficha, i) {
   debounces[ficha.id] = setTimeout(() => {
     const resumen = card.querySelector('.ficha-card__resumen');
     if (resumen) resumen.textContent = ficha.titulo;
+    if (ficha.tipo === 'codigo') {
+      // el badge y el aviso de detección siguen al lenguaje en vivo
+      const badge = card.querySelector('.ficha-card__tipo');
+      if (badge) {
+        badge.textContent = etiquetaDeTipo(ficha);
+        const lang = lenguajeEfectivo(ficha.codigo, ficha.lenguaje);
+        badge.style.color = ACENTO_LENGUAJE[lang] || '#6a737d';
+      }
+      const hint = card.querySelector('[data-lang-hint]');
+      if (hint) {
+        hint.textContent = (!ficha.lenguaje || ficha.lenguaje === 'auto') && ficha.codigo.trim()
+          ? 'Detectado: ' + nombreLenguaje(lenguajeEfectivo(ficha.codigo, 'auto'))
+          : '';
+      }
+    }
     const prev = card.querySelector('.ficha-card__preview');
     if (!prev) return;
     const viejo = prev.querySelector('.ficha-view');
@@ -847,6 +914,10 @@ async function exportarDOCX() {
             .then(info => ({ dataUrl: info.uri, width: info.width, height: info.height }))
             .catch(() => null); // sin conexión: el Word lleva el código como texto
         }
+      } else if (f.tipo === 'codigo') {
+        if (f.codigo.trim()) {
+          bloques = codigoAPng(f.codigo, f.lenguaje, f.escala); // {dataUrl, width, height}
+        }
       } else {
         const svgInfo = svgStringDeFicha(f);
         if (svgInfo) {
@@ -939,6 +1010,20 @@ function importarJSON(texto) {
 // --- Prompt para que la IA escriba código scratchblocks ---
 function copiarPromptCodigo(ficha) {
   const tema = ficha.titulo.trim() || ficha.consigna.trim() || '[describí acá qué tiene que hacer el programa]';
+  if (ficha.tipo === 'codigo') {
+    const lang = ficha.lenguaje && ficha.lenguaje !== 'auto' ? nombreLenguaje(ficha.lenguaje) : 'Python (o el lenguaje que mejor se adapte)';
+    const prompt = `Escribí un programa corto en ${lang} para esto:
+
+${tema}
+
+REGLAS:
+- Código simple y didáctico, pensado para estudiantes (sin librerías raras).
+- Entre 4 y 20 líneas, con nombres de variables en español.
+- Incluí un comentario breve solo si aclara algo importante.
+- No uses bloques de código markdown ni explicación: respondé SOLO con el código.`;
+    copiarTexto(prompt, 'Prompt copiado. Pegalo en ChatGPT, Claude o Gemini y traé el código.');
+    return;
+  }
   if (ficha.tipo === 'microbit') {
     const lenguaje = ficha.lenguaje === 'python' ? 'Python de MakeCode (micro:bit)' : 'JavaScript de MakeCode (micro:bit)';
     const prompt = `Escribí un programa en ${lenguaje} para esto:
@@ -993,6 +1078,8 @@ async function imagenesDeFichas(nota) {
           if (nota) nota.textContent = `Dibujando los bloques de la ficha ${i + 1} con MakeCode…`;
           dataUrl = await obtenerBloquesMicrobit(f.codigo).then(x => x.uri).catch(() => null);
         }
+      } else if (f.tipo === 'codigo') {
+        dataUrl = codigoAPng(f.codigo, f.lenguaje, f.escala).dataUrl; // código coloreado como imagen
       } else {
         const s = svgStringDeFicha(f);
         if (s) dataUrl = (await svgAPng(s.svg, s.width, s.height)).dataUrl;
@@ -1083,13 +1170,15 @@ function copiarPromptCuestionarioIA() {
       if (f.codigo.trim()) {
         const etiqueta = f.tipo === 'microbit'
           ? `Código MakeCode para micro:bit (${f.lenguaje === 'python' ? 'Python' : 'JavaScript'})`
-          : 'Código Scratch';
+          : (f.tipo === 'codigo'
+            ? `Código ${nombreLenguaje(lenguajeEfectivo(f.codigo, f.lenguaje))}`
+            : 'Código Scratch');
         t += `\n${etiqueta}:\n${f.codigo}`;
       }
       return t;
     }).join('\n\n---\n\n');
 
-  const prompt = `Sos docente de programación. A partir de estas fichas didácticas (cada una tiene una imagen con los bloques del programa, que el alumno VE en la pregunta), generá un cuestionario de comprensión de entre 6 y 12 preguntas: qué hacen los programas, qué bloques se usan, qué pasaría si se cambian valores, encontrar errores, etc.
+  const prompt = `Sos docente de programación. A partir de estas fichas didácticas (cada una tiene una imagen con el programa —bloques o código coloreado— que el alumno VE en la pregunta), generá un cuestionario de comprensión de entre 6 y 12 preguntas: qué hacen los programas, qué instrucciones se usan, qué pasaría si se cambian valores, encontrar errores, etc.
 
 ${fichasTxt}
 
@@ -1233,7 +1322,7 @@ function init() {
 
   function agregarFicha(tipo) {
     const primeraDeTipo = !state.fichas.some(f => f.tipo === tipo);
-    const ejemplo = tipo === 'microbit' ? CODIGO_EJEMPLO_MICROBIT : CODIGO_EJEMPLO;
+    const ejemplo = tipo === 'microbit' ? CODIGO_EJEMPLO_MICROBIT : (tipo === 'codigo' ? CODIGO_EJEMPLO_CODIGO : CODIGO_EJEMPLO);
     state.fichas.push(nuevaFicha(primeraDeTipo ? ejemplo : '', tipo));
     renderLista();
     guardarLuego();
@@ -1241,6 +1330,7 @@ function init() {
   }
   document.getElementById('btnAgregarFicha').addEventListener('click', () => agregarFicha('scratch'));
   document.getElementById('btnAgregarFichaMicrobit').addEventListener('click', () => agregarFicha('microbit'));
+  document.getElementById('btnAgregarFichaCodigo')?.addEventListener('click', () => agregarFicha('codigo'));
   document.getElementById('btnAgregarFichaAbajo')?.addEventListener('click', () => agregarFicha('scratch'));
 
   // ---- pestañas de modo (visual / texto / ia) ----

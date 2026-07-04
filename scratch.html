@@ -46,9 +46,7 @@
       <h2 class="section__title">Fichas de Scratch<br>y micro:bit<span class="accent">.</span></h2>
     </div>
     <p class="scratch-intro">
-      Escribí el código como texto plano y se dibuja como bloques de colores: <strong>Scratch</strong> en la versión que elijas
-      (Scratch 3, Scratch 2 o alto contraste, cada una con su paleta oficial) y <strong>micro:bit</strong> convirtiendo el código
-      JavaScript de MakeCode en bloques automáticamente. Cada ficha lleva consigna, código, imagen opcional y notas,
+      Escribí el código como texto plano y se dibuja con colores: <strong>Scratch</strong> como bloques en la versión que elijas (Scratch 3, Scratch 2 o alto contraste, cada una con su paleta oficial), <strong>micro:bit</strong> convirtiendo el código JavaScript de MakeCode en bloques automáticamente, y <strong>cualquier lenguaje de texto</strong> (Python, JavaScript, Java, C++, HTML, SQL...) con resaltado de sintaxis y detección automática del lenguaje. Cada ficha lleva consigna, código, imagen opcional y notas,
       y el documento final se descarga en <strong>PDF o Word</strong> listo para repartir en clase.
     </p>
     <div class="primeros-pasos">
@@ -127,6 +125,7 @@
       <span class="ve-barra-label">Agregar ficha:</span>
       <button class="tag tag--filled" id="btnAgregarFicha">+ Ficha Scratch</button>
       <button class="tag tag--filled" id="btnAgregarFichaMicrobit">+ Ficha micro:bit</button>
+      <button class="tag tag--filled" id="btnAgregarFichaCodigo">+ Ficha Código (Python, JS...)</button>
       <span class="ve-barra-sep"></span>
       <span class="ve-barra-label">O empezá con una plantilla:</span>
       <span id="barraPlantillas"></span>
@@ -236,7 +235,8 @@
             <select class="campo__input" id="iaFichasPlataforma">
               <option value="scratch">Scratch</option>
               <option value="microbit">micro:bit (MakeCode)</option>
-              <option value="mixto">Mezcla de ambas</option>
+              <option value="codigo">Código texto (Python, JS, Java...)</option>
+              <option value="mixto">Mezcla de todas</option>
             </select>
           </div>
         </div>
@@ -383,6 +383,7 @@
 <script src="ia-panel.js"></script>
 <script src="templatemo-axis-script.js"></script>
 <script src="scratchblocks.min.js"></script>
+<script src="highlight.min.js"></script>
 <script src="scratchblocks-translations.js"></script>
 <script src="docx.iife.js"></script>
 <script type="module" src="scratch-fichas.js"></script>

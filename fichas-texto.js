@@ -29,6 +29,22 @@ const RE_SEPARADOR = /^===\s*FICHA\s*:?\s*(.*?)\s*=*\s*$/i;
 const RE_CLAVE = /^(tipo|versi[oó]n|version|lenguaje|muestra|vista|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s*(.*)$/i;
 const CLAVES_MULTILINEA = ['consigna', 'codigo', 'notas'];
 
+// mapea nombres comunes de lenguaje al id que usa el resaltador
+function normalizarLenguajeCodigo(v) {
+  const s = (v || '').toLowerCase().trim();
+  if (!s || s === 'auto') return 'auto';
+  const mapa = {
+    'python': 'python', 'py': 'python',
+    'javascript': 'javascript', 'js': 'javascript',
+    'typescript': 'typescript', 'ts': 'typescript',
+    'java': 'java', 'c': 'c', 'c++': 'cpp', 'cpp': 'cpp', 'c#': 'csharp', 'csharp': 'csharp',
+    'html': 'xml', 'xml': 'xml', 'css': 'css', 'sql': 'sql', 'php': 'php',
+    'bash': 'bash', 'shell': 'bash', 'terminal': 'bash', 'json': 'json',
+    'ruby': 'ruby', 'go': 'go', 'lua': 'lua', 'texto': 'plaintext', 'plaintext': 'plaintext'
+  };
+  return mapa[s] || 'auto';
+}
+
 function normalizarClave(k) {
   const c = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   if (c === 'version') return 'version';
@@ -112,7 +128,9 @@ export function parsearFichasTexto(texto) {
 
   // convertir campos crudos al modelo de ficha
   const resultado = fichas.map((f, i) => {
-    const tipo = /micro/i.test(f.tipo || '') ? 'microbit' : 'scratch';
+    const tipoRaw = f.tipo || '';
+    const tipo = /micro/i.test(tipoRaw) ? 'microbit'
+      : (/cod|texto|python|java|lenguaje/i.test(tipoRaw) ? 'codigo' : 'scratch');
     const ficha = {
       tipo,
       titulo: (f.titulo || '').trim(),
@@ -124,6 +142,8 @@ export function parsearFichasTexto(texto) {
     if (tipo === 'scratch') {
       const v = (f.version || '').toLowerCase();
       ficha.estilo = /2/.test(v) ? 'scratch2' : (/(alto|contrast)/.test(v) ? 'scratch3-high-contrast' : 'scratch3');
+    } else if (tipo === 'codigo') {
+      ficha.lenguaje = normalizarLenguajeCodigo(f.lenguaje);
     } else {
       ficha.lenguaje = /py/i.test(f.lenguaje || '') ? 'python' : 'javascript';
       const m = (f.muestra || '').toLowerCase();
@@ -156,6 +176,9 @@ export function fichasComoTexto(state) {
       out.push('tipo: microbit');
       if (f.lenguaje === 'python') out.push('lenguaje: python');
       if (f.vista && f.vista !== 'bloques') out.push('muestra: ' + f.vista);
+    } else if (f.tipo === 'codigo') {
+      out.push('tipo: codigo');
+      if (f.lenguaje && f.lenguaje !== 'auto') out.push('lenguaje: ' + f.lenguaje);
     } else if (f.estilo && f.estilo !== 'scratch3') {
       out.push('version: ' + (f.estilo === 'scratch2' ? 'scratch2' : 'alto contraste'));
     }
@@ -207,7 +230,8 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
   const plataformaTexto = {
     scratch: 'Scratch (todas las fichas con tipo: scratch)',
     microbit: 'micro:bit con MakeCode (todas las fichas con tipo: microbit)',
-    mixto: 'mezclá fichas de Scratch (tipo: scratch) y de micro:bit (tipo: microbit)'
+    codigo: 'código en texto plano (todas las fichas con tipo: codigo — Python salvo que el tema pida otro lenguaje)',
+    mixto: 'mezclá fichas de Scratch (tipo: scratch), de micro:bit (tipo: microbit) y de código en texto plano (tipo: codigo) según convenga al tema'
   }[plataforma] || 'Scratch';
 
   const enfoqueTexto = {
@@ -265,6 +289,11 @@ Escribí el código en sintaxis "scratchblocks" en español, un bloque por líne
 Escribí JavaScript de MakeCode que compile en makecode.microbit.org:
 - API típica: basic.showString("..."), basic.showIcon(IconNames.Heart), basic.showNumber(...), basic.pause(500), basic.clearScreen(), input.onButtonPressed(Button.A, function () {...}), basic.forever(function () {...}), input.onGesture(Gesture.Shake, ...), music.playTone(...)
 - Podés agregar la línea "muestra: ambos" para que la ficha muestre bloques y código, o "muestra: codigo" para solo código.
+
+## REGLAS DEL CÓDIGO EN TEXTO PLANO (tipo: codigo)
+Para lenguajes de texto (Python, JavaScript, Java, C, C++, C#, HTML, CSS, SQL, PHP, Bash...):
+- Agregá la línea "lenguaje: python" (o javascript, java, cpp, sql...) después de "tipo: codigo" — así la ficha se colorea con la sintaxis correcta.
+- Código simple y didáctico, con nombres de variables en español, sin librerías raras.
 
 ## REGLAS GENERALES
 - Cada ficha empieza EXACTAMENTE con === FICHA: Título ===
