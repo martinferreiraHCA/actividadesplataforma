@@ -74,6 +74,7 @@ export async function abrirSimuladorMicrobit(ficha, opciones) {
     <div class="sim-panel__top">
       <strong>Simulador micro:bit — MakeCode</strong>
       <span class="sim-panel__sep"></span>
+      <button type="button" class="ficha-card__accion" data-sim-capturar>📸 Capturar y recortar</button>
       <button type="button" class="ficha-card__accion" data-sim-copiar>⧉ Copiar código</button>
       <a class="ficha-card__accion" data-sim-abrir href="${ORIGEN_EDITOR}/#editor" target="_blank" rel="noopener">↗ Abrir en MakeCode</a>
       <button type="button" class="ficha-card__accion ficha-card__accion--peligro" data-sim-cerrar>✕ Cerrar simulador</button>
@@ -85,8 +86,8 @@ export async function abrirSimuladorMicrobit(ficha, opciones) {
     <div class="sim-panel__ayuda">
       El código se carga en el simulador oficial de MakeCode mediante un enlace para compartir (anónimo).
       Con "↗ Abrir en MakeCode" ves el proyecto completo con bloques y editor.
-      Para la captura: usá el recorte de tu equipo (Windows: <code>Win + Shift + S</code> — Mac: <code>Cmd + Shift + 4</code>)
-      y subila como imagen de la ficha.
+      Con <strong>📸 Capturar y recortar</strong>: dejá el simulador mostrando lo que te interesa, apretá el botón,
+      aceptá compartir <strong>esta pestaña</strong> y después recortá el micro:bit — la imagen queda en la ficha.
     </div>`;
   contenedor.innerHTML = '';
   contenedor.appendChild(panel);
@@ -96,6 +97,18 @@ export async function abrirSimuladorMicrobit(ficha, opciones) {
   panel.querySelector('[data-sim-cerrar]').addEventListener('click', () => cerrarSimuladorMicrobit());
   panel.querySelector('[data-sim-copiar]').addEventListener('click', () => {
     navigator.clipboard?.writeText(ficha.codigo).catch(() => {});
+  });
+  panel.querySelector('[data-sim-capturar]').addEventListener('click', async () => {
+    // el iframe de MakeCode es de otro dominio: no se puede leer directo.
+    // Usamos la captura de pestaña del navegador y después se recorta.
+    try {
+      marcarEstado('Elegí compartir ESTA pestaña en el diálogo del navegador…');
+      const dataUrl = await capturarPestana();
+      marcarEstado('Captura lista: recortá el simulador en el editor que se abrió.');
+      if (opciones && opciones.alCapturar) opciones.alCapturar(dataUrl);
+    } catch (e) {
+      marcarEstado('No se pudo capturar (' + (e.message || 'permiso denegado') + '). Alternativa: recorte del sistema — Windows: Win + Shift + S, Mac: Cmd + Shift + 4 — y subila como imagen de la ficha.', true);
+    }
   });
   escapeHandler = (e) => { if (e.key === 'Escape') cerrarSimuladorMicrobit(); };
   document.addEventListener('keydown', escapeHandler);
@@ -135,5 +148,33 @@ export function cerrarSimuladorMicrobit() {
     if (contenedorActual.dataset) delete contenedorActual.dataset.simAbierto;
     contenedorActual.dispatchEvent(new CustomEvent('sim:cerrado'));
     contenedorActual = null;
+  }
+}
+
+// captura un cuadro de la pestaña actual con la API de captura de pantalla
+async function capturarPestana() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    throw new Error('tu navegador no soporta captura de pantalla');
+  }
+  const stream = await navigator.mediaDevices.getDisplayMedia({
+    video: { displaySurface: 'browser' },
+    audio: false,
+    preferCurrentTab: true,       // Chrome: preselecciona esta pestaña
+    selfBrowserSurface: 'include'
+  });
+  try {
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.muted = true;
+    await video.play();
+    // dejar que el primer cuadro se estabilice
+    await new Promise(r => setTimeout(r, 350));
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    return canvas.toDataURL('image/png');
+  } finally {
+    stream.getTracks().forEach(t => t.stop());
   }
 }

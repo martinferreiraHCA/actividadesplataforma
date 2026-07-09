@@ -262,8 +262,17 @@
           </div>
           <div class="campo">
             <label class="campo__etiqueta" for="iaFichasNotas">Indicaciones extra (opcional)</label>
-            <input class="campo__input" type="text" id="iaFichasNotas" placeholder="Ej: personajes de animales, sin variables...">
+            <input class="campo__input" type="text" id="iaFichasNotas" placeholder="Ej: sin variables, con puntaje...">
           </div>
+        </div>
+
+        <div class="campo" id="campoCatalogoIA">
+          <label class="campo__etiqueta">Personajes y fondo para las fichas (opcional — solo Scratch)</label>
+          <div class="ia-catalogo">
+            <button class="ficha-card__accion" type="button" id="btnIaCatalogo">📚 Elegir del catálogo</button>
+            <span id="chipsIaCatalogo" class="ia-catalogo__chips"></span>
+          </div>
+          <p class="ia-catalogo__ayuda">Elegí con qué personajes y fondo querés que la IA arme las fichas: el prompt sale con los nombres exactos.</p>
         </div>
 
         <button class="btn btn--primary" type="submit">Generá el Prompt</button>

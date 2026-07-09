@@ -292,8 +292,12 @@ basic.showIcon(IconNames.Heart)</pre>
         captura queda como <strong>imagen de la ficha</strong> (sale en el PDF, el Word y las preguntas de
         CREA). También podés descargar la captura o el <strong>.sb3</strong> para abrirlo en scratch.mit.edu.</p>
         <p class="guia-p">Las fichas de micro:bit tienen <strong>"▶ Simular en MakeCode"</strong>: debajo del código se abre el
-        editor oficial de MakeCode con tu código ya cargado y su simulador (necesita internet). Para la
-        captura usá la herramienta de recorte de tu equipo y subila como imagen de la ficha.</p>
+        simulador oficial con tu programa ya corriendo (necesita internet). Con <strong>📸 Capturar y recortar</strong>
+        el navegador te pide compartir la pestaña, saca la foto y te deja recortar el micro:bit — la imagen
+        queda directamente en la ficha, igual que con Scratch.</p>
+        <p class="guia-p">En el <strong>Asistente IA</strong> también podés apretar <strong>"📚 Elegir del catálogo"</strong>
+        y marcar con qué personajes y fondo querés las fichas: el prompt sale con esos nombres como obligatorios,
+        así la IA arma las actividades exactamente con los personajes que elegiste.</p>
         <div class="guia-aviso">El simulador de Scratch cubre los bloques más comunes de aula (movimiento,
         apariencia, control, sensores, operadores, variables, lápiz, sonido). Si un bloque no se puede
         simular, te lo avisa y sigue con el resto.</div>

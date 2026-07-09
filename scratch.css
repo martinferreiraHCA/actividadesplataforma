@@ -766,3 +766,29 @@ body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06
   overflow: hidden;
   max-height: 2.4em;
 }
+
+/* ---- selección de catálogo en el asistente IA ---- */
+.ia-catalogo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.ia-catalogo__chips { display: inline-flex; gap: 0.4rem; flex-wrap: wrap; }
+.ia-catalogo__chip {
+  font: inherit;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #855CD6;
+  border: 1px solid #855CD6;
+  background: var(--base, #fff);
+  padding: 0.15em 0.6em;
+  cursor: pointer;
+}
+.ia-catalogo__chip:hover { background: #fdeaea; color: #8a1f1f; border-color: #8a1f1f; }
+.ia-catalogo__ayuda {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  margin: 0.4rem 0 0;
+}
