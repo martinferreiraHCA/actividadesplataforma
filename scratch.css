@@ -677,3 +677,38 @@ body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06
   font-size: 0.78rem;
   opacity: 0.7;
 }
+
+/* ---- teoría, chips de personaje y secciones en la ficha ---- */
+.ficha-view__teoria {
+  background: #f2f7ff;
+  border: 1px solid #c9ddf5;
+  border-left: 4px solid #4C97FF;
+  padding: 0.7rem 0.9rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #111111;
+}
+.ficha-view__teoria-label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #2b6cb0;
+  margin-bottom: 0.3rem;
+}
+.ficha-view__teoria p { margin: 0; white-space: pre-wrap; }
+.ficha-view__chip {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #855CD6;
+  border: 1px solid #855CD6;
+  padding: 0.1em 0.6em;
+  margin: 0.4rem 0 0.25rem;
+}
+.ficha-view__chip--fondo { color: #555555; border-color: #999999; }
+.ficha-view__seccion { margin-bottom: 0.4rem; }

@@ -26,8 +26,8 @@
 //   })
 
 const RE_SEPARADOR = /^===\s*FICHA\s*:?\s*(.*?)\s*=*\s*$/i;
-const RE_CLAVE = /^(tipo|versi[oó]n|version|lenguaje|muestra|vista|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s*(.*)$/i;
-const CLAVES_MULTILINEA = ['consigna', 'codigo', 'notas'];
+const RE_CLAVE = /^(tipo|versi[oó]n|version|lenguaje|muestra|vista|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s*(.*)$/i;
+const CLAVES_MULTILINEA = ['teoria', 'consigna', 'codigo', 'notas'];
 
 // mapea nombres comunes de lenguaje al id que usa el resaltador
 function normalizarLenguajeCodigo(v) {
@@ -50,13 +50,14 @@ function normalizarClave(k) {
   if (c === 'version') return 'version';
   if (c === 'codigo') return 'codigo';
   if (c === 'vista') return 'muestra';
+  if (c === 'teoria') return 'teoria';
   if (c === 'epigrafe') return 'epigrafe';
   return c;
 }
 
 export function parsearFichasTexto(texto) {
   const lineas = texto.replace(/\r\n?/g, '\n').split('\n');
-  const doc = { titulo: '', subtitulo: '' };
+  const doc = { titulo: '', subtitulo: '', modo: null };
   const fichas = [];
   const avisos = [];
 
@@ -89,10 +90,11 @@ export function parsearFichasTexto(texto) {
 
     if (!actual) {
       // antes de la primera ficha: datos del documento
-      const m = linea.match(/^(t[ií]tulo|titulo|nivel|grupo)\s*:\s*(.*)$/i);
+      const m = linea.match(/^(t[ií]tulo|titulo|nivel|grupo|modo)\s*:\s*(.*)$/i);
       if (m) {
         const k = normalizarClave(m[1]);
         if (k === 'titulo') doc.titulo = m[2].trim();
+        else if (k === 'modo') doc.modo = /gu[ií]a|tutorial|paso/i.test(m[2]) ? 'guia' : 'fichas';
         else doc.subtitulo = m[2].trim();
       } else if (linea.trim()) {
         avisos.push(`Se ignoró texto fuera de las fichas: "${linea.trim().slice(0, 50)}"`);
@@ -102,7 +104,7 @@ export function parsearFichasTexto(texto) {
 
     const clave = linea.match(RE_CLAVE);
     // dentro de "codigo:" solo cortan las claves que no pueden ser código
-    const esCorte = clave && (claveAbierta !== 'codigo' || /^(notas|consigna|tipo|versi|lenguaje|muestra|vista|ep[ií]grafe)/i.test(clave[1]));
+    const esCorte = clave && (claveAbierta !== 'codigo' || /^(notas|consigna|teor|tipo|versi|lenguaje|muestra|vista|ep[ií]grafe)/i.test(clave[1]));
 
     if (esCorte) {
       cerrarClave();
@@ -134,6 +136,7 @@ export function parsearFichasTexto(texto) {
     const ficha = {
       tipo,
       titulo: (f.titulo || '').trim(),
+      teoria: (f.teoria || '').trim(),
       consigna: (f.consigna || '').trim(),
       codigo: (f.codigo || '').replace(/\s+$/, ''),
       notas: (f.notas || '').trim(),
@@ -159,7 +162,7 @@ export function parsearFichasTexto(texto) {
     avisos.push('No se encontró ninguna ficha. Cada ficha empieza con una línea "=== FICHA: Título ===".');
   }
 
-  return { titulo: doc.titulo, subtitulo: doc.subtitulo, fichas: resultado, avisos };
+  return { titulo: doc.titulo, subtitulo: doc.subtitulo, modo: doc.modo, fichas: resultado, avisos };
 }
 
 // Exporta el estado actual al mismo formato de texto (ida y vuelta):
@@ -168,6 +171,7 @@ export function fichasComoTexto(state) {
   const out = [];
   if (state.titulo.trim()) out.push('titulo: ' + state.titulo.trim());
   if (state.subtitulo.trim()) out.push('nivel: ' + state.subtitulo.trim());
+  if (state.opciones && state.opciones.modo === 'guia') out.push('modo: guia');
   if (out.length) out.push('');
 
   state.fichas.forEach(f => {
@@ -182,6 +186,7 @@ export function fichasComoTexto(state) {
     } else if (f.estilo && f.estilo !== 'scratch3') {
       out.push('version: ' + (f.estilo === 'scratch2' ? 'scratch2' : 'alto contraste'));
     }
+    if ((f.teoria || '').trim()) out.push('teoria: ' + f.teoria.trim());
     if (f.consigna.trim()) out.push('consigna: ' + f.consigna.trim());
     if (f.codigo.trim()) {
       out.push('codigo:');
@@ -235,6 +240,7 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
   }[plataforma] || 'Scratch';
 
   const enfoqueTexto = {
+    guia: 'GUÍA PASO A PASO (tutorial): los ítems NO son ejercicios sueltos sino PASOS ordenados para construir UN MISMO juego o proyecto completo. Cada paso agrega una parte del juego, con "teoria:" explicando el concepto del paso y el código nuevo de ese paso. El último paso deja el juego terminado y jugable.',
     lectura: 'Lectura de código: mostrar un programa y pedir que el alumno explique o prediga qué hace.',
     error: 'Encontrar el error: el código tiene UN error deliberado; la consigna pide encontrarlo y en "notas:" va la solución para el docente.',
     completar: 'Completar: el programa está incompleto o tiene un valor a ajustar; la consigna dice qué debe lograr.',
@@ -257,10 +263,11 @@ Respondé SOLO con las fichas en el formato de abajo, sin texto antes ni despué
 ## FORMATO REQUERIDO
 
 titulo: [título del documento]
-nivel: ${nivel || '[nivel]'}
+nivel: ${nivel || '[nivel]'}${enfoque === 'guia' ? '\nmodo: guia' : ''}
 
-=== FICHA: [título corto de la ficha] ===
+=== FICHA: [título corto de la ficha o del paso] ===
 tipo: scratch
+teoria: [opcional: explicación teórica breve del concepto, antes de la consigna]
 consigna: [la consigna para el alumno, 1 a 3 oraciones]
 codigo:
 [el código]
@@ -284,6 +291,18 @@ Escribí el código en sintaxis "scratchblocks" en español, un bloque por líne
   decir [Hola] durante (2) segundos / pensar [Hmm...] durante (2) segundos / cambiar disfraz a [disfraz2 v] / esconder / mostrar
   iniciar sonido [Miau v] / esperar (1) segundos / repetir (10) / por siempre / si <¿tocando [borde v]?> entonces
   dar a [puntaje v] el valor (0) / sumar a [puntaje v] (1) / número aleatorio entre (1) y (10) / preguntar [...] y esperar / respuesta
+
+## PERSONAJES Y FONDO EN SCRATCH (opcional)
+Dentro de "codigo:" podés usar varios personajes y elegir el fondo del escenario:
+  fondo: Estrellas
+  personaje: Gato
+  al presionar bandera verde
+  ...
+  personaje: Perro
+  ...
+- Personajes disponibles (usá EXACTAMENTE estos nombres): Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo.
+- Fondos disponibles: Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.
+- Sin encabezados "personaje:", todo el código es del Gato.
 
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)
 Escribí JavaScript de MakeCode que compile en makecode.microbit.org:

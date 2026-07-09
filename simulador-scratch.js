@@ -8,7 +8,7 @@
 import { codigoASb3 } from './scratch-sb3.js';
 
 // los bundles del motor pesan ~10 MB: se cargan una sola vez y bajo demanda
-const MOTOR_SCRIPTS = ['scratch-vm.js', 'scratch-storage.js', 'scratch-render.min.js', 'scratch-audio.web.js'];
+const MOTOR_SCRIPTS = ['scratch-vm.js', 'scratch-storage.js', 'scratch-render.min.js', 'scratch-svg-renderer.js', 'scratch-audio.web.js'];
 let motorCargado = null;
 
 function cargarScript(src) {
@@ -68,7 +68,7 @@ export async function abrirSimuladorScratch(ficha, opciones) {
     </div>
     <div class="sim-sc__cuerpo">
       <div class="sim-sc__escenario-wrap">
-        <canvas width="480" height="360" tabindex="0" aria-label="Escenario de Scratch"></canvas>
+        <canvas width="960" height="720" style="width:480px;height:360px;max-width:100%" tabindex="0" aria-label="Escenario de Scratch"></canvas>
         <div class="sim-sc__pregunta">
           <input type="text" placeholder="Escribí tu respuesta y apretá Enter…" aria-label="Respuesta">
           <button type="button" class="sim-sc__btn">✓</button>
@@ -131,6 +131,16 @@ export async function abrirSimuladorScratch(ficha, opciones) {
     vm.attachStorage(new ClaseStorage());
     const renderer = new window.ScratchRender(canvas);
     vm.attachRenderer(renderer);
+    // renderizar a 2x para que las capturas salgan nítidas (sin pixelar)
+    try { renderer.resize && renderer.resize(960, 720); } catch (e) { /* tamaño estándar */ }
+    // los fondos PNG del catálogo necesitan el adaptador de mapas de bits
+    const svgr = window.ScratchSVGRenderer;
+    if (svgr) {
+      try {
+        if (vm.attachV2SVGAdapter && svgr.SVGRenderer) vm.attachV2SVGAdapter(new svgr.SVGRenderer());
+        if (vm.attachV2BitmapAdapter && svgr.BitmapAdapter) vm.attachV2BitmapAdapter(new svgr.BitmapAdapter());
+      } catch (e) { /* sin adaptadores: los fondos PNG no cargan, el resto sí */ }
+    }
     if (window.AudioEngine) {
       try { vm.attachAudioEngine(new window.AudioEngine()); } catch (e) { /* sin audio */ }
     }

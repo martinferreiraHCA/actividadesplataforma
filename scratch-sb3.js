@@ -4,6 +4,8 @@
 // y se informan como avisos.
 
 import { GATO1_SVG, GATO2_SVG, FONDO_SVG, MIAU_WAV, b64aBytes } from './scratch-sb3-assets.js';
+import { PERSONAJES as CATALOGO_PERSONAJES, FONDOS as CATALOGO_FONDOS, buscarPersonaje, buscarFondo, listaNombresPersonajes, listaNombresFondos } from './scratch-personajes.js';
+import { separarSecciones } from './scratch-secciones.js';
 
 const ASSETS = {
   gato1: { md5: 'bcf454acf82e4504149f7ffe07081dbc', ext: 'svg', datos: GATO1_SVG },
@@ -409,28 +411,18 @@ function emitirPila(ctx, bloquesAst, parentId) {
 // API principal
 // ============================================================
 
-// Convierte código scratchblocks → { proyecto (objeto project.json), avisos }
-export function convertirAProyecto(codigo) {
+// emite todas las pilas de un código en ctx.bloques; devuelve cuántas emitió
+function emitirScriptsDeCodigo(ctx, codigo) {
   const sb = window.scratchblocks;
-  if (!sb) throw new Error('scratchblocks no está cargado');
-  const ctx = nuevoContexto();
-
   const doc = sb.parse(codigo, { languages: ['en', 'es'] });
   const scripts = (doc.scripts || []).filter(s => s.blocks && s.blocks.length);
-  if (!scripts.length) throw new Error('El código no tiene bloques para simular.');
 
   let x = 60;
-  let scriptsEmitidos = 0;
+  let emitidos = 0;
   for (const script of scripts) {
-    let bloquesAst = script.blocks;
-    let hatExtra = null;
-
-    // si la pila no arranca con un sombrero, agregamos bandera verde
-    const primeroId = idDe(bloquesAst[0]);
-    const primeroSpec = BLOQUES[primeroId];
-    if (!primeroSpec || !primeroSpec.hat) {
-      hatExtra = true;
-    }
+    const bloquesAst = script.blocks;
+    const primeroSpec = BLOQUES[idDe(bloquesAst[0])];
+    const hatExtra = !primeroSpec || !primeroSpec.hat;
 
     const topId = (() => {
       if (!hatExtra) return emitirPila(ctx, bloquesAst, null);
@@ -452,13 +444,107 @@ export function convertirAProyecto(codigo) {
       ctx.bloques[topId].x = x;
       ctx.bloques[topId].y = 40;
       x += 320;
-      scriptsEmitidos++;
+      emitidos++;
       if (hatExtra) {
         ctx.avisos.push('Una pila no empezaba con un bloque sombrero: se le agregó "al presionar bandera verde" para poder ejecutarla.');
       }
     }
   }
-  if (!scriptsEmitidos) throw new Error('Ningún bloque del código se pudo convertir para el simulador.');
+  return emitidos;
+}
+
+const SONIDO_MIAU = { name: 'Miau', assetId: ASSETS.miau.md5, md5ext: ASSETS.miau.md5 + '.wav', dataFormat: 'wav', format: '', rate: 22050, sampleCount: 18688 };
+
+// Convierte código scratchblocks → { proyecto, avisos, assets }
+// El código puede tener secciones "personaje: Nombre" y una línea "fondo: Nombre".
+export function convertirAProyecto(codigo) {
+  const sb = window.scratchblocks;
+  if (!sb) throw new Error('scratchblocks no está cargado');
+  const ctx = nuevoContexto();
+  const assets = new Map(); // nombreArchivo → base64
+  assets.set(ASSETS.miau.md5 + '.wav', MIAU_WAV);
+
+  const { fondo, secciones } = separarSecciones(codigo);
+  if (!secciones.length) throw new Error('El código no tiene bloques para simular.');
+
+  // ---- fondo del escenario ----
+  let costumeFondo = {
+    name: 'fondo1', assetId: ASSETS.fondo.md5, md5ext: ASSETS.fondo.md5 + '.svg',
+    dataFormat: 'svg', rotationCenterX: 240, rotationCenterY: 180
+  };
+  assets.set(ASSETS.fondo.md5 + '.svg', FONDO_SVG);
+  if (fondo) {
+    const claveFondo = buscarFondo(fondo);
+    if (claveFondo) {
+      const f = CATALOGO_FONDOS[claveFondo];
+      costumeFondo = {
+        name: f.nombre, assetId: f.md5, md5ext: f.md5 + '.' + f.ext,
+        dataFormat: f.ext, rotationCenterX: f.rc[0], rotationCenterY: f.rc[1]
+      };
+      assets.set(f.md5 + '.' + f.ext, f.b64);
+    } else {
+      ctx.avisos.push(`No conozco el fondo "${fondo}". Los disponibles: ${listaNombresFondos().join(', ')}.`);
+    }
+  }
+
+  // ---- agrupar secciones por personaje (dos secciones "Perro" = un sprite) ----
+  const grupos = [];
+  const porNombre = new Map();
+  for (const sec of secciones) {
+    const clave = buscarPersonaje(sec.personaje);
+    if (!clave) {
+      ctx.avisos.push(`No conozco el personaje "${sec.personaje}": se usa el Gato. Los disponibles: ${listaNombresPersonajes().join(', ')}.`);
+    }
+    const claveOk = clave || 'gato';
+    const nombre = claveOk === 'gato' ? 'Gato' : CATALOGO_PERSONAJES[claveOk].nombre;
+    if (porNombre.has(nombre)) {
+      porNombre.get(nombre).codigos.push(sec.codigo);
+    } else {
+      const g = { clave: claveOk, nombre, codigos: [sec.codigo] };
+      porNombre.set(nombre, g);
+      grupos.push(g);
+    }
+  }
+
+  // ---- un target por personaje ----
+  const targets = [];
+  let totalEmitidos = 0;
+  grupos.forEach((g, i) => {
+    ctx.bloques = {};
+    let emitidos = 0;
+    for (const cod of g.codigos) emitidos += emitirScriptsDeCodigo(ctx, cod);
+    totalEmitidos += emitidos;
+
+    let costumes;
+    if (g.clave === 'gato') {
+      costumes = [
+        { name: 'disfraz1', assetId: ASSETS.gato1.md5, md5ext: ASSETS.gato1.md5 + '.svg', dataFormat: 'svg', rotationCenterX: 48, rotationCenterY: 50 },
+        { name: 'disfraz2', assetId: ASSETS.gato2.md5, md5ext: ASSETS.gato2.md5 + '.svg', dataFormat: 'svg', rotationCenterX: 46, rotationCenterY: 53 }
+      ];
+      assets.set(ASSETS.gato1.md5 + '.svg', GATO1_SVG);
+      assets.set(ASSETS.gato2.md5 + '.svg', GATO2_SVG);
+    } else {
+      const p = CATALOGO_PERSONAJES[g.clave];
+      costumes = [{ name: 'disfraz1', assetId: p.md5, md5ext: p.md5 + '.' + p.ext, dataFormat: p.ext, rotationCenterX: p.rc[0], rotationCenterY: p.rc[1] }];
+      assets.set(p.md5 + '.' + p.ext, p.b64);
+    }
+
+    // repartir los personajes por el escenario para que no queden encimados
+    const n = grupos.length;
+    const xPos = n === 1 ? 0 : Math.round(-150 + (300 / (n - 1)) * i);
+
+    targets.push({
+      isStage: false, name: g.nombre,
+      variables: {}, lists: {}, broadcasts: {},
+      blocks: ctx.bloques, comments: {},
+      currentCostume: 0, costumes,
+      sounds: [Object.assign({}, SONIDO_MIAU)],
+      volume: 100, layerOrder: i + 1,
+      visible: true, x: xPos, y: 0, size: 100, direction: 90,
+      draggable: false, rotationStyle: 'all around'
+    });
+  });
+  if (!totalEmitidos) throw new Error('Ningún bloque del código se pudo convertir para el simulador.');
 
   const variables = {};
   ctx.variables.forEach((id, nombre) => { variables[id] = [nombre, 0]; });
@@ -470,55 +556,34 @@ export function convertirAProyecto(codigo) {
     variables, lists: {}, broadcasts,
     blocks: {}, comments: {},
     currentCostume: 0,
-    costumes: [{
-      name: 'fondo1', assetId: ASSETS.fondo.md5, md5ext: ASSETS.fondo.md5 + '.svg',
-      dataFormat: 'svg', rotationCenterX: 240, rotationCenterY: 180
-    }],
+    costumes: [costumeFondo],
     sounds: [], volume: 100, layerOrder: 0,
     tempo: 60, videoTransparency: 50, videoState: 'on', textToSpeechLanguage: null
   };
-  const sprite = {
-    isStage: false, name: 'Objeto1',
-    variables: {}, lists: {}, broadcasts: {},
-    blocks: ctx.bloques, comments: {},
-    currentCostume: 0,
-    costumes: [
-      { name: 'disfraz1', assetId: ASSETS.gato1.md5, md5ext: ASSETS.gato1.md5 + '.svg', dataFormat: 'svg', rotationCenterX: 48, rotationCenterY: 50 },
-      { name: 'disfraz2', assetId: ASSETS.gato2.md5, md5ext: ASSETS.gato2.md5 + '.svg', dataFormat: 'svg', rotationCenterX: 46, rotationCenterY: 53 }
-    ],
-    sounds: [{
-      name: 'Miau', assetId: ASSETS.miau.md5, md5ext: ASSETS.miau.md5 + '.wav',
-      dataFormat: 'wav', format: '', rate: 22050, sampleCount: 18688
-    }],
-    volume: 100, layerOrder: 1,
-    visible: true, x: 0, y: 0, size: 100, direction: 90,
-    draggable: false, rotationStyle: 'all around'
-  };
 
   const proyecto = {
-    targets: [stage, sprite],
+    targets: [stage].concat(targets),
     monitors: [],
     extensions: ctx.usaPen ? ['pen'] : [],
     meta: { semver: '3.0.0', vm: '0.2.0', agent: 'Generador de Actividades' }
   };
 
-  return { proyecto, avisos: ctx.avisos };
+  return { proyecto, avisos: ctx.avisos, assets };
 }
 
 // Empaqueta el proyecto como .sb3 (zip) y devuelve un Blob
-export async function proyectoASb3(proyecto) {
+export async function proyectoASb3(proyecto, assets) {
   const zip = new JSZip();
   zip.file('project.json', JSON.stringify(proyecto));
-  zip.file(ASSETS.fondo.md5 + '.svg', b64aBytes(FONDO_SVG));
-  zip.file(ASSETS.gato1.md5 + '.svg', b64aBytes(GATO1_SVG));
-  zip.file(ASSETS.gato2.md5 + '.svg', b64aBytes(GATO2_SVG));
-  zip.file(ASSETS.miau.md5 + '.wav', b64aBytes(MIAU_WAV));
+  (assets || new Map()).forEach((b64, archivo) => {
+    zip.file(archivo, b64aBytes(b64));
+  });
   return zip.generateAsync({ type: 'blob', mimeType: 'application/x.scratch.sb3' });
 }
 
 // Atajo: código scratchblocks → { blob (.sb3), avisos }
 export async function codigoASb3(codigo) {
-  const { proyecto, avisos } = convertirAProyecto(codigo);
-  const blob = await proyectoASb3(proyecto);
+  const { proyecto, avisos, assets } = convertirAProyecto(codigo);
+  const blob = await proyectoASb3(proyecto, assets);
   return { blob, avisos, proyecto };
 }

@@ -4,6 +4,7 @@ import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-rende
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
 import { sugerirCorreccion } from './scratch-correcciones.js';
 import { parsear } from './parser.js';
+import { separarSecciones, tieneSecciones } from './scratch-secciones.js';
 import { LENGUAJES_CODIGO, ACENTO_LENGUAJE, nombreLenguaje, lenguajeEfectivo, elementoCodigo, codigoAPng } from './codigo-render.js';
 
 const STORAGE_KEY = 'gen_fichas_scratch';
@@ -96,7 +97,7 @@ const PLANTILLAS = [
 let state = {
   titulo: '',
   subtitulo: '',
-  opciones: { numerar: true, bordes: true, salto: false },
+  opciones: { numerar: true, bordes: true, salto: false, modo: 'fichas' },
   fichas: []
 };
 
@@ -106,6 +107,7 @@ function nuevaFicha(codigo, tipo) {
     id: 'f' + (uid++) + '_' + state.fichas.length,
     tipo: tipo || 'scratch', // scratch | microbit | codigo (texto plano con colores)
     titulo: '',
+    teoria: '',             // apartado teórico que va antes de la consigna
     consigna: '',
     codigo: codigo || '',
     escala: 1,
@@ -158,7 +160,7 @@ export function construirFichaView(ficha, numero, opciones) {
   if (opciones.numerar) {
     const num = document.createElement('span');
     num.className = 'ficha-view__num';
-    num.textContent = 'FICHA ' + numero;
+    num.textContent = (opciones.modo === 'guia' ? 'PASO ' : 'FICHA ') + numero;
     head.appendChild(num);
   }
   if (ficha.titulo.trim()) {
@@ -168,6 +170,18 @@ export function construirFichaView(ficha, numero, opciones) {
     head.appendChild(h);
   }
   if (head.children.length) view.appendChild(head);
+
+  if ((ficha.teoria || '').trim()) {
+    const t = document.createElement('div');
+    t.className = 'ficha-view__teoria';
+    const et = document.createElement('span');
+    et.className = 'ficha-view__teoria-label';
+    et.textContent = 'Teoría';
+    const cuerpoT = document.createElement('p');
+    cuerpoT.textContent = ficha.teoria;
+    t.append(et, cuerpoT);
+    view.appendChild(t);
+  }
 
   if (ficha.consigna.trim()) {
     const p = document.createElement('p');
@@ -198,15 +212,34 @@ export function construirFichaView(ficha, numero, opciones) {
     vacio.textContent = '(sin código todavía)';
     zonaCodigo.appendChild(vacio);
   } else {
-    const r = renderBloques(ficha.codigo, ficha.escala, ficha.estilo);
-    if (r && r.svg) {
-      zonaCodigo.appendChild(r.svg);
-    } else {
-      const err = document.createElement('span');
-      err.className = 'ficha-view__vacio';
-      err.textContent = 'No se pudo dibujar el código' + (r && r.error ? ': ' + r.error : '');
-      zonaCodigo.appendChild(err);
+    const { fondo, secciones } = separarSecciones(ficha.codigo);
+    const conChips = tieneSecciones(ficha.codigo);
+    if (conChips && fondo) {
+      const chipF = document.createElement('span');
+      chipF.className = 'ficha-view__chip ficha-view__chip--fondo';
+      chipF.textContent = '🖼 Fondo: ' + fondo;
+      zonaCodigo.appendChild(chipF);
     }
+    secciones.forEach(sec => {
+      if (conChips) {
+        const chip = document.createElement('span');
+        chip.className = 'ficha-view__chip';
+        chip.textContent = sec.personaje;
+        zonaCodigo.appendChild(chip);
+      }
+      const r = renderBloques(sec.codigo, ficha.escala, ficha.estilo);
+      if (r && r.svg) {
+        const envoltura = document.createElement('div');
+        envoltura.className = 'ficha-view__seccion';
+        envoltura.appendChild(r.svg);
+        zonaCodigo.appendChild(envoltura);
+      } else {
+        const err = document.createElement('span');
+        err.className = 'ficha-view__vacio';
+        err.textContent = 'No se pudo dibujar el código' + (r && r.error ? ': ' + r.error : '');
+        zonaCodigo.appendChild(err);
+      }
+    });
   }
   cuerpo.appendChild(zonaCodigo);
 
@@ -336,7 +369,8 @@ function construirTarjeta(ficha, i) {
   top.className = 'ficha-card__top';
   const etiquetaTipo = etiquetaDeTipo(ficha);
   const tituloResumen = ficha.titulo.trim() ? `<span class="ficha-card__resumen">${escHtml(ficha.titulo)}</span>` : '';
-  top.innerHTML = `<span class="ficha-card__num">FICHA ${i + 1} / ${state.fichas.length}</span><span class="ficha-card__tipo ficha-card__tipo--${ficha.tipo}"${estiloBadge(ficha)}>${etiquetaTipo}</span>${tituloResumen}<span class="ficha-card__top-sep"></span>`;
+  const rotulo = state.opciones.modo === 'guia' ? 'PASO' : 'FICHA';
+  top.innerHTML = `<span class="ficha-card__num">${rotulo} ${i + 1} / ${state.fichas.length}</span><span class="ficha-card__tipo ficha-card__tipo--${ficha.tipo}"${estiloBadge(ficha)}>${etiquetaTipo}</span>${tituloResumen}<span class="ficha-card__top-sep"></span>`;
   const acciones = [
     [ficha.plegada ? '▸ Desplegar' : '▾ Plegar', () => { ficha.plegada = !ficha.plegada; renderLista(); guardarLuego(); }, false],
     ['↑ Subir', () => mover(i, -1), i === 0],
@@ -366,6 +400,7 @@ function construirTarjeta(ficha, i) {
   form.className = 'ficha-card__form';
 
   form.appendChild(campoTexto('Título de la ficha (opcional)', ficha.titulo, 'Ej: El gato rebota en los bordes', v => { ficha.titulo = v; refrescar(card, ficha, i); }));
+  form.appendChild(campoArea('Teoría / explicación previa (opcional)', ficha.teoria || '', 'Ej: Un bucle repite bloques. "Por siempre" repite sin parar...', 2, v => { ficha.teoria = v; refrescar(card, ficha, i); }));
   form.appendChild(campoArea('Consigna / explicación (opcional)', ficha.consigna, 'Ej: Leé el programa y explicá qué hace el gato...', 2, v => { ficha.consigna = v; refrescar(card, ficha, i); }));
 
   const esMicrobit = ficha.tipo === 'microbit';
@@ -507,7 +542,7 @@ function avisarBloquesRojos(prev, ficha, card, i) {
   // detectar qué líneas fallan y buscar una corrección para cada una
   const sugerencias = [];
   ficha.codigo.split('\n').forEach((l, idx) => {
-    if (!l.trim() || !lineaEsRoja(l)) return;
+    if (!l.trim() || /^\s*(personaje|objeto|sprite|fondo|escenario|backdrop)\s*:/i.test(l) || !lineaEsRoja(l)) return;
     const propuesta = sugerirCorreccion(l);
     sugerencias.push({ idx, original: l.trim(), propuesta: propuesta && propuesta.trim() !== l.trim() ? propuesta : null });
   });
@@ -857,7 +892,7 @@ function cargar() {
     const data = JSON.parse(raw);
     if (data && Array.isArray(data.fichas)) {
       state = Object.assign(state, data);
-      state.opciones = Object.assign({ numerar: true, bordes: true, salto: false }, data.opciones);
+      state.opciones = Object.assign({ numerar: true, bordes: true, salto: false, modo: 'fichas' }, data.opciones);
       // borradores viejos: completar campos que no existían (tipo, estilo, vista...)
       state.fichas = state.fichas.map(f => Object.assign(nuevaFicha(), f));
     }
@@ -889,6 +924,69 @@ function hayFichasConContenido() {
   const ok = state.fichas.some(f => f.codigo.trim() || f.consigna.trim() || f.imagen);
   if (!ok) toast('Agregá al menos una ficha con contenido antes de exportar.');
   return ok;
+}
+
+// imagen PNG de los bloques de una ficha Scratch; si hay varios personajes,
+// apila las secciones con el nombre de cada personaje como etiqueta
+async function imagenBloquesScratch(ficha) {
+  const { fondo, secciones } = separarSecciones(ficha.codigo);
+  const conChips = tieneSecciones(ficha.codigo);
+  const partes = [];
+  for (const sec of secciones) {
+    const r = renderBloques(sec.codigo, ficha.escala, ficha.estilo);
+    if (!r || !r.view || !r.svg) continue;
+    let svgInfo;
+    try {
+      svgInfo = { svg: r.view.exportSVGString(), width: r.svg.width.baseVal.value, height: r.svg.height.baseVal.value };
+    } catch (e) { continue; }
+    const png = await svgAPng(svgInfo.svg, svgInfo.width, svgInfo.height);
+    partes.push({ etiqueta: conChips ? sec.personaje.trim() : null, png });
+  }
+  if (!partes.length) return null;
+  if (partes.length === 1 && !partes[0].etiqueta && !fondo) return partes[0].png;
+
+  const K = 2, PAD = 10, LABEL_H = 24;
+  const fuente = `bold ${14}px "JetBrains Mono", monospace`;
+  const etiquetaFondo = fondo && conChips ? '🖼 Fondo: ' + fondo : null;
+  const width = Math.max(120, ...partes.map(p => p.png.width));
+  let height = (etiquetaFondo ? LABEL_H + PAD : 0);
+  partes.forEach(p => { height += (p.etiqueta ? LABEL_H : 0) + p.png.height + PAD; });
+  height = Math.max(40, height - PAD);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(width * K);
+  canvas.height = Math.ceil(height * K);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(K, K);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.textBaseline = 'middle';
+
+  const imgs = await Promise.all(partes.map(p => new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = rej;
+    im.src = p.png.dataUrl;
+  })));
+
+  let y = 0;
+  if (etiquetaFondo) {
+    ctx.font = fuente;
+    ctx.fillStyle = '#555555';
+    ctx.fillText(etiquetaFondo, 0, y + LABEL_H / 2);
+    y += LABEL_H + PAD;
+  }
+  partes.forEach((p, i) => {
+    if (p.etiqueta) {
+      ctx.font = fuente;
+      ctx.fillStyle = '#855CD6';
+      ctx.fillText(p.etiqueta + ':', 0, y + LABEL_H / 2);
+      y += LABEL_H;
+    }
+    ctx.drawImage(imgs[i], 0, y, p.png.width, p.png.height);
+    y += p.png.height + PAD;
+  });
+
+  return { dataUrl: canvas.toDataURL('image/png'), width, height };
 }
 
 // espera a que estén dibujados los bloques micro:bit que se van a mostrar
@@ -957,10 +1055,7 @@ async function exportarDOCX() {
           bloques = codigoAPng(f.codigo, f.lenguaje, f.escala); // {dataUrl, width, height}
         }
       } else {
-        const svgInfo = svgStringDeFicha(f);
-        if (svgInfo) {
-          bloques = await svgAPng(svgInfo.svg, svgInfo.width, svgInfo.height);
-        }
+        bloques = await imagenBloquesScratch(f);
       }
       let imagen = null;
       if (f.imagen) {
@@ -1037,7 +1132,7 @@ function importarJSON(texto) {
   }
   state.titulo = data.titulo || '';
   state.subtitulo = data.subtitulo || '';
-  state.opciones = Object.assign({ numerar: true, bordes: true, salto: false }, data.opciones);
+  state.opciones = Object.assign({ numerar: true, bordes: true, salto: false, modo: 'fichas' }, data.opciones);
   state.fichas = data.fichas.map(f => Object.assign(nuevaFicha(), f, { id: 'f' + (uid++) + '_imp' }));
   sincronizarCampos();
   renderLista();
@@ -1119,8 +1214,8 @@ async function imagenesDeFichas(nota) {
       } else if (f.tipo === 'codigo') {
         dataUrl = codigoAPng(f.codigo, f.lenguaje, f.escala).dataUrl; // código coloreado como imagen
       } else {
-        const s = svgStringDeFicha(f);
-        if (s) dataUrl = (await svgAPng(s.svg, s.width, s.height)).dataUrl;
+        const img = await imagenBloquesScratch(f);
+        if (img) dataUrl = img.dataUrl;
       }
     }
     if (!dataUrl && f.imagen) dataUrl = f.imagen.data; // sin bloques: va la imagen subida
@@ -1364,6 +1459,8 @@ function copiarTexto(texto, msgOk) {
 }
 
 function sincronizarCampos() {
+  const selModo = document.getElementById('fdModo');
+  if (selModo) selModo.value = state.opciones.modo || 'fichas';
   document.getElementById('fdTitulo').value = state.titulo;
   document.getElementById('fdSubtitulo').value = state.subtitulo;
   document.getElementById('fdNumerar').checked = state.opciones.numerar;
@@ -1383,6 +1480,11 @@ function init() {
 
   document.getElementById('fdTitulo').addEventListener('input', e => { state.titulo = e.target.value; guardarLuego(); });
   document.getElementById('fdSubtitulo').addEventListener('input', e => { state.subtitulo = e.target.value; guardarLuego(); });
+  document.getElementById('fdModo')?.addEventListener('change', (e) => {
+    state.opciones.modo = e.target.value;
+    renderLista();
+    guardarLuego();
+  });
   [['fdNumerar', 'numerar'], ['fdBordes', 'bordes'], ['fdSalto', 'salto']].forEach(([id, key]) => {
     document.getElementById(id).addEventListener('change', e => {
       state.opciones[key] = e.target.checked;
@@ -1464,6 +1566,7 @@ function init() {
     }
     if (res.titulo && (reemplazar || !state.titulo.trim())) state.titulo = res.titulo;
     if (res.subtitulo && (reemplazar || !state.subtitulo.trim())) state.subtitulo = res.subtitulo;
+    if (res.modo) state.opciones.modo = res.modo;
     const nuevas = res.fichas.map(f => Object.assign(nuevaFicha(), f));
     state.fichas = reemplazar ? nuevas : state.fichas.concat(nuevas);
     sincronizarCampos();

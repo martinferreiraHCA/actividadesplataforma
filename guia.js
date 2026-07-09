@@ -298,6 +298,44 @@ basic.showIcon(IconNames.Heart)</pre>
         apariencia, control, sensores, operadores, variables, lápiz, sonido). Si un bloque no se puede
         simular, te lo avisa y sigue con el resto.</div>
 
+        <h4 class="guia-h">Varios personajes y fondo del escenario</h4>
+        <p class="guia-p">Dentro del código de una ficha Scratch podés programar <strong>varios
+        personajes</strong> y elegir el <strong>fondo</strong>, con estas líneas:</p>
+        <pre class="guia-pre">fondo: Estrellas
+
+personaje: Gato
+al presionar bandera verde
+por siempre
+  mover (10) pasos
+fin
+
+personaje: Perro
+al presionar bandera verde
+decir [¡Guau!] durante (2) segundos</pre>
+        <ul class="guia-lista">
+          <li><strong>Personajes disponibles:</strong> Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo.</li>
+          <li><strong>Fondos disponibles:</strong> Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.</li>
+          <li>Sin encabezados "personaje:", todo el código es del Gato, como siempre.</li>
+          <li>En la ficha impresa cada personaje aparece con su nombre arriba de sus bloques, y el simulador crea todos los personajes en el escenario con el fondo elegido.</li>
+        </ul>
+
+        <h4 class="guia-h">Guías paso a paso (tutoriales de juegos)</h4>
+        <p class="guia-p">En el Paso 1, cambiá <strong>"Tipo de documento"</strong> a
+        <strong>"Guía paso a paso"</strong>: las fichas pasan a numerarse como <strong>PASO 1, PASO 2…</strong>
+        y el documento se vuelve un tutorial donde cada paso construye una parte de un mismo juego.
+        Cada paso puede llevar un recuadro de <strong>Teoría</strong> (el concepto que se aprende),
+        la consigna, el código nuevo del paso (con sus personajes) y una captura del escenario.</p>
+        <p class="guia-p">El <strong>Asistente IA</strong> tiene la opción de actividad
+        <strong>"Guía paso a paso (tutorial de un juego completo)"</strong>: describís el juego
+        (ej: "atrapar a la mariposa con el gato") y la IA genera todos los pasos de una vez, con teoría,
+        código por personaje y dificultad creciente. Pegás la respuesta y queda el tutorial armado.</p>
+
+        <h4 class="guia-h">Apartado teórico en las fichas</h4>
+        <p class="guia-p">Toda ficha tiene el campo <strong>"Teoría / explicación previa"</strong>: un
+        recuadro destacado que aparece antes de la consigna, para explicar el concepto antes de
+        ejercitar. Sale en el PDF, el Word y se puede combinar con las capturas del simulador.
+        En el formato de texto en lote es la clave <code>teoria:</code>.</p>
+
         <h4 class="guia-h">Convertir las fichas en cuestionario para CREA</h4>
         <p class="guia-p">En el <strong>Paso 4</strong> de la página de fichas, tus fichas se convierten en un
         cuestionario donde <strong>la imagen de los bloques es parte del enunciado</strong> de cada pregunta:</p>

@@ -45,6 +45,8 @@ export function abrirEditorImagen(dataUrl, opciones) {
   let arrastrando = null;  // punto de inicio del drag
 
   function dibujar() {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     if (sel && sel.w > 2 && sel.h > 2) {
@@ -122,7 +124,10 @@ export function abrirEditorImagen(dataUrl, opciones) {
     const salida = document.createElement('canvas');
     salida.width = Math.max(1, Math.round(nw));
     salida.height = Math.max(1, Math.round(nh));
-    salida.getContext('2d').drawImage(img, nx, ny, nw, nh, 0, 0, salida.width, salida.height);
+    const sctx = salida.getContext('2d');
+    sctx.imageSmoothingEnabled = true;
+    sctx.imageSmoothingQuality = 'high';
+    sctx.drawImage(img, nx, ny, nw, nh, 0, 0, salida.width, salida.height);
     return salida.toDataURL('image/png');
   }
 
