@@ -1,63 +1,39 @@
-// Simulador de micro:bit: embebe el editor oficial de MakeCode
-// (makecode.microbit.org) DENTRO de la tarjeta de la ficha, debajo del
-// código, en modo "controller", y le carga el código por postMessage
-// (API documentada en pxteditor.d.ts de Microsoft/pxt).
-// Requiere conexión a internet. El simulador corre dentro del editor.
+// Simulador de micro:bit DENTRO de la tarjeta de la ficha, debajo del código.
+// Cómo funciona: el código se publica como enlace compartido anónimo de
+// MakeCode (la misma API que usa el botón "Compartir" de makecode.microbit.org)
+// y se embebe el simulador oficial con ese proyecto ya cargado
+// (endpoint /---run?id=...). Es el método más confiable: no depende de
+// handshakes entre ventanas. Requiere conexión a internet.
 
-const ORIGEN = 'https://makecode.microbit.org';
-const URL_EDITOR = ORIGEN + '/?controller=1&ws=mem&lang=es#editor';
+const API_PUBLICAR = 'https://makecode.com/api/scripts';
+const ORIGEN_EDITOR = 'https://makecode.microbit.org';
 
 let panel = null;
 let contenedorActual = null;
-let iframe = null;
 let escapeHandler = null;
-let escuchando = false;
-let pendienteImport = null; // { codigo, timer }
-let contador = 0;
+let abortController = null;
+
+// cache: código → shortid ya publicado (evita republicar el mismo código)
+const publicados = new Map();
 
 // si la lista de fichas se re-renderiza, el panel muere con ella: limpiamos
 if (typeof window !== 'undefined') {
   window.addEventListener('fichas:renderizando', () => cerrarSimuladorMicrobit());
 }
 
-function asegurarListener() {
-  if (escuchando) return;
-  escuchando = true;
-  window.addEventListener('message', (ev) => {
-    if (ev.origin !== ORIGEN || !iframe) return;
-    const msg = ev.data;
-    if (!msg || typeof msg !== 'object') return;
+async function publicarProyecto(codigo, señal) {
+  const clave = codigo.trim();
+  if (publicados.has(clave)) return publicados.get(clave);
 
-    // En modo controller el editor nos pide el workspace: respondemos vacío
-    // para que arranque limpio y acepte el importproject.
-    if (msg.type === 'pxthost' && msg.action === 'workspacesync') {
-      iframe.contentWindow.postMessage({
-        type: 'pxthost', id: msg.id, success: true, projects: []
-      }, ORIGEN);
-      return;
-    }
-    if (msg.type === 'pxthost' && msg.action === 'workspacesave') {
-      // guardado del editor: lo ignoramos (no persistimos nada)
-      return;
-    }
-    // cuando el editor terminó de cargar contenido, mandamos el proyecto
-    if (msg.type === 'pxthost' && (msg.action === 'workspaceloaded' || msg.action === 'editorcontentloaded')) {
-      importarPendiente();
-      return;
-    }
-  });
-}
-
-function importarPendiente() {
-  if (!pendienteImport || !iframe) return;
-  const { codigo } = pendienteImport;
-  const id = 'imp' + (++contador);
-  iframe.contentWindow.postMessage({
-    type: 'pxteditor',
-    id,
-    action: 'importproject',
-    response: true,
-    project: {
+  const resp = await fetch(API_PUBLICAR, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal: señal,
+    body: JSON.stringify({
+      name: 'Ficha micro:bit',
+      target: 'microbit',
+      description: 'Ficha didáctica del Generador de Actividades',
+      editor: 'tsprj',
       text: {
         'main.ts': codigo,
         'main.blocks': '',
@@ -67,24 +43,27 @@ function importarPendiente() {
           dependencies: { core: '*' },
           files: ['main.blocks', 'main.ts', 'README.md']
         })
-      }
-    }
-  }, ORIGEN);
-  marcarEstado('El código de la ficha se cargó en MakeCode. Apretá ▶ en el simulador (panel izquierdo) para verlo funcionar.');
-  clearTimeout(pendienteImport.timer);
-  pendienteImport = null;
+      },
+      meta: {}
+    })
+  });
+  if (!resp.ok) throw new Error('MakeCode respondió ' + resp.status);
+  const data = await resp.json();
+  if (!data.shortid && !data.id) throw new Error('MakeCode no devolvió el enlace del proyecto');
+  const id = data.shortid || data.id;
+  publicados.set(clave, id);
+  return id;
 }
 
 function marcarEstado(texto, esError) {
   const el = panel && panel.querySelector('.sim-mb__estado');
   if (!el) return;
-  el.textContent = texto;
+  el.innerHTML = texto;
   el.classList.toggle('sim-mb__estado--error', !!esError);
 }
 
 // abre el simulador DENTRO de `opciones.contenedor` (un div dentro de la tarjeta)
-export function abrirSimuladorMicrobit(ficha, opciones) {
-  asegurarListener();
+export async function abrirSimuladorMicrobit(ficha, opciones) {
   cerrarSimuladorMicrobit();
   const contenedor = opciones && opciones.contenedor;
   if (!contenedor) return;
@@ -96,14 +75,18 @@ export function abrirSimuladorMicrobit(ficha, opciones) {
       <strong>Simulador micro:bit — MakeCode</strong>
       <span class="sim-panel__sep"></span>
       <button type="button" class="ficha-card__accion" data-sim-copiar>⧉ Copiar código</button>
-      <a class="ficha-card__accion" href="${ORIGEN}/#editor" target="_blank" rel="noopener">↗ Abrir MakeCode aparte</a>
+      <a class="ficha-card__accion" data-sim-abrir href="${ORIGEN_EDITOR}/#editor" target="_blank" rel="noopener">↗ Abrir en MakeCode</a>
       <button type="button" class="ficha-card__accion ficha-card__accion--peligro" data-sim-cerrar>✕ Cerrar simulador</button>
     </div>
-    <div class="sim-mb__estado">Cargando el editor de MakeCode… (necesita internet; puede tardar unos segundos)</div>
-    <iframe class="sim-mb__iframe" allow="usb; autoplay" title="Editor MakeCode micro:bit"></iframe>
+    <div class="sim-mb__estado">Preparando el simulador… (necesita internet; puede tardar unos segundos)</div>
+    <div class="sim-mb__marco">
+      <iframe class="sim-mb__iframe" allow="autoplay" title="Simulador micro:bit" style="display:none"></iframe>
+    </div>
     <div class="sim-panel__ayuda">
-      Para la captura: dejá el simulador mostrando lo que te interesa y usá la captura de tu equipo
-      (Windows: <code>Win + Shift + S</code> — Mac: <code>Cmd + Shift + 4</code>). Después subila como imagen de la ficha.
+      El código se carga en el simulador oficial de MakeCode mediante un enlace para compartir (anónimo).
+      Con "↗ Abrir en MakeCode" ves el proyecto completo con bloques y editor.
+      Para la captura: usá el recorte de tu equipo (Windows: <code>Win + Shift + S</code> — Mac: <code>Cmd + Shift + 4</code>)
+      y subila como imagen de la ficha.
     </div>`;
   contenedor.innerHTML = '';
   contenedor.appendChild(panel);
@@ -117,24 +100,37 @@ export function abrirSimuladorMicrobit(ficha, opciones) {
   escapeHandler = (e) => { if (e.key === 'Escape') cerrarSimuladorMicrobit(); };
   document.addEventListener('keydown', escapeHandler);
 
-  iframe = panel.querySelector('iframe');
-  iframe.src = URL_EDITOR;
+  abortController = new AbortController();
+  const miPanel = panel;
+  const timeout = setTimeout(() => abortController && abortController.abort(), 30000);
+  try {
+    const id = await publicarProyecto(ficha.codigo, abortController.signal);
+    clearTimeout(timeout);
+    if (panel !== miPanel) return; // lo cerraron mientras publicaba
 
-  // si el editor nunca avisa que cargó (p.ej. sin internet), avisamos igual
-  pendienteImport = {
-    codigo: ficha.codigo,
-    timer: setTimeout(() => {
-      if (pendienteImport) {
-        marcarEstado('MakeCode está tardando en responder. Si no aparece el editor, revisá tu conexión o usá "Abrir MakeCode aparte" y pegá el código (ya podés copiarlo con el botón de arriba).', true);
-      }
-    }, 25000)
-  };
+    const iframe = panel.querySelector('iframe');
+    iframe.src = `${ORIGEN_EDITOR}/---run?id=${encodeURIComponent(id)}`;
+    iframe.style.display = 'block';
+    const abrir = panel.querySelector('[data-sim-abrir]');
+    abrir.href = `${ORIGEN_EDITOR}/#pub:${encodeURIComponent(id)}`;
+    marcarEstado('Simulador cargado: el programa ya está corriendo. Tocá los botones A/B del micro:bit virtual para probarlo.');
+  } catch (e) {
+    clearTimeout(timeout);
+    if (panel !== miPanel) return;
+    console.error(e);
+    marcarEstado(
+      'No se pudo cargar el simulador (¿hay conexión a internet?). ' +
+      'Podés copiar el código con el botón de arriba, abrir <a href="' + ORIGEN_EDITOR + '/#editor" target="_blank" rel="noopener">MakeCode</a> ' +
+      'en otra pestaña y pegarlo en la vista JavaScript.',
+      true
+    );
+  }
 }
 
 export function cerrarSimuladorMicrobit() {
-  if (pendienteImport) { clearTimeout(pendienteImport.timer); pendienteImport = null; }
+  if (abortController) { abortController.abort(); abortController = null; }
   if (escapeHandler) { document.removeEventListener('keydown', escapeHandler); escapeHandler = null; }
-  if (panel) { panel.remove(); panel = null; iframe = null; }
+  if (panel) { panel.remove(); panel = null; }
   if (contenedorActual) {
     if (contenedorActual.dataset) delete contenedorActual.dataset.simAbierto;
     contenedorActual.dispatchEvent(new CustomEvent('sim:cerrado'));
