@@ -313,6 +313,8 @@ function llenarZonaMicrobit(zona, ficha) {
 const lista = document.getElementById('listaFichas');
 
 function renderLista() {
+  // los simuladores abiertos mueren con el re-render: que se apaguen prolijo
+  window.dispatchEvent(new CustomEvent('fichas:renderizando'));
   lista.innerHTML = '';
   if (!state.fichas.length) {
     const vacio = document.createElement('div');
@@ -437,23 +439,31 @@ function construirTarjeta(ficha, i) {
   prev.className = 'ficha-card__preview';
   const lbl = document.createElement('div');
   lbl.className = 'ficha-card__preview-label';
-  lbl.style.cssText = 'display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap';
-  const lblTexto = document.createElement('span');
-  lblTexto.textContent = '// Así queda la ficha';
-  lbl.appendChild(lblTexto);
-  if (ficha.tipo === 'scratch' || ficha.tipo === 'microbit') {
-    const btnSim = document.createElement('button');
-    btnSim.type = 'button';
-    btnSim.className = 'ficha-card__accion';
-    btnSim.style.marginLeft = 'auto';
-    btnSim.textContent = ficha.tipo === 'microbit' ? '▶ Simular en MakeCode' : '▶ Probar en el escenario';
-    btnSim.title = 'Ejecutá el código y capturá el resultado para la ficha';
-    btnSim.addEventListener('click', () => abrirSimulador(ficha, card, i));
-    lbl.appendChild(btnSim);
-  }
+  lbl.textContent = '// Así queda la ficha';
   prev.appendChild(lbl);
   prev.appendChild(construirFichaView(ficha, i + 1, state.opciones));
   if (ficha.tipo === 'scratch') avisarBloquesRojos(prev, ficha, card, i);
+
+  // simulador inline: el escenario/simulador aparece acá abajo, dentro de la ficha
+  if (ficha.tipo === 'scratch' || ficha.tipo === 'microbit') {
+    const zonaSim = document.createElement('div');
+    zonaSim.className = 'ficha-card__sim';
+    const btnSim = document.createElement('button');
+    btnSim.type = 'button';
+    btnSim.className = 'ficha-card__sim-btn';
+    btnSim.textContent = ficha.tipo === 'microbit'
+      ? '▶ Simular en MakeCode — el simulador aparece acá abajo'
+      : '▶ Probar en el escenario — el programa corre acá abajo';
+    const contSim = document.createElement('div');
+    contSim.className = 'ficha-card__sim-cont';
+    btnSim.addEventListener('click', () => {
+      btnSim.style.display = 'none';
+      abrirSimulador(ficha, contSim);
+    });
+    contSim.addEventListener('sim:cerrado', () => { btnSim.style.display = ''; });
+    zonaSim.append(btnSim, contSim);
+    prev.appendChild(zonaSim);
+  }
   grid.appendChild(prev);
 
   card.appendChild(grid);
@@ -1276,18 +1286,20 @@ async function procesarCuestionarioIA() {
 // ============================================================
 // Simuladores (se cargan recién cuando se usan)
 // ============================================================
-async function abrirSimulador(ficha, card, i) {
+async function abrirSimulador(ficha, contenedor) {
   if (!ficha.codigo.trim()) {
     toast('Escribí primero el código de la ficha para poder simularlo.');
+    contenedor.dispatchEvent(new CustomEvent('sim:cerrado'));
     return;
   }
   try {
     if (ficha.tipo === 'microbit') {
       const mod = await import('./simulador-microbit.js');
-      mod.abrirSimuladorMicrobit(ficha);
+      mod.abrirSimuladorMicrobit(ficha, { contenedor });
     } else {
       const mod = await import('./simulador-scratch.js');
       mod.abrirSimuladorScratch(ficha, {
+        contenedor,
         // la captura del escenario puede quedar como imagen de la ficha
         alCapturar: (dataUrl) => {
           ficha.imagen = { data: dataUrl, nombre: 'captura-escenario.png' };
@@ -1300,6 +1312,7 @@ async function abrirSimulador(ficha, card, i) {
   } catch (e) {
     console.error(e);
     toast('No se pudo abrir el simulador: ' + (e.message || e));
+    contenedor.dispatchEvent(new CustomEvent('sim:cerrado'));
   }
 }
 
