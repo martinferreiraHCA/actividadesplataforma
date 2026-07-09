@@ -1,5 +1,7 @@
 // Exporta las fichas Scratch a un documento Word (.docx) usando docx.iife.js (global window.docx)
 
+import { pictogramasDeFicha } from './pictogramas.js';
+
 // ancho útil de una hoja A4 con márgenes de 2 cm, en píxeles a 96 dpi
 const ANCHO_CONTENIDO = 630;
 
@@ -132,6 +134,24 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
         spacing: { after: 80 }
       }));
     });
+  }
+
+  // pictogramas de "qué va a pasar" (solo diseño infantil)
+  if (infantil) {
+    const pictos = pictogramasDeFicha(ficha);
+    if (pictos.length) {
+      const runs = [new d.TextRun({ text: '👀 Vas a ver que…  ', bold: true, size: 22, color: 'B04A9C', font: FUENTE_INFANTIL })];
+      pictos.forEach((p, j) => {
+        if (j > 0) runs.push(new d.TextRun({ text: '   ·   ', size: 22, color: 'B04A9C' }));
+        runs.push(new d.TextRun({ text: p.emoji + ' ', size: 26 }));
+        runs.push(new d.TextRun({ text: p.texto, size: 22, color: '7A4B70', font: FUENTE_INFANTIL }));
+      });
+      out.push(new d.Paragraph({
+        children: runs,
+        shading: { type: d.ShadingType.CLEAR, fill: 'FDF1FA' },
+        spacing: { before: 60, after: 120 }
+      }));
+    }
   }
 
   // cuerpo: código + imagen según posición
