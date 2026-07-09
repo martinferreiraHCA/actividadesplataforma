@@ -284,6 +284,20 @@ basic.showIcon(IconNames.Heart)</pre>
         tus fichas actuales en este mismo formato — las editás en cualquier editor y las volvés a pegar.
         Con eso podés mantener bancos de fichas reutilizables.</div>
 
+        <h4 class="guia-h">Probar el código y capturar el escenario</h4>
+        <p class="guia-p">Cada ficha de Scratch tiene el botón <strong>"▶ Probar en el escenario"</strong>:
+        el código se convierte en un proyecto real y corre en el <strong>motor oficial de Scratch 3.0</strong>
+        dentro de la página, sin conexión. Ves al gato ejecutar el programa, con bandera verde, teclado,
+        mouse y preguntas/respuestas. Con <strong>📸</strong> capturás el escenario en ese momento y la
+        captura queda como <strong>imagen de la ficha</strong> (sale en el PDF, el Word y las preguntas de
+        CREA). También podés descargar la captura o el <strong>.sb3</strong> para abrirlo en scratch.mit.edu.</p>
+        <p class="guia-p">Las fichas de micro:bit tienen <strong>"▶ Simular en MakeCode"</strong>: se abre el
+        editor oficial de MakeCode con tu código ya cargado y su simulador (necesita internet). Para la
+        captura usá la herramienta de recorte de tu equipo y subila como imagen de la ficha.</p>
+        <div class="guia-aviso">El simulador de Scratch cubre los bloques más comunes de aula (movimiento,
+        apariencia, control, sensores, operadores, variables, lápiz, sonido). Si un bloque no se puede
+        simular, te lo avisa y sigue con el resto.</div>
+
         <h4 class="guia-h">Convertir las fichas en cuestionario para CREA</h4>
         <p class="guia-p">En el <strong>Paso 4</strong> de la página de fichas, tus fichas se convierten en un
         cuestionario donde <strong>la imagen de los bloques es parte del enunciado</strong> de cada pregunta:</p>

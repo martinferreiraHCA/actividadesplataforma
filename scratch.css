@@ -476,3 +476,132 @@ body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06
 .ficha-view__pre--hl .hljs-bullet { color: #735c0f; }
 .ficha-view__pre--hl .hljs-deletion { color: #b31d28; }
 .ficha-view__pre--hl .hljs-subst, .ficha-view__pre--hl .hljs-params { color: #24292e; }
+
+/* ---- Simuladores (Scratch y micro:bit): overlay + panel ---- */
+.sim-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.sim-panel {
+  background: var(--base, #fff);
+  border: var(--border, 4px solid #000);
+  box-shadow: var(--shadow, 8px 8px 0 #000);
+  max-width: 96vw;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sim-panel--mb { width: 1200px; height: 90vh; }
+.sim-panel__top {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 1rem;
+  border-bottom: var(--border-thin, 1px solid #000);
+  background: var(--surface, #f5f5f0);
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+.sim-panel__top a.ficha-card__accion { text-decoration: none; display: inline-block; }
+.sim-panel__sep { flex: 1; }
+.sim-panel__ayuda {
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  opacity: 0.75;
+  border-top: var(--border-hair, 1px solid rgba(0,0,0,0.1));
+  line-height: 1.5;
+}
+.sim-panel__ayuda code {
+  background: var(--surface, #f5f5f0);
+  border: var(--border-hair, 1px solid rgba(0,0,0,0.1));
+  padding: 0.05em 0.35em;
+}
+.sim-mb__estado {
+  padding: 0.55rem 1rem;
+  font-size: 0.82rem;
+  font-family: 'JetBrains Mono', monospace;
+  background: #fffbe8;
+  color: #6b5900;
+  border-bottom: var(--border-hair, 1px solid rgba(0,0,0,0.1));
+}
+.sim-mb__estado--error { background: #fdeaea; color: #8a1f1f; }
+.sim-mb__iframe { flex: 1; border: 0; width: 100%; min-height: 300px; }
+
+/* panel del simulador Scratch */
+.sim-sc__cuerpo {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  overflow: auto;
+}
+.sim-sc__escenario-wrap {
+  border: var(--border-thin, 1px solid #000);
+  background: #fff;
+  position: relative;
+  flex-shrink: 0;
+}
+.sim-sc__escenario-wrap canvas { display: block; }
+.sim-sc__pregunta {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.96);
+  border-top: 1px solid rgba(0,0,0,0.2);
+  padding: 0.5rem;
+  display: none;
+  gap: 0.4rem;
+  align-items: center;
+}
+.sim-sc__pregunta--visible { display: flex; }
+.sim-sc__pregunta input {
+  flex: 1;
+  font: inherit;
+  padding: 0.3em 0.5em;
+  border: 1px solid #888;
+}
+.sim-sc__lateral {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  font-size: 0.85rem;
+}
+.sim-sc__controles { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.sim-sc__btn {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.45em 1em;
+  border: var(--border-thin, 1px solid #000);
+  background: var(--base, #fff);
+  cursor: pointer;
+}
+.sim-sc__btn:hover { background: var(--ink, #000); color: var(--base, #fff); }
+.sim-sc__btn--bandera { color: #0b8a00; font-weight: 700; }
+.sim-sc__btn--stop { color: #b3000c; font-weight: 700; }
+.sim-sc__avisos {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  background: #fffbe8;
+  color: #6b5900;
+  border: 1px solid rgba(0,0,0,0.12);
+  padding: 0.6rem 0.8rem;
+  max-height: 160px;
+  overflow: auto;
+}
+.sim-sc__estado {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  opacity: 0.8;
+  min-height: 1.2em;
+}
+.sim-sc__mini { font-size: 0.78rem; opacity: 0.7; line-height: 1.5; }
