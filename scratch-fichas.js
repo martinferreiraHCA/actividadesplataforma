@@ -437,7 +437,20 @@ function construirTarjeta(ficha, i) {
   prev.className = 'ficha-card__preview';
   const lbl = document.createElement('div');
   lbl.className = 'ficha-card__preview-label';
-  lbl.textContent = '// Así queda la ficha';
+  lbl.style.cssText = 'display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap';
+  const lblTexto = document.createElement('span');
+  lblTexto.textContent = '// Así queda la ficha';
+  lbl.appendChild(lblTexto);
+  if (ficha.tipo === 'scratch' || ficha.tipo === 'microbit') {
+    const btnSim = document.createElement('button');
+    btnSim.type = 'button';
+    btnSim.className = 'ficha-card__accion';
+    btnSim.style.marginLeft = 'auto';
+    btnSim.textContent = ficha.tipo === 'microbit' ? '▶ Simular en MakeCode' : '▶ Probar en el escenario';
+    btnSim.title = 'Ejecutá el código y capturá el resultado para la ficha';
+    btnSim.addEventListener('click', () => abrirSimulador(ficha, card, i));
+    lbl.appendChild(btnSim);
+  }
   prev.appendChild(lbl);
   prev.appendChild(construirFichaView(ficha, i + 1, state.opciones));
   if (ficha.tipo === 'scratch') avisarBloquesRojos(prev, ficha, card, i);
@@ -1257,6 +1270,36 @@ async function procesarCuestionarioIA() {
     nota.textContent = 'Hubo un problema: ' + (e.message || e);
   } finally {
     btn.disabled = false;
+  }
+}
+
+// ============================================================
+// Simuladores (se cargan recién cuando se usan)
+// ============================================================
+async function abrirSimulador(ficha, card, i) {
+  if (!ficha.codigo.trim()) {
+    toast('Escribí primero el código de la ficha para poder simularlo.');
+    return;
+  }
+  try {
+    if (ficha.tipo === 'microbit') {
+      const mod = await import('./simulador-microbit.js');
+      mod.abrirSimuladorMicrobit(ficha);
+    } else {
+      const mod = await import('./simulador-scratch.js');
+      mod.abrirSimuladorScratch(ficha, {
+        // la captura del escenario puede quedar como imagen de la ficha
+        alCapturar: (dataUrl) => {
+          ficha.imagen = { data: dataUrl, nombre: 'captura-escenario.png' };
+          renderLista();
+          guardarLuego();
+          toast('La captura del escenario quedó como imagen de la ficha.');
+        }
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    toast('No se pudo abrir el simulador: ' + (e.message || e));
   }
 }
 
