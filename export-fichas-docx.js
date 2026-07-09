@@ -71,6 +71,23 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
     out.push(new d.Paragraph({ children: runsHead, spacing: { after: 120 } }));
   }
 
+  // teoría (recuadro conceptual previo)
+  if ((ficha.teoria || '').trim()) {
+    out.push(new d.Paragraph({
+      children: [new d.TextRun({ text: 'TEORÍA', bold: true, size: 16, color: '2B6CB0', font: 'Consolas' })],
+      shading: { type: d.ShadingType.CLEAR, fill: 'F2F7FF' },
+      spacing: { before: 40, after: 20 }
+    }));
+    ficha.teoria.trim().split(/\n/).forEach(linea => {
+      out.push(new d.Paragraph({
+        children: [new d.TextRun({ text: linea || ' ', size: 21 })],
+        shading: { type: d.ShadingType.CLEAR, fill: 'F2F7FF' },
+        spacing: { after: 40 }
+      }));
+    });
+    out.push(new d.Paragraph({ text: '', spacing: { after: 60 } }));
+  }
+
   // consigna (respetando saltos de línea)
   if (ficha.consigna.trim()) {
     ficha.consigna.trim().split(/\n/).forEach(linea => {

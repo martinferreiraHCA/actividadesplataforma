@@ -88,6 +88,13 @@
         <input class="campo__input" type="text" id="fdSubtitulo" placeholder="Ej: 6° año, 1° CB Informática...">
       </div>
     </div>
+    <div class="scratch-opciones" style="margin-top:1.2rem">
+      <span class="scratch-opciones__label">Tipo de documento:</span>
+      <select class="campo__input" id="fdModo" style="max-width:340px">
+        <option value="fichas">Fichas de actividades (ejercicios sueltos)</option>
+        <option value="guia">Guía paso a paso (tutorial de un proyecto)</option>
+      </select>
+    </div>
     <div class="scratch-opciones" style="margin-top:1rem">
       <span class="scratch-opciones__label">Presentación:</span>
       <label class="scratch-check"><input type="checkbox" id="fdNumerar" checked> Numerar fichas</label>
@@ -246,6 +253,7 @@
             <label class="campo__etiqueta" for="iaFichasEnfoque">Tipo de actividad</label>
             <select class="campo__input" id="iaFichasEnfoque">
               <option value="mixto">Variado (recomendado)</option>
+              <option value="guia">Guía paso a paso (tutorial de un juego completo)</option>
               <option value="lectura">Leer y predecir</option>
               <option value="error">Encontrar el error</option>
               <option value="completar">Completar el programa</option>
