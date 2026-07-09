@@ -697,12 +697,27 @@ function zonaImagen(ficha, card, i) {
       const nom = document.createElement('span');
       nom.className = 'ficha-card__img-nombre';
       nom.textContent = ficha.imagen.nombre;
+      const recortar = document.createElement('button');
+      recortar.type = 'button';
+      recortar.className = 'ficha-card__accion';
+      recortar.textContent = '✂ Recortar / zoom';
+      recortar.addEventListener('click', async () => {
+        const ed = await import('./editor-imagen.js');
+        ed.abrirEditorImagen(ficha.imagen.data, {
+          alAplicar: (resultado) => {
+            ficha.imagen = { data: resultado, nombre: ficha.imagen.nombre };
+            pintar();
+            refrescar(card, ficha, i);
+            guardarLuego();
+          }
+        });
+      });
       const quitar = document.createElement('button');
       quitar.type = 'button';
       quitar.className = 'ficha-card__accion ficha-card__accion--peligro';
       quitar.textContent = '✕ Quitar';
       quitar.addEventListener('click', () => { ficha.imagen = null; pintar(); refrescar(card, ficha, i); });
-      zona.append(th, nom, quitar);
+      zona.append(th, nom, recortar, quitar);
     } else {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -1300,12 +1315,17 @@ async function abrirSimulador(ficha, contenedor) {
       const mod = await import('./simulador-scratch.js');
       mod.abrirSimuladorScratch(ficha, {
         contenedor,
-        // la captura del escenario puede quedar como imagen de la ficha
-        alCapturar: (dataUrl) => {
-          ficha.imagen = { data: dataUrl, nombre: 'captura-escenario.png' };
-          renderLista();
-          guardarLuego();
-          toast('La captura del escenario quedó como imagen de la ficha.');
+        // la captura pasa por el editor (recortar/zoom) y queda en la ficha
+        alCapturar: async (dataUrl) => {
+          const ed = await import('./editor-imagen.js');
+          ed.abrirEditorImagen(dataUrl, {
+            alAplicar: (resultado) => {
+              ficha.imagen = { data: resultado, nombre: 'captura-escenario.png' };
+              renderLista();
+              guardarLuego();
+              toast('La captura del escenario quedó como imagen de la ficha.');
+            }
+          });
         }
       });
     }
