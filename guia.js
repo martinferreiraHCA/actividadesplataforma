@@ -10,15 +10,21 @@
       id: "inicio",
       titulo: "Empezar",
       html: `
-        <p class="guia-p">Esta herramienta arma <strong>cuestionarios y actividades</strong> y te los
-        descarga listos para subir a <strong>CREA de Ceibal, Schoology, Moodle o Google Classroom</strong>.
-        Todo pasa en tu navegador: no se instala nada y tus datos no salen de tu compu.</p>
+        <p class="guia-p">Esta herramienta te ayuda con dos grandes tareas docentes, todo en tu navegador
+        (no se instala nada y tus datos no salen de tu compu):</p>
+        <ul class="guia-lista">
+          <li><strong>Editor</strong> — cuestionarios (9 tipos de pregunta) y rúbricas, exportables a
+          <strong>CREA de Ceibal, Schoology, Moodle y Google Classroom</strong>.</li>
+          <li><strong>Fichas Scratch · micro:bit</strong> — fichas de trabajo y guías paso a paso de programación,
+          con bloques dibujados desde texto, simuladores para ver el resultado en el escenario, y descarga en
+          PDF, Word o como cuestionario para CREA.</li>
+        </ul>
 
-        <h4 class="guia-h">Los 3 pasos</h4>
+        <h4 class="guia-h">Los 3 pasos (en cualquiera de las dos)</h4>
         <ol class="guia-pasos">
-          <li><strong>Elegí el tipo de actividad</strong> en la página de inicio (cuestionario, opción múltiple, V/F, etc.).</li>
-          <li><strong>Cargá tus preguntas</strong> de una de estas tres formas: a mano con el editor visual, pegando texto, o con ayuda de una IA.</li>
-          <li><strong>Descargá</strong> el archivo en el formato de tu plataforma y subilo.</li>
+          <li><strong>Elegí qué crear</strong> desde la página de inicio: un tipo de cuestionario, una rúbrica, o fichas de programación.</li>
+          <li><strong>Cargá el contenido</strong> de una de estas tres formas: a mano con el editor visual, pegando texto, o con ayuda de una IA.</li>
+          <li><strong>Descargá</strong> en el formato de tu plataforma y subilo.</li>
         </ol>
 
         <div class="guia-aviso">Consejo: empezá por el <strong>Editor Visual</strong>. Es el modo más simple y no necesitás aprender ningún formato.</div>
@@ -56,13 +62,16 @@
       id: "tipos",
       titulo: "Tipos de pregunta",
       html: `
-        <p class="guia-p">Un cuestionario puede mezclar estos seis tipos:</p>
+        <p class="guia-p">Un cuestionario puede mezclar estos nueve tipos:</p>
         <ul class="guia-lista">
           <li><strong>Opción múltiple</strong> — varias opciones, una correcta.</li>
           <li><strong>Verdadero / Falso</strong> — afirmación que se marca V o F.</li>
           <li><strong>Respuesta corta</strong> — el alumno escribe; aceptás varias respuestas válidas separadas con <code>|</code>.</li>
           <li><strong>Numérica</strong> — respuesta con número y tolerancia (± un margen).</li>
           <li><strong>Emparejamiento</strong> — unir elementos de dos columnas.</li>
+          <li><strong>Ordenamiento</strong> — el alumno arrastra los elementos hasta la secuencia correcta.</li>
+          <li><strong>Completar huecos</strong> — arrastra palabras de un banco a los espacios del texto.</li>
+          <li><strong>Selección inline</strong> — desplegables dentro del texto.</li>
           <li><strong>Ensayo</strong> — desarrollo libre, se corrige a mano.</li>
         </ul>
 
@@ -70,6 +79,12 @@
         <p class="guia-p">Desde el editor visual, cada pregunta tiene un botón
         <strong>"+ Agregar imagen"</strong> para subir una figura. Las imágenes viajan dentro del
         archivo <code>.imscc</code>, así que se ven en Schoology y Moodle sin pasos extra.</p>
+
+        <h4 class="guia-h">Rúbricas</h4>
+        <p class="guia-p">Desde la página de inicio también podés crear <strong>rúbricas</strong> (tabla de
+        criterios y niveles de desempeño): editor visual, importación por texto, asistente IA, y salida en
+        varios formatos — copiar como texto para pegar en tu plataforma, HTML para imprimir, CSV para
+        planillas, Moodle y más.</p>
       `
     },
     {
@@ -121,6 +136,7 @@ Si V=12 e I=2, ¿cuánto vale R?
             <tr><td><strong>.imscc</strong></td><td>CREA (Ceibal), Schoology y Moodle (Common Cartridge + QTI 1.2). La opción más universal.</td></tr>
             <tr><td><strong>GIFT .txt</strong></td><td>Moodle — formato nativo, rápido de importar.</td></tr>
             <tr><td><strong>Moodle XML</strong></td><td>Moodle — el formato más completo.</td></tr>
+            <tr><td><strong>QTI 2.1 .zip</strong></td><td>CREA, Schoology y Moodle — habilita las interacciones ricas (ordenamiento, completar huecos, selección inline).</td></tr>
             <tr><td><strong>Apps Script</strong></td><td>Google Classroom — script que crea un Google Form.</td></tr>
             <tr><td><strong>.json</strong></td><td>Guardar el borrador para seguir editándolo después acá mismo.</td></tr>
           </tbody>
@@ -145,20 +161,21 @@ Si V=12 e I=2, ¿cuánto vale R?
       id: "fichas",
       titulo: "Fichas Scratch · micro:bit",
       html: `
-        <p class="guia-p">La página <strong>Fichas Scratch · micro:bit</strong> arma fichas de trabajo
-        imprimibles: escribís el código como texto y se dibuja como <strong>bloques de colores</strong>.
-        Cada ficha lleva consigna, código, imagen opcional y notas al pie, y el documento sale en
-        <strong>PDF o Word</strong>.</p>
+        <p class="guia-p">La página <strong>Fichas Scratch · micro:bit</strong> arma material didáctico de
+        programación: escribís el código como texto y se dibuja con colores. Tres clases de ficha:
+        <strong>Scratch</strong> (bloques, en la versión 3, 2 o alto contraste), <strong>micro:bit</strong>
+        (el JavaScript de MakeCode se convierte en bloques solo) y <strong>Código</strong> (Python, JavaScript,
+        Java, SQL… con resaltado de sintaxis y detección automática del lenguaje).</p>
 
-        <h4 class="guia-h">4 formas de crear fichas</h4>
+        <h4 class="guia-h">1 · Crear fichas (cuatro formas)</h4>
         <ul class="guia-lista">
-          <li><strong>A mano</strong> — "+ Ficha Scratch" o "+ Ficha micro:bit" y completás los campos.</li>
-          <li><strong>Con plantilla</strong> — un clic en "Leer y predecir", "Encontrar el error", "Completar" o "Desafío" y queda una ficha entera para retocar.</li>
-          <li><strong>En lote desde texto</strong> — pegás un solo texto con todas las fichas (pestaña <em>Importar Texto</em>). Ideal para crear 5 o 10 fichas de una vez.</li>
-          <li><strong>Con IA</strong> — completás tema, cantidad y tipo de actividad; la app genera el prompt, y la respuesta de la IA se convierte en fichas editables.</li>
+          <li><strong>A mano</strong> — "+ Ficha Scratch", "+ Ficha micro:bit" o "+ Ficha Código".</li>
+          <li><strong>Con plantilla</strong> — un clic en "Leer y predecir", "Encontrar el error", "Completar" o "Desafío".</li>
+          <li><strong>En lote desde texto</strong> — un solo texto crea muchas fichas (pestaña <em>Importar Texto</em>).</li>
+          <li><strong>Con IA</strong> — completás tema, cantidad y tipo de actividad; el prompt vuelve como fichas editables.</li>
         </ul>
 
-        <h4 class="guia-h">Cómo se escribe el código Scratch</h4>
+        <h4 class="guia-h">2 · Cómo se escribe el código Scratch</h4>
         <pre class="guia-pre">al presionar bandera verde
 por siempre
   mover (10) pasos
@@ -167,191 +184,64 @@ por siempre
   fin
 fin</pre>
         <ul class="guia-lista">
-          <li><code>(10)</code> — números entre paréntesis; <code>[hola]</code> — textos entre corchetes; <code>[v]</code> marca un desplegable.</li>
-          <li><code>&lt;condición&gt;</code> — los bloques hexagonales van entre <code>&lt; &gt;</code>.</li>
-          <li><code>fin</code> — cierra "si", "repetir" y "por siempre". Una línea en blanco separa dos pilas.</li>
-          <li>Se puede escribir en español o inglés, y elegir la <strong>versión de Scratch</strong> (3, 2 o alto contraste): cada una se dibuja con su paleta oficial de colores.</li>
+          <li><code>(10)</code> números — <code>[hola]</code> textos — <code>[espacio v]</code> desplegables — <code>&lt;condición&gt;</code> bloques hexagonales.</li>
+          <li><code>fin</code> cierra "si", "repetir" y "por siempre". Una línea en blanco separa pilas.</li>
+          <li>Si un bloque queda <strong>rojo</strong>, el texto no coincide con un bloque real: el editor te sugiere la corrección con un botón "Aplicar".</li>
         </ul>
 
-        <h4 class="guia-h">¿Un bloque quedó rojo?</h4>
-        <p class="guia-p">Si un bloque se dibuja <strong>rojo</strong>, el texto no coincide con ningún bloque
-        real de Scratch. El editor lo detecta y te <strong>sugiere la corrección con un botón "Aplicar"</strong>.
-        Los errores más comunes:</p>
-        <table class="guia-tabla">
-          <thead><tr><th>Se suele escribir…</th><th>El bloque real es…</th></tr></thead>
-          <tbody>
-            <tr><td><code>girar (90) grados</code></td><td><code>girar a la derecha (90) grados</code></td></tr>
-            <tr><td><code>decir [Hola] por (2) segundos</code></td><td><code>decir [Hola] durante (2) segundos</code></td></tr>
-            <tr><td><code>cambiar [puntos v] por (1)</code></td><td><code>sumar a [puntos v] (1)</code></td></tr>
-            <tr><td><code>fijar [puntos v] a (0)</code></td><td><code>dar a [puntos v] el valor (0)</code></td></tr>
-            <tr><td><code>tocar sonido [Miau v]</code></td><td><code>iniciar sonido [Miau v]</code></td></tr>
-            <tr><td><code>¿tocando un borde?</code></td><td><code>¿tocando [borde v]?</code></td></tr>
-            <tr><td><code>rebotar si toca un borde</code></td><td><code>si toca un borde, rebotar</code></td></tr>
-          </tbody>
-        </table>
-
-        <h4 class="guia-h">Chuletario: bloques frecuentes (redacción exacta)</h4>
-        <p class="guia-p"><strong>Eventos</strong> (amarillo #FFBF00)</p>
-        <pre class="guia-pre">al presionar bandera verde
-al presionar tecla [espacio v]
-al hacer clic en este objeto
-al recibir [mensaje1 v]
-enviar [mensaje1 v]</pre>
-        <p class="guia-p"><strong>Movimiento</strong> (azul #4C97FF)</p>
-        <pre class="guia-pre">mover (10) pasos
-girar a la derecha (15) grados
-girar a la izquierda (15) grados
-apuntar en dirección (90)
-ir a x: (0) y: (0)
-ir a [posición aleatoria v]
-deslizar en (1) segs a x: (0) y: (0)
-si toca un borde, rebotar</pre>
-        <p class="guia-p"><strong>Apariencia</strong> (violeta #9966FF)</p>
-        <pre class="guia-pre">decir [¡Hola!] durante (2) segundos
-decir [¡Hola!]
-pensar [Hmm...] durante (2) segundos
-cambiar disfraz a [disfraz2 v]
-siguiente disfraz
-cambiar fondo a [fondo1 v]
-fijar tamaño al (100) %
-sumar al efecto [color v] (25)
-esconder
-mostrar</pre>
-        <p class="guia-p"><strong>Sonido</strong> (fucsia #CF63CF)</p>
-        <pre class="guia-pre">iniciar sonido [Miau v]
-tocar sonido [Miau v] hasta que termine</pre>
-        <p class="guia-p"><strong>Control</strong> (naranja #FFAB19)</p>
-        <pre class="guia-pre">esperar (1) segundos
-repetir (10)
-por siempre
-si &lt;&gt; entonces
-si no
-esperar hasta que &lt;&gt;
-repetir hasta que &lt;&gt;
-detener [todos v]
-crear clon de [mí mismo v]
-al comenzar como clon
-eliminar este clon
-fin</pre>
-        <p class="guia-p"><strong>Sensores</strong> (celeste #5CB1D6)</p>
-        <pre class="guia-pre">¿tocando [borde v]?
-¿tocando el color [#ff0000]?
-¿tecla [espacio v] presionada?
-preguntar [¿Cómo te llamás?] y esperar
-respuesta</pre>
-        <p class="guia-p"><strong>Operadores</strong> (verde #59C059) · <strong>Variables</strong> (naranja #FF8C1A) · <strong>Listas</strong> (#FF661A) · <strong>Lápiz</strong> (extensión)</p>
-        <pre class="guia-pre">número aleatorio entre (1) y (10)
-unir [manzana ] [banana ]
-dar a [variable v] el valor (0)
-sumar a [variable v] (1)
-mostrar variable [variable v]
-añadir [cosa] a [lista v]
-bajar lápiz
-subir lápiz
-borrar todo
-sellar</pre>
-
-        <h4 class="guia-h">Fichas de micro:bit</h4>
-        <p class="guia-p">Escribí el <strong>JavaScript de MakeCode</strong> (el de la pestaña JavaScript de
-        makecode.microbit.org) y los bloques se dibujan solos con el servicio oficial de MakeCode
-        (necesita internet). Elegís si la ficha muestra <strong>bloques, código o ambos</strong>.
-        En Python se muestra el código tal cual.</p>
-
-        <h4 class="guia-h">Fichas de código (Python, JavaScript, Java...)</h4>
-        <p class="guia-p">Con <strong>"+ Ficha Código"</strong> pegás código de cualquier lenguaje de texto
-        —Python, JavaScript, Java, C/C++, C#, HTML, CSS, SQL, PHP, Bash y más— y se colorea con
-        <strong>resaltado de sintaxis</strong>: cada lenguaje con sus colores. El lenguaje se
-        <strong>detecta automáticamente</strong> (o lo elegís a mano) y aparece etiquetado en la ficha.
-        En el Word y en las preguntas para CREA el código va como imagen coloreada, igual que los bloques.</p>
-
-        <h4 class="guia-h">Formato de texto para el lote</h4>
-        <pre class="guia-pre">titulo: Práctico — Bucles
-nivel: 6° año
-
-=== FICHA: El gato rebota ===
-consigna: Explicá qué hace el gato.
-codigo:
-al presionar bandera verde
-mover (10) pasos
-notas: Pista para el alumno.
-
-=== FICHA: Corazón ===
-tipo: microbit
-muestra: ambos
-codigo:
-basic.showIcon(IconNames.Heart)</pre>
-        <div class="guia-aviso">Consejo: el botón <strong>"Copiar como texto"</strong> (en Descargar) baja
-        tus fichas actuales en este mismo formato — las editás en cualquier editor y las volvés a pegar.
-        Con eso podés mantener bancos de fichas reutilizables.</div>
-
-        <h4 class="guia-h">Probar el código y capturar el escenario</h4>
-        <p class="guia-p">Cada ficha de Scratch tiene el botón <strong>"▶ Probar en el escenario"</strong>:
-        el código se convierte en un proyecto real y corre en el <strong>motor oficial de Scratch 3.0</strong>,
-        con el escenario apareciendo <strong>ahí mismo, debajo del código de la ficha</strong>, sin conexión. Ves al gato ejecutar el programa, con bandera verde, teclado,
-        mouse y preguntas/respuestas. Con <strong>📸</strong> capturás el escenario en ese momento y la
-        captura queda como <strong>imagen de la ficha</strong> (sale en el PDF, el Word y las preguntas de
-        CREA). También podés descargar la captura o el <strong>.sb3</strong> para abrirlo en scratch.mit.edu.</p>
-        <p class="guia-p">Las fichas de micro:bit tienen <strong>"▶ Simular en MakeCode"</strong>: debajo del código se abre el
-        simulador oficial con tu programa ya corriendo (necesita internet). Con <strong>📸 Capturar y recortar</strong>
-        el navegador te pide compartir la pestaña, saca la foto y te deja recortar el micro:bit — la imagen
-        queda directamente en la ficha, igual que con Scratch.</p>
-        <p class="guia-p">En el <strong>Asistente IA</strong> también podés apretar <strong>"📚 Elegir del catálogo"</strong>
-        y marcar con qué personajes y fondo querés las fichas: el prompt sale con esos nombres como obligatorios,
-        así la IA arma las actividades exactamente con los personajes que elegiste.</p>
-        <div class="guia-aviso">El simulador de Scratch cubre los bloques más comunes de aula (movimiento,
-        apariencia, control, sensores, operadores, variables, lápiz, sonido). Si un bloque no se puede
-        simular, te lo avisa y sigue con el resto.</div>
-
-        <h4 class="guia-h">Varios personajes y fondo del escenario</h4>
-        <p class="guia-p">Dentro del código de una ficha Scratch podés programar <strong>varios
-        personajes</strong> y elegir el <strong>fondo</strong>, con estas líneas:</p>
+        <h4 class="guia-h">3 · Personajes y fondos</h4>
         <pre class="guia-pre">fondo: Estrellas
 
 personaje: Gato
 al presionar bandera verde
-por siempre
-  mover (10) pasos
-fin
+mover (10) pasos
 
 personaje: Perro
 al presionar bandera verde
 decir [¡Guau!] durante (2) segundos</pre>
         <ul class="guia-lista">
-          <li><strong>Personajes disponibles:</strong> Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo.</li>
-          <li><strong>Fondos disponibles:</strong> Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.</li>
-          <li>Esos 13 personajes y 6 fondos están guardados en la página y andan <strong>sin internet</strong>.</li>
-          <li>Además, con conexión podés usar <strong>toda la biblioteca oficial de Scratch</strong> (339 personajes y 85 fondos): abrí el botón <strong>"📚 Catálogo de Scratch"</strong> de la ficha, buscá por nombre (en inglés, como en Scratch: Abby, Dragon, Shark 2…) y un clic inserta la línea en tu código. El dibujo se descarga solo al simular o exportar.</li>
-          <li>Sin encabezados "personaje:", todo el código es del Gato, como siempre.</li>
-          <li>En la ficha impresa cada personaje aparece con su nombre arriba de sus bloques, y el simulador crea todos los personajes en el escenario con el fondo elegido.</li>
+          <li><strong>Sin internet</strong> (guardados en la página): Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo — fondos Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.</li>
+          <li><strong>Con internet</strong>: toda la biblioteca oficial (339 personajes y 85 fondos). Botón <strong>"📚 Catálogo de Scratch"</strong> en la ficha: buscás con miniaturas y un clic inserta la línea. En el <strong>Asistente IA</strong> el mismo botón elige con qué personajes quiere trabajar el docente y el prompt sale con esos nombres como obligatorios.</li>
+          <li>Sin encabezados "personaje:", todo el código es del Gato.</li>
         </ul>
 
-        <h4 class="guia-h">Guías paso a paso (tutoriales de juegos)</h4>
-        <p class="guia-p">En el Paso 1, cambiá <strong>"Tipo de documento"</strong> a
-        <strong>"Guía paso a paso"</strong>: las fichas pasan a numerarse como <strong>PASO 1, PASO 2…</strong>
-        y el documento se vuelve un tutorial donde cada paso construye una parte de un mismo juego.
-        Cada paso puede llevar un recuadro de <strong>Teoría</strong> (el concepto que se aprende),
-        la consigna, el código nuevo del paso (con sus personajes) y una captura del escenario.</p>
-        <p class="guia-p">El <strong>Asistente IA</strong> tiene la opción de actividad
-        <strong>"Guía paso a paso (tutorial de un juego completo)"</strong>: describís el juego
-        (ej: "atrapar a la mariposa con el gato") y la IA genera todos los pasos de una vez, con teoría,
-        código por personaje y dificultad creciente. Pegás la respuesta y queda el tutorial armado.</p>
-
-        <h4 class="guia-h">Apartado teórico en las fichas</h4>
-        <p class="guia-p">Toda ficha tiene el campo <strong>"Teoría / explicación previa"</strong>: un
-        recuadro destacado que aparece antes de la consigna, para explicar el concepto antes de
-        ejercitar. Sale en el PDF, el Word y se puede combinar con las capturas del simulador.
-        En el formato de texto en lote es la clave <code>teoria:</code>.</p>
-
-        <h4 class="guia-h">Convertir las fichas en cuestionario para CREA</h4>
-        <p class="guia-p">En el <strong>Paso 4</strong> de la página de fichas, tus fichas se convierten en un
-        cuestionario donde <strong>la imagen de los bloques es parte del enunciado</strong> de cada pregunta:</p>
+        <h4 class="guia-h">4 · Simular y capturar el resultado</h4>
         <ul class="guia-lista">
-          <li><strong>Cuestionario automático</strong> — una pregunta de comprensión por ficha (imagen + consigna), se abre directo en el Editor.</li>
-          <li><strong>Preguntas variadas con IA</strong> — la IA arma opción múltiple, V/F, respuesta corta y ensayo citando las imágenes; pegás la respuesta y se abre en el Editor con todo asociado.</li>
+          <li><strong>Scratch</strong> — botón "▶ Probar en el escenario": el código corre en el <strong>motor oficial de Scratch 3.0</strong> dentro de la ficha, sin internet, con bandera verde, teclado, mouse y preguntas/respuestas. <strong>📸</strong> captura el escenario, lo <strong>recortás/zoomeás</strong> y queda como imagen de la ficha. También podés bajar la captura o el <strong>.sb3</strong> para abrirlo en scratch.mit.edu.</li>
+          <li><strong>micro:bit</strong> — botón "▶ Simular en MakeCode": el simulador oficial aparece bajo el código con tu programa corriendo (necesita internet; crea un enlace compartido anónimo de MakeCode). <strong>📸 Capturar y recortar</strong>: compartís la pestaña, recortás el micro:bit y la imagen queda en la ficha.</li>
+          <li>Cualquier imagen de una ficha se puede reeditar con <strong>"✂ Recortar / zoom"</strong>.</li>
         </ul>
-        <p class="guia-p">En el Editor podés mezclar esas preguntas con otras tuyas, y al descargar el
-        <code>.imscc</code> las imágenes de bloques viajan adentro del paquete: en CREA, Schoology o Moodle
-        el alumno ve los bloques dentro de la pregunta.</p>
+
+        <h4 class="guia-h">5 · Teoría y guías paso a paso</h4>
+        <ul class="guia-lista">
+          <li>Cada ficha tiene el campo <strong>"Teoría"</strong>: un recuadro destacado antes de la consigna para explicar el concepto. Sale en PDF, Word y el formato de texto (<code>teoria:</code>).</li>
+          <li>En el Paso 1, <strong>"Tipo de documento → Guía paso a paso"</strong> convierte las fichas en <strong>PASO 1, PASO 2…</strong> de un mismo proyecto: ideal para tutoriales de juegos completos. El Asistente IA tiene la opción <strong>"Guía paso a paso (tutorial de un juego completo)"</strong> que genera todos los pasos de una vez, con teoría y código por personaje.</li>
+          <li><strong>"Diseño → Infantil 🎈"</strong> transforma todo el documento en una versión colorida para niños de escuela: cada paso con un color distinto, número en un globo, teoría como nube "💡 Para aprender", consigna con 🎯, pistas con ⭐ y una casilla <strong>"¡Lo logré!"</strong> para que el niño marque cada paso terminado. Se aplica a la vista, al PDF y al Word. En el Asistente IA, marcá <strong>"🎈 Para niños de escuela"</strong> para que la IA escriba con lenguaje simple, tono lúdico y pasos chiquitos.</li>
+        </ul>
+
+        <h4 class="guia-h">6 · Formato de texto para el lote</h4>
+        <pre class="guia-pre">titulo: Práctico — Bucles
+nivel: 6° año
+modo: guia            (opcional: tutorial paso a paso)
+
+=== FICHA: El gato rebota ===
+tipo: scratch         (scratch | microbit | codigo)
+teoria: Un bucle repite bloques sin parar.
+consigna: Explicá qué hace el gato.
+codigo:
+al presionar bandera verde
+mover (10) pasos
+notas: Pista para el alumno.</pre>
+        <div class="guia-aviso">El botón <strong>"Copiar como texto"</strong> (en Descargar) baja tus fichas en
+        este formato: las editás donde quieras y las volvés a pegar. Así mantenés bancos de fichas reutilizables.</div>
+
+        <h4 class="guia-h">7 · Descargar y convertir</h4>
+        <ul class="guia-lista">
+          <li><strong>PDF</strong> — vista de impresión del navegador ("Guardar como PDF").</li>
+          <li><strong>Word .docx</strong> — editable, con los bloques como imágenes nítidas y la teoría en recuadro.</li>
+          <li><strong>Cuestionario para CREA</strong> (Paso 4) — cada pregunta lleva la <strong>imagen de los bloques en el enunciado</strong>: automático (una pregunta por ficha) o variado con IA. Se abre en el Editor y de ahí sale el <code>.imscc</code> con las imágenes adentro.</li>
+          <li><strong>Borrador .json</strong> — para retomar otro día (además se autoguarda en el navegador).</li>
+        </ul>
       `
     },
     {
@@ -386,6 +276,19 @@ decir [¡Guau!] durante (2) segundos</pre>
         <h4 class="guia-h">¿Necesito pagar una IA?</h4>
         <p class="guia-p">No. El asistente IA es opcional y funciona con la versión gratuita de
         ChatGPT, Claude o Gemini. También podés cargar todo a mano.</p>
+
+        <h4 class="guia-h">¿Los simuladores necesitan internet?</h4>
+        <p class="guia-p">El de <strong>Scratch no</strong>: el motor oficial vive en la página (salvo que uses
+        personajes del catálogo ampliado, que se descargan la primera vez). El de <strong>micro:bit sí</strong>:
+        usa el simulador oficial de MakeCode.</p>
+
+        <h4 class="guia-h">¿Mi código de micro:bit se publica en algún lado?</h4>
+        <p class="guia-p">Al simular se crea un <strong>enlace compartido anónimo de MakeCode</strong> (lo mismo
+        que el botón "Compartir" de MakeCode). No lleva tu nombre ni datos, solo el código de la ficha.</p>
+
+        <h4 class="guia-h">¿Se guardan mis fichas?</h4>
+        <p class="guia-p">Se autoguardan en tu navegador mientras trabajás. Para conservarlas o pasarlas a otra
+        compu, usá <strong>"Guardar borrador .json"</strong> o <strong>"Copiar como texto"</strong>.</p>
 
         <h4 class="guia-h">¿Puedo cambiar los colores?</h4>
         <p class="guia-p">Sí, con el selector de temas arriba a la derecha (crema, claro, nocturno, amigable, azul).</p>

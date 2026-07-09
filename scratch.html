@@ -8,7 +8,7 @@
 <meta name="description" content="Creá fichas didácticas con bloques de Scratch y micro:bit a partir de texto plano. Con plantillas, importación en lote y asistente IA. Exportalas en PDF o Word.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="templatemo-axis-industrial.css">
 <link rel="stylesheet" href="generador.css">
 <link rel="stylesheet" href="scratch.css">
@@ -93,6 +93,11 @@
       <select class="campo__input" id="fdModo" style="max-width:340px">
         <option value="fichas">Fichas de actividades (ejercicios sueltos)</option>
         <option value="guia">Guía paso a paso (tutorial de un proyecto)</option>
+      </select>
+      <span class="scratch-opciones__label">Diseño:</span>
+      <select class="campo__input" id="fdEstiloDoc" style="max-width:280px">
+        <option value="clasico">Clásico (sobrio, para liceo)</option>
+        <option value="infantil">Infantil 🎈 (colorido, para escuela)</option>
       </select>
     </div>
     <div class="scratch-opciones" style="margin-top:1rem">
@@ -264,6 +269,13 @@
             <label class="campo__etiqueta" for="iaFichasNotas">Indicaciones extra (opcional)</label>
             <input class="campo__input" type="text" id="iaFichasNotas" placeholder="Ej: sin variables, con puntaje...">
           </div>
+        </div>
+
+        <div class="campo">
+          <label class="scratch-check" style="font-size:0.95rem">
+            <input type="checkbox" id="iaFichasInfantil">
+            🎈 Para niños de escuela (lenguaje simple, tono lúdico, pasos chiquitos)
+          </label>
         </div>
 
         <div class="campo" id="campoCatalogoIA">
