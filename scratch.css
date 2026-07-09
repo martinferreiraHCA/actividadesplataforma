@@ -712,3 +712,57 @@ body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06
 }
 .ficha-view__chip--fondo { color: #555555; border-color: #999999; }
 .ficha-view__seccion { margin-bottom: 0.4rem; }
+
+/* ---- catálogo de personajes y fondos ---- */
+.catalogo-panel { width: 900px; max-width: 94vw; height: 84vh; }
+.catalogo-barra {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.8rem 1rem 0.4rem;
+}
+.catalogo-tab--activa { background: var(--ink, #000); color: var(--base, #fff); }
+.catalogo-buscar { flex: 1; min-width: 180px; max-width: 340px; }
+.catalogo-nota {
+  padding: 0.3rem 1rem 0.6rem;
+  font-size: 0.78rem;
+  opacity: 0.75;
+  line-height: 1.5;
+  margin: 0;
+}
+.catalogo-grilla {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.6rem;
+  padding: 0.6rem 1rem 1rem;
+  background:
+    repeating-linear-gradient(45deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 8px, transparent 8px, transparent 16px);
+}
+.catalogo-item {
+  font: inherit;
+  font-size: 0.72rem;
+  border: var(--border-hair, 1px solid rgba(0,0,0,0.15));
+  background: #fff;
+  cursor: pointer;
+  padding: 0.5rem 0.3rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  color: #111;
+}
+.catalogo-item:hover { border-color: var(--safety, #ff3e00); box-shadow: 2px 2px 0 var(--safety, #ff3e00); }
+.catalogo-item img {
+  width: 72px;
+  height: 54px;
+  object-fit: contain;
+}
+.catalogo-item span {
+  text-align: center;
+  line-height: 1.2;
+  overflow: hidden;
+  max-height: 2.4em;
+}

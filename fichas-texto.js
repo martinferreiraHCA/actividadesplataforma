@@ -300,8 +300,9 @@ Dentro de "codigo:" podés usar varios personajes y elegir el fondo del escenari
   ...
   personaje: Perro
   ...
-- Personajes disponibles (usá EXACTAMENTE estos nombres): Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo.
-- Fondos disponibles: Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.
+- Personajes recomendados (funcionan siempre, usá EXACTAMENTE estos nombres): Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo.
+- Fondos recomendados: Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.
+- También se acepta cualquier personaje o fondo de la biblioteca oficial de Scratch por su nombre EXACTO en inglés (ej: Shark 2, Dragon, Beach Malibu) — preferí los recomendados salvo que el tema pida otro.
 - Sin encabezados "personaje:", todo el código es del Gato.
 
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)

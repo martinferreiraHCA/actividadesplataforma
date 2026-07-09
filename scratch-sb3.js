@@ -6,6 +6,7 @@
 import { GATO1_SVG, GATO2_SVG, FONDO_SVG, MIAU_WAV, b64aBytes } from './scratch-sb3-assets.js';
 import { PERSONAJES as CATALOGO_PERSONAJES, FONDOS as CATALOGO_FONDOS, buscarPersonaje, buscarFondo, listaNombresPersonajes, listaNombresFondos } from './scratch-personajes.js';
 import { separarSecciones } from './scratch-secciones.js';
+import { buscarPersonajeEnTodo, buscarFondoEnTodo, descargarAsset } from './scratch-catalogo.js';
 
 const ASSETS = {
   gato1: { md5: 'bcf454acf82e4504149f7ffe07081dbc', ext: 'svg', datos: GATO1_SVG },
@@ -457,7 +458,7 @@ const SONIDO_MIAU = { name: 'Miau', assetId: ASSETS.miau.md5, md5ext: ASSETS.mia
 
 // Convierte código scratchblocks → { proyecto, avisos, assets }
 // El código puede tener secciones "personaje: Nombre" y una línea "fondo: Nombre".
-export function convertirAProyecto(codigo) {
+export async function convertirAProyecto(codigo) {
   const sb = window.scratchblocks;
   if (!sb) throw new Error('scratchblocks no está cargado');
   const ctx = nuevoContexto();
@@ -483,25 +484,81 @@ export function convertirAProyecto(codigo) {
       };
       assets.set(f.md5 + '.' + f.ext, f.b64);
     } else {
-      ctx.avisos.push(`No conozco el fondo "${fondo}". Los disponibles: ${listaNombresFondos().join(', ')}.`);
+      // biblioteca completa de Scratch: se descarga del CDN oficial (necesita internet)
+      const cat = buscarFondoEnTodo(fondo);
+      if (cat) {
+        try {
+          const b64 = await descargarAsset(cat.md5ext);
+          const [md5, ext] = [cat.md5ext.slice(0, cat.md5ext.lastIndexOf('.')), cat.md5ext.slice(cat.md5ext.lastIndexOf('.') + 1)];
+          costumeFondo = {
+            name: cat.nombre, assetId: md5, md5ext: cat.md5ext,
+            dataFormat: ext, rotationCenterX: cat.rc[0], rotationCenterY: cat.rc[1]
+          };
+          assets.set(cat.md5ext, b64);
+        } catch (e) {
+          ctx.avisos.push(`No se pudo descargar el fondo "${cat.nombre}" de la biblioteca de Scratch (¿hay internet?): se usa el fondo blanco.`);
+        }
+      } else {
+        ctx.avisos.push(`No conozco el fondo "${fondo}". Sin conexión: ${listaNombresFondos().join(', ')}. Con internet, cualquier fondo de la biblioteca de Scratch (botón "📚 Catálogo").`);
+      }
     }
   }
 
   // ---- agrupar secciones por personaje (dos secciones "Perro" = un sprite) ----
+  // resolución: 1) los embebidos (sin internet), 2) la biblioteca completa
+  // de Scratch descargando los disfraces del CDN oficial (con internet)
+  async function resolverPersonaje(nombreCrudo) {
+    const clave = buscarPersonaje(nombreCrudo);
+    if (clave === 'gato') {
+      assets.set(ASSETS.gato1.md5 + '.svg', GATO1_SVG);
+      assets.set(ASSETS.gato2.md5 + '.svg', GATO2_SVG);
+      return {
+        nombre: 'Gato',
+        costumes: [
+          { name: 'disfraz1', assetId: ASSETS.gato1.md5, md5ext: ASSETS.gato1.md5 + '.svg', dataFormat: 'svg', rotationCenterX: 48, rotationCenterY: 50 },
+          { name: 'disfraz2', assetId: ASSETS.gato2.md5, md5ext: ASSETS.gato2.md5 + '.svg', dataFormat: 'svg', rotationCenterX: 46, rotationCenterY: 53 }
+        ]
+      };
+    }
+    if (clave) {
+      const p = CATALOGO_PERSONAJES[clave];
+      assets.set(p.md5 + '.' + p.ext, p.b64);
+      return {
+        nombre: p.nombre,
+        costumes: [{ name: 'disfraz1', assetId: p.md5, md5ext: p.md5 + '.' + p.ext, dataFormat: p.ext, rotationCenterX: p.rc[0], rotationCenterY: p.rc[1] }]
+      };
+    }
+    const cat = buscarPersonajeEnTodo(nombreCrudo);
+    if (cat) {
+      try {
+        const costumes = [];
+        for (const d of cat.disfraces) {
+          const b64 = await descargarAsset(d.md5ext);
+          assets.set(d.md5ext, b64);
+          const md5 = d.md5ext.slice(0, d.md5ext.lastIndexOf('.'));
+          const ext = d.md5ext.slice(d.md5ext.lastIndexOf('.') + 1);
+          costumes.push({ name: d.nombre, assetId: md5, md5ext: d.md5ext, dataFormat: ext, rotationCenterX: d.rc[0], rotationCenterY: d.rc[1] });
+        }
+        return { nombre: cat.nombre, costumes };
+      } catch (e) {
+        ctx.avisos.push(`No se pudo descargar el personaje "${cat.nombre}" de la biblioteca de Scratch (¿hay internet?): se usa el Gato.`);
+        return null;
+      }
+    }
+    ctx.avisos.push(`No conozco el personaje "${nombreCrudo}": se usa el Gato. Sin conexión tenés: ${listaNombresPersonajes().join(', ')} — y con internet, cualquiera de la biblioteca de Scratch (botón "📚 Catálogo").`);
+    return null;
+  }
+
   const grupos = [];
   const porNombre = new Map();
   for (const sec of secciones) {
-    const clave = buscarPersonaje(sec.personaje);
-    if (!clave) {
-      ctx.avisos.push(`No conozco el personaje "${sec.personaje}": se usa el Gato. Los disponibles: ${listaNombresPersonajes().join(', ')}.`);
-    }
-    const claveOk = clave || 'gato';
-    const nombre = claveOk === 'gato' ? 'Gato' : CATALOGO_PERSONAJES[claveOk].nombre;
-    if (porNombre.has(nombre)) {
-      porNombre.get(nombre).codigos.push(sec.codigo);
+    let res = await resolverPersonaje(sec.personaje);
+    if (!res) res = await resolverPersonaje('Gato');
+    if (porNombre.has(res.nombre)) {
+      porNombre.get(res.nombre).codigos.push(sec.codigo);
     } else {
-      const g = { clave: claveOk, nombre, codigos: [sec.codigo] };
-      porNombre.set(nombre, g);
+      const g = { resol: res, nombre: res.nombre, codigos: [sec.codigo] };
+      porNombre.set(res.nombre, g);
       grupos.push(g);
     }
   }
@@ -515,19 +572,7 @@ export function convertirAProyecto(codigo) {
     for (const cod of g.codigos) emitidos += emitirScriptsDeCodigo(ctx, cod);
     totalEmitidos += emitidos;
 
-    let costumes;
-    if (g.clave === 'gato') {
-      costumes = [
-        { name: 'disfraz1', assetId: ASSETS.gato1.md5, md5ext: ASSETS.gato1.md5 + '.svg', dataFormat: 'svg', rotationCenterX: 48, rotationCenterY: 50 },
-        { name: 'disfraz2', assetId: ASSETS.gato2.md5, md5ext: ASSETS.gato2.md5 + '.svg', dataFormat: 'svg', rotationCenterX: 46, rotationCenterY: 53 }
-      ];
-      assets.set(ASSETS.gato1.md5 + '.svg', GATO1_SVG);
-      assets.set(ASSETS.gato2.md5 + '.svg', GATO2_SVG);
-    } else {
-      const p = CATALOGO_PERSONAJES[g.clave];
-      costumes = [{ name: 'disfraz1', assetId: p.md5, md5ext: p.md5 + '.' + p.ext, dataFormat: p.ext, rotationCenterX: p.rc[0], rotationCenterY: p.rc[1] }];
-      assets.set(p.md5 + '.' + p.ext, p.b64);
-    }
+    const costumes = g.resol.costumes;
 
     // repartir los personajes por el escenario para que no queden encimados
     const n = grupos.length;
@@ -583,7 +628,7 @@ export async function proyectoASb3(proyecto, assets) {
 
 // Atajo: código scratchblocks → { blob (.sb3), avisos }
 export async function codigoASb3(codigo) {
-  const { proyecto, avisos, assets } = convertirAProyecto(codigo);
+  const { proyecto, avisos, assets } = await convertirAProyecto(codigo);
   const blob = await proyectoASb3(proyecto, assets);
   return { blob, avisos, proyecto };
 }

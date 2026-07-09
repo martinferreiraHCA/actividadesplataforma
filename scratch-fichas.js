@@ -449,6 +449,38 @@ function construirTarjeta(ficha, i) {
   } else {
     // versión de Scratch (cada una con su paleta oficial de colores)
     filaEscala.appendChild(campoSelect('Versión de Scratch', ficha.estilo, ESTILOS_SCRATCH, v => { ficha.estilo = v; refrescar(card, ficha, i); }));
+    // catálogo completo de personajes y fondos
+    const divCat = document.createElement('div');
+    divCat.className = 'campo';
+    const lblCat = document.createElement('span');
+    lblCat.className = 'ficha-card__mini-label';
+    lblCat.textContent = 'Personajes y fondos';
+    const btnCat = document.createElement('button');
+    btnCat.type = 'button';
+    btnCat.className = 'ficha-card__accion';
+    btnCat.style.cssText = 'width:100%;padding:0.55em';
+    btnCat.textContent = '📚 Catálogo de Scratch';
+    btnCat.addEventListener('click', async () => {
+      const mod = await import('./catalogo-ui.js');
+      mod.abrirCatalogo({
+        alElegir: ({ tipo, linea }) => {
+          const cod = ficha.codigo.replace(/\s+$/, '');
+          if (tipo === 'fondo') {
+            // un solo fondo por ficha: si ya hay una línea "fondo:", se reemplaza
+            ficha.codigo = /^\s*(fondo|escenario|backdrop)\s*:/im.test(cod)
+              ? cod.replace(/^\s*(fondo|escenario|backdrop)\s*:.*$/im, linea)
+              : linea + '\n\n' + cod;
+          } else {
+            ficha.codigo = (cod ? cod + '\n\n' : '') + linea + '\n';
+          }
+          renderLista();
+          guardarLuego();
+          toast('Se insertó "' + linea + '" en el código de la ficha.');
+        }
+      });
+    });
+    divCat.append(lblCat, btnCat);
+    filaEscala.appendChild(divCat);
   }
   filaEscala.appendChild(campoRango(esCodigo ? 'Tamaño del texto' : 'Tamaño de los bloques', ficha.escala, 0.6, 1.6, 0.1, v => `×${v}`, v => { ficha.escala = v; refrescar(card, ficha, i); }));
   form.appendChild(filaEscala);

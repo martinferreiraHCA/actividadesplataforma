@@ -315,6 +315,8 @@ decir [¡Guau!] durante (2) segundos</pre>
         <ul class="guia-lista">
           <li><strong>Personajes disponibles:</strong> Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo.</li>
           <li><strong>Fondos disponibles:</strong> Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.</li>
+          <li>Esos 13 personajes y 6 fondos están guardados en la página y andan <strong>sin internet</strong>.</li>
+          <li>Además, con conexión podés usar <strong>toda la biblioteca oficial de Scratch</strong> (339 personajes y 85 fondos): abrí el botón <strong>"📚 Catálogo de Scratch"</strong> de la ficha, buscá por nombre (en inglés, como en Scratch: Abby, Dragon, Shark 2…) y un clic inserta la línea en tu código. El dibujo se descarga solo al simular o exportar.</li>
           <li>Sin encabezados "personaje:", todo el código es del Gato, como siempre.</li>
           <li>En la ficha impresa cada personaje aparece con su nombre arriba de sus bloques, y el simulador crea todos los personajes en el escenario con el fondo elegido.</li>
         </ul>
