@@ -902,47 +902,6 @@ body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06
   border-width: 2px;
   padding: 0.1em 0.9em;
 }
-/* pictogramas "qué va a pasar" */
-.ficha-view--infantil .ficha-view__pictos {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.8rem;
-  margin: 0.7rem 0;
-  padding: 0.55rem 0.8rem;
-  background: #FDF1FA;
-  border: 2px solid #F3CFE9;
-  border-radius: 14px;
-}
-.ficha-view--infantil .ficha-view__pictos-label {
-  font-family: 'Baloo 2', sans-serif;
-  font-weight: 800;
-  font-size: 0.95rem;
-  color: #B04A9C;
-}
-.ficha-view--infantil .ficha-view__picto {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.05rem;
-  min-width: 4.2rem;
-  padding: 0.25rem 0.5rem;
-  background: #fff;
-  border: 2px solid #F3CFE9;
-  border-radius: 12px;
-}
-.ficha-view--infantil .ficha-view__picto-emoji {
-  font-size: 1.5rem;
-  line-height: 1.2;
-}
-.ficha-view--infantil .ficha-view__picto-texto {
-  font-family: 'Baloo 2', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #7A4B70;
-  text-align: center;
-  line-height: 1.15;
-}
 /* notas = pista con estrella */
 .ficha-view--infantil .ficha-view__notas {
   border-top: none;

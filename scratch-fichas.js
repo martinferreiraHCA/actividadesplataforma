@@ -2,7 +2,6 @@
 import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
-import { pictogramasDeFicha } from './pictogramas.js';
 import { sugerirCorreccion } from './scratch-correcciones.js';
 import { parsear } from './parser.js';
 import { separarSecciones, tieneSecciones } from './scratch-secciones.js';
@@ -197,28 +196,6 @@ export function construirFichaView(ficha, numero, opciones) {
     p.className = 'ficha-view__consigna';
     p.textContent = ficha.consigna;
     view.appendChild(p);
-  }
-
-  // pictogramas de "qué va a pasar" (solo diseño infantil)
-  if (infantil) {
-    const pictos = pictogramasDeFicha(ficha);
-    if (pictos.length) {
-      const tira = document.createElement('div');
-      tira.className = 'ficha-view__pictos';
-      const et = document.createElement('span');
-      et.className = 'ficha-view__pictos-label';
-      et.textContent = '👀 Vas a ver que…';
-      tira.appendChild(et);
-      pictos.forEach(p => {
-        const item = document.createElement('span');
-        item.className = 'ficha-view__picto';
-        item.innerHTML = '<span class="ficha-view__picto-emoji"></span><span class="ficha-view__picto-texto"></span>';
-        item.firstChild.textContent = p.emoji;
-        item.lastChild.textContent = p.texto;
-        tira.appendChild(item);
-      });
-      view.appendChild(tira);
-    }
   }
 
   const cuerpo = document.createElement('div');
