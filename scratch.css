@@ -605,3 +605,29 @@ body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06
   min-height: 1.2em;
 }
 .sim-sc__mini { font-size: 0.78rem; opacity: 0.7; line-height: 1.5; }
+
+/* ---- simulador inline dentro de la tarjeta ---- */
+.ficha-card__sim { margin-top: 1rem; }
+.ficha-card__sim-btn {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 0.7em 1em;
+  border: var(--border-thin, 1px solid #000);
+  background: var(--base, #fff);
+  color: #0b8a00;
+  cursor: pointer;
+  text-align: center;
+}
+.ficha-card__sim-btn:hover { background: #0b8a00; color: #fff; border-color: #0b8a00; }
+.sim-panel--inline {
+  box-shadow: none;
+  max-width: 100%;
+  width: 100%;
+  max-height: none;
+}
+.sim-panel--inline.sim-panel--mb { height: 78vh; min-height: 480px; }
+.sim-panel--inline .sim-sc__cuerpo { padding: 0.8rem; }
+.sim-panel--inline .sim-sc__escenario-wrap { max-width: 100%; overflow: auto; }
