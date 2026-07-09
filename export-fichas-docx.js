@@ -3,21 +3,33 @@
 // ancho útil de una hoja A4 con márgenes de 2 cm, en píxeles a 96 dpi
 const ANCHO_CONTENIDO = 630;
 
+// colores del diseño infantil (mismos que PALETA_INFANTIL de la vista)
+const PALETA_INFANTIL = ['F6416C', '00B8A9', 'A66CFF', 'FF8C42', '38B000', '3A86FF'];
+const FUENTE_INFANTIL = 'Comic Sans MS';
+
 export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }) {
   const d = window.docx;
   if (!d) throw new Error('No se cargó la librería de Word (docx.iife.js)');
 
   const children = [];
 
+  const infantil = opciones.estiloDoc === 'infantil';
   if (titulo && titulo.trim()) {
     children.push(new d.Paragraph({
-      children: [new d.TextRun({ text: titulo.trim(), bold: true, size: 44, font: 'Calibri' })],
+      alignment: infantil ? d.AlignmentType.CENTER : undefined,
+      children: [new d.TextRun({
+        text: infantil ? '🌈 ' + titulo.trim() + ' 🚀' : titulo.trim(),
+        bold: true, size: infantil ? 48 : 44,
+        color: infantil ? PALETA_INFANTIL[0] : undefined,
+        font: infantil ? FUENTE_INFANTIL : 'Calibri'
+      })],
       spacing: { after: subtitulo && subtitulo.trim() ? 60 : 240 }
     }));
   }
   if (subtitulo && subtitulo.trim()) {
     children.push(new d.Paragraph({
-      children: [new d.TextRun({ text: subtitulo.trim(), size: 24, color: '666666', font: 'Calibri' })],
+      alignment: infantil ? d.AlignmentType.CENTER : undefined,
+      children: [new d.TextRun({ text: subtitulo.trim(), size: 24, color: '666666', font: infantil ? FUENTE_INFANTIL : 'Calibri' })],
       spacing: { after: 240 }
     }));
   }
@@ -28,7 +40,8 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
     }
     const contenido = contenidoFicha(d, item, opciones);
     if (opciones.bordes) {
-      children.push(tablaMarco(d, contenido));
+      const acento = infantil ? PALETA_INFANTIL[(item.numero - 1) % PALETA_INFANTIL.length] : null;
+      children.push(tablaMarco(d, contenido, acento));
       children.push(new d.Paragraph({ text: '', spacing: { after: 160 } }));
     } else {
       children.push(...contenido);
@@ -57,15 +70,29 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
 function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
   const out = [];
   const anchoInterior = opciones.bordes ? ANCHO_CONTENIDO - 30 : ANCHO_CONTENIDO;
+  const infantil = opciones.estiloDoc === 'infantil';
+  const acento = PALETA_INFANTIL[(numero - 1) % PALETA_INFANTIL.length];
+  const rotulo = opciones.modo === 'guia' ? 'PASO' : 'FICHA';
 
   // encabezado: chip "FICHA N" + título
   const runsHead = [];
   if (opciones.numerar) {
-    runsHead.push(new d.TextRun({ text: ` FICHA ${numero} `, bold: true, size: 18, color: 'FFFFFF', highlight: 'black', font: 'Consolas' }));
+    if (infantil) {
+      runsHead.push(new d.TextRun({
+        text: ` 🌟 ${rotulo} ${numero} `, bold: true, size: 24, color: 'FFFFFF',
+        shading: { type: d.ShadingType.CLEAR, fill: acento }, font: FUENTE_INFANTIL
+      }));
+    } else {
+      runsHead.push(new d.TextRun({ text: ` ${rotulo} ${numero} `, bold: true, size: 18, color: 'FFFFFF', highlight: 'black', font: 'Consolas' }));
+    }
     if (ficha.titulo.trim()) runsHead.push(new d.TextRun({ text: '   ' }));
   }
   if (ficha.titulo.trim()) {
-    runsHead.push(new d.TextRun({ text: ficha.titulo.trim(), bold: true, size: 28 }));
+    runsHead.push(new d.TextRun({
+      text: ficha.titulo.trim(), bold: true, size: infantil ? 30 : 28,
+      color: infantil ? acento : undefined,
+      font: infantil ? FUENTE_INFANTIL : undefined
+    }));
   }
   if (runsHead.length) {
     out.push(new d.Paragraph({ children: runsHead, spacing: { after: 120 } }));
@@ -74,14 +101,18 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
   // teoría (recuadro conceptual previo)
   if ((ficha.teoria || '').trim()) {
     out.push(new d.Paragraph({
-      children: [new d.TextRun({ text: 'TEORÍA', bold: true, size: 16, color: '2B6CB0', font: 'Consolas' })],
-      shading: { type: d.ShadingType.CLEAR, fill: 'F2F7FF' },
+      children: [new d.TextRun({
+        text: infantil ? '💡 Para aprender' : 'TEORÍA',
+        bold: true, size: infantil ? 20 : 16, color: '2B6CB0',
+        font: infantil ? FUENTE_INFANTIL : 'Consolas'
+      })],
+      shading: { type: d.ShadingType.CLEAR, fill: infantil ? 'EAF6FF' : 'F2F7FF' },
       spacing: { before: 40, after: 20 }
     }));
     ficha.teoria.trim().split(/\n/).forEach(linea => {
       out.push(new d.Paragraph({
-        children: [new d.TextRun({ text: linea || ' ', size: 21 })],
-        shading: { type: d.ShadingType.CLEAR, fill: 'F2F7FF' },
+        children: [new d.TextRun({ text: linea || ' ', size: infantil ? 22 : 21, font: infantil ? FUENTE_INFANTIL : undefined })],
+        shading: { type: d.ShadingType.CLEAR, fill: infantil ? 'EAF6FF' : 'F2F7FF' },
         spacing: { after: 40 }
       }));
     });
@@ -90,9 +121,14 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
 
   // consigna (respetando saltos de línea)
   if (ficha.consigna.trim()) {
-    ficha.consigna.trim().split(/\n/).forEach(linea => {
+    ficha.consigna.trim().split(/\n/).forEach((linea, j) => {
       out.push(new d.Paragraph({
-        children: [new d.TextRun({ text: linea, size: 22 })],
+        children: [new d.TextRun({
+          text: infantil && j === 0 ? '🎯 ' + linea : linea,
+          size: infantil ? 24 : 22,
+          font: infantil ? FUENTE_INFANTIL : undefined
+        })],
+        shading: infantil ? { type: d.ShadingType.CLEAR, fill: 'FFF8DE' } : undefined,
         spacing: { after: 80 }
       }));
     });
@@ -126,10 +162,28 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
   if (ficha.notas.trim()) {
     ficha.notas.trim().split(/\n/).forEach((linea, j) => {
       out.push(new d.Paragraph({
-        children: [new d.TextRun({ text: linea, italics: true, size: 20, color: '444444' })],
+        children: [new d.TextRun({
+          text: infantil && j === 0 ? '⭐ ' + linea : linea,
+          italics: !infantil, size: infantil ? 22 : 20,
+          color: infantil ? '2F7D32' : '444444',
+          font: infantil ? FUENTE_INFANTIL : undefined
+        })],
+        shading: infantil ? { type: d.ShadingType.CLEAR, fill: 'EFFAEC' } : undefined,
         spacing: { before: j === 0 ? 160 : 0, after: 40 }
       }));
     });
+  }
+
+  // casilla "¡Lo logré!" para que el niño marque el paso terminado
+  if (infantil) {
+    out.push(new d.Paragraph({
+      alignment: d.AlignmentType.RIGHT,
+      children: [
+        new d.TextRun({ text: '☐  ', size: 32, color: acento }),
+        new d.TextRun({ text: '¡Lo logré!', bold: true, size: 24, color: acento, font: FUENTE_INFANTIL })
+      ],
+      spacing: { before: 160, after: 40 }
+    }));
   }
 
   return out;
@@ -227,9 +281,11 @@ function bordesCelda(d) {
   return { top: nada, bottom: nada, left: nada, right: nada };
 }
 
-// tabla 1×1 que hace de marco de la ficha
-function tablaMarco(d, contenido) {
-  const linea = { style: d.BorderStyle.SINGLE, size: 12, color: '111111' };
+// tabla 1×1 que hace de marco de la ficha (con color de acento en modo infantil)
+function tablaMarco(d, contenido, acento) {
+  const linea = acento
+    ? { style: d.BorderStyle.SINGLE, size: 28, color: acento }
+    : { style: d.BorderStyle.SINGLE, size: 12, color: '111111' };
   return new d.Table({
     width: { size: 100, type: d.WidthType.PERCENTAGE },
     borders: {

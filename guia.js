@@ -216,6 +216,7 @@ decir [¡Guau!] durante (2) segundos</pre>
         <ul class="guia-lista">
           <li>Cada ficha tiene el campo <strong>"Teoría"</strong>: un recuadro destacado antes de la consigna para explicar el concepto. Sale en PDF, Word y el formato de texto (<code>teoria:</code>).</li>
           <li>En el Paso 1, <strong>"Tipo de documento → Guía paso a paso"</strong> convierte las fichas en <strong>PASO 1, PASO 2…</strong> de un mismo proyecto: ideal para tutoriales de juegos completos. El Asistente IA tiene la opción <strong>"Guía paso a paso (tutorial de un juego completo)"</strong> que genera todos los pasos de una vez, con teoría y código por personaje.</li>
+          <li><strong>"Diseño → Infantil 🎈"</strong> transforma todo el documento en una versión colorida para niños de escuela: cada paso con un color distinto, número en un globo, teoría como nube "💡 Para aprender", consigna con 🎯, pistas con ⭐ y una casilla <strong>"¡Lo logré!"</strong> para que el niño marque cada paso terminado. Se aplica a la vista, al PDF y al Word. En el Asistente IA, marcá <strong>"🎈 Para niños de escuela"</strong> para que la IA escriba con lenguaje simple, tono lúdico y pasos chiquitos.</li>
         </ul>
 
         <h4 class="guia-h">6 · Formato de texto para el lote</h4>

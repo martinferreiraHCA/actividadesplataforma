@@ -231,7 +231,7 @@ basic.forever(function () {
 // ============================================================
 // Prompt para que una IA genere fichas en este formato
 // ============================================================
-export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque, notas, catalogo }) {
+export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque, notas, catalogo, infantil }) {
   const plataformaTexto = {
     scratch: 'Scratch (todas las fichas con tipo: scratch)',
     microbit: 'micro:bit con MakeCode (todas las fichas con tipo: microbit)',
@@ -255,6 +255,15 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
 - **Plataforma:** ${plataformaTexto}
 - **Tipo de actividad:** ${enfoqueTexto}`;
   if (notas) prompt += `\n- **Indicaciones extra:** ${notas}`;
+  if (infantil) {
+    prompt += `\n- **Destinatarios: NIÑOS DE ESCUELA PRIMARIA.** Escribí para que un niño pueda seguir la guía SOLO, sin ayuda del docente:
+  - Lenguaje MUY simple y directo, frases cortas, vocabulario cotidiano. Hablale al niño con tono alegre y motivador ("¡Vas muy bien!", "¡Ahora viene lo más divertido!").
+  - Pasos chiquitos: UNA sola idea o acción por ficha. Mejor muchas fichas cortas que pocas largas.
+  - En "teoria:" explicá el concepto con una comparación de la vida diaria (una receta, un semáforo, un juego) en 1 o 2 frases.
+  - En "consigna:" decí exactamente qué hacer y qué va a pasar cuando lo logre, para que pueda comprobarlo solo.
+  - En "notas:" agregá una pista simpática o un mini desafío extra ("¿Y si probás con otro número?").
+  - Evitá tecnicismos; si un término es inevitable (bucle, variable), explicalo la primera vez con palabras de niño.`;
+  }
   if (catalogo && catalogo.personajes && catalogo.personajes.length) {
     prompt += `\n- **Personajes elegidos por el docente (usalos, son OBLIGATORIOS):** ${catalogo.personajes.join(', ')}`;
   }
