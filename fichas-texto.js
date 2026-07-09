@@ -231,7 +231,7 @@ basic.forever(function () {
 // ============================================================
 // Prompt para que una IA genere fichas en este formato
 // ============================================================
-export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque, notas }) {
+export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque, notas, catalogo }) {
   const plataformaTexto = {
     scratch: 'Scratch (todas las fichas con tipo: scratch)',
     microbit: 'micro:bit con MakeCode (todas las fichas con tipo: microbit)',
@@ -255,6 +255,12 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
 - **Plataforma:** ${plataformaTexto}
 - **Tipo de actividad:** ${enfoqueTexto}`;
   if (notas) prompt += `\n- **Indicaciones extra:** ${notas}`;
+  if (catalogo && catalogo.personajes && catalogo.personajes.length) {
+    prompt += `\n- **Personajes elegidos por el docente (usalos, son OBLIGATORIOS):** ${catalogo.personajes.join(', ')}`;
+  }
+  if (catalogo && catalogo.fondo) {
+    prompt += `\n- **Fondo del escenario elegido (usalo en las fichas con "fondo: ${catalogo.fondo}"):** ${catalogo.fondo}`;
+  }
 
   prompt += `
 
@@ -300,8 +306,10 @@ Dentro de "codigo:" podés usar varios personajes y elegir el fondo del escenari
   ...
   personaje: Perro
   ...
-- Personajes disponibles (usá EXACTAMENTE estos nombres): Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo.
-- Fondos disponibles: Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.
+- Personajes recomendados (funcionan siempre, usá EXACTAMENTE estos nombres): Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo.
+- Fondos recomendados: Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.
+- También se acepta cualquier personaje o fondo de la biblioteca oficial de Scratch por su nombre EXACTO en inglés (ej: Shark 2, Dragon, Beach Malibu) — preferí los recomendados salvo que el tema pida otro.
+- Si el docente eligió personajes y/o fondo (arriba), usá EXACTAMENTE esos, escribiendo "personaje: Nombre" para cada uno y "fondo: Nombre".
 - Sin encabezados "personaje:", todo el código es del Gato.
 
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)

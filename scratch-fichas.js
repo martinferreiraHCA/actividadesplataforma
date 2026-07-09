@@ -449,6 +449,38 @@ function construirTarjeta(ficha, i) {
   } else {
     // versión de Scratch (cada una con su paleta oficial de colores)
     filaEscala.appendChild(campoSelect('Versión de Scratch', ficha.estilo, ESTILOS_SCRATCH, v => { ficha.estilo = v; refrescar(card, ficha, i); }));
+    // catálogo completo de personajes y fondos
+    const divCat = document.createElement('div');
+    divCat.className = 'campo';
+    const lblCat = document.createElement('span');
+    lblCat.className = 'ficha-card__mini-label';
+    lblCat.textContent = 'Personajes y fondos';
+    const btnCat = document.createElement('button');
+    btnCat.type = 'button';
+    btnCat.className = 'ficha-card__accion';
+    btnCat.style.cssText = 'width:100%;padding:0.55em';
+    btnCat.textContent = '📚 Catálogo de Scratch';
+    btnCat.addEventListener('click', async () => {
+      const mod = await import('./catalogo-ui.js');
+      mod.abrirCatalogo({
+        alElegir: ({ tipo, linea }) => {
+          const cod = ficha.codigo.replace(/\s+$/, '');
+          if (tipo === 'fondo') {
+            // un solo fondo por ficha: si ya hay una línea "fondo:", se reemplaza
+            ficha.codigo = /^\s*(fondo|escenario|backdrop)\s*:/im.test(cod)
+              ? cod.replace(/^\s*(fondo|escenario|backdrop)\s*:.*$/im, linea)
+              : linea + '\n\n' + cod;
+          } else {
+            ficha.codigo = (cod ? cod + '\n\n' : '') + linea + '\n';
+          }
+          renderLista();
+          guardarLuego();
+          toast('Se insertó "' + linea + '" en el código de la ficha.');
+        }
+      });
+    });
+    divCat.append(lblCat, btnCat);
+    filaEscala.appendChild(divCat);
   }
   filaEscala.appendChild(campoRango(esCodigo ? 'Tamaño del texto' : 'Tamaño de los bloques', ficha.escala, 0.6, 1.6, 0.1, v => `×${v}`, v => { ficha.escala = v; refrescar(card, ficha, i); }));
   form.appendChild(filaEscala);
@@ -1394,6 +1426,32 @@ async function procesarCuestionarioIA() {
 }
 
 // ============================================================
+// Selección de personajes/fondo para el prompt de IA
+// ============================================================
+const seleccionIA = { personajes: [], fondo: null };
+
+function pintarChipsIA() {
+  const cont = document.getElementById('chipsIaCatalogo');
+  if (!cont) return;
+  cont.innerHTML = '';
+  const chips = seleccionIA.personajes.map(p => ({ texto: p, tipo: 'personaje' }));
+  if (seleccionIA.fondo) chips.push({ texto: '🖼 ' + seleccionIA.fondo, tipo: 'fondo' });
+  chips.forEach(ch => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ia-catalogo__chip';
+    b.title = 'Quitar';
+    b.textContent = ch.texto + ' ✕';
+    b.addEventListener('click', () => {
+      if (ch.tipo === 'fondo') seleccionIA.fondo = null;
+      else seleccionIA.personajes = seleccionIA.personajes.filter(p => p !== ch.texto);
+      pintarChipsIA();
+    });
+    cont.appendChild(b);
+  });
+}
+
+// ============================================================
 // Simuladores (se cargan recién cuando se usan)
 // ============================================================
 async function abrirSimulador(ficha, contenedor) {
@@ -1403,26 +1461,23 @@ async function abrirSimulador(ficha, contenedor) {
     return;
   }
   try {
-    if (ficha.tipo === 'microbit') {
-      const mod = await import('./simulador-microbit.js');
-      mod.abrirSimuladorMicrobit(ficha, { contenedor });
-    } else {
-      const mod = await import('./simulador-scratch.js');
-      mod.abrirSimuladorScratch(ficha, {
-        contenedor,
-        // la captura pasa por el editor (recortar/zoom) y queda en la ficha
-        alCapturar: async (dataUrl) => {
-          const ed = await import('./editor-imagen.js');
-          ed.abrirEditorImagen(dataUrl, {
-            alAplicar: (resultado) => {
-              ficha.imagen = { data: resultado, nombre: 'captura-escenario.png' };
-              renderLista();
-              guardarLuego();
-              toast('La captura del escenario quedó como imagen de la ficha.');
-            }
-          });
+    const alCapturar = async (dataUrl) => {
+      const ed = await import('./editor-imagen.js');
+      ed.abrirEditorImagen(dataUrl, {
+        alAplicar: (resultado) => {
+          ficha.imagen = { data: resultado, nombre: 'captura-simulador.png' };
+          renderLista();
+          guardarLuego();
+          toast('La captura quedó como imagen de la ficha.');
         }
       });
+    };
+    if (ficha.tipo === 'microbit') {
+      const mod = await import('./simulador-microbit.js');
+      mod.abrirSimuladorMicrobit(ficha, { contenedor, alCapturar });
+    } else {
+      const mod = await import('./simulador-scratch.js');
+      mod.abrirSimuladorScratch(ficha, { contenedor, alCapturar });
     }
   } catch (e) {
     console.error(e);
@@ -1586,6 +1641,22 @@ function init() {
   });
 
   // ---- asistente IA ----
+  document.getElementById('btnIaCatalogo')?.addEventListener('click', async () => {
+    const mod = await import('./catalogo-ui.js');
+    mod.abrirCatalogo({
+      alElegir: ({ tipo, nombre }) => {
+        if (tipo === 'fondo') {
+          seleccionIA.fondo = nombre;
+        } else if (!seleccionIA.personajes.includes(nombre)) {
+          if (seleccionIA.personajes.length >= 6) { toast('Hasta 6 personajes por documento — quitá alguno primero.'); return; }
+          seleccionIA.personajes.push(nombre);
+        }
+        pintarChipsIA();
+        toast('Agregado al prompt: ' + nombre + '. Podés volver a abrir el catálogo para sumar más.');
+      }
+    });
+  });
+
   document.getElementById('formPromptFichas').addEventListener('submit', (e) => {
     e.preventDefault();
     const prompt = generarPromptFichas({
@@ -1594,7 +1665,8 @@ function init() {
       cantidad: parseInt(document.getElementById('iaFichasCantidad').value, 10) || 4,
       plataforma: document.getElementById('iaFichasPlataforma').value,
       enfoque: document.getElementById('iaFichasEnfoque').value,
-      notas: document.getElementById('iaFichasNotas').value.trim()
+      notas: document.getElementById('iaFichasNotas').value.trim(),
+      catalogo: { personajes: seleccionIA.personajes.slice(), fondo: seleccionIA.fondo }
     });
     const caja = document.getElementById('cajaPrompt');
     caja.textContent = prompt;
