@@ -1069,3 +1069,152 @@ body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06
   }
   .fichas-impresion .ficha-view--colorido { border-radius: 10px; }
 }
+
+/* ============================================================
+   MODO GUIADO (wizard): barra de pasos, tarjetas y navegación
+   ============================================================ */
+.wiz-oculto { display: none !important; }
+body:not(.modo-guiado) .wiz-explica { display: none; }
+
+.wiz-explica {
+  max-width: 760px;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  margin: 0 0 1.4rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--base);
+  border: var(--border-thin);
+  border-left: 4px solid var(--safety);
+}
+
+/* ---- barra de pasos ---- */
+.wiz-barra {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.wiz-barra__pasos {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.wiz-paso {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.9rem 0.45rem 0.5rem;
+  background: var(--base);
+  border: var(--border-thin);
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+}
+.wiz-paso__num {
+  width: 1.9em;
+  height: 1.9em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.wiz-paso__rotulo { display: flex; flex-direction: column; line-height: 1.2; }
+.wiz-paso__rotulo strong { font-size: 0.82rem; }
+.wiz-paso__rotulo small { font-size: 0.68rem; opacity: 0.6; }
+.wiz-paso--actual {
+  background: var(--ink);
+  color: var(--base);
+  border-color: var(--ink);
+}
+.wiz-paso--actual .wiz-paso__num { background: var(--safety); border-color: var(--safety); color: #fff; }
+.wiz-paso--hecho { opacity: 0.75; }
+.wiz-paso--hecho .wiz-paso__num { background: var(--ink); border-color: var(--ink); color: var(--base); }
+.wiz-paso--hecho .wiz-paso__num::before { content: '✓'; }
+.wiz-paso--hecho .wiz-paso__num { font-size: 0; }
+.wiz-paso--hecho .wiz-paso__num::before { font-size: 0.85rem; }
+.wiz-barra--completa .wiz-paso { opacity: 0.85; }
+
+.wiz-toggle {
+  background: none;
+  border: var(--border-thin);
+  padding: 0.45em 1em;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: inherit;
+  background: var(--base);
+  white-space: nowrap;
+}
+.wiz-toggle:hover { background: var(--ink); color: var(--base); }
+
+/* ---- tarjetas grandes de elección ---- */
+.wiz-cards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.wiz-card {
+  flex: 1;
+  min-width: 240px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  background: var(--base);
+  border: var(--border-thin);
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  box-shadow: var(--shadow-hover);
+}
+.wiz-card:hover { transform: translateY(-2px); }
+.wiz-card--activa {
+  border-color: var(--safety);
+  border-width: 3px;
+  outline: none;
+}
+.wiz-card--activa .wiz-card__titulo::after { content: ' ✓'; color: var(--safety); }
+.wiz-card__icono { font-size: 1.6rem; line-height: 1; }
+.wiz-card__titulo { font-weight: 700; font-size: 1rem; }
+.wiz-card__texto { font-size: 0.85rem; line-height: 1.5; opacity: 0.75; }
+
+/* ---- navegación Volver / Continuar ---- */
+.wiz-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: var(--border-hair);
+}
+.wiz-nav__aviso {
+  flex: 1;
+  text-align: right;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+/* ---- vista previa del diseño (paso 3) ---- */
+.wiz-preview { margin-top: 1.6rem; overflow-x: auto; }
+.wiz-preview__rotulo {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 0.8rem;
+}
+.wiz-preview .ficha-view { box-shadow: var(--shadow-hover); }
+
+@media (max-width: 760px) {
+  .wiz-paso__rotulo small { display: none; }
+  .wiz-nav__aviso { text-align: left; order: 3; width: 100%; }
+}
