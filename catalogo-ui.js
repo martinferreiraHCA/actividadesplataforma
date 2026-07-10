@@ -3,22 +3,30 @@
 // y un clic para insertar "personaje: X" / "fondo: X" en el código de la ficha.
 
 import { CATALOGO_PERSONAJES_TODOS, CATALOGO_FONDOS_TODOS, urlMiniatura } from './scratch-catalogo.js';
-import { listaNombresPersonajes, listaNombresFondos } from './scratch-personajes.js';
+import { PERSONAJES, FONDOS, buscarPersonaje, buscarFondo } from './scratch-personajes.js';
+import { GATO1_SVG } from './scratch-sb3-assets.js';
 
 let overlay = null;
 let escapeHandler = null;
 
-// nombres del set embebido (funcionan sin internet) para marcarlos
-const OFFLINE_P = new Set(listaNombresPersonajes().map(n => n.toLowerCase()));
-const OFFLINE_F = new Set(listaNombresFondos().map(n => n.toLowerCase()));
-// alias español → nombre del catálogo (para marcar los offline)
-const ALIAS_OFFLINE = {
-  'cat': 'gato', 'dog2': 'perro', 'bear': 'oso', 'frog': 'rana', 'ball': 'pelota',
-  'butterfly 1': 'mariposa', 'dinosaur4': 'dinosaurio', 'crab': 'cangrejo',
-  'penguin 2': 'pingüino', 'mouse1': 'ratón', 'bat': 'murciélago', 'fish': 'pez', 'hedgehog': 'erizo',
-  'blue sky': 'cielo', 'underwater 1': 'fondo de mar', 'stars': 'estrellas',
-  'night city': 'ciudad de noche', 'soccer': 'cancha de fútbol', 'farm': 'granja'
-};
+// miniatura embebida (dataURL, funciona sin internet) para los del set offline
+function miniaturaLocal(nombre, esPersonaje) {
+  if (esPersonaje) {
+    const clave = buscarPersonaje(nombre);
+    if (clave === 'gato') return 'data:image/svg+xml;base64,' + GATO1_SVG;
+    if (clave && PERSONAJES[clave]) {
+      const p = PERSONAJES[clave];
+      return 'data:image/' + (p.ext === 'svg' ? 'svg+xml' : p.ext) + ';base64,' + p.b64;
+    }
+  } else {
+    const clave = buscarFondo(nombre);
+    if (clave && FONDOS[clave]) {
+      const f = FONDOS[clave];
+      return 'data:image/' + (f.ext === 'svg' ? 'svg+xml' : f.ext) + ';base64,' + f.b64;
+    }
+  }
+  return null;
+}
 
 export function abrirCatalogo(opciones) {
   cerrarCatalogo();
@@ -51,15 +59,15 @@ export function abrirCatalogo(opciones) {
 
   function itemsDe() {
     if (tab === 'personajes') {
-      return CATALOGO_PERSONAJES_TODOS.map(([nombre, disfraces]) => ({
-        nombre, md5ext: disfraces[0][1], linea: 'personaje: ' + nombre,
-        offline: OFFLINE_P.has((ALIAS_OFFLINE[nombre.toLowerCase()] || '').toLowerCase()) || nombre.toLowerCase() === 'cat'
-      }));
+      return CATALOGO_PERSONAJES_TODOS.map(([nombre, disfraces]) => {
+        const local = miniaturaLocal(nombre, true);
+        return { nombre, md5ext: disfraces[0][1], linea: 'personaje: ' + nombre, local, offline: !!local };
+      });
     }
-    return CATALOGO_FONDOS_TODOS.map(([nombre, md5ext]) => ({
-      nombre, md5ext, linea: 'fondo: ' + nombre,
-      offline: OFFLINE_F.has((ALIAS_OFFLINE[nombre.toLowerCase()] || '').toLowerCase())
-    }));
+    return CATALOGO_FONDOS_TODOS.map(([nombre, md5ext]) => {
+      const local = miniaturaLocal(nombre, false);
+      return { nombre, md5ext, linea: 'fondo: ' + nombre, local, offline: !!local };
+    });
   }
 
   function pintar() {
@@ -73,8 +81,18 @@ export function abrirCatalogo(opciones) {
       b.title = 'Insertar "' + it.linea + '"';
       const img = document.createElement('img');
       img.loading = 'lazy';
-      img.src = urlMiniatura(it.md5ext);
+      // los embebidos usan su dibujo local (sin internet); el resto viene del CDN
+      img.src = it.local || urlMiniatura(it.md5ext);
       img.alt = it.nombre;
+      if (!it.local) {
+        img.addEventListener('error', () => {
+          const ph = document.createElement('span');
+          ph.className = 'catalogo-item__sinred';
+          ph.textContent = '🌐✕';
+          ph.title = 'La miniatura no cargó: la red está bloqueando assets.scratch.mit.edu. Los personajes con ✓ funcionan igual.';
+          img.replaceWith(ph);
+        }, { once: true });
+      }
       const nom = document.createElement('span');
       nom.textContent = (it.offline ? '✓ ' : '') + it.nombre;
       b.append(img, nom);

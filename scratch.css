@@ -1218,3 +1218,13 @@ body:not(.modo-guiado) .wiz-explica { display: none; }
   .wiz-paso__rotulo small { display: none; }
   .wiz-nav__aviso { text-align: left; order: 3; width: 100%; }
 }
+
+/* miniatura del catálogo cuando el CDN está bloqueado */
+.catalogo-item__sinred {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  font-size: 1.2rem;
+  opacity: 0.4;
+}

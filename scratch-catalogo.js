@@ -34,7 +34,14 @@ export function buscarFondoEnTodo(nombre) {
 // descarga un asset del CDN oficial y lo devuelve en base64 (con cache)
 export async function descargarAsset(md5ext) {
   if (cacheAssets.has(md5ext)) return cacheAssets.get(md5ext);
-  const resp = await fetch(CDN + md5ext + '/get/');
+  // un reintento: los cortes momentáneos de red son comunes en las escuelas
+  let resp;
+  try {
+    resp = await fetch(CDN + md5ext + '/get/');
+  } catch (e) {
+    await new Promise(r => setTimeout(r, 800));
+    resp = await fetch(CDN + md5ext + '/get/');
+  }
   if (!resp.ok) throw new Error('No se pudo descargar ' + md5ext + ' (' + resp.status + ')');
   const buf = await resp.arrayBuffer();
   let bin = '';

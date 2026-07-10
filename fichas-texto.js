@@ -262,7 +262,8 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
   - En "teoria:" explicá el concepto con una comparación de la vida diaria (una receta, un semáforo, un juego) en 1 o 2 frases.
   - En "consigna:" decí exactamente qué hacer y qué va a pasar cuando lo logre, para que pueda comprobarlo solo.
   - En "notas:" agregá una pista simpática o un mini desafío extra ("¿Y si probás con otro número?").
-  - Evitá tecnicismos; si un término es inevitable (bucle, variable), explicalo la primera vez con palabras de niño.`;
+  - Evitá tecnicismos; si un término es inevitable (bucle, variable), explicalo la primera vez con palabras de niño.
+  - OJO: lo simple es el TEXTO, no el código. Cada ficha lleva IGUAL su bloque "codigo:" con código REAL y válido según las reglas de abajo (el código se dibuja como bloques de colores para el niño; sin "codigo:" la ficha queda vacía).`;
   }
   if (catalogo && catalogo.personajes && catalogo.personajes.length) {
     prompt += `\n- **Personajes elegidos por el docente (usalos, son OBLIGATORIOS):** ${catalogo.personajes.join(', ')}`;
