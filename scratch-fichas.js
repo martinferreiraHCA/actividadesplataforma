@@ -97,7 +97,7 @@ const PLANTILLAS = [
 let state = {
   titulo: '',
   subtitulo: '',
-  opciones: { numerar: true, bordes: true, salto: false, modo: 'fichas', estiloDoc: 'clasico' },
+  opciones: { numerar: true, bordes: true, salto: false, modo: 'fichas', estiloDoc: 'clasico', fuenteDoc: 'predeterminada', tamanoDoc: 'normal' },
   fichas: []
 };
 
@@ -153,11 +153,28 @@ function svgStringDeFicha(ficha) {
 // ============================================================
 const PALETA_INFANTIL = ['#F6416C', '#00B8A9', '#A66CFF', '#FF8C42', '#38B000', '#3A86FF'];
 
+const FUENTES_DOC = {
+  arial: 'Arial, Helvetica, sans-serif',
+  times: '"Times New Roman", Times, serif'
+};
+const ZOOM_DOC = { chico: 0.88, normal: 1, grande: 1.14 };
+
 export function construirFichaView(ficha, numero, opciones) {
-  const infantil = opciones.estiloDoc === 'infantil';
+  const estilo = opciones.estiloDoc || 'clasico';
+  const infantil = estilo === 'infantil';
   const view = document.createElement('div');
-  view.className = 'ficha-view' + (opciones.bordes ? ' ficha-view--borde' : '') + (infantil ? ' ficha-view--infantil' : '');
-  if (infantil) view.style.setProperty('--acento', PALETA_INFANTIL[(numero - 1) % PALETA_INFANTIL.length]);
+  view.className = 'ficha-view'
+    + (opciones.bordes ? ' ficha-view--borde' : '')
+    + (estilo !== 'clasico' ? ' ficha-view--' + estilo : '');
+  if (infantil || estilo === 'colorido') {
+    view.style.setProperty('--acento', PALETA_INFANTIL[(numero - 1) % PALETA_INFANTIL.length]);
+  }
+  if (FUENTES_DOC[opciones.fuenteDoc]) {
+    view.classList.add('ficha-view--fuente');
+    view.style.setProperty('--fuente-doc', FUENTES_DOC[opciones.fuenteDoc]);
+  }
+  const zoom = ZOOM_DOC[opciones.tamanoDoc] || 1;
+  if (zoom !== 1) view.style.zoom = zoom;
 
   const head = document.createElement('div');
   head.className = 'ficha-view__head';
@@ -940,7 +957,7 @@ function cargar() {
     const data = JSON.parse(raw);
     if (data && Array.isArray(data.fichas)) {
       state = Object.assign(state, data);
-      state.opciones = Object.assign({ numerar: true, bordes: true, salto: false, modo: 'fichas', estiloDoc: 'clasico' }, data.opciones);
+      state.opciones = Object.assign({ numerar: true, bordes: true, salto: false, modo: 'fichas', estiloDoc: 'clasico', fuenteDoc: 'predeterminada', tamanoDoc: 'normal' }, data.opciones);
       // borradores viejos: completar campos que no existían (tipo, estilo, vista...)
       state.fichas = state.fichas.map(f => Object.assign(nuevaFicha(), f));
     }
@@ -1180,7 +1197,7 @@ function importarJSON(texto) {
   }
   state.titulo = data.titulo || '';
   state.subtitulo = data.subtitulo || '';
-  state.opciones = Object.assign({ numerar: true, bordes: true, salto: false, modo: 'fichas', estiloDoc: 'clasico' }, data.opciones);
+  state.opciones = Object.assign({ numerar: true, bordes: true, salto: false, modo: 'fichas', estiloDoc: 'clasico', fuenteDoc: 'predeterminada', tamanoDoc: 'normal' }, data.opciones);
   state.fichas = data.fichas.map(f => Object.assign(nuevaFicha(), f, { id: 'f' + (uid++) + '_imp' }));
   sincronizarCampos();
   renderLista();
@@ -1534,6 +1551,10 @@ function sincronizarCampos() {
   if (selModo) selModo.value = state.opciones.modo || 'fichas';
   const selEstilo = document.getElementById('fdEstiloDoc');
   if (selEstilo) selEstilo.value = state.opciones.estiloDoc || 'clasico';
+  const selFuente = document.getElementById('fdFuenteDoc');
+  if (selFuente) selFuente.value = state.opciones.fuenteDoc || 'predeterminada';
+  const selTamano = document.getElementById('fdTamanoDoc');
+  if (selTamano) selTamano.value = state.opciones.tamanoDoc || 'normal';
   document.getElementById('fdTitulo').value = state.titulo;
   document.getElementById('fdSubtitulo').value = state.subtitulo;
   document.getElementById('fdNumerar').checked = state.opciones.numerar;
@@ -1555,6 +1576,16 @@ function init() {
   document.getElementById('fdSubtitulo').addEventListener('input', e => { state.subtitulo = e.target.value; guardarLuego(); });
   document.getElementById('fdEstiloDoc')?.addEventListener('change', (e) => {
     state.opciones.estiloDoc = e.target.value;
+    renderLista();
+    guardarLuego();
+  });
+  document.getElementById('fdFuenteDoc')?.addEventListener('change', (e) => {
+    state.opciones.fuenteDoc = e.target.value;
+    renderLista();
+    guardarLuego();
+  });
+  document.getElementById('fdTamanoDoc')?.addEventListener('change', (e) => {
+    state.opciones.tamanoDoc = e.target.value;
     renderLista();
     guardarLuego();
   });

@@ -7,21 +7,49 @@ const ANCHO_CONTENIDO = 630;
 const PALETA_INFANTIL = ['F6416C', '00B8A9', 'A66CFF', 'FF8C42', '38B000', '3A86FF'];
 const FUENTE_INFANTIL = 'Comic Sans MS';
 
+// letra elegida por el usuario y tamaño general del texto
+const FUENTES_DOC = { arial: 'Arial', times: 'Times New Roman' };
+const FACTOR_TAMANO = { chico: 0.9, normal: 1, grande: 1.15 };
+
+// resume las opciones de diseño en un "tema" para todo el documento
+function temaDoc(opciones) {
+  const estilo = opciones.estiloDoc || 'clasico';
+  const infantil = estilo === 'infantil';
+  const k = FACTOR_TAMANO[opciones.tamanoDoc] || 1;
+  return {
+    estilo,
+    infantil,
+    // la letra del usuario gana; si no eligió, cada diseño tiene la suya
+    fuente: FUENTES_DOC[opciones.fuenteDoc] || (infantil ? FUENTE_INFANTIL : estilo === 'simple' ? 'Times New Roman' : 'Calibri'),
+    tz: (s) => Math.round(s * k)   // tamaño de texto escalado (half-points de docx)
+  };
+}
+
 export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }) {
   const d = window.docx;
   if (!d) throw new Error('No se cargó la librería de Word (docx.iife.js)');
 
   const children = [];
+  const tema = temaDoc(opciones);
+  const { infantil, tz } = tema;
 
-  const infantil = opciones.estiloDoc === 'infantil';
+  // blanco y negro: las imágenes (bloques de colores, capturas) van en escala de grises
+  if (tema.estilo === 'bn') {
+    fichas = await Promise.all(fichas.map(async (item) => ({
+      ...item,
+      bloques: item.bloques ? { ...item.bloques, dataUrl: await aEscalaDeGrises(item.bloques.dataUrl) } : item.bloques,
+      imagen: item.imagen ? { ...item.imagen, dataUrl: await aEscalaDeGrises(item.imagen.dataUrl) } : item.imagen
+    })));
+  }
+
   if (titulo && titulo.trim()) {
     children.push(new d.Paragraph({
       alignment: infantil ? d.AlignmentType.CENTER : undefined,
       children: [new d.TextRun({
         text: infantil ? '🌈 ' + titulo.trim() + ' 🚀' : titulo.trim(),
-        bold: true, size: infantil ? 48 : 44,
-        color: infantil ? PALETA_INFANTIL[0] : undefined,
-        font: infantil ? FUENTE_INFANTIL : 'Calibri'
+        bold: true, size: tz(infantil ? 48 : 44),
+        color: infantil ? PALETA_INFANTIL[0] : tema.estilo === 'colorido' ? '3A86FF' : undefined,
+        font: tema.fuente
       })],
       spacing: { after: subtitulo && subtitulo.trim() ? 60 : 240 }
     }));
@@ -29,7 +57,7 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
   if (subtitulo && subtitulo.trim()) {
     children.push(new d.Paragraph({
       alignment: infantil ? d.AlignmentType.CENTER : undefined,
-      children: [new d.TextRun({ text: subtitulo.trim(), size: 24, color: '666666', font: infantil ? FUENTE_INFANTIL : 'Calibri' })],
+      children: [new d.TextRun({ text: subtitulo.trim(), size: tz(24), color: '666666', font: tema.fuente })],
       spacing: { after: 240 }
     }));
   }
@@ -40,8 +68,9 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
     }
     const contenido = contenidoFicha(d, item, opciones);
     if (opciones.bordes) {
-      const acento = infantil ? PALETA_INFANTIL[(item.numero - 1) % PALETA_INFANTIL.length] : null;
-      children.push(tablaMarco(d, contenido, acento));
+      const conAcento = infantil || tema.estilo === 'colorido';
+      const acento = conAcento ? PALETA_INFANTIL[(item.numero - 1) % PALETA_INFANTIL.length] : null;
+      children.push(tablaMarco(d, contenido, acento, tema.estilo));
       children.push(new d.Paragraph({ text: '', spacing: { after: 160 } }));
     } else {
       children.push(...contenido);
@@ -52,7 +81,7 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
   const doc = new d.Document({
     styles: {
       default: {
-        document: { run: { font: 'Calibri', size: 22 } }
+        document: { run: { font: tema.fuente, size: tz(22) } }
       }
     },
     sections: [{
@@ -70,28 +99,37 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
 function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
   const out = [];
   const anchoInterior = opciones.bordes ? ANCHO_CONTENIDO - 30 : ANCHO_CONTENIDO;
-  const infantil = opciones.estiloDoc === 'infantil';
+  const tema = temaDoc(opciones);
+  const { estilo, infantil, tz } = tema;
   const acento = PALETA_INFANTIL[(numero - 1) % PALETA_INFANTIL.length];
   const rotulo = opciones.modo === 'guia' ? 'PASO' : 'FICHA';
 
-  // encabezado: chip "FICHA N" + título
+  // encabezado: número + título (cada diseño con su forma)
   const runsHead = [];
   if (opciones.numerar) {
     if (infantil) {
       runsHead.push(new d.TextRun({
-        text: ` 🌟 ${rotulo} ${numero} `, bold: true, size: 24, color: 'FFFFFF',
-        shading: { type: d.ShadingType.CLEAR, fill: acento }, font: FUENTE_INFANTIL
+        text: ` 🌟 ${rotulo} ${numero} `, bold: true, size: tz(24), color: 'FFFFFF',
+        shading: { type: d.ShadingType.CLEAR, fill: acento }, font: tema.fuente
+      }));
+    } else if (estilo === 'simple') {
+      runsHead.push(new d.TextRun({ text: `${rotulo} ${numero}.`, bold: true, size: tz(24), font: tema.fuente }));
+    } else if (estilo === 'colorido') {
+      runsHead.push(new d.TextRun({
+        text: ` ${rotulo} ${numero} `, bold: true, size: tz(20), color: 'FFFFFF',
+        shading: { type: d.ShadingType.CLEAR, fill: acento }, font: tema.fuente
       }));
     } else {
-      runsHead.push(new d.TextRun({ text: ` ${rotulo} ${numero} `, bold: true, size: 18, color: 'FFFFFF', highlight: 'black', font: 'Consolas' }));
+      runsHead.push(new d.TextRun({ text: ` ${rotulo} ${numero} `, bold: true, size: tz(18), color: 'FFFFFF', highlight: 'black', font: 'Consolas' }));
     }
     if (ficha.titulo.trim()) runsHead.push(new d.TextRun({ text: '   ' }));
   }
   if (ficha.titulo.trim()) {
     runsHead.push(new d.TextRun({
-      text: ficha.titulo.trim(), bold: true, size: infantil ? 30 : 28,
-      color: infantil ? acento : undefined,
-      font: infantil ? FUENTE_INFANTIL : undefined
+      text: ficha.titulo.trim(), bold: true,
+      size: tz(infantil ? 30 : estilo === 'simple' ? 30 : 28),
+      color: infantil || estilo === 'colorido' ? acento : undefined,
+      font: tema.fuente
     }));
   }
   if (runsHead.length) {
@@ -100,23 +138,38 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
 
   // teoría (recuadro conceptual previo)
   if ((ficha.teoria || '').trim()) {
-    out.push(new d.Paragraph({
-      children: [new d.TextRun({
-        text: infantil ? '💡 Para aprender' : 'TEORÍA',
-        bold: true, size: infantil ? 20 : 16, color: '2B6CB0',
-        font: infantil ? FUENTE_INFANTIL : 'Consolas'
-      })],
-      shading: { type: d.ShadingType.CLEAR, fill: infantil ? 'EAF6FF' : 'F2F7FF' },
-      spacing: { before: 40, after: 20 }
-    }));
-    ficha.teoria.trim().split(/\n/).forEach(linea => {
+    const lineas = ficha.teoria.trim().split(/\n/);
+    if (estilo === 'simple') {
+      // sin recuadro: "Teoría:" en negrita y el texto a continuación
+      lineas.forEach((linea, j) => {
+        const runs = [];
+        if (j === 0) runs.push(new d.TextRun({ text: 'Teoría: ', bold: true, size: tz(22), font: tema.fuente }));
+        runs.push(new d.TextRun({ text: linea || ' ', size: tz(22), font: tema.fuente }));
+        out.push(new d.Paragraph({ children: runs, spacing: { after: 40 } }));
+      });
+      out.push(new d.Paragraph({ text: '', spacing: { after: 60 } }));
+    } else {
+      const fondoTeoria = infantil ? 'EAF6FF' : estilo === 'colorido' ? 'F4F7FB' : estilo === 'bn' ? undefined : 'F2F7FF';
+      const conFondo = fondoTeoria ? { type: d.ShadingType.CLEAR, fill: fondoTeoria } : undefined;
       out.push(new d.Paragraph({
-        children: [new d.TextRun({ text: linea || ' ', size: infantil ? 22 : 21, font: infantil ? FUENTE_INFANTIL : undefined })],
-        shading: { type: d.ShadingType.CLEAR, fill: infantil ? 'EAF6FF' : 'F2F7FF' },
-        spacing: { after: 40 }
+        children: [new d.TextRun({
+          text: infantil ? '💡 Para aprender' : 'TEORÍA',
+          bold: true, size: tz(infantil ? 20 : 16),
+          color: estilo === 'bn' ? '111111' : estilo === 'colorido' ? acento : '2B6CB0',
+          font: infantil ? tema.fuente : 'Consolas'
+        })],
+        shading: conFondo,
+        spacing: { before: 40, after: 20 }
       }));
-    });
-    out.push(new d.Paragraph({ text: '', spacing: { after: 60 } }));
+      lineas.forEach(linea => {
+        out.push(new d.Paragraph({
+          children: [new d.TextRun({ text: linea || ' ', size: tz(infantil ? 22 : 21), font: tema.fuente })],
+          shading: conFondo,
+          spacing: { after: 40 }
+        }));
+      });
+      out.push(new d.Paragraph({ text: '', spacing: { after: 60 } }));
+    }
   }
 
   // consigna (respetando saltos de línea)
@@ -125,8 +178,8 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
       out.push(new d.Paragraph({
         children: [new d.TextRun({
           text: infantil && j === 0 ? '🎯 ' + linea : linea,
-          size: infantil ? 24 : 22,
-          font: infantil ? FUENTE_INFANTIL : undefined
+          size: tz(infantil ? 24 : 22),
+          font: tema.fuente
         })],
         shading: infantil ? { type: d.ShadingType.CLEAR, fill: 'FFF8DE' } : undefined,
         spacing: { after: 80 }
@@ -139,8 +192,8 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
   if (imgLado) {
     const anchoImg = Math.round(anchoInterior * ficha.imgAncho / 100) - 12;
     const anchoCod = anchoInterior - anchoImg - 24;
-    const celdaCodigo = celdaSinBorde(d, zonaCodigoDocx(d, ficha, bloques, anchoCod), 100 - ficha.imgAncho);
-    const celdaImagen = celdaSinBorde(d, imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe), ficha.imgAncho);
+    const celdaCodigo = celdaSinBorde(d, zonaCodigoDocx(d, ficha, bloques, anchoCod, tema), 100 - ficha.imgAncho);
+    const celdaImagen = celdaSinBorde(d, imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe, false, tema), ficha.imgAncho);
     const celdas = ficha.imgPos === 'derecha' ? [celdaCodigo, celdaImagen] : [celdaImagen, celdaCodigo];
     out.push(new d.Table({
       width: { size: 100, type: d.WidthType.PERCENTAGE },
@@ -150,11 +203,11 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
   } else {
     const anchoImg = imagen ? Math.round(anchoInterior * Math.min(ficha.imgAncho + 20, 100) / 100) : 0;
     if (imagen && ficha.imgPos === 'arriba') {
-      out.push(...imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe, true));
+      out.push(...imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe, true, tema));
     }
-    out.push(...zonaCodigoDocx(d, ficha, bloques, anchoInterior));
+    out.push(...zonaCodigoDocx(d, ficha, bloques, anchoInterior, tema));
     if (imagen && ficha.imgPos === 'abajo') {
-      out.push(...imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe, true));
+      out.push(...imagenComoParrafos(d, imagen, anchoImg, ficha.epigrafe, true, tema));
     }
   }
 
@@ -164,9 +217,9 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
       out.push(new d.Paragraph({
         children: [new d.TextRun({
           text: infantil && j === 0 ? '⭐ ' + linea : linea,
-          italics: !infantil, size: infantil ? 22 : 20,
-          color: infantil ? '2F7D32' : '444444',
-          font: infantil ? FUENTE_INFANTIL : undefined
+          italics: !infantil, size: tz(infantil ? 22 : 20),
+          color: infantil ? '2F7D32' : estilo === 'bn' ? '333333' : '444444',
+          font: tema.fuente
         })],
         shading: infantil ? { type: d.ShadingType.CLEAR, fill: 'EFFAEC' } : undefined,
         spacing: { before: j === 0 ? 160 : 0, after: 40 }
@@ -179,8 +232,8 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
     out.push(new d.Paragraph({
       alignment: d.AlignmentType.RIGHT,
       children: [
-        new d.TextRun({ text: '☐  ', size: 32, color: acento }),
-        new d.TextRun({ text: '¡Lo logré!', bold: true, size: 24, color: acento, font: FUENTE_INFANTIL })
+        new d.TextRun({ text: '☐  ', size: tz(32), color: acento }),
+        new d.TextRun({ text: '¡Lo logré!', bold: true, size: tz(24), color: acento, font: tema.fuente })
       ],
       spacing: { before: 160, after: 40 }
     }));
@@ -190,7 +243,7 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
 }
 
 // zona de código de una ficha: bloques (imagen) y/o código como texto
-function zonaCodigoDocx(d, ficha, bloques, anchoMax) {
+function zonaCodigoDocx(d, ficha, bloques, anchoMax, tema) {
   const out = [];
   if (bloques) {
     // en micro:bit la escala no viene aplicada en la imagen: se aplica acá
@@ -201,7 +254,7 @@ function zonaCodigoDocx(d, ficha, bloques, anchoMax) {
   const quiereCodigoTexto = esMicrobit && ficha.codigo.trim() &&
     (ficha.lenguaje === 'python' || ficha.vista !== 'bloques' || !bloques);
   if (quiereCodigoTexto) {
-    out.push(...codigoComoParrafos(d, ficha.codigo));
+    out.push(...codigoComoParrafos(d, ficha.codigo, tema));
   }
   if (!out.length) {
     out.push(new d.Paragraph({
@@ -228,16 +281,18 @@ function bloquesComoParrafos(d, bloques, anchoMax, escalaExtra) {
 }
 
 // código fuente como párrafos monoespaciados con fondo gris
-function codigoComoParrafos(d, codigo) {
+function codigoComoParrafos(d, codigo, tema) {
+  const tz = tema ? tema.tz : (s) => s;
+  const conFondo = tema && (tema.estilo === 'simple' || tema.estilo === 'bn') ? undefined : { type: d.ShadingType.CLEAR, fill: 'F2F2F0' };
   const lineas = codigo.replace(/\t/g, '    ').split('\n');
   return lineas.map((linea, i) => new d.Paragraph({
-    children: [new d.TextRun({ text: linea || ' ', font: 'Consolas', size: 18 })],
-    shading: { type: d.ShadingType.CLEAR, fill: 'F2F2F0' },
+    children: [new d.TextRun({ text: linea || ' ', font: 'Consolas', size: tz(18) })],
+    shading: conFondo,
     spacing: { before: i === 0 ? 80 : 0, after: i === lineas.length - 1 ? 120 : 0, line: 240 }
   }));
 }
 
-function imagenComoParrafos(d, imagen, anchoMax, epigrafe, centrar) {
+function imagenComoParrafos(d, imagen, anchoMax, epigrafe, centrar, tema) {
   const k = Math.min(1, anchoMax / imagen.width);
   const parrafos = [new d.Paragraph({
     alignment: centrar ? d.AlignmentType.CENTER : undefined,
@@ -254,7 +309,7 @@ function imagenComoParrafos(d, imagen, anchoMax, epigrafe, centrar) {
   if (epigrafe && epigrafe.trim()) {
     parrafos.push(new d.Paragraph({
       alignment: d.AlignmentType.CENTER,
-      children: [new d.TextRun({ text: epigrafe.trim(), italics: true, size: 18, color: '666666' })],
+      children: [new d.TextRun({ text: epigrafe.trim(), italics: true, size: tema ? tema.tz(18) : 18, color: '666666', font: tema ? tema.fuente : undefined })],
       spacing: { after: 80 }
     }));
   }
@@ -281,11 +336,13 @@ function bordesCelda(d) {
   return { top: nada, bottom: nada, left: nada, right: nada };
 }
 
-// tabla 1×1 que hace de marco de la ficha (con color de acento en modo infantil)
-function tablaMarco(d, contenido, acento) {
+// tabla 1×1 que hace de marco de la ficha (color/grosor según el diseño)
+function tablaMarco(d, contenido, acento, estilo) {
   const linea = acento
     ? { style: d.BorderStyle.SINGLE, size: 28, color: acento }
-    : { style: d.BorderStyle.SINGLE, size: 12, color: '111111' };
+    : estilo === 'simple'
+      ? { style: d.BorderStyle.SINGLE, size: 6, color: '999999' }
+      : { style: d.BorderStyle.SINGLE, size: 12, color: '111111' };
   return new d.Table({
     width: { size: 100, type: d.WidthType.PERCENTAGE },
     borders: {
@@ -299,6 +356,26 @@ function tablaMarco(d, contenido, acento) {
         margins: { top: 160, bottom: 160, left: 200, right: 200 }
       })]
     })]
+  });
+}
+
+// convierte una imagen (dataURL) a escala de grises para el diseño blanco y negro
+function aEscalaDeGrises(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.filter = 'grayscale(1) contrast(1.15)';
+        ctx.drawImage(img, 0, 0);
+        resolve(c.toDataURL('image/png'));
+      } catch (e) { resolve(dataUrl); }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
   });
 }
 
