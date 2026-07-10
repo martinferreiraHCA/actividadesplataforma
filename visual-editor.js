@@ -16,6 +16,18 @@ export class EditorVisual {
     this.contenedor = contenedor;
     this.preguntas = [];
     this.onUpdate = onUpdate || (() => {});
+    // función opcional que devuelve [{nombre, dataUrl, tipo}] con las imágenes
+    // ya cargadas en el gestor (ej: los bloques generados desde Fichas), para
+    // poder usarlas en una pregunta sin subir un archivo.
+    this.fuenteImagenes = null;
+  }
+
+  imagenesDisponibles() {
+    try {
+      return this.fuenteImagenes ? (this.fuenteImagenes() || []) : [];
+    } catch (e) {
+      return [];
+    }
   }
 
   agregarPregunta(tipo) {
@@ -200,11 +212,16 @@ export class EditorVisual {
         </div>
       `;
     }
+    const hayCargadas = this.imagenesDisponibles().length > 0;
     return `
       <div class="campo ve-imagen-campo" style="margin-top:1rem">
         <label class="campo__etiqueta">Imagen (opcional)</label>
-        <button class="btn btn--ghost ve-btn-agregar-imagen" type="button" style="padding:0.4em 1em;font-size:0.65rem">+ Agregar imagen</button>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center">
+          ${hayCargadas ? `<button class="btn btn--ghost ve-btn-elegir-imagen" type="button" style="padding:0.4em 1em;font-size:0.65rem">🧩 Usar una imagen ya cargada (bloques de las fichas)</button>` : ''}
+          <button class="btn btn--ghost ve-btn-agregar-imagen" type="button" style="padding:0.4em 1em;font-size:0.65rem">+ Subir imagen</button>
+        </div>
         <input type="file" class="ve-input-imagen" accept="image/*" style="display:none">
+        <div class="ve-galeria" style="display:none"></div>
       </div>
     `;
   }
@@ -445,6 +462,49 @@ export class EditorVisual {
           this.render();
         };
         reader.readAsDataURL(file);
+      });
+    }
+
+    // Galería: usar una imagen ya cargada (ej: bloques generados desde Fichas)
+    const btnElegir = card.querySelector('.ve-btn-elegir-imagen');
+    const galeria = card.querySelector('.ve-galeria');
+    if (btnElegir && galeria) {
+      btnElegir.addEventListener('click', () => {
+        if (galeria.style.display !== 'none') { galeria.style.display = 'none'; return; }
+        const disponibles = this.imagenesDisponibles();
+        galeria.innerHTML = '';
+        disponibles.forEach(img => {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 've-galeria__item';
+          item.title = img.nombre;
+          const mini = document.createElement('img');
+          mini.src = img.dataUrl;
+          mini.alt = img.nombre;
+          const rotulo = document.createElement('span');
+          rotulo.textContent = img.nombre;
+          item.append(mini, rotulo);
+          item.addEventListener('click', async () => {
+            let anchoOriginal = 0, altoOriginal = 0;
+            try {
+              const dim = await medirImagen(img.dataUrl);
+              anchoOriginal = dim.ancho;
+              altoOriginal = dim.alto;
+            } catch (_) { /* sin dimensiones: seguimos */ }
+            p.imagen = {
+              nombre: img.nombre,
+              tipo: img.tipo || (img.dataUrl.startsWith('data:image/svg') ? 'image/svg+xml' : 'image/png'),
+              original: img.dataUrl,
+              dataUrl: img.dataUrl,
+              anchoOriginal,
+              altoOriginal,
+              ancho: 0
+            };
+            this.render();
+          });
+          galeria.appendChild(item);
+        });
+        galeria.style.display = 'grid';
       });
     }
 

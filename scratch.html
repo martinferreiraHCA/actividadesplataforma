@@ -247,13 +247,29 @@
 
       <form id="formPromptFichas" autocomplete="off">
         <div class="campo">
+          <span class="campo__etiqueta" style="display:block;margin-bottom:0.6rem">¿Qué querés generar?</span>
+          <div class="wiz-cards" id="iaCardsTipo">
+            <button type="button" class="wiz-card" data-valor="fichas">
+              <span class="wiz-card__icono">📄</span>
+              <span class="wiz-card__titulo">Fichas de actividades</span>
+              <span class="wiz-card__texto">Ejercicios sueltos: leer y predecir, encontrar el error, completar, crear.</span>
+            </button>
+            <button type="button" class="wiz-card" data-valor="guia">
+              <span class="wiz-card__icono">🪜</span>
+              <span class="wiz-card__titulo">Guía paso a paso</span>
+              <span class="wiz-card__texto">Un tutorial completo: PASO 1, PASO 2… donde cada paso construye una parte del mismo proyecto o juego.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="campo">
           <label class="campo__etiqueta" for="iaFichasTema">Tema o contenido</label>
           <input class="campo__input" type="text" id="iaFichasTema" placeholder="Ej: bucles y repetición, sensores del micro:bit, coordenadas..." required>
         </div>
 
         <div class="campo-grid">
           <div class="campo">
-            <label class="campo__etiqueta" for="iaFichasCantidad">Cantidad de fichas</label>
+            <label class="campo__etiqueta" for="iaFichasCantidad" id="lblIaCantidad">Cantidad de fichas</label>
             <input class="campo__input" type="number" id="iaFichasCantidad" value="4" min="1" max="20">
           </div>
           <div class="campo">
@@ -268,11 +284,10 @@
         </div>
 
         <div class="campo-grid">
-          <div class="campo">
+          <div class="campo" id="campoEnfoqueIA">
             <label class="campo__etiqueta" for="iaFichasEnfoque">Tipo de actividad</label>
             <select class="campo__input" id="iaFichasEnfoque">
               <option value="mixto">Variado (recomendado)</option>
-              <option value="guia">Guía paso a paso (tutorial de un juego completo)</option>
               <option value="lectura">Leer y predecir</option>
               <option value="error">Encontrar el error</option>
               <option value="completar">Completar el programa</option>
@@ -403,7 +418,7 @@
 <section class="editor-section" id="seccionCuestionarioCrea" data-wiz="5">
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 5 (opcional) — Convertir en cuestionario para CREA</div>
-    <p class="wiz-explica">Este paso es <strong>opcional</strong>: si además del papel querés evaluar en la plataforma, tus fichas se convierten en un cuestionario con las imágenes de los bloques adentro de las preguntas.</p>
+    <p class="wiz-explica">Este paso es <strong>opcional</strong>: si además del papel querés evaluar en la plataforma, tus fichas se convierten en un cuestionario con las imágenes de los bloques adentro de las preguntas. Y en el Editor, esas imágenes quedan disponibles en una galería: cualquier pregunta nueva puede usarlas sin subir archivos.</p>
     <p class="exportar-intro">
       Tus fichas también sirven como <strong>cuestionario para CREA, Schoology o Moodle</strong>: cada pregunta lleva la
       <strong>imagen de los bloques como parte del enunciado</strong>. El cuestionario se abre en el Editor de siempre,

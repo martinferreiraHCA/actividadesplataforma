@@ -1253,6 +1253,18 @@ REGLAS DE LA SINTAXIS:
   dar a [puntaje v] el valor (0) / sumar a [puntaje v] (1) / si toca un borde, rebotar / ¿tocando [borde v]?
 - No uses numeración, viñetas ni bloques de código markdown.
 
+PERSONAJES Y FONDO (opcional):
+- Podés usar varios personajes y elegir el fondo del escenario con líneas de encabezado dentro del código:
+  fondo: Estrellas
+  personaje: Gato
+  al presionar bandera verde
+  ...
+  personaje: Perro
+  ...
+- Personajes que funcionan siempre (usá EXACTAMENTE estos nombres): Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo. Fondos: Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.
+- También vale cualquier personaje o fondo de la biblioteca oficial de Scratch por su nombre exacto en inglés (ej: Shark 2, Dragon, Beach Malibu).
+- Sin encabezados "personaje:", todo el código es del Gato.
+
 Respondé SOLO con el código scratchblocks, sin explicación.`;
   copiarTexto(prompt, 'Prompt copiado. Pegalo en ChatGPT, Claude o Gemini y traé el código.');
 }
@@ -1695,6 +1707,31 @@ function init() {
   });
 
   // ---- asistente IA ----
+  // tarjetas "¿Qué querés generar?": fichas sueltas o guía paso a paso.
+  // Heredan lo elegido en el Paso 1 y, al generar una guía, actualizan el
+  // tipo de documento para que las fichas se numeren como PASO 1, 2, 3…
+  let iaGeneraGuia = state.opciones.modo === 'guia';
+  function refrescarIaTipo() {
+    document.querySelectorAll('#iaCardsTipo .wiz-card').forEach(c => {
+      c.classList.toggle('wiz-card--activa', (c.dataset.valor === 'guia') === iaGeneraGuia);
+    });
+    const campoEnfoque = document.getElementById('campoEnfoqueIA');
+    if (campoEnfoque) campoEnfoque.style.display = iaGeneraGuia ? 'none' : '';
+    const lbl = document.getElementById('lblIaCantidad');
+    if (lbl) lbl.textContent = iaGeneraGuia ? 'Cantidad de pasos' : 'Cantidad de fichas';
+  }
+  document.querySelectorAll('#iaCardsTipo .wiz-card').forEach(card => {
+    card.addEventListener('click', () => {
+      iaGeneraGuia = card.dataset.valor === 'guia';
+      refrescarIaTipo();
+    });
+  });
+  document.getElementById('fdModo')?.addEventListener('change', (e) => {
+    iaGeneraGuia = e.target.value === 'guia';
+    refrescarIaTipo();
+  });
+  refrescarIaTipo();
+
   document.getElementById('btnIaCatalogo')?.addEventListener('click', async () => {
     const mod = await import('./catalogo-ui.js');
     mod.abrirCatalogo({
@@ -1718,13 +1755,21 @@ function init() {
       nivel: state.subtitulo,
       cantidad: parseInt(document.getElementById('iaFichasCantidad').value, 10) || 4,
       plataforma: document.getElementById('iaFichasPlataforma').value,
-      enfoque: document.getElementById('iaFichasEnfoque').value,
+      enfoque: iaGeneraGuia ? 'guia' : document.getElementById('iaFichasEnfoque').value,
       notas: document.getElementById('iaFichasNotas').value.trim(),
       infantil: !!document.getElementById('iaFichasInfantil')?.checked,
       catalogo: { personajes: seleccionIA.personajes.slice(), fondo: seleccionIA.fondo }
     });
+    let cambio = false;
     if (document.getElementById('iaFichasInfantil')?.checked && state.opciones.estiloDoc !== 'infantil') {
       state.opciones.estiloDoc = 'infantil';
+      cambio = true;
+    }
+    if (iaGeneraGuia && state.opciones.modo !== 'guia') {
+      state.opciones.modo = 'guia';
+      cambio = true;
+    }
+    if (cambio) {
       sincronizarCampos();
       renderLista();
       guardarLuego();

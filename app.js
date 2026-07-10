@@ -98,6 +98,15 @@ const editorVisual = new EditorVisual(
   }
 );
 
+// las imágenes del gestor (subidas acá o llegadas desde Fichas con los bloques
+// ya dibujados) quedan disponibles para elegirlas en cualquier pregunta
+editorVisual.fuenteImagenes = () =>
+  Array.from(gestorImg.archivos.entries()).map(([nombre, a]) => ({
+    nombre,
+    dataUrl: a.dataUrl,
+    tipo: (a.file && a.file.type) || 'image/png'
+  }));
+
 // Mostrar el estado vacío desde el arranque (evita un área en blanco confusa)
 editorVisual.render();
 

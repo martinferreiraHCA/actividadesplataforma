@@ -496,7 +496,7 @@ export async function convertirAProyecto(codigo) {
           };
           assets.set(cat.md5ext, b64);
         } catch (e) {
-          ctx.avisos.push(`No se pudo descargar el fondo "${cat.nombre}" de la biblioteca de Scratch (¿hay internet?): se usa el fondo blanco.`);
+          ctx.avisos.push(`No se pudo descargar el fondo "${cat.nombre}" de la biblioteca de Scratch: se usa el fondo blanco. Suele pasar si no hay internet o si la red del centro bloquea assets.scratch.mit.edu. Estos fondos funcionan siempre, sin conexión: ${listaNombresFondos().join(', ')}.`);
         }
       } else {
         ctx.avisos.push(`No conozco el fondo "${fondo}". Sin conexión: ${listaNombresFondos().join(', ')}. Con internet, cualquier fondo de la biblioteca de Scratch (botón "📚 Catálogo").`);
@@ -541,7 +541,7 @@ export async function convertirAProyecto(codigo) {
         }
         return { nombre: cat.nombre, costumes };
       } catch (e) {
-        ctx.avisos.push(`No se pudo descargar el personaje "${cat.nombre}" de la biblioteca de Scratch (¿hay internet?): se usa el Gato.`);
+        ctx.avisos.push(`No se pudo descargar el personaje "${cat.nombre}" de la biblioteca de Scratch: se usa el Gato. Suele pasar si no hay internet o si la red del centro bloquea assets.scratch.mit.edu. Estos personajes funcionan siempre, sin conexión: ${listaNombresPersonajes().join(', ')}.`);
         return null;
       }
     }
