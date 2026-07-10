@@ -246,7 +246,8 @@ notas: Pista para el alumno.</pre>
         <ul class="guia-lista">
           <li><strong>PDF</strong> — vista de impresión del navegador ("Guardar como PDF").</li>
           <li><strong>Word .docx</strong> — editable, con los bloques como imágenes nítidas y la teoría en recuadro.</li>
-          <li><strong>Cuestionario para CREA</strong> (Paso 4) — cada pregunta lleva la <strong>imagen de los bloques en el enunciado</strong>: automático (una pregunta por ficha) o variado con IA. Se abre en el Editor y de ahí sale el <code>.imscc</code> con las imágenes adentro.</li>
+          <li><strong>Cuestionario para CREA</strong> (Paso 5) — cada pregunta lleva la <strong>imagen de los bloques en el enunciado</strong>: automático (una pregunta por ficha) o variado con IA. Se abre en el Editor y de ahí sale el <code>.imscc</code> con las imágenes adentro.</li>
+          <li>Ya en el Editor, si agregás o editás preguntas, no hace falta subir nada: el botón <strong>"🧩 Usar una imagen ya cargada"</strong> abre una galería con las <strong>imágenes de los bloques generadas desde las fichas</strong> (y cualquier otra que hayas subido) para ponerla en la pregunta con un clic.</li>
           <li><strong>Borrador .json</strong> — para retomar otro día (además se autoguarda en el navegador).</li>
         </ul>
       `
