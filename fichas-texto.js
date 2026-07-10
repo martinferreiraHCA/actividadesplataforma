@@ -240,7 +240,7 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
   }[plataforma] || 'Scratch';
 
   const enfoqueTexto = {
-    guia: 'GUÍA PASO A PASO (tutorial): los ítems NO son ejercicios sueltos sino PASOS ordenados para construir UN MISMO juego o proyecto completo. Cada paso agrega una parte del juego, con "teoria:" explicando el concepto del paso y el código nuevo de ese paso. El último paso deja el juego terminado y jugable.',
+    guia: 'GUÍA PASO A PASO (tutorial): los ítems NO son ejercicios sueltos sino PASOS ordenados para construir UN MISMO proyecto completo (en Scratch un juego; en micro:bit un proyecto con la placa, ej. un contador, un dado, un juego con los botones; en código de texto un programa que crece paso a paso). Cada paso agrega una parte, con "teoria:" explicando el concepto del paso y "codigo:" con el código NUEVO de ese paso (los pasos de Scratch pueden repetir "personaje:"/"fondo:" para ubicar el código). El último paso deja el proyecto terminado y funcionando.',
     lectura: 'Lectura de código: mostrar un programa y pedir que el alumno explique o prediga qué hace.',
     error: 'Encontrar el error: el código tiene UN error deliberado; la consigna pide encontrarlo y en "notas:" va la solución para el docente.',
     completar: 'Completar: el programa está incompleto o tiene un valor a ajustar; la consigna dice qué debe lograr.',
