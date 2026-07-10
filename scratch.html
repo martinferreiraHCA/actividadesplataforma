@@ -52,18 +52,18 @@
     <div class="primeros-pasos">
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 01</span>
-        <span class="paso-rapido__titulo">Datos del documento</span>
-        <span class="paso-rapido__texto">Poné título y grupo, y elegí cómo se ve el documento: numeración, bordes, una ficha por página.</span>
+        <span class="paso-rapido__titulo">El documento</span>
+        <span class="paso-rapido__texto">Poné título y grupo, y elegí si armás fichas de ejercicios sueltos o una guía paso a paso.</span>
       </div>
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 02</span>
-        <span class="paso-rapido__titulo">Creá las fichas</span>
-        <span class="paso-rapido__texto">A mano, desde una plantilla, pegando texto (varias de una vez) o con ayuda de una IA. Todo se edita después.</span>
+        <span class="paso-rapido__titulo">El contenido</span>
+        <span class="paso-rapido__texto">Creá las fichas a mano, desde una plantilla, pegando texto (varias de una vez) o con ayuda de una IA.</span>
       </div>
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 03</span>
-        <span class="paso-rapido__titulo">Descargá o convertí</span>
-        <span class="paso-rapido__texto">PDF para imprimir, Word para editar — o convertí las fichas en un cuestionario para CREA con las imágenes de bloques en las preguntas.</span>
+        <span class="paso-rapido__titulo">Diseño y descarga</span>
+        <span class="paso-rapido__texto">Elegí cómo se ve (clásico, simple, colorido, B/N o infantil), y descargá en PDF o Word — o convertilo en cuestionario para CREA.</span>
       </div>
     </div>
     <div class="cta-guia" style="margin-top:1.5rem">
@@ -74,10 +74,19 @@
 </section>
 
 
-<!-- ====== PASO 1: DATOS DEL DOCUMENTO ====== -->
-<section class="editor-section editor-section--surface">
+<!-- ====== BARRA DEL MODO GUIADO (la dibuja fichas-wizard.js) ====== -->
+<section class="editor-section" id="seccionWizBarra" style="padding-bottom:0">
   <div class="container">
-    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — Datos del documento</div>
+    <div id="wizBarra"></div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 1: EL DOCUMENTO ====== -->
+<section class="editor-section editor-section--surface" data-wiz="1">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — El documento</div>
+    <p class="wiz-explica">Empecemos por lo fácil: poné un <strong>título</strong> (aparece arriba de todo cuando imprimís) y para qué <strong>grupo</strong> es. Después elegí qué querés armar — no te preocupes, todo se puede cambiar en cualquier momento.</p>
     <div class="campo-grid" style="max-width:700px">
       <div class="campo">
         <label class="campo__etiqueta" for="fdTitulo">Título del documento</label>
@@ -88,47 +97,37 @@
         <input class="campo__input" type="text" id="fdSubtitulo" placeholder="Ej: 6° año, 1° CB Informática...">
       </div>
     </div>
-    <div class="scratch-opciones" style="margin-top:1.2rem">
-      <span class="scratch-opciones__label">Tipo de documento:</span>
-      <select class="campo__input" id="fdModo" style="max-width:340px">
+    <div class="campo" style="margin-top:1.2rem">
+      <span class="campo__etiqueta" style="display:block;margin-bottom:0.6rem">¿Qué querés armar?</span>
+      <div class="wiz-cards" id="wizCardsModo">
+        <button type="button" class="wiz-card" data-valor="fichas">
+          <span class="wiz-card__icono">📄</span>
+          <span class="wiz-card__titulo">Fichas de actividades</span>
+          <span class="wiz-card__texto">Ejercicios sueltos e independientes: leer código y predecir, encontrar el error, completar, crear.</span>
+        </button>
+        <button type="button" class="wiz-card" data-valor="guia">
+          <span class="wiz-card__icono">🪜</span>
+          <span class="wiz-card__titulo">Guía paso a paso</span>
+          <span class="wiz-card__texto">Un tutorial: PASO 1, PASO 2, PASO 3… donde cada paso agrega una parte de un mismo proyecto o juego.</span>
+        </button>
+      </div>
+      <select class="campo__input" id="fdModo" hidden>
         <option value="fichas">Fichas de actividades (ejercicios sueltos)</option>
         <option value="guia">Guía paso a paso (tutorial de un proyecto)</option>
       </select>
-      <span class="scratch-opciones__label">Diseño:</span>
-      <select class="campo__input" id="fdEstiloDoc" style="max-width:280px">
-        <option value="clasico">Clásico (marcos negros, sobrio)</option>
-        <option value="simple">Documento simple (sin recuadros, tipo apunte)</option>
-        <option value="colorido">Colorido (acentos de color, prolijo)</option>
-        <option value="bn">Blanco y negro (para fotocopias)</option>
-        <option value="infantil">Infantil 🎈 (colorido, para escuela)</option>
-      </select>
-      <span class="scratch-opciones__label">Letra:</span>
-      <select class="campo__input" id="fdFuenteDoc" style="max-width:190px">
-        <option value="predeterminada">Predeterminada</option>
-        <option value="arial">Arial</option>
-        <option value="times">Times New Roman</option>
-      </select>
-      <span class="scratch-opciones__label">Tamaño:</span>
-      <select class="campo__input" id="fdTamanoDoc" style="max-width:130px">
-        <option value="chico">Chico</option>
-        <option value="normal" selected>Normal</option>
-        <option value="grande">Grande</option>
-      </select>
-    </div>
-    <div class="scratch-opciones" style="margin-top:1rem">
-      <span class="scratch-opciones__label">Presentación:</span>
-      <label class="scratch-check"><input type="checkbox" id="fdNumerar" checked> Numerar fichas</label>
-      <label class="scratch-check"><input type="checkbox" id="fdBordes" checked> Borde alrededor de cada ficha</label>
-      <label class="scratch-check"><input type="checkbox" id="fdSalto"> Una ficha por página</label>
     </div>
   </div>
 </section>
 
 
 <!-- ====== PASO 2: TABS DE MODO ====== -->
-<section class="editor-section" style="padding-bottom:0">
+<section class="editor-section" style="padding-bottom:0" data-wiz="2">
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Creá tus fichas</div>
+    <p class="wiz-explica">Hay <strong>tres maneras</strong> de crear las fichas — elegí la que te quede más cómoda (se pueden combinar):<br>
+      <strong>◎ Editor Visual</strong>: armás cada ficha a mano y ves los bloques dibujarse mientras escribís. Ideal para empezar y para retocar.<br>
+      <strong>≡ Importar Texto</strong>: pegás un solo texto con muchas fichas y se cargan todas de golpe. Ideal para trabajos largos.<br>
+      <strong>✦ Asistente IA</strong>: completás un formulario, le pasás el prompt a tu IA favorita y su respuesta se convierte en fichas editables. Ideal si querés que el contenido se escriba solo.</p>
     <div class="tabs-modo">
       <button class="tab-modo active" data-modo="visual">
         <span class="tab-modo__icono">◎</span> Editor Visual
@@ -145,7 +144,7 @@
 
 
 <!-- ====== PANEL: EDITOR VISUAL ====== -->
-<section class="editor-section panel-modo" id="panel-fichas-visual">
+<section class="editor-section panel-modo" id="panel-fichas-visual" data-wiz="2">
   <div class="container">
 
     <div class="ve-barra-agregar">
@@ -171,7 +170,7 @@
 
 
 <!-- ====== PANEL: IMPORTAR TEXTO ====== -->
-<section class="editor-section panel-modo" id="panel-fichas-texto" style="display:none">
+<section class="editor-section panel-modo" id="panel-fichas-texto" style="display:none" data-wiz="2">
   <div class="container">
 
     <div class="paso-card">
@@ -225,7 +224,7 @@
 
 
 <!-- ====== PANEL: ASISTENTE IA ====== -->
-<section class="editor-section panel-modo" id="panel-fichas-ia" style="display:none">
+<section class="editor-section panel-modo" id="panel-fichas-ia" style="display:none" data-wiz="2">
   <div class="container">
 
     <div class="paso-card" style="margin-bottom:var(--gap)">
@@ -335,10 +334,49 @@
 </section>
 
 
-<!-- ====== PASO 3: DESCARGAS ====== -->
-<section class="editor-section editor-section--surface" id="seccionExportFichas">
+<!-- ====== PASO 3: EL DISEÑO ====== -->
+<section class="editor-section editor-section--surface" id="seccionDiseno" data-wiz="3">
   <div class="container">
-    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 3 — Descargar</div>
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 3 — El diseño</div>
+    <p class="wiz-explica">Ahora elegí <strong>cómo se va a ver</strong> el documento impreso. Probá los diseños y mirá la vista previa de abajo: <strong>Clásico</strong> es sobrio con marcos negros, <strong>Documento simple</strong> es un apunte sin recuadros, <strong>Colorido</strong> le pone un color distinto a cada ficha, <strong>Blanco y negro</strong> es ideal para fotocopiar, e <strong>Infantil 🎈</strong> es para niños de escuela (globos, colores y casilla "¡Lo logré!").</p>
+    <div class="scratch-opciones">
+      <span class="scratch-opciones__label">Diseño:</span>
+      <select class="campo__input" id="fdEstiloDoc" style="max-width:280px">
+        <option value="clasico">Clásico (marcos negros, sobrio)</option>
+        <option value="simple">Documento simple (sin recuadros, tipo apunte)</option>
+        <option value="colorido">Colorido (acentos de color, prolijo)</option>
+        <option value="bn">Blanco y negro (para fotocopias)</option>
+        <option value="infantil">Infantil 🎈 (colorido, para escuela)</option>
+      </select>
+      <span class="scratch-opciones__label">Letra:</span>
+      <select class="campo__input" id="fdFuenteDoc" style="max-width:190px">
+        <option value="predeterminada">Predeterminada</option>
+        <option value="arial">Arial</option>
+        <option value="times">Times New Roman</option>
+      </select>
+      <span class="scratch-opciones__label">Tamaño:</span>
+      <select class="campo__input" id="fdTamanoDoc" style="max-width:130px">
+        <option value="chico">Chico</option>
+        <option value="normal" selected>Normal</option>
+        <option value="grande">Grande</option>
+      </select>
+    </div>
+    <div class="scratch-opciones" style="margin-top:1rem">
+      <span class="scratch-opciones__label">Presentación:</span>
+      <label class="scratch-check"><input type="checkbox" id="fdNumerar" checked> Numerar fichas</label>
+      <label class="scratch-check"><input type="checkbox" id="fdBordes" checked> Borde alrededor de cada ficha</label>
+      <label class="scratch-check"><input type="checkbox" id="fdSalto"> Una ficha por página</label>
+    </div>
+    <div id="wizVistaDiseno" class="wiz-preview"></div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 4: DESCARGAS ====== -->
+<section class="editor-section editor-section--surface" id="seccionExportFichas" data-wiz="4">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 4 — Descargar</div>
+    <p class="wiz-explica">¡Ya está! Descargá el documento para repartir en clase — o guardá un borrador para seguir otro día.</p>
     <p class="exportar-intro">Descargá tus fichas listas para repartir. El PDF sale de la vista de impresión del navegador; el Word lleva los bloques como imágenes y se puede seguir editando.</p>
 
     <div class="descargas__grid">
@@ -361,10 +399,11 @@
 </section>
 
 
-<!-- ====== PASO 4: CUESTIONARIO PARA CREA ====== -->
-<section class="editor-section" id="seccionCuestionarioCrea">
+<!-- ====== PASO 5: CUESTIONARIO PARA CREA ====== -->
+<section class="editor-section" id="seccionCuestionarioCrea" data-wiz="5">
   <div class="container">
-    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 4 (opcional) — Convertir en cuestionario para CREA</div>
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 5 (opcional) — Convertir en cuestionario para CREA</div>
+    <p class="wiz-explica">Este paso es <strong>opcional</strong>: si además del papel querés evaluar en la plataforma, tus fichas se convierten en un cuestionario con las imágenes de los bloques adentro de las preguntas.</p>
     <p class="exportar-intro">
       Tus fichas también sirven como <strong>cuestionario para CREA, Schoology o Moodle</strong>: cada pregunta lleva la
       <strong>imagen de los bloques como parte del enunciado</strong>. El cuestionario se abre en el Editor de siempre,
@@ -396,6 +435,14 @@
       <div id="avisosCreaIA" style="margin-top:1.5rem"></div>
     </div>
     <p class="scratch-export-nota" id="notaCrea" style="display:none"></p>
+  </div>
+</section>
+
+
+<!-- ====== NAVEGACIÓN DEL MODO GUIADO (la dibuja fichas-wizard.js) ====== -->
+<section class="editor-section" id="seccionWizNav" style="padding-top:0">
+  <div class="container">
+    <div id="wizNav"></div>
   </div>
 </section>
 
@@ -432,6 +479,7 @@
 <script src="scratchblocks-translations.js"></script>
 <script src="docx.iife.js"></script>
 <script type="module" src="scratch-fichas.js"></script>
+<script type="module" src="fichas-wizard.js"></script>
 
 </body>
 </html>
