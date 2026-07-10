@@ -952,3 +952,120 @@ body.tema-nocturno .scratch-como__lista code { background: rgba(255,255,255,0.06
   }
   .fichas-impresion .ficha-view--infantil { border-radius: 22px; }
 }
+
+/* ============================================================
+   DISEÑOS DE EXPORTACIÓN: simple / colorido / blanco y negro
+   + letra configurable (--fuente-doc)
+   ============================================================ */
+
+/* ---- Documento simple: sin recuadros, tipo apunte ---- */
+.ficha-view--simple { font-family: var(--fuente-doc, Georgia, 'Times New Roman', serif); }
+.ficha-view--simple.ficha-view--borde { border: 1px solid #aaaaaa; }
+.ficha-view--simple .ficha-view__num {
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #111111;
+  background: none;
+  padding: 0;
+}
+.ficha-view--simple .ficha-view__num::after { content: '.'; }
+.ficha-view--simple .ficha-view__titulo {
+  font-family: inherit;
+  font-size: 1.3rem;
+}
+.ficha-view--simple .ficha-view__teoria {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.95rem;
+}
+.ficha-view--simple .ficha-view__teoria-label {
+  font-family: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #111111;
+  display: inline;
+  margin-right: 0.4em;
+}
+.ficha-view--simple .ficha-view__teoria-label::after { content: ':'; }
+.ficha-view--simple .ficha-view__teoria p { display: inline; }
+.ficha-view--simple .ficha-view__consigna { font-size: 1rem; }
+.ficha-view--simple .ficha-view__notas {
+  border-top: none;
+  padding-top: 0;
+  font-style: italic;
+  font-size: 0.92rem;
+}
+.ficha-view--simple .ficha-view__chip {
+  font-family: inherit;
+  border: none;
+  padding: 0;
+  font-style: italic;
+  font-weight: 700;
+}
+.ficha-view--simple .ficha-view__figura img { border: none; }
+
+/* ---- Colorido: acentos de color, prolijo (adulto) ---- */
+.ficha-view--colorido { border-left: 6px solid var(--acento, #3A86FF); }
+.ficha-view--colorido.ficha-view--borde {
+  border: 2px solid var(--acento, #3A86FF);
+  border-left-width: 6px;
+  border-radius: 10px;
+}
+.ficha-view--colorido .ficha-view__num {
+  background: var(--acento, #3A86FF);
+  border-radius: 4px;
+}
+.ficha-view--colorido .ficha-view__titulo { color: var(--acento, #3A86FF); }
+.ficha-view--colorido .ficha-view__teoria {
+  border: none;
+  border-left: 4px solid var(--acento, #3A86FF);
+  background: #f4f7fb;
+  border-radius: 0 8px 8px 0;
+}
+.ficha-view--colorido .ficha-view__notas {
+  border-top: 1px dashed var(--acento, #3A86FF);
+}
+
+/* ---- Blanco y negro: para fotocopias ---- */
+.ficha-view--bn .ficha-view__codigo svg,
+.ficha-view--bn .ficha-view__codigo img,
+.ficha-view--bn .ficha-view__figura img {
+  filter: grayscale(1) contrast(1.15);
+}
+.ficha-view--bn .ficha-view__teoria {
+  background: #ffffff;
+  border: 1px solid #111111;
+  border-left: 4px solid #111111;
+}
+.ficha-view--bn .ficha-view__teoria-label { color: #111111; }
+.ficha-view--bn .ficha-view__chip { color: #111111; border-color: #111111; }
+.ficha-view--bn .ficha-view__pre { background: #ffffff; border-color: #111111; }
+.ficha-view--bn .ficha-view__mb-nota { color: #333333; }
+
+/* ---- Letra elegida por el usuario (gana sobre el diseño) ---- */
+.ficha-view--fuente,
+.ficha-view--fuente .ficha-view__titulo,
+.ficha-view--fuente .ficha-view__num,
+.ficha-view--fuente .ficha-view__num-palabra,
+.ficha-view--fuente .ficha-view__consigna,
+.ficha-view--fuente .ficha-view__teoria,
+.ficha-view--fuente .ficha-view__teoria-label,
+.ficha-view--fuente .ficha-view__notas,
+.ficha-view--fuente .ficha-view__logro,
+.ficha-view--fuente .ficha-view__figura figcaption {
+  font-family: var(--fuente-doc);
+}
+
+/* que los colores del diseño colorido también salgan impresos */
+@media print {
+  .ficha-view--colorido,
+  .ficha-view--colorido * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .fichas-impresion .ficha-view--colorido { border-radius: 10px; }
+}
