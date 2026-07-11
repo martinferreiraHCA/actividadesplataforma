@@ -25,7 +25,7 @@ function temaDoc(opciones) {
   };
 }
 
-export async function exportarFichasDOCX({ titulo, subtitulo, descripcion, opciones, fichas }) {
+export async function exportarFichasDOCX({ titulo, subtitulo, descripcion, opciones, portada, fichas }) {
   const d = window.docx;
   if (!d) throw new Error('No se cargó la librería de Word (docx.iife.js)');
 
@@ -97,6 +97,61 @@ export async function exportarFichasDOCX({ titulo, subtitulo, descripcion, opcio
       }));
     });
     children.push(new d.Paragraph({ text: '', spacing: { after: 160 } }));
+  }
+
+  // guías: portada de preparación (personajes, fondo e imagen del escenario)
+  if (portada && portada.personajes && portada.personajes.length) {
+    children.push(new d.Paragraph({
+      children: [new d.TextRun({
+        text: infantil ? '🚀 Antes de empezar' : 'Antes de empezar — Preparación del proyecto',
+        bold: true, size: tz(28),
+        color: infantil ? PALETA_INFANTIL[5] : undefined,
+        font: tema.fuente
+      })],
+      spacing: { before: 120, after: 100 }
+    }));
+    const runsP = [new d.TextRun({ text: 'Agregá estos personajes:  ', bold: true, size: tz(22), font: tema.fuente })];
+    portada.personajes.forEach((p, j) => {
+      if (j) runsP.push(new d.TextRun({ text: '   ' }));
+      if (p.dataUrl && p.height) {
+        const kk = 42 / p.height;
+        runsP.push(new d.ImageRun({ type: 'png', data: dataUrlABytes(p.dataUrl), transformation: { width: Math.round(p.width * kk), height: 42 } }));
+        runsP.push(new d.TextRun({ text: ' ' }));
+      }
+      runsP.push(new d.TextRun({ text: p.nombre, size: tz(22), font: tema.fuente }));
+    });
+    children.push(new d.Paragraph({ children: runsP, spacing: { after: 100 } }));
+    if (portada.fondo && portada.fondo.dataUrl && portada.fondo.height) {
+      const kk = 46 / portada.fondo.height;
+      children.push(new d.Paragraph({
+        children: [
+          new d.TextRun({ text: 'Elegí este fondo:  ', bold: true, size: tz(22), font: tema.fuente }),
+          new d.ImageRun({ type: 'png', data: dataUrlABytes(portada.fondo.dataUrl), transformation: { width: Math.round(portada.fondo.width * kk), height: 46 } }),
+          new d.TextRun({ text: ' ' + portada.fondo.nombre, size: tz(22), font: tema.fuente })
+        ],
+        spacing: { after: 120 }
+      }));
+    }
+    if (portada.escena && portada.escena.dataUrl) {
+      const anchoEscena = 400;
+      children.push(new d.Paragraph({
+        alignment: d.AlignmentType.CENTER,
+        children: [new d.ImageRun({
+          type: 'png',
+          data: dataUrlABytes(portada.escena.dataUrl),
+          transformation: { width: anchoEscena, height: Math.round(anchoEscena * portada.escena.height / portada.escena.width) }
+        })],
+        spacing: { after: 40 }
+      }));
+      children.push(new d.Paragraph({
+        alignment: d.AlignmentType.CENTER,
+        children: [new d.TextRun({
+          text: infantil ? '¡Así se va a ver tu juego terminado!' : 'Así queda el escenario del juego (imagen orientativa).',
+          italics: true, size: tz(18), color: '666666', font: tema.fuente
+        })],
+        spacing: { after: 200 }
+      }));
+    }
   }
 
   fichas.forEach((item, idx) => {

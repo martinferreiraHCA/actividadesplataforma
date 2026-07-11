@@ -3,6 +3,7 @@ import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
 import { retratosDeFicha, retratosDeFichaDataUrl, interaccionesDeFicha, retratoDeNombre, retratoDataUrlDeNombre, fondoDeFicha, fondoDataUrlDeFicha } from './personaje-retrato.js';
+import { construirPortada, datosPortada } from './portada-guia.js';
 import { sugerirCorreccion, sintaxisScratchPrompt } from './scratch-correcciones.js';
 import { parsear } from './parser.js';
 import { separarSecciones, tieneSecciones } from './scratch-secciones.js';
@@ -1201,6 +1202,11 @@ async function exportarPDF() {
     d.append(et, cuerpo);
     area.appendChild(d);
   }
+  // guías: portada de preparación (personajes, fondo e imagen del escenario)
+  try {
+    const portada = await construirPortada(state);
+    if (portada) area.appendChild(portada);
+  } catch (e) { console.error('portada:', e); }
   state.fichas.forEach((f, i) => {
     const v = construirFichaView(f, i + 1, state.opciones);
     if (state.opciones.salto) v.classList.add('ficha-view--salto');
@@ -1272,11 +1278,30 @@ async function exportarDOCX() {
       }
       preparadas.push({ ficha: f, numero: i + 1, bloques, imagen, retratos, interacciones, fondoRetrato });
     }
+    let portada = null;
+    try {
+      portada = await datosPortada(state);
+      if (portada) {
+        const conv = async (r) => {
+          if (!r || !r.dataUrl) return r;
+          try {
+            const i = await dataUrlAPngInfo(r.dataUrl);
+            return { ...r, dataUrl: i.dataUrl, width: i.width, height: i.height };
+          } catch (e) { return { ...r, dataUrl: null }; }
+        };
+        portada = {
+          personajes: await Promise.all(portada.personajes.map(conv)),
+          fondo: await conv(portada.fondo),
+          escena: portada.escena
+        };
+      }
+    } catch (e) { console.error('portada docx:', e); }
     const blob = await exportarFichasDOCX({
       titulo: state.titulo,
       subtitulo: state.subtitulo,
       descripcion: state.descripcion,
       opciones: state.opciones,
+      portada,
       fichas: preparadas
     });
     descargarBlob(blob, nombreArchivo('docx'));
