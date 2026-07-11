@@ -57,7 +57,8 @@ function normalizarClave(k) {
 
 export function parsearFichasTexto(texto) {
   const lineas = texto.replace(/\r\n?/g, '\n').split('\n');
-  const doc = { titulo: '', subtitulo: '', modo: null };
+  const doc = { titulo: '', subtitulo: '', modo: null, descripcion: '' };
+  let docDescAbierta = false;
   const fichas = [];
   const avisos = [];
 
@@ -90,14 +91,21 @@ export function parsearFichasTexto(texto) {
 
     if (!actual) {
       // antes de la primera ficha: datos del documento
-      const m = linea.match(/^(t[ií]tulo|titulo|nivel|grupo|modo)\s*:\s*(.*)$/i);
+      const m = linea.match(/^(t[ií]tulo|titulo|nivel|grupo|modo|descripci[oó]n|din[aá]mica)\s*:\s*(.*)$/i);
       if (m) {
         const k = normalizarClave(m[1]);
+        docDescAbierta = false;
         if (k === 'titulo') doc.titulo = m[2].trim();
         else if (k === 'modo') doc.modo = /gu[ií]a|tutorial|paso/i.test(m[2]) ? 'guia' : 'fichas';
+        else if (k === 'descripcion' || k === 'dinamica') { doc.descripcion = m[2].trim(); docDescAbierta = true; }
         else doc.subtitulo = m[2].trim();
+      } else if (linea.trim() && docDescAbierta) {
+        // la descripción puede seguir en varias líneas, hasta una línea vacía
+        doc.descripcion += '\n' + linea.trim();
       } else if (linea.trim()) {
         avisos.push(`Se ignoró texto fuera de las fichas: "${linea.trim().slice(0, 50)}"`);
+      } else {
+        docDescAbierta = false;
       }
       continue;
     }
@@ -162,7 +170,7 @@ export function parsearFichasTexto(texto) {
     avisos.push('No se encontró ninguna ficha. Cada ficha empieza con una línea "=== FICHA: Título ===".');
   }
 
-  return { titulo: doc.titulo, subtitulo: doc.subtitulo, modo: doc.modo, fichas: resultado, avisos };
+  return { titulo: doc.titulo, subtitulo: doc.subtitulo, descripcion: doc.descripcion.trim(), modo: doc.modo, fichas: resultado, avisos };
 }
 
 // Exporta el estado actual al mismo formato de texto (ida y vuelta):
@@ -170,6 +178,7 @@ export function parsearFichasTexto(texto) {
 export function fichasComoTexto(state) {
   const out = [];
   if (state.titulo.trim()) out.push('titulo: ' + state.titulo.trim());
+  if ((state.descripcion || '').trim()) out.push('descripcion: ' + state.descripcion.trim().replace(/\n+/g, ' '));
   if (state.subtitulo.trim()) out.push('nivel: ' + state.subtitulo.trim());
   if (state.opciones && state.opciones.modo === 'guia') out.push('modo: guia');
   if (out.length) out.push('');
@@ -200,6 +209,7 @@ export function fichasComoTexto(state) {
 }
 
 export const EJEMPLO_FICHAS_TEXTO = `titulo: Práctico — Bucles y eventos
+descripcion: Vamos a explorar cómo los programas repiten acciones. Primero leemos código de Scratch para predecir qué hace, y después probamos lo mismo en la micro:bit.
 nivel: 6° año
 
 === FICHA: El gato rebota ===
@@ -284,7 +294,8 @@ Respondé SOLO con las fichas en el formato de abajo, sin texto antes ni despué
 ## FORMATO REQUERIDO
 
 titulo: [título del documento]
-nivel: ${nivel || '[nivel]'}${enfoque === 'guia' ? '\nmodo: guia' : ''}
+nivel: ${nivel || '[nivel]'}
+descripcion: [2 o 3 frases para el alumno: qué se va a construir y cómo es la dinámica de juego — qué hace el jugador, qué pasa al jugar, cómo se gana o qué se logra]${enfoque === 'guia' ? '\nmodo: guia' : ''}
 
 === FICHA: [título corto de la ficha o del paso] ===
 tipo: scratch

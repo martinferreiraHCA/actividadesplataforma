@@ -25,7 +25,7 @@ function temaDoc(opciones) {
   };
 }
 
-export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }) {
+export async function exportarFichasDOCX({ titulo, subtitulo, descripcion, opciones, fichas }) {
   const d = window.docx;
   if (!d) throw new Error('No se cargó la librería de Word (docx.iife.js)');
 
@@ -73,6 +73,30 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
       children: [new d.TextRun({ text: subtitulo.trim(), size: tz(24), color: '666666', font: tema.fuente })],
       spacing: { after: 240 }
     }));
+  }
+
+  // descripción del proyecto y dinámica de juego, antes de la primera ficha
+  if ((descripcion || '').trim()) {
+    const fondoDesc = infantil ? 'FFF2E8' : tema.estilo === 'simple' || tema.estilo === 'bn' ? undefined : 'F5F5F0';
+    const sombra = fondoDesc ? { type: d.ShadingType.CLEAR, fill: fondoDesc } : undefined;
+    children.push(new d.Paragraph({
+      children: [new d.TextRun({
+        text: infantil ? '🎮 ¿Cómo es el juego?' : 'Descripción',
+        bold: true, size: tz(infantil ? 24 : 20),
+        color: infantil ? 'E36414' : undefined,
+        font: tema.fuente
+      })],
+      shading: sombra,
+      spacing: { before: 60, after: 40 }
+    }));
+    descripcion.trim().split(/\n/).forEach(linea => {
+      children.push(new d.Paragraph({
+        children: [new d.TextRun({ text: linea || ' ', size: tz(22), font: tema.fuente })],
+        shading: sombra,
+        spacing: { after: 60 }
+      }));
+    });
+    children.push(new d.Paragraph({ text: '', spacing: { after: 160 } }));
   }
 
   fichas.forEach((item, idx) => {

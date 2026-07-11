@@ -1434,3 +1434,47 @@ body:not(.modo-guiado) .wiz-explica { display: none; }
   border-radius: 8px;
   padding: 0;
 }
+
+/* ---- descripción del proyecto / dinámica de juego (impresión) ---- */
+.fichas-impresion__descripcion {
+  max-width: 760px;
+  margin: 0 0 1.4rem;
+  padding: 0.8rem 1rem;
+  background: #f6f6f2;
+  border: 1px solid rgba(0,0,0,0.25);
+  border-left: 4px solid #111111;
+  color: #111111;
+}
+.fichas-impresion__descripcion-label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+.fichas-impresion__descripcion p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.fichas-impresion__descripcion--infantil {
+  background: #FFF2E8;
+  border: 3px solid #FFB570;
+  border-radius: 18px;
+  font-family: 'Baloo 2', sans-serif;
+}
+.fichas-impresion__descripcion--infantil .fichas-impresion__descripcion-label {
+  color: #E36414;
+  text-transform: none;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+.fichas-impresion__descripcion--infantil p { font-size: 1.02rem; }
+@media print {
+  .fichas-impresion__descripcion,
+  .fichas-impresion__descripcion * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

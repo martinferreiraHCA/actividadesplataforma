@@ -98,6 +98,7 @@ const PLANTILLAS = [
 let state = {
   titulo: '',
   subtitulo: '',
+  descripcion: '',
   opciones: { numerar: true, bordes: true, salto: false, modo: 'fichas', estiloDoc: 'clasico', fuenteDoc: 'predeterminada', tamanoDoc: 'normal' },
   fichas: []
 };
@@ -1188,6 +1189,18 @@ async function exportarPDF() {
     s.textContent = state.subtitulo;
     area.appendChild(s);
   }
+  if ((state.descripcion || '').trim()) {
+    const infantil = state.opciones.estiloDoc === 'infantil';
+    const d = document.createElement('div');
+    d.className = 'fichas-impresion__descripcion' + (infantil ? ' fichas-impresion__descripcion--infantil' : '');
+    const et = document.createElement('strong');
+    et.className = 'fichas-impresion__descripcion-label';
+    et.textContent = infantil ? '🎮 ¿Cómo es el juego?' : 'Descripción';
+    const cuerpo = document.createElement('p');
+    cuerpo.textContent = state.descripcion;
+    d.append(et, cuerpo);
+    area.appendChild(d);
+  }
   state.fichas.forEach((f, i) => {
     const v = construirFichaView(f, i + 1, state.opciones);
     if (state.opciones.salto) v.classList.add('ficha-view--salto');
@@ -1262,6 +1275,7 @@ async function exportarDOCX() {
     const blob = await exportarFichasDOCX({
       titulo: state.titulo,
       subtitulo: state.subtitulo,
+      descripcion: state.descripcion,
       opciones: state.opciones,
       fichas: preparadas
     });
@@ -1328,6 +1342,7 @@ function importarJSON(texto) {
   }
   state.titulo = data.titulo || '';
   state.subtitulo = data.subtitulo || '';
+  state.descripcion = data.descripcion || '';
   state.opciones = Object.assign({ numerar: true, bordes: true, salto: false, modo: 'fichas', estiloDoc: 'clasico', fuenteDoc: 'predeterminada', tamanoDoc: 'normal' }, data.opciones);
   state.fichas = data.fichas.map(f => Object.assign(nuevaFicha(), f, { id: 'f' + (uid++) + '_imp' }));
   sincronizarCampos();
@@ -1701,6 +1716,8 @@ function sincronizarCampos() {
   if (selTamano) selTamano.value = state.opciones.tamanoDoc || 'normal';
   document.getElementById('fdTitulo').value = state.titulo;
   document.getElementById('fdSubtitulo').value = state.subtitulo;
+  const fdDesc = document.getElementById('fdDescripcion');
+  if (fdDesc) fdDesc.value = state.descripcion || '';
   document.getElementById('fdNumerar').checked = state.opciones.numerar;
   document.getElementById('fdBordes').checked = state.opciones.bordes;
   document.getElementById('fdSalto').checked = state.opciones.salto;
@@ -1718,6 +1735,7 @@ function init() {
 
   document.getElementById('fdTitulo').addEventListener('input', e => { state.titulo = e.target.value; guardarLuego(); });
   document.getElementById('fdSubtitulo').addEventListener('input', e => { state.subtitulo = e.target.value; guardarLuego(); });
+  document.getElementById('fdDescripcion')?.addEventListener('input', e => { state.descripcion = e.target.value; guardarLuego(); });
   document.getElementById('fdEstiloDoc')?.addEventListener('change', (e) => {
     state.opciones.estiloDoc = e.target.value;
     renderLista();
@@ -1819,6 +1837,7 @@ function init() {
     }
     if (res.titulo && (reemplazar || !state.titulo.trim())) state.titulo = res.titulo;
     if (res.subtitulo && (reemplazar || !state.subtitulo.trim())) state.subtitulo = res.subtitulo;
+    if (res.descripcion && (reemplazar || !(state.descripcion || '').trim())) state.descripcion = res.descripcion;
     if (res.modo) state.opciones.modo = res.modo;
     const nuevas = res.fichas.map(f => Object.assign(nuevaFicha(), f));
     state.fichas = reemplazar ? nuevas : state.fichas.concat(nuevas);
