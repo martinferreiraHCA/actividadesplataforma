@@ -320,6 +320,7 @@ Dentro de "codigo:" podés usar varios personajes y elegir el fondo del escenari
 - Fondos recomendados: Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.
 - También se acepta cualquier personaje o fondo de la biblioteca oficial de Scratch por su nombre EXACTO en inglés (ej: Shark 2, Dragon, Beach Malibu) — preferí los recomendados salvo que el tema pida otro.
 - Si el docente eligió personajes y/o fondo (arriba), usá EXACTAMENTE esos, escribiendo "personaje: Nombre" para cada uno y "fondo: Nombre".
+- Empezá SIEMPRE el código con su línea "personaje: ..." aunque haya un solo personaje: la ficha muestra automáticamente el dibujo del personaje en la esquina, y así el alumno ve a quién está programando.
 - Sin encabezados "personaje:", todo el código es del Gato.
 
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)

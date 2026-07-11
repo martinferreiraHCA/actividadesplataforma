@@ -38,7 +38,10 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
     fichas = await Promise.all(fichas.map(async (item) => ({
       ...item,
       bloques: item.bloques ? { ...item.bloques, dataUrl: await aEscalaDeGrises(item.bloques.dataUrl) } : item.bloques,
-      imagen: item.imagen ? { ...item.imagen, dataUrl: await aEscalaDeGrises(item.imagen.dataUrl) } : item.imagen
+      imagen: item.imagen ? { ...item.imagen, dataUrl: await aEscalaDeGrises(item.imagen.dataUrl) } : item.imagen,
+      retratos: item.retratos
+        ? await Promise.all(item.retratos.map(async r => ({ ...r, dataUrl: await aEscalaDeGrises(r.dataUrl) })))
+        : item.retratos
     })));
   }
 
@@ -96,7 +99,7 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
 }
 
 // contenido de una ficha como lista de párrafos/tablas
-function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
+function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos }, opciones) {
   const out = [];
   const anchoInterior = opciones.bordes ? ANCHO_CONTENIDO - 30 : ANCHO_CONTENIDO;
   const tema = temaDoc(opciones);
@@ -132,8 +135,41 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen }, opciones) {
       font: tema.fuente
     }));
   }
-  if (runsHead.length) {
+  // encabezado + retratos de los personajes en la esquina superior derecha
+  const altoRetrato = infantil ? 52 : 38;
+  const runsRetratos = [];
+  (retratos || []).forEach((r, j) => {
+    if (!r.dataUrl || !r.height) return;
+    const kk = altoRetrato / r.height;
+    if (runsRetratos.length) runsRetratos.push(new d.TextRun({ text: '  ' }));
+    runsRetratos.push(new d.ImageRun({
+      type: 'png',
+      data: dataUrlABytes(r.dataUrl),
+      transformation: { width: Math.round(r.width * kk), height: altoRetrato },
+      altText: { title: 'Personaje: ' + (r.nombre || ''), description: 'Personaje: ' + (r.nombre || ''), name: r.nombre || 'personaje' }
+    }));
+  });
+  if (runsHead.length && runsRetratos.length) {
+    out.push(new d.Table({
+      width: { size: 100, type: d.WidthType.PERCENTAGE },
+      borders: bordesInvisibles(d),
+      rows: [new d.TableRow({
+        children: [
+          celdaSinBorde(d, [new d.Paragraph({ children: runsHead })], 78),
+          new d.TableCell({
+            children: [new d.Paragraph({ alignment: d.AlignmentType.RIGHT, children: runsRetratos })],
+            width: { size: 22, type: d.WidthType.PERCENTAGE },
+            borders: bordesCelda(d),
+            verticalAlign: d.VerticalAlign.TOP
+          })
+        ]
+      })]
+    }));
+    out.push(new d.Paragraph({ text: '', spacing: { after: 60 } }));
+  } else if (runsHead.length) {
     out.push(new d.Paragraph({ children: runsHead, spacing: { after: 120 } }));
+  } else if (runsRetratos.length) {
+    out.push(new d.Paragraph({ alignment: d.AlignmentType.RIGHT, children: runsRetratos, spacing: { after: 80 } }));
   }
 
   // teoría (recuadro conceptual previo)
