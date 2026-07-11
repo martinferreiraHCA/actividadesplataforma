@@ -297,7 +297,7 @@ codigo:
 [...]
 
 ## REGLAS DEL CÓDIGO SCRATCH (tipo: scratch)
-Escribí el código en sintaxis "scratchblocks" en español, un bloque por línea, tal como se lee en Scratch:
+Escribí el código en sintaxis "scratchblocks" en español, un bloque por línea, tal como se lee en Scratch (se aceptan las redacciones de Scratch tanto en español de España como en español latinoamericano, ej: "al presionar bandera" y "al hacer clic en la bandera" valen las dos):
 - Números entre paréntesis: mover (10) pasos. Textos entre corchetes: decir [¡Hola!]. Desplegables con [v]: al presionar tecla [espacio v]
 - Condiciones entre ángulos: si <¿tocando [borde v]?> entonces
 - Los bloques "si", "repetir", "por siempre" cierran con una línea "fin"

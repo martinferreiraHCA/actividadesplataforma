@@ -2,7 +2,7 @@
 import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
-import { retratosDeFicha, retratosDeFichaDataUrl } from './personaje-retrato.js';
+import { retratosDeFicha, retratosDeFichaDataUrl, interaccionesDeFicha, retratoDeNombre, retratoDataUrlDeNombre } from './personaje-retrato.js';
 import { sugerirCorreccion } from './scratch-correcciones.js';
 import { parsear } from './parser.js';
 import { separarSecciones, tieneSecciones } from './scratch-secciones.js';
@@ -130,7 +130,7 @@ function nuevaFicha(codigo, tipo) {
 function renderBloques(codigo, escala, estilo) {
   if (!sb || !codigo.trim()) return null;
   try {
-    const doc = sb.parse(codigo, { languages: ['en', 'es'] });
+    const doc = sb.parse(codigo, { languages: ['en', 'es', 'es-419'] });
     const view = sb.newView(doc, { style: estilo || 'scratch3', scale: escala || 1 });
     const svg = view.render();
     return { svg, view };
@@ -239,6 +239,43 @@ export function construirFichaView(ficha, numero, opciones) {
     p.className = 'ficha-view__consigna';
     p.textContent = ficha.consigna;
     view.appendChild(p);
+  }
+
+  // interacciones entre personajes: "Si [foto] A está tocando a [foto] B"
+  const interacciones = interaccionesDeFicha(ficha);
+  if (interacciones.length) {
+    const zonaInter = document.createElement('div');
+    zonaInter.className = 'ficha-view__interacciones';
+    interacciones.forEach(({ a, b }) => {
+      const ra = retratoDeNombre(a);
+      const rb = retratoDeNombre(b);
+      const fila = document.createElement('div');
+      fila.className = 'ficha-view__interaccion';
+      const pieza = (texto) => {
+        const s = document.createElement('span');
+        s.className = 'ficha-view__inter-palabra';
+        s.textContent = texto;
+        return s;
+      };
+      const figura = (retrato, nombre) => {
+        const f = document.createElement('span');
+        f.className = 'ficha-view__inter-personaje';
+        if (retrato) {
+          const img = document.createElement('img');
+          img.src = retrato.src;
+          img.alt = retrato.nombre;
+          img.addEventListener('error', () => img.remove(), { once: true });
+          f.appendChild(img);
+        }
+        const cap = document.createElement('span');
+        cap.textContent = retrato ? retrato.nombre : nombre;
+        f.appendChild(cap);
+        return f;
+      };
+      fila.append(pieza('Si'), figura(ra, a), pieza('está tocando a'), figura(rb, b));
+      zonaInter.appendChild(fila);
+    });
+    view.appendChild(zonaInter);
   }
 
   const cuerpo = document.createElement('div');
@@ -1000,6 +1037,29 @@ function nombreArchivo(ext) {
   return base + '.' + ext;
 }
 
+// junta el código Scratch de TODAS las fichas en un solo proyecto .sb3
+// (las secciones del mismo personaje se combinan en un solo sprite)
+async function descargarProyectoSb3() {
+  const conCodigo = state.fichas.filter(f => (!f.tipo || f.tipo === 'scratch') && f.codigo.trim());
+  if (!conCodigo.length) {
+    toast('Todavía no hay fichas de Scratch con código para armar el proyecto.');
+    return;
+  }
+  toast('Armando el proyecto Scratch… (si usa personajes de la biblioteca, puede tardar unos segundos)');
+  try {
+    const { codigoASb3 } = await import('./scratch-sb3.js');
+    const codigo = conCodigo.map(f => f.codigo.trim()).join('\n\n');
+    const { blob, avisos } = await codigoASb3(codigo);
+    descargarBlob(blob, nombreArchivo('sb3'));
+    toast(avisos && avisos.length
+      ? 'Proyecto .sb3 descargado, con avisos: ' + avisos[0]
+      : 'Proyecto .sb3 descargado: abrilo en scratch.mit.edu (Archivo → Cargar desde tu computadora) para probarlo.');
+  } catch (e) {
+    console.error(e);
+    toast('No se pudo armar el proyecto: ' + (e.message || e));
+  }
+}
+
 function descargarBlob(blob, nombre) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1162,7 +1222,25 @@ async function exportarDOCX() {
           } catch (e) { /* retrato ilegible: la ficha sale sin él */ }
         }
       }
-      preparadas.push({ ficha: f, numero: i + 1, bloques, imagen, retratos });
+      // interacciones "A está tocando a B" con sus retratos en PNG
+      const interacciones = [];
+      if (!f.tipo || f.tipo === 'scratch') {
+        const aPng = async (r) => {
+          if (!r) return null;
+          try {
+            const info = await dataUrlAPngInfo(r.dataUrl);
+            return { nombre: r.nombre, dataUrl: info.dataUrl, width: info.width, height: info.height };
+          } catch (e) { return null; }
+        };
+        for (const it of interaccionesDeFicha(f)) {
+          interacciones.push({
+            a: it.a, b: it.b,
+            ra: await aPng(await retratoDataUrlDeNombre(it.a)),
+            rb: await aPng(await retratoDataUrlDeNombre(it.b))
+          });
+        }
+      }
+      preparadas.push({ ficha: f, numero: i + 1, bloques, imagen, retratos, interacciones });
     }
     const blob = await exportarFichasDOCX({
       titulo: state.titulo,
@@ -1847,6 +1925,8 @@ function init() {
 
   document.getElementById('btnFichasPDF').addEventListener('click', exportarPDF);
   document.getElementById('btnFichasDOCX').addEventListener('click', exportarDOCX);
+  document.getElementById('btnProyectoSb3')?.addEventListener('click', descargarProyectoSb3);
+  document.getElementById('btnProyectoSb3Arriba')?.addEventListener('click', descargarProyectoSb3);
   document.getElementById('btnFichasJSON').addEventListener('click', exportarJSON);
   document.getElementById('btnCreaAuto').addEventListener('click', generarCuestionarioAuto);
   document.getElementById('btnCreaPromptIA').addEventListener('click', copiarPromptCuestionarioIA);
