@@ -220,6 +220,7 @@ decir [¡Guau!] durante (2) segundos</pre>
 
         <h4 class="guia-h">5 · Teoría y guías paso a paso</h4>
         <ul class="guia-lista">
+          <li>En el Paso 1 podés escribir una <strong>descripción del proyecto y la dinámica de juego</strong>: aparece al principio del documento, antes de la primera ficha (en Infantil 🎈 sale como "🎮 ¿Cómo es el juego?"). En el formato de texto es la línea <code>descripcion:</code>, y el Asistente IA la escribe por vos en cada prompt.</li>
           <li>Cada ficha tiene el campo <strong>"Teoría"</strong>: un recuadro destacado antes de la consigna para explicar el concepto. Sale en PDF, Word y el formato de texto (<code>teoria:</code>).</li>
           <li>Si el código tiene una condición de contacto entre personajes (<code>&lt;¿tocando [Perro v]?&gt;</code> dentro de la sección de otro personaje), la ficha muestra automáticamente la frase visual <strong>"Si [foto] Gato está tocando a [foto] Perro"</strong> con las fotos y nombres de ambos — así el alumno ve de un vistazo qué interacción está programando. Sale también en PDF y Word.</li>
           <li>El botón <strong>"🐱 Descargar el proyecto Scratch completo (.sb3)"</strong> (arriba del editor visual y en Descargar) junta el código de todas las fichas en un solo proyecto: lo abrís en scratch.mit.edu (Archivo → Cargar desde tu computadora) y lo mostrás funcionando. Las secciones del mismo personaje se combinan en un solo sprite.</li>
