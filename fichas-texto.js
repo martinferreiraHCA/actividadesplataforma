@@ -240,7 +240,7 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
   }[plataforma] || 'Scratch';
 
   const enfoqueTexto = {
-    guia: 'GUÍA PASO A PASO (tutorial): los ítems NO son ejercicios sueltos sino PASOS ordenados para construir UN MISMO proyecto completo (en Scratch un juego; en micro:bit un proyecto con la placa, ej. un contador, un dado, un juego con los botones; en código de texto un programa que crece paso a paso). Cada paso agrega una parte, con "teoria:" explicando el concepto del paso y "codigo:" con el código NUEVO de ese paso (los pasos de Scratch pueden repetir "personaje:"/"fondo:" para ubicar el código). El último paso deja el proyecto terminado y funcionando.',
+    guia: 'GUÍA PASO A PASO (tutorial): los ítems NO son ejercicios sueltos sino PASOS ordenados para construir UN MISMO proyecto completo (en Scratch un juego; en micro:bit un proyecto con la placa, ej. un contador, un dado, un juego con los botones; en código de texto un programa que crece paso a paso). Cada paso agrega una parte, con "teoria:" explicando el concepto del paso y "codigo:" con el código NUEVO de ese paso. En Scratch, el código de CADA paso empieza con "personaje: Nombre" para que quede claro A QUIÉN se le ponen los bloques, y la consigna dice DÓNDE va lo nuevo ("agregale al Gato estos bloques, debajo de los que ya tiene", "creá este código nuevo en el Perro"...) y qué debería pasar al probarlo. El último paso deja el proyecto terminado y funcionando.',
     lectura: 'Lectura de código: mostrar un programa y pedir que el alumno explique o prediga qué hace.',
     error: 'Encontrar el error: el código tiene UN error deliberado; la consigna pide encontrarlo y en "notas:" va la solución para el docente.',
     completar: 'Completar: el programa está incompleto o tiene un valor a ajustar; la consigna dice qué debe lograr.',
@@ -248,7 +248,12 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
     mixto: 'Variá el enfoque entre las fichas: leer y predecir, encontrar el error, completar y desafíos de creación.'
   }[enfoque] || '';
 
-  let prompt = `Sos docente de programación. Generá ${cantidad} fichas didácticas de trabajo con estas características:
+  const cuantas = cantidad
+    ? `${cantidad} fichas didácticas de trabajo`
+    : (enfoque === 'guia'
+      ? 'una guía con LOS PASOS QUE HAGAN FALTA (decidí vos la cantidad: pasos chicos y claros, los necesarios para que el proyecto quede completo, sin relleno)'
+      : 'LAS FICHAS QUE HAGAN FALTA (decidí vos la cantidad: las necesarias para cubrir bien el tema, sin relleno)');
+  let prompt = `Sos docente de programación. Generá ${cuantas} con estas características:
 
 - **Tema:** ${tema}
 - **Nivel/Grupo:** ${nivel || 'No especificado'}
@@ -337,7 +342,8 @@ Para lenguajes de texto (Python, JavaScript, Java, C, C++, C#, HTML, CSS, SQL, P
 - Cada ficha empieza EXACTAMENTE con === FICHA: Título ===
 - Programas cortos (4 a 12 bloques/líneas), adecuados al nivel indicado.
 - Consignas claras, en español rioplatense (voseo).
-- La dificultad debe ir creciendo de la primera ficha a la última.`;
+- La dificultad debe ir creciendo de la primera ficha a la última.
+- El código debe ser DIDÁCTICO y SECUENCIAL: los bloques aparecen en el orden en que el alumno los construye, y en Scratch cada tanda de bloques va bajo su "personaje: Nombre" para que quede claro a quién pertenece. Si una ficha agrega código a algo ya hecho, la consigna lo dice explícitamente ("agregá esto al código del Gato").`;
 
   return prompt;
 }
