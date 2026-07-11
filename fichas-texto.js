@@ -25,7 +25,7 @@
 //       basic.showIcon(IconNames.Heart)
 //   })
 
-const RE_SEPARADOR = /^===\s*FICHA\s*:?\s*(.*?)\s*=*\s*$/i;
+const RE_SEPARADOR = /^\s*[=#\-]{2,}\s*(?:FICHA|PASO)\s*\d*\s*:?\s*(.*?)[\s=#\-]*$/i;
 const RE_CLAVE = /^(tipo|versi[oó]n|version|lenguaje|muestra|vista|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s*(.*)$/i;
 const CLAVES_MULTILINEA = ['teoria', 'consigna', 'codigo', 'notas'];
 
@@ -56,7 +56,14 @@ function normalizarClave(k) {
 }
 
 export function parsearFichasTexto(texto) {
-  const lineas = texto.replace(/\r\n?/g, '\n').split('\n');
+  // Robustez ante respuestas de IA: se quitan los cercos de código markdown
+  // (```), y si hay charla antes del contenido ("Aquí tienes las fichas..."),
+  // se descarta todo lo anterior a la primera línea reconocible.
+  let lineas = String(texto || '').replace(/\r\n?/g, '\n').split('\n')
+    .filter(l => !/^\s*```/.test(l));
+  const primera = lineas.findIndex(l =>
+    RE_SEPARADOR.test(l) || /^\s*(t[ií]tulo|nivel|grupo|modo|descripci[oó]n|din[aá]mica)\s*:/i.test(l));
+  if (primera > 0) lineas = lineas.slice(primera);
   const doc = { titulo: '', subtitulo: '', modo: null, descripcion: '' };
   let docDescAbierta = false;
   const fichas = [];
@@ -289,7 +296,7 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
 
   prompt += `
 
-Respondé SOLO con las fichas en el formato de abajo, sin texto antes ni después, sin bloques de código markdown.
+MUY IMPORTANTE: tu respuesta la va a leer un PROGRAMA automático (un parser), no una persona. Cualquier desvío del formato rompe la importación. Respondé SOLO con las fichas en el formato de abajo: sin saludo, sin explicación antes ni después, sin cercos de código markdown (\`\`\`), empezando directo con la línea "titulo:".
 
 ## FORMATO REQUERIDO
 
@@ -317,7 +324,7 @@ Escribí el código en sintaxis "scratchblocks" en español, un bloque por líne
 - Números entre paréntesis: mover (10) pasos. Textos entre corchetes: decir [¡Hola!]. Desplegables con [v]: al presionar tecla [espacio v]
 - Condiciones entre ángulos: si <¿tocando [borde v]?> entonces
 - Los bloques "si", "repetir", "por siempre" cierran con una línea "fin"
-- Usá EXACTAMENTE estas redacciones (un texto distinto se dibuja como bloque rojo inválido):
+- NO inventes redacciones: si un bloque no está en esta lista y no estás seguro de su texto exacto en Scratch, resolvelo con bloques de la lista. Un texto distinto se dibuja como bloque rojo inválido. Redacciones verificadas:
   al presionar bandera verde / al presionar tecla [espacio v] / al hacer clic en este objeto
   mover (10) pasos / girar a la derecha (15) grados / apuntar en dirección (90) / ir a x: (0) y: (0) / si toca un borde, rebotar
   decir [Hola] durante (2) segundos / pensar [Hmm...] durante (2) segundos / cambiar disfraz a [disfraz2 v] / esconder / mostrar
@@ -342,6 +349,7 @@ Dentro de "codigo:" podés usar varios personajes y elegir el fondo del escenari
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)
 Escribí JavaScript de MakeCode que compile en makecode.microbit.org:
 - API típica: basic.showString("..."), basic.showIcon(IconNames.Heart), basic.showNumber(...), basic.pause(500), basic.clearScreen(), input.onButtonPressed(Button.A, function () {...}), basic.forever(function () {...}), input.onGesture(Gesture.Shake, ...), music.playTone(...)
+- El código debe COMPILAR en makecode.microbit.org tal cual: declarar variables con "let", callbacks con "function () { ... }", sin librerías externas ni APIs inventadas.
 - Podés agregar la línea "muestra: ambos" para que la ficha muestre bloques y código, o "muestra: codigo" para solo código.
 
 ## REGLAS DEL CÓDIGO EN TEXTO PLANO (tipo: codigo)
@@ -354,7 +362,16 @@ Para lenguajes de texto (Python, JavaScript, Java, C, C++, C#, HTML, CSS, SQL, P
 - Programas cortos (4 a 12 bloques/líneas), adecuados al nivel indicado.
 - Consignas claras, en español rioplatense (voseo).
 - La dificultad debe ir creciendo de la primera ficha a la última.
-- El código debe ser DIDÁCTICO y SECUENCIAL: los bloques aparecen en el orden en que el alumno los construye, y en Scratch cada tanda de bloques va bajo su "personaje: Nombre" para que quede claro a quién pertenece. Si una ficha agrega código a algo ya hecho, la consigna lo dice explícitamente ("agregá esto al código del Gato").`;
+- El código debe ser DIDÁCTICO y SECUENCIAL: los bloques aparecen en el orden en que el alumno los construye, y en Scratch cada tanda de bloques va bajo su "personaje: Nombre" para que quede claro a quién pertenece. Si una ficha agrega código a algo ya hecho, la consigna lo dice explícitamente ("agregá esto al código del Gato").
+
+## ANTES DE RESPONDER, VERIFICÁ ESTA LISTA
+1. La respuesta empieza directo con "titulo:" — sin saludo, sin \`\`\`, sin comentarios.
+2. Cada ficha empieza EXACTAMENTE con: === FICHA: Título ===
+3. NINGUNA ficha quedó sin "codigo:" (nunca vacío, nunca "..." ni pseudocódigo).
+4. En Scratch: cada línea coincide letra por letra con una redacción de la lista; los números van entre paréntesis (10), los textos entre corchetes [hola], los desplegables terminan en v]; cada "repetir", "por siempre" y "si ... entonces" cierra con su línea "fin"; el código empieza con "personaje: ...".
+5. En micro:bit: el código compila tal cual en MakeCode.
+6. En tipo codigo: está la línea "lenguaje: ...".
+7. Se cumple la cantidad de fichas pedida y la dificultad crece de la primera a la última.`;
 
   return prompt;
 }
