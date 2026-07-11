@@ -2,6 +2,7 @@
 import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
+import { retratosDeFicha, retratosDeFichaDataUrl } from './personaje-retrato.js';
 import { sugerirCorreccion } from './scratch-correcciones.js';
 import { parsear } from './parser.js';
 import { separarSecciones, tieneSecciones } from './scratch-secciones.js';
@@ -193,6 +194,31 @@ export function construirFichaView(ficha, numero, opciones) {
     h.className = 'ficha-view__titulo';
     h.textContent = ficha.titulo;
     head.appendChild(h);
+  }
+
+  // retratos de los personajes del código, en la esquina superior derecha
+  const retratos = retratosDeFicha(ficha);
+  if (retratos.length) {
+    const zona = document.createElement('span');
+    zona.className = 'ficha-view__retratos';
+    retratos.forEach(r => {
+      const fig = document.createElement('span');
+      fig.className = 'ficha-view__retrato';
+      const img = document.createElement('img');
+      img.src = r.src;
+      img.alt = 'Personaje: ' + r.nombre;
+      img.title = 'Personaje: ' + r.nombre;
+      img.addEventListener('error', () => fig.remove(), { once: true });
+      fig.appendChild(img);
+      if (infantil) {
+        const cap = document.createElement('span');
+        cap.className = 'ficha-view__retrato-nombre';
+        cap.textContent = r.nombre;
+        fig.appendChild(cap);
+      }
+      zona.appendChild(fig);
+    });
+    head.appendChild(zona);
   }
   if (head.children.length) view.appendChild(head);
 
@@ -1126,7 +1152,17 @@ async function exportarDOCX() {
       if (f.imagen) {
         imagen = await dataUrlAPngInfo(f.imagen.data);
       }
-      preparadas.push({ ficha: f, numero: i + 1, bloques, imagen });
+      // retratos de personajes para la esquina de la ficha (convertidos a PNG)
+      const retratos = [];
+      if (!f.tipo || f.tipo === 'scratch') {
+        for (const r of await retratosDeFichaDataUrl(f)) {
+          try {
+            const info = await dataUrlAPngInfo(r.dataUrl);
+            retratos.push({ nombre: r.nombre, dataUrl: info.dataUrl, width: info.width, height: info.height });
+          } catch (e) { /* retrato ilegible: la ficha sale sin él */ }
+        }
+      }
+      preparadas.push({ ficha: f, numero: i + 1, bloques, imagen, retratos });
     }
     const blob = await exportarFichasDOCX({
       titulo: state.titulo,
@@ -1263,6 +1299,7 @@ PERSONAJES Y FONDO (opcional):
   ...
 - Personajes que funcionan siempre (usá EXACTAMENTE estos nombres): Gato, Perro, Oso, Rana, Pelota, Mariposa, Dinosaurio, Cangrejo, Pingüino, Ratón, Murciélago, Pez, Erizo. Fondos: Cielo, Fondo de mar, Estrellas, Ciudad de noche, Cancha de fútbol, Granja.
 - También vale cualquier personaje o fondo de la biblioteca oficial de Scratch por su nombre exacto en inglés (ej: Shark 2, Dragon, Beach Malibu).
+- Empezá SIEMPRE con una línea "personaje: ..." aunque haya un solo personaje: la ficha muestra su dibujo automáticamente en la esquina.
 - Sin encabezados "personaje:", todo el código es del Gato.
 
 Respondé SOLO con el código scratchblocks, sin explicación.`;
