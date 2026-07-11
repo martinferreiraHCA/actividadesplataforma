@@ -415,7 +415,7 @@ function emitirPila(ctx, bloquesAst, parentId) {
 // emite todas las pilas de un código en ctx.bloques; devuelve cuántas emitió
 function emitirScriptsDeCodigo(ctx, codigo) {
   const sb = window.scratchblocks;
-  const doc = sb.parse(codigo, { languages: ['en', 'es'] });
+  const doc = sb.parse(codigo, { languages: ['en', 'es', 'es-419'] });
   const scripts = (doc.scripts || []).filter(s => s.blocks && s.blocks.length);
 
   let x = 60;

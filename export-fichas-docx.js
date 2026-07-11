@@ -41,7 +41,14 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
       imagen: item.imagen ? { ...item.imagen, dataUrl: await aEscalaDeGrises(item.imagen.dataUrl) } : item.imagen,
       retratos: item.retratos
         ? await Promise.all(item.retratos.map(async r => ({ ...r, dataUrl: await aEscalaDeGrises(r.dataUrl) })))
-        : item.retratos
+        : item.retratos,
+      interacciones: item.interacciones
+        ? await Promise.all(item.interacciones.map(async it => ({
+            ...it,
+            ra: it.ra ? { ...it.ra, dataUrl: await aEscalaDeGrises(it.ra.dataUrl) } : it.ra,
+            rb: it.rb ? { ...it.rb, dataUrl: await aEscalaDeGrises(it.rb.dataUrl) } : it.rb
+          })))
+        : item.interacciones
     })));
   }
 
@@ -99,7 +106,7 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
 }
 
 // contenido de una ficha como lista de párrafos/tablas
-function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos }, opciones) {
+function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos, interacciones }, opciones) {
   const out = [];
   const anchoInterior = opciones.bordes ? ANCHO_CONTENIDO - 30 : ANCHO_CONTENIDO;
   const tema = temaDoc(opciones);
@@ -222,6 +229,31 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos }, opcione
       }));
     });
   }
+
+  // interacciones entre personajes: "Si [foto] A está tocando a [foto] B"
+  (interacciones || []).forEach(inter => {
+    const runs = [new d.TextRun({ text: 'Si  ', bold: true, size: tz(22), font: tema.fuente })];
+    const conRetrato = (retrato, nombre) => {
+      if (retrato && retrato.dataUrl && retrato.height) {
+        const kk = 30 / retrato.height;
+        runs.push(new d.ImageRun({
+          type: 'png',
+          data: dataUrlABytes(retrato.dataUrl),
+          transformation: { width: Math.round(retrato.width * kk), height: 30 }
+        }));
+        runs.push(new d.TextRun({ text: ' ' }));
+      }
+      runs.push(new d.TextRun({ text: (retrato ? retrato.nombre : nombre), bold: true, size: tz(22), font: tema.fuente }));
+    };
+    conRetrato(inter.ra, inter.a);
+    runs.push(new d.TextRun({ text: '  está tocando a  ', bold: true, size: tz(22), font: tema.fuente }));
+    conRetrato(inter.rb, inter.b);
+    out.push(new d.Paragraph({
+      children: runs,
+      shading: infantil ? { type: d.ShadingType.CLEAR, fill: 'EFF9FF' } : undefined,
+      spacing: { after: 100 }
+    }));
+  });
 
   // cuerpo: código + imagen según posición
   const imgLado = imagen && (ficha.imgPos === 'derecha' || ficha.imgPos === 'izquierda');

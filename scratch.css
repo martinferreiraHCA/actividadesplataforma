@@ -1278,3 +1278,74 @@ body:not(.modo-guiado) .wiz-explica { display: none; }
 }
 /* blanco y negro: también en grises */
 .ficha-view--bn .ficha-view__retrato img { filter: grayscale(1) contrast(1.15); }
+
+/* ---- interacciones entre personajes: "Si A está tocando a B" ---- */
+.ficha-view__interacciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0 0 0.9rem;
+}
+.ficha-view__interaccion {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.45rem 0.8rem;
+  border: 1px dashed rgba(0,0,0,0.35);
+  background: #fbfbf8;
+}
+.ficha-view__inter-palabra {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+.ficha-view__inter-personaje {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+.ficha-view__inter-personaje img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  display: block;
+}
+.ficha-view__inter-personaje span {
+  font-size: 0.66rem;
+  font-weight: 700;
+  opacity: 0.8;
+}
+/* infantil: recuadro celeste con retratos en globito */
+.ficha-view--infantil .ficha-view__interaccion {
+  background: #EFF9FF;
+  border: 2px solid #BFE3F7;
+  border-radius: 14px;
+  padding: 0.55rem 0.9rem;
+}
+.ficha-view--infantil .ficha-view__inter-palabra {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 1.02rem;
+  color: #23689B;
+}
+.ficha-view--infantil .ficha-view__inter-personaje img {
+  width: 52px;
+  height: 52px;
+  background: #fff;
+  border: 3px solid var(--acento);
+  border-radius: 50%;
+  padding: 4px;
+}
+.ficha-view--infantil .ficha-view__inter-personaje span {
+  font-family: 'Baloo 2', sans-serif;
+  color: var(--acento);
+  opacity: 1;
+  font-size: 0.72rem;
+}
+.ficha-view--colorido .ficha-view__interaccion {
+  border: 1px solid var(--acento, #3A86FF);
+  border-radius: 8px;
+  background: #fafcff;
+}
+.ficha-view--bn .ficha-view__inter-personaje img { filter: grayscale(1) contrast(1.15); }
+.ficha-view--simple .ficha-view__interaccion { border: none; background: none; padding: 0.2rem 0; }
