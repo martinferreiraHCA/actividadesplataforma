@@ -150,6 +150,15 @@ function similitud(a, b) {
 }
 
 // Sugerencia para UNA línea roja. Devuelve la línea corregida o null.
+// El catálogo completo como texto para prompts de IA: la sintaxis queda
+// auto-contenida — el mismo catálogo alimenta el corrector, el chuletario
+// de la guía y los prompts, sin listas duplicadas a mano.
+export function sintaxisScratchPrompt() {
+  return Object.entries(CATALOGO)
+    .map(([cat, bloques]) => '  ' + cat + ': ' + bloques.join(' / '))
+    .join('\n');
+}
+
 export function sugerirCorreccion(linea) {
   const indent = (linea.match(/^\s*/) || [''])[0];
   let texto = linea.trim();

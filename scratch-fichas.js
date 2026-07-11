@@ -3,7 +3,7 @@ import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
 import { retratosDeFicha, retratosDeFichaDataUrl, interaccionesDeFicha, retratoDeNombre, retratoDataUrlDeNombre, fondoDeFicha, fondoDataUrlDeFicha } from './personaje-retrato.js';
-import { sugerirCorreccion } from './scratch-correcciones.js';
+import { sugerirCorreccion, sintaxisScratchPrompt } from './scratch-correcciones.js';
 import { parsear } from './parser.js';
 import { separarSecciones, tieneSecciones } from './scratch-secciones.js';
 import { LENGUAJES_CODIGO, ACENTO_LENGUAJE, nombreLenguaje, lenguajeEfectivo, elementoCodigo, codigoAPng } from './codigo-render.js';
@@ -1394,9 +1394,8 @@ REGLAS DE LA SINTAXIS:
 - Condiciones entre ángulos: <¿tocando [borde v]?>, <(x) > (50)>.
 - Los bloques "si ... entonces", "repetir", "por siempre" se cierran con una línea "fin".
 - Separá pilas de bloques distintas con una línea en blanco.
-- Usá EXACTAMENTE estas redacciones (un texto distinto se dibuja como bloque rojo inválido):
-  girar a la derecha (15) grados / decir [Hola] durante (2) segundos / iniciar sonido [Miau v]
-  dar a [puntaje v] el valor (0) / sumar a [puntaje v] (1) / si toca un borde, rebotar / ¿tocando [borde v]?
+- Construí el programa SOLO con este catálogo de bloques verificados (un texto distinto se dibuja como bloque rojo inválido):
+${sintaxisScratchPrompt()}
 - No uses numeración, viñetas ni bloques de código markdown.
 
 PERSONAJES Y FONDO (opcional):

@@ -25,6 +25,8 @@
 //       basic.showIcon(IconNames.Heart)
 //   })
 
+import { sintaxisScratchPrompt } from './scratch-correcciones.js';
+
 const RE_SEPARADOR = /^\s*[=#\-]{2,}\s*(?:FICHA|PASO)\s*\d*\s*:?\s*(.*?)[\s=#\-]*$/i;
 const RE_CLAVE = /^(tipo|versi[oó]n|version|lenguaje|muestra|vista|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s*(.*)$/i;
 const CLAVES_MULTILINEA = ['teoria', 'consigna', 'codigo', 'notas'];
@@ -324,12 +326,12 @@ Escribí el código en sintaxis "scratchblocks" en español, un bloque por líne
 - Números entre paréntesis: mover (10) pasos. Textos entre corchetes: decir [¡Hola!]. Desplegables con [v]: al presionar tecla [espacio v]
 - Condiciones entre ángulos: si <¿tocando [borde v]?> entonces
 - Los bloques "si", "repetir", "por siempre" cierran con una línea "fin"
-- NO inventes redacciones: si un bloque no está en esta lista y no estás seguro de su texto exacto en Scratch, resolvelo con bloques de la lista. Un texto distinto se dibuja como bloque rojo inválido. Redacciones verificadas:
-  al presionar bandera verde / al presionar tecla [espacio v] / al hacer clic en este objeto
-  mover (10) pasos / girar a la derecha (15) grados / apuntar en dirección (90) / ir a x: (0) y: (0) / si toca un borde, rebotar
-  decir [Hola] durante (2) segundos / pensar [Hmm...] durante (2) segundos / cambiar disfraz a [disfraz2 v] / esconder / mostrar
-  iniciar sonido [Miau v] / esperar (1) segundos / repetir (10) / por siempre / si <¿tocando [borde v]?> entonces
-  dar a [puntaje v] el valor (0) / sumar a [puntaje v] (1) / número aleatorio entre (1) y (10) / preguntar [...] y esperar / respuesta
+- NO inventes redacciones: construí los programas SOLO con los bloques del catálogo de abajo (es la sintaxis completa verificada — todo lo que el programa necesita para funcionar). Un texto distinto se dibuja como bloque rojo inválido.
+
+CATÁLOGO COMPLETO DE BLOQUES VERIFICADOS (por categoría):
+${sintaxisScratchPrompt()}
+
+- Las condiciones <> se rellenan con un sensor u operador, ej: si <¿tocando [borde v]?> entonces / repetir hasta que <(puntaje) > (9)>
 
 ## PERSONAJES Y FONDO EN SCRATCH (opcional)
 Dentro de "codigo:" podés usar varios personajes y elegir el fondo del escenario:
@@ -348,7 +350,14 @@ Dentro de "codigo:" podés usar varios personajes y elegir el fondo del escenari
 
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)
 Escribí JavaScript de MakeCode que compile en makecode.microbit.org:
-- API típica: basic.showString("..."), basic.showIcon(IconNames.Heart), basic.showNumber(...), basic.pause(500), basic.clearScreen(), input.onButtonPressed(Button.A, function () {...}), basic.forever(function () {...}), input.onGesture(Gesture.Shake, ...), music.playTone(...)
+- Usá SOLO esta API verificada de MakeCode (auto-contenida: alcanza para cualquier proyecto didáctico):
+  Pantalla: basic.showString("hola"), basic.showNumber(9), basic.showIcon(IconNames.Heart), basic.clearScreen(), led.plot(2, 2), led.unplot(2, 2)
+  Control: basic.forever(function () {...}), basic.pause(500), if / else, for (let i = 0; i < 5; i++) {...}
+  Entradas: input.onButtonPressed(Button.A, function () {...}) (también Button.B y Button.AB), input.onGesture(Gesture.Shake, function () {...}), input.buttonIsPressed(Button.A), input.temperature(), input.lightLevel(), input.compassHeading(), input.acceleration(Dimension.X)
+  Sonido: music.playTone(262, music.beat()), music.startMelody(music.builtInMelody(Melodies.Entertainer), MelodyOptions.Once)
+  Radio: radio.setGroup(1), radio.sendNumber(7), radio.onReceivedNumber(function (receivedNumber) {...})
+  Pines: pins.digitalWritePin(DigitalPin.P0, 1), pins.digitalReadPin(DigitalPin.P0)
+  Azar y variables: Math.randomRange(1, 6), let puntaje = 0
 - El código debe COMPILAR en makecode.microbit.org tal cual: declarar variables con "let", callbacks con "function () { ... }", sin librerías externas ni APIs inventadas.
 - Podés agregar la línea "muestra: ambos" para que la ficha muestre bloques y código, o "muestra: codigo" para solo código.
 
