@@ -25,7 +25,7 @@
 //       basic.showIcon(IconNames.Heart)
 //   })
 
-import { sintaxisScratchPrompt } from './scratch-correcciones.js';
+import { sintaxisScratchPrompt, CATALOGO } from './scratch-correcciones.js';
 
 const RE_SEPARADOR = /^\s*[=#\-]{2,}\s*(?:FICHA|PASO)\s*\d*\s*:?\s*(.*?)[\s=#\-]*$/i;
 const RE_CLAVE = /^(tipo|versi[oó]n|version|lenguaje|muestra|vista|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s*(.*)$/i;
@@ -57,12 +57,85 @@ function normalizarClave(k) {
   return c;
 }
 
+// ============================================================
+// Reconstrucción de texto "aplastado": al copiar desde algunos chats de IA
+// se pierden los saltos de línea y todo llega en una sola línea. Estas
+// funciones vuelven a armar la estructura (claves y bloques por línea).
+// ============================================================
+
+const RE_CLAVES_TODAS = /\s+(?=(?:t[ií]tulo|nivel|grupo|modo|descripci[oó]n|din[aá]mica|tipo|versi[oó]n|version|lenguaje|muestra|vista|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s)/gi;
+const RE_SEP_INLINE = /\s+(?===+\s*(?:FICHA|PASO)\b)/gi;
+
+// una línea "aplastada" tiene 2+ claves o un separador con cola de contenido
+function lineaAplastada(linea) {
+  const claves = (linea.match(/\b(tipo|teor[ií]a|consigna|c[oó]digo|notas|nivel|descripci[oó]n|modo|lenguaje|muestra)\s*:\s/gi) || []).length;
+  return claves >= 2 || (RE_SEPARADOR.test(linea) === false && /==+\s*(?:FICHA|PASO)/i.test(linea));
+}
+
+// prefijos de bloque (del catálogo verificado) con los que puede EMPEZAR una
+// línea de código Scratch — para volver a partir código aplastado en líneas
+const INICIOS_BLOQUE = (() => {
+  const reporteros = new Set(['posición en x', 'dirección', 'respuesta']);
+  const prefijos = new Set(['personaje:', 'fondo:', 'fin', 'si no', 'si ']);
+  Object.values(CATALOGO).flat().forEach(b => {
+    if (reporteros.has(b) || /^[¿(]|^n[uú]mero aleatorio|^unir/i.test(b)) return;
+    const pref = b.split(/[([<]/)[0].trim();
+    if (pref) prefijos.add(pref.toLowerCase());
+  });
+  return [...prefijos].sort((a, b) => b.length - a.length);
+})();
+
+function esLetra(c) { return !!c && /[a-záéíóúüñ0-9]/i.test(c); }
+
+// parte una línea de código en bloques: corta en los prefijos conocidos que
+// aparecen fuera de paréntesis/corchetes/condiciones
+function partirLineaBloques(linea) {
+  const low = linea.toLowerCase();
+  const cortes = [];
+  let dep = 0;
+  for (let i = 0; i < linea.length; i++) {
+    const c = linea[i];
+    if (c === '(' || c === '[') dep++;
+    else if (c === ')' || c === ']') dep = Math.max(0, dep - 1);
+    else if (c === '<' && linea[i + 1] && linea[i + 1] !== ' ') dep++;      // <condición  (no el operador " < ")
+    else if (c === '>' && i > 0 && linea[i - 1] !== ' ' && dep > 0) dep--;  // cierre de condición
+    if (dep !== 0 || i === 0) continue;
+    if (linea[i - 1] !== ' ') continue;
+    for (const pref of INICIOS_BLOQUE) {
+      if (!low.startsWith(pref, i)) continue;
+      const despues = linea[i + pref.length];
+      if (/[a-záéíóúüñ]/i.test(pref[pref.length - 1]) && esLetra(despues)) continue; // "mover" ≠ "moverse"
+      cortes.push(i);
+      break;
+    }
+  }
+  if (!cortes.length) return [linea];
+  const partes = [];
+  let ini = 0;
+  for (const c of cortes) { partes.push(linea.slice(ini, c).replace(/\s+$/, '')); ini = c; }
+  partes.push(linea.slice(ini));
+  return partes.filter(p => p.trim());
+}
+
+function partirCodigoScratch(codigo) {
+  return String(codigo || '').split('\n').flatMap(partirLineaBloques).join('\n');
+}
+
 export function parsearFichasTexto(texto) {
   // Robustez ante respuestas de IA: se quitan los cercos de código markdown
   // (```), y si hay charla antes del contenido ("Aquí tienes las fichas..."),
   // se descarta todo lo anterior a la primera línea reconocible.
   let lineas = String(texto || '').replace(/\r\n?/g, '\n').split('\n')
     .filter(l => !/^\s*```/.test(l));
+  // texto aplastado (sin saltos de línea): reconstruir la estructura
+  let reconstruido = false;
+  lineas = lineas.flatMap(l => {
+    if (l.length > 60 && lineaAplastada(l)) {
+      reconstruido = true;
+      return l.replace(RE_SEP_INLINE, '\n').replace(RE_CLAVES_TODAS, '\n').split('\n');
+    }
+    return [l];
+  });
   const primera = lineas.findIndex(l =>
     RE_SEPARADOR.test(l) || /^\s*(t[ií]tulo|nivel|grupo|modo|descripci[oó]n|din[aá]mica)\s*:/i.test(l));
   if (primera > 0) lineas = lineas.slice(primera);
@@ -162,6 +235,7 @@ export function parsearFichasTexto(texto) {
     if (tipo === 'scratch') {
       const v = (f.version || '').toLowerCase();
       ficha.estilo = /2/.test(v) ? 'scratch2' : (/(alto|contrast)/.test(v) ? 'scratch3-high-contrast' : 'scratch3');
+      ficha.codigo = partirCodigoScratch(ficha.codigo);
     } else if (tipo === 'codigo') {
       ficha.lenguaje = normalizarLenguajeCodigo(f.lenguaje);
     } else {
@@ -177,6 +251,9 @@ export function parsearFichasTexto(texto) {
 
   if (!resultado.length) {
     avisos.push('No se encontró ninguna ficha. Cada ficha empieza con una línea "=== FICHA: Título ===".');
+  }
+  if (reconstruido) {
+    avisos.unshift('El texto llegó sin saltos de línea (suele pasar al copiar desde el chat de la IA): se reconstruyó la estructura automáticamente. Revisá las fichas por las dudas.');
   }
 
   return { titulo: doc.titulo, subtitulo: doc.subtitulo, descripcion: doc.descripcion.trim(), modo: doc.modo, fichas: resultado, avisos };
