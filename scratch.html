@@ -124,19 +124,28 @@
 <section class="editor-section" style="padding-bottom:0" data-wiz="2">
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Creá tus fichas</div>
-    <p class="wiz-explica">Hay <strong>tres maneras</strong> de crear las fichas — elegí la que te quede más cómoda (se pueden combinar):<br>
-      <strong>◎ Editor Visual</strong>: armás cada ficha a mano y ves los bloques dibujarse mientras escribís. Ideal para empezar y para retocar.<br>
-      <strong>≡ Importar Texto</strong>: pegás un solo texto con muchas fichas y se cargan todas de golpe. Ideal para trabajos largos.<br>
-      <strong>✦ Asistente IA</strong>: completás un formulario, le pasás el prompt a tu IA favorita y su respuesta se convierte en fichas editables. Ideal si querés que el contenido se escriba solo.</p>
-    <div class="tabs-modo">
+    <p class="wiz-explica" style="margin-bottom:1rem"><strong>Elegí cómo crear las fichas</strong> — las tres formas se pueden combinar y todo se edita después:</p>
+    <div class="tabs-modo tabs-modo--cards">
       <button class="tab-modo active" data-modo="visual">
-        <span class="tab-modo__icono">◎</span> Editor Visual
+        <span class="tab-modo__icono">◎</span>
+        <span class="tab-modo__cuerpo">
+          <span class="tab-modo__nombre">Editor Visual</span>
+          <span class="tab-modo__desc">Armá cada ficha a mano y mirá los bloques dibujarse mientras escribís. Ideal para empezar y retocar.</span>
+        </span>
       </button>
       <button class="tab-modo" data-modo="texto">
-        <span class="tab-modo__icono">≡</span> Importar Texto
+        <span class="tab-modo__icono">≡</span>
+        <span class="tab-modo__cuerpo">
+          <span class="tab-modo__nombre">Importar Texto</span>
+          <span class="tab-modo__desc">Pegá un solo texto con muchas fichas y se cargan todas de golpe. Ideal para trabajos largos.</span>
+        </span>
       </button>
       <button class="tab-modo" data-modo="ia">
-        <span class="tab-modo__icono">✦</span> Asistente IA
+        <span class="tab-modo__icono">✦</span>
+        <span class="tab-modo__cuerpo">
+          <span class="tab-modo__nombre">Asistente IA</span>
+          <span class="tab-modo__desc">Completá un formulario, pasale el prompt a tu IA y su respuesta se convierte en fichas editables.</span>
+        </span>
       </button>
     </div>
   </div>
@@ -273,7 +282,8 @@
         <div class="campo-grid">
           <div class="campo">
             <label class="campo__etiqueta" for="iaFichasCantidad" id="lblIaCantidad">Cantidad de fichas</label>
-            <input class="campo__input" type="number" id="iaFichasCantidad" value="4" min="1" max="20">
+            <input class="campo__input" type="number" id="iaFichasCantidad" value="" min="1" max="30" placeholder="Auto — la IA decide">
+            <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Dejalo vacío para que la IA elija cuántas hacen falta según el tema.</p>
           </div>
           <div class="campo">
             <label class="campo__etiqueta" for="iaFichasPlataforma">Plataforma</label>

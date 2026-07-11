@@ -48,7 +48,10 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
             ra: it.ra ? { ...it.ra, dataUrl: await aEscalaDeGrises(it.ra.dataUrl) } : it.ra,
             rb: it.rb ? { ...it.rb, dataUrl: await aEscalaDeGrises(it.rb.dataUrl) } : it.rb
           })))
-        : item.interacciones
+        : item.interacciones,
+      fondoRetrato: item.fondoRetrato
+        ? { ...item.fondoRetrato, dataUrl: await aEscalaDeGrises(item.fondoRetrato.dataUrl) }
+        : item.fondoRetrato
     })));
   }
 
@@ -106,7 +109,7 @@ export async function exportarFichasDOCX({ titulo, subtitulo, opciones, fichas }
 }
 
 // contenido de una ficha como lista de párrafos/tablas
-function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos, interacciones }, opciones) {
+function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos, interacciones, fondoRetrato }, opciones) {
   const out = [];
   const anchoInterior = opciones.bordes ? ANCHO_CONTENIDO - 30 : ANCHO_CONTENIDO;
   const tema = temaDoc(opciones);
@@ -156,6 +159,26 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos, interacci
       altText: { title: 'Personaje: ' + (r.nombre || ''), description: 'Personaje: ' + (r.nombre || ''), name: r.nombre || 'personaje' }
     }));
   });
+  if (fondoRetrato && fondoRetrato.dataUrl && fondoRetrato.height) {
+    const kk = altoRetrato / fondoRetrato.height;
+    if (runsRetratos.length) runsRetratos.push(new d.TextRun({ text: '  ' }));
+    runsRetratos.push(new d.ImageRun({
+      type: 'png',
+      data: dataUrlABytes(fondoRetrato.dataUrl),
+      transformation: { width: Math.round(fondoRetrato.width * kk), height: altoRetrato },
+      altText: { title: 'Fondo: ' + (fondoRetrato.nombre || ''), description: 'Fondo: ' + (fondoRetrato.nombre || ''), name: fondoRetrato.nombre || 'fondo' }
+    }));
+  }
+  const parrafosRetratos = () => {
+    const ps = [new d.Paragraph({ alignment: d.AlignmentType.RIGHT, children: runsRetratos })];
+    if (fondoRetrato && fondoRetrato.nombre) {
+      ps.push(new d.Paragraph({
+        alignment: d.AlignmentType.RIGHT,
+        children: [new d.TextRun({ text: 'Fondo: ' + fondoRetrato.nombre, size: tz(16), color: '666666', font: tema.fuente })]
+      }));
+    }
+    return ps;
+  };
   if (runsHead.length && runsRetratos.length) {
     out.push(new d.Table({
       width: { size: 100, type: d.WidthType.PERCENTAGE },
@@ -164,7 +187,7 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos, interacci
         children: [
           celdaSinBorde(d, [new d.Paragraph({ children: runsHead })], 78),
           new d.TableCell({
-            children: [new d.Paragraph({ alignment: d.AlignmentType.RIGHT, children: runsRetratos })],
+            children: parrafosRetratos(),
             width: { size: 22, type: d.WidthType.PERCENTAGE },
             borders: bordesCelda(d),
             verticalAlign: d.VerticalAlign.TOP
@@ -176,7 +199,8 @@ function contenidoFicha(d, { ficha, numero, bloques, imagen, retratos, interacci
   } else if (runsHead.length) {
     out.push(new d.Paragraph({ children: runsHead, spacing: { after: 120 } }));
   } else if (runsRetratos.length) {
-    out.push(new d.Paragraph({ alignment: d.AlignmentType.RIGHT, children: runsRetratos, spacing: { after: 80 } }));
+    out.push(...parrafosRetratos());
+    out.push(new d.Paragraph({ text: '', spacing: { after: 60 } }));
   }
 
   // teoría (recuadro conceptual previo)

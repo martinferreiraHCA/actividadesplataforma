@@ -4,9 +4,9 @@
 // Los 13 embebidos + el Gato salen de los datos locales (sin internet);
 // el resto de la biblioteca oficial se busca en el CDN de Scratch.
 
-import { PERSONAJES, buscarPersonaje } from './scratch-personajes.js';
+import { PERSONAJES, FONDOS, buscarPersonaje, buscarFondo } from './scratch-personajes.js';
 import { GATO1_SVG } from './scratch-sb3-assets.js';
-import { buscarPersonajeEnTodo, urlMiniatura, descargarAsset } from './scratch-catalogo.js';
+import { buscarPersonajeEnTodo, buscarFondoEnTodo, urlMiniatura, descargarAsset } from './scratch-catalogo.js';
 import { separarSecciones } from './scratch-secciones.js';
 
 const MAX_RETRATOS = 3;
@@ -79,6 +79,42 @@ export function interaccionesDeFicha(ficha) {
     }
   });
   return out.slice(0, 3);
+}
+
+// fondo del escenario declarado en el código ("fondo: X"): miniatura + nombre.
+// Síncrono para la vista (los embebidos como dataURL, el resto vía CDN).
+export function fondoDeFicha(ficha) {
+  if (ficha.tipo && ficha.tipo !== 'scratch') return null;
+  if (!(ficha.codigo || '').trim()) return null;
+  const { fondo } = separarSecciones(ficha.codigo);
+  if (!fondo) return null;
+  const clave = buscarFondo(fondo);
+  if (clave && FONDOS[clave]) {
+    const f = FONDOS[clave];
+    return {
+      nombre: f.nombre,
+      src: 'data:image/' + (f.ext === 'svg' ? 'svg+xml' : f.ext) + ';base64,' + f.b64,
+      local: true
+    };
+  }
+  const cat = buscarFondoEnTodo(fondo);
+  if (cat) return { nombre: cat.nombre, src: urlMiniatura(cat.md5ext), local: false };
+  return null;
+}
+
+// versión para exportar (Word): todo como dataURL; null si no hay o sin internet
+export async function fondoDataUrlDeFicha(ficha) {
+  const f = fondoDeFicha(ficha);
+  if (!f) return null;
+  if (f.local) return { nombre: f.nombre, dataUrl: f.src };
+  const { fondo } = separarSecciones(ficha.codigo);
+  const cat = buscarFondoEnTodo(fondo);
+  if (!cat) return null;
+  try {
+    const b64 = await descargarAsset(cat.md5ext);
+    const ext = cat.md5ext.slice(cat.md5ext.lastIndexOf('.') + 1);
+    return { nombre: cat.nombre, dataUrl: 'data:image/' + (ext === 'svg' ? 'svg+xml' : ext) + ';base64,' + b64 };
+  } catch (e) { return null; }
 }
 
 // dataURL (para exportar) del retrato de un nombre; null si no hay o sin internet

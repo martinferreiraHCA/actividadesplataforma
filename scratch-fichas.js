@@ -2,7 +2,7 @@
 import { exportarFichasDOCX } from './export-fichas-docx.js';
 import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
-import { retratosDeFicha, retratosDeFichaDataUrl, interaccionesDeFicha, retratoDeNombre, retratoDataUrlDeNombre } from './personaje-retrato.js';
+import { retratosDeFicha, retratosDeFichaDataUrl, interaccionesDeFicha, retratoDeNombre, retratoDataUrlDeNombre, fondoDeFicha, fondoDataUrlDeFicha } from './personaje-retrato.js';
 import { sugerirCorreccion } from './scratch-correcciones.js';
 import { parsear } from './parser.js';
 import { separarSecciones, tieneSecciones } from './scratch-secciones.js';
@@ -196,9 +196,10 @@ export function construirFichaView(ficha, numero, opciones) {
     head.appendChild(h);
   }
 
-  // retratos de los personajes del código, en la esquina superior derecha
+  // retratos de los personajes y fondo del código, en la esquina superior derecha
   const retratos = retratosDeFicha(ficha);
-  if (retratos.length) {
+  const fondoFicha = fondoDeFicha(ficha);
+  if (retratos.length || fondoFicha) {
     const zona = document.createElement('span');
     zona.className = 'ficha-view__retratos';
     retratos.forEach(r => {
@@ -218,6 +219,20 @@ export function construirFichaView(ficha, numero, opciones) {
       }
       zona.appendChild(fig);
     });
+    if (fondoFicha) {
+      const fig = document.createElement('span');
+      fig.className = 'ficha-view__retrato ficha-view__retrato--fondo';
+      const img = document.createElement('img');
+      img.src = fondoFicha.src;
+      img.alt = 'Fondo: ' + fondoFicha.nombre;
+      img.title = 'Fondo del escenario: ' + fondoFicha.nombre;
+      img.addEventListener('error', () => fig.remove(), { once: true });
+      const cap = document.createElement('span');
+      cap.className = 'ficha-view__retrato-nombre';
+      cap.textContent = fondoFicha.nombre;
+      fig.append(img, cap);
+      zona.appendChild(fig);
+    }
     head.appendChild(zona);
   }
   if (head.children.length) view.appendChild(head);
@@ -1222,8 +1237,9 @@ async function exportarDOCX() {
           } catch (e) { /* retrato ilegible: la ficha sale sin él */ }
         }
       }
-      // interacciones "A está tocando a B" con sus retratos en PNG
+      // interacciones "A está tocando a B" y fondo del escenario, en PNG
       const interacciones = [];
+      let fondoRetrato = null;
       if (!f.tipo || f.tipo === 'scratch') {
         const aPng = async (r) => {
           if (!r) return null;
@@ -1239,8 +1255,9 @@ async function exportarDOCX() {
             rb: await aPng(await retratoDataUrlDeNombre(it.b))
           });
         }
+        fondoRetrato = await aPng(await fondoDataUrlDeFicha(f));
       }
-      preparadas.push({ ficha: f, numero: i + 1, bloques, imagen, retratos, interacciones });
+      preparadas.push({ ficha: f, numero: i + 1, bloques, imagen, retratos, interacciones, fondoRetrato });
     }
     const blob = await exportarFichasDOCX({
       titulo: state.titulo,
@@ -1868,7 +1885,7 @@ function init() {
     const prompt = generarPromptFichas({
       tema: document.getElementById('iaFichasTema').value.trim(),
       nivel: state.subtitulo,
-      cantidad: parseInt(document.getElementById('iaFichasCantidad').value, 10) || 4,
+      cantidad: parseInt(document.getElementById('iaFichasCantidad').value, 10) || 0,
       plataforma: document.getElementById('iaFichasPlataforma').value,
       enfoque: iaGeneraGuia ? 'guia' : document.getElementById('iaFichasEnfoque').value,
       notas: document.getElementById('iaFichasNotas').value.trim(),
