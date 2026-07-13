@@ -32,6 +32,10 @@ const REGLAS = [
   [/\bal\s+presionar\s+(?:la\s+)?tecla\s+([a-zA-Z0-9áéíóúñ]+)\s*$/gi, 'al presionar tecla [$1 v]'],
   // rebotar: todas las variantes -> redacción oficial
   [/.*\brebotar\b.*\bborde\b.*|.*\bborde\b.*\brebotar\b.*/gi, 'si toca un borde, rebotar'],
+  // estilo de rotación: variantes comunes -> redacción oficial
+  [/\bfijar\s+(?:el\s+)?estilo\s+de\s+rotaci[oó]n\s+(?:a\s+)?\[?\s*izquierda\s*[\/\-,]?\s*(?:y\s+)?derecha\s*v?\s*\]?/gi, 'fijar estilo de rotación a [izquierda-derecha v]'],
+  [/\bfijar\s+(?:el\s+)?estilo\s+de\s+rotaci[oó]n\s+(?:a\s+)?\[?\s*no\s+rotar\s*v?\s*\]?/gi, 'fijar estilo de rotación a [no rotar v]'],
+  [/\bfijar\s+(?:el\s+)?estilo\s+de\s+rotaci[oó]n\s+(?:a\s+)?\[?\s*(?:en\s+)?todas(?:\s+las)?\s+direcciones\s*v?\s*\]?/gi, 'fijar estilo de rotación a [en todas direcciones v]'],
   // apariencia
   [/^\s*ocultar\s*$/gi, 'esconder'],
   // listas: "agregar X a [lista]" -> "añadir X a [lista]"
@@ -61,7 +65,9 @@ export const CATALOGO = {
     'apuntar en dirección (90)',
     'ir a x: (0) y: (0)',
     'ir a [posición aleatoria v]',
+    'apuntar hacia [puntero del ratón v]',
     'deslizar en (1) segs a x: (0) y: (0)',
+    'fijar estilo de rotación a [izquierda-derecha v]',
     'si toca un borde, rebotar',
     'posición en x',
     'dirección'

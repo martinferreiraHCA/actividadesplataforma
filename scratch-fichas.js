@@ -1954,6 +1954,32 @@ function init() {
     caja.classList.add('caja-prompt--visible');
     document.getElementById('accionesPromptFichas').style.display = 'flex';
   });
+  // prompt de REFUERZO: actividades nuevas sobre los conceptos ya trabajados
+  document.getElementById('btnPromptRefuerzo')?.addEventListener('click', () => {
+    if (!state.fichas.some(f => f.codigo.trim() || f.consigna.trim())) {
+      toast('Primero creá o cargá las fichas del tema: el refuerzo se arma sobre ellas.');
+      return;
+    }
+    const tipos = new Set(state.fichas.map(f => f.tipo || 'scratch'));
+    const plataforma = tipos.size > 1 ? 'mixto' : (tipos.has('microbit') ? 'microbit' : tipos.has('codigo') ? 'codigo' : 'scratch');
+    const prompt = generarPromptFichas({
+      tema: (state.titulo.trim() || 'los contenidos de las fichas') + ' — actividades de refuerzo',
+      nivel: state.subtitulo,
+      cantidad: parseInt(document.getElementById('iaFichasCantidad').value, 10) || 0,
+      plataforma,
+      enfoque: 'mixto',
+      notas: document.getElementById('iaFichasNotas').value.trim(),
+      infantil: !!document.getElementById('iaFichasInfantil')?.checked || state.opciones.estiloDoc === 'infantil',
+      catalogo: {},
+      refuerzo: fichasComoTexto(state)
+    });
+    const caja = document.getElementById('cajaPrompt');
+    caja.textContent = prompt;
+    caja.classList.add('caja-prompt--visible');
+    document.getElementById('accionesPromptFichas').style.display = 'flex';
+    toast('Prompt de refuerzo listo: copialo, pegá la respuesta abajo y las actividades nuevas se agregan al final.');
+  });
+
   document.getElementById('btnCopiarPromptFichas').addEventListener('click', () => {
     const t = document.getElementById('cajaPrompt').textContent;
     if (t.trim()) copiarTexto(t, 'Prompt copiado. Pegalo en tu IA y traé la respuesta.');

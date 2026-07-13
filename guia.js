@@ -179,6 +179,7 @@ Si V=12 e I=2, ¿cuánto vale R?
           <li><strong>Con plantilla</strong> — un clic en "Leer y predecir", "Encontrar el error", "Completar" o "Desafío".</li>
           <li><strong>En lote desde texto</strong> — un solo texto crea muchas fichas (pestaña <em>Importar Texto</em>).</li>
           <li><strong>Con IA</strong> — completás tema, cantidad y tipo de actividad; el prompt vuelve como fichas editables.</li>
+          <li><strong>Refuerzo con IA</strong> — con fichas ya cargadas, el botón <strong>"💪 Refuerzo"</strong> del Asistente IA arma un prompt que incluye tus fichas actuales y pide actividades NUEVAS sobre los mismos conceptos: práctica extra, variantes más simples para quien necesita apoyo y desafíos de extensión. La respuesta se agrega al final del documento.</li>
         </ul>
 
         <h4 class="guia-h">2 · Cómo se escribe el código Scratch</h4>

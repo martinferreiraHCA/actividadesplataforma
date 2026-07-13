@@ -92,7 +92,7 @@ const BLOQUES = {
   MOTION_SETY: { op: 'motion_sety', inputs: [['Y', 'num']] },
   MOTION_GLIDESECSTOXY: { op: 'motion_glidesecstoxy', inputs: [['SECS', 'num'], ['X', 'num'], ['Y', 'num']] },
   MOTION_IFONEDGEBOUNCE: { op: 'motion_ifonedgebounce' },
-  MOTION_SETROTATIONSTYLE: { op: 'motion_setrotationstyle', fields: [['STYLE', v => trad({ 'izquierda-derecha': 'left-right', 'left-right': 'left-right', 'no rotar': "don't rotate", "don't rotate": "don't rotate", 'en todas direcciones': 'all around', 'all around': 'all around' }, v, 'all around')]] },
+  MOTION_SETROTATIONSTYLE: { op: 'motion_setrotationstyle', fields: [['STYLE', v => trad({ 'izquierda-derecha': 'left-right', 'izquierda/derecha': 'left-right', 'left-right': 'left-right', 'no rotar': "don't rotate", "don't rotate": "don't rotate", 'en todas direcciones': 'all around', 'all around': 'all around' }, v, 'all around')]] },
   MOTION_XPOSITION: { op: 'motion_xposition', reporter: true },
   MOTION_YPOSITION: { op: 'motion_yposition', reporter: true },
   MOTION_DIRECTION: { op: 'motion_direction', reporter: true },

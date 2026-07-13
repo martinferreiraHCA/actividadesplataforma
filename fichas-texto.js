@@ -327,7 +327,7 @@ basic.forever(function () {
 // ============================================================
 // Prompt para que una IA genere fichas en este formato
 // ============================================================
-export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque, notas, catalogo, infantil }) {
+export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque, notas, catalogo, infantil, refuerzo }) {
   const plataformaTexto = {
     scratch: 'Scratch (todas las fichas con tipo: scratch)',
     microbit: 'micro:bit con MakeCode (todas las fichas con tipo: microbit)',
@@ -373,6 +373,18 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
     prompt += `\n- **Fondo del escenario elegido (usalo en las fichas con "fondo: ${catalogo.fondo}"):** ${catalogo.fondo}`;
   }
 
+  if (refuerzo) {
+    prompt += `
+
+## CONTENIDO YA TRABAJADO EN CLASE (base del refuerzo)
+Estas fichas ya se trabajaron. Generá actividades NUEVAS de REFUERZO sobre los MISMOS conceptos:
+- Práctica extra parecida (mismos bloques/instrucciones, otro contexto o personajes).
+- Al menos una variante MÁS SIMPLE para quien necesitó apoyo.
+- 1 o 2 desafíos de EXTENSIÓN para quien terminó rápido.
+- NO repitas consignas ni códigos ya usados; apoyate en lo que el grupo ya vio.
+
+${refuerzo}`;
+  }
   prompt += `
 
 MUY IMPORTANTE: tu respuesta la va a leer un PROGRAMA automático (un parser), no una persona. Cualquier desvío del formato rompe la importación. Respondé SOLO con las fichas en el formato de abajo: sin saludo, sin explicación antes ni después, sin cercos de código markdown (\`\`\`), empezando directo con la línea "titulo:".
