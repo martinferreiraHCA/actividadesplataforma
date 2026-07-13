@@ -7,6 +7,7 @@ import { GATO1_SVG, GATO2_SVG, FONDO_SVG, MIAU_WAV, b64aBytes } from './scratch-
 import { PERSONAJES as CATALOGO_PERSONAJES, FONDOS as CATALOGO_FONDOS, buscarPersonaje, buscarFondo, listaNombresPersonajes, listaNombresFondos } from './scratch-personajes.js';
 import { separarSecciones } from './scratch-secciones.js';
 import { buscarPersonajeEnTodo, buscarFondoEnTodo, descargarAsset } from './scratch-catalogo.js';
+import { buscarSonidoEnTodo } from './scratch-sonidos.js';
 
 const ASSETS = {
   gato1: { md5: 'bcf454acf82e4504149f7ffe07081dbc', ext: 'svg', datos: GATO1_SVG },
@@ -59,7 +60,7 @@ const DETENER = {
 };
 const DISFRACES = { 'costume1': 'disfraz1', 'costume2': 'disfraz2', 'disfraz1': 'disfraz1', 'disfraz2': 'disfraz2' };
 const FONDOS = { 'backdrop1': 'fondo1', 'fondo1': 'fondo1', 'fondo2': 'fondo1', 'siguiente fondo': 'next backdrop', 'next backdrop': 'next backdrop' };
-const SONIDOS = { 'miau': 'Miau', 'meow': 'Miau', 'pop': 'Miau' };
+const SONIDOS = { 'miau': 'Miau', 'meow': 'Miau' };
 
 function trad(mapa, v, def) {
   const k = String(v == null ? '' : v).trim().toLowerCase();
@@ -566,13 +567,48 @@ export async function convertirAProyecto(codigo) {
   // ---- un target por personaje ----
   const targets = [];
   let totalEmitidos = 0;
-  grupos.forEach((g, i) => {
+  for (let i = 0; i < grupos.length; i++) {
+    const g = grupos[i];
     ctx.bloques = {};
     let emitidos = 0;
     for (const cod of g.codigos) emitidos += emitirScriptsDeCodigo(ctx, cod);
     totalEmitidos += emitidos;
 
     const costumes = g.resol.costumes;
+
+    // sonidos usados por este personaje: el Miau va embebido (sin internet);
+    // cualquier otro de la biblioteca de Scratch se descarga del CDN
+    const sonidos = [Object.assign({}, SONIDO_MIAU)];
+    const yaTiene = new Set(['miau']);
+    for (const b of Object.values(ctx.bloques)) {
+      if (b.opcode !== 'sound_sounds_menu' || !b.fields || !b.fields.SOUND_MENU) continue;
+      const nombre = b.fields.SOUND_MENU[0];
+      const clave = String(nombre || '').trim().toLowerCase();
+      if (!clave || yaTiene.has(clave)) continue;
+      const cat = buscarSonidoEnTodo(nombre);
+      if (!cat) {
+        ctx.avisos.push(`No conozco el sonido "${nombre}": se reproducirá el Miau. Con internet vale cualquier sonido de la biblioteca de Scratch por su nombre exacto en inglés (Pop, Boing, Bark, Clapping...). Mirá la pestaña Sonidos del "📚 Catálogo".`);
+        b.fields.SOUND_MENU[0] = 'Miau';
+        continue;
+      }
+      try {
+        const b64 = await descargarAsset(cat.md5ext);
+        assets.set(cat.md5ext, b64);
+        b.fields.SOUND_MENU[0] = cat.nombre; // nombre canónico de la biblioteca
+        sonidos.push({
+          name: cat.nombre,
+          assetId: cat.md5ext.slice(0, cat.md5ext.lastIndexOf('.')),
+          md5ext: cat.md5ext,
+          dataFormat: cat.md5ext.slice(cat.md5ext.lastIndexOf('.') + 1),
+          format: '', rate: cat.rate, sampleCount: cat.sampleCount
+        });
+        yaTiene.add(clave);
+        yaTiene.add(cat.nombre.toLowerCase());
+      } catch (e) {
+        ctx.avisos.push(`No se pudo descargar el sonido "${cat.nombre}" (¿sin internet o CDN bloqueado?): se reproducirá el Miau.`);
+        b.fields.SOUND_MENU[0] = 'Miau';
+      }
+    }
 
     // repartir los personajes por el escenario para que no queden encimados
     const n = grupos.length;
@@ -583,12 +619,12 @@ export async function convertirAProyecto(codigo) {
       variables: {}, lists: {}, broadcasts: {},
       blocks: ctx.bloques, comments: {},
       currentCostume: 0, costumes,
-      sounds: [Object.assign({}, SONIDO_MIAU)],
+      sounds: sonidos,
       volume: 100, layerOrder: i + 1,
       visible: true, x: xPos, y: 0, size: 100, direction: 90,
       draggable: false, rotationStyle: 'all around'
     });
-  });
+  }
   if (!totalEmitidos) throw new Error('Ningún bloque del código se pudo convertir para el simulador.');
 
   const variables = {};

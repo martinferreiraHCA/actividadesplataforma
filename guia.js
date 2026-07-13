@@ -215,6 +215,7 @@ decir [¡Guau!] durante (2) segundos</pre>
         <h4 class="guia-h">4 · Simular y capturar el resultado</h4>
         <ul class="guia-lista">
           <li><strong>Scratch</strong> — botón "▶ Probar en el escenario": el código corre en el <strong>motor oficial de Scratch 3.0</strong> dentro de la ficha, sin internet, con bandera verde, teclado, mouse y preguntas/respuestas. <strong>📸</strong> captura el escenario, lo <strong>recortás/zoomeás</strong> y queda como imagen de la ficha. También podés bajar la captura o el <strong>.sb3</strong> para abrirlo en scratch.mit.edu.</li>
+          <li><strong>Sonidos</strong> — el "📚 Catálogo" tiene una pestaña <strong>Sonidos</strong> con los 353 de la biblioteca oficial: podés <strong>escucharlos (▶)</strong> y un clic inserta <code>iniciar sonido [Nombre v]</code> en el código. En el simulador y el .sb3 el sonido se descarga solo (el Miau funciona sin internet). Si un sonido no existe, suena el Miau y te avisa.</li>
           <li><strong>micro:bit</strong> — botón "▶ Simular en MakeCode": el simulador oficial aparece bajo el código con tu programa corriendo (necesita internet; crea un enlace compartido anónimo de MakeCode). <strong>📸 Capturar y recortar</strong>: compartís la pestaña, recortás el micro:bit y la imagen queda en la ficha.</li>
           <li>Cualquier imagen de una ficha se puede reeditar con <strong>"✂ Recortar / zoom"</strong>.</li>
         </ul>

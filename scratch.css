@@ -1592,3 +1592,19 @@ body:not(.modo-guiado) .wiz-explica { display: none; }
     print-color-adjust: exact;
   }
 }
+
+/* sonidos en el catálogo */
+.catalogo-item__sonido {
+  font-size: 1.6rem;
+  line-height: 1.4;
+}
+.catalogo-item__oir {
+  font-size: 0.62rem;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid currentColor;
+  padding: 0.15em 0.55em;
+  border-radius: 999px;
+  opacity: 0.75;
+  cursor: pointer;
+}
+.catalogo-item__oir:hover { opacity: 1; background: var(--surface, #f5f5f0); }

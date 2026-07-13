@@ -381,6 +381,9 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
   if (catalogo && catalogo.fondo) {
     prompt += `\n- **Fondo del escenario elegido (usalo en las fichas con "fondo: ${catalogo.fondo}"):** ${catalogo.fondo}`;
   }
+  if (catalogo && catalogo.sonidos && catalogo.sonidos.length) {
+    prompt += `\n- **Sonidos elegidos por el docente (usalos, son OBLIGATORIOS — con "iniciar sonido [Nombre v]"):** ${catalogo.sonidos.join(', ')}`;
+  }
 
   if (refuerzo) {
     prompt += `
@@ -445,6 +448,7 @@ Dentro de "codigo:" podés usar varios personajes y elegir el fondo del escenari
 - Si el docente eligió personajes y/o fondo (arriba), usá EXACTAMENTE esos, escribiendo "personaje: Nombre" para cada uno y "fondo: Nombre".
 - Empezá SIEMPRE el código con su línea "personaje: ..." aunque haya un solo personaje: la ficha muestra automáticamente el dibujo del personaje en la esquina, y así el alumno ve a quién está programando.
 - Sin encabezados "personaje:", todo el código es del Gato.
+- Sonidos: "iniciar sonido [Miau v]" funciona siempre; además vale CUALQUIER sonido de la biblioteca oficial de Scratch por su nombre exacto en inglés (Pop, Boing, Bark, Clapping, Drum, Laser1...) — se descarga solo al usarlo (necesita internet).
 
 ## REGLAS DEL CÓDIGO MICRO:BIT (tipo: microbit)
 Escribí JavaScript de MakeCode que compile en makecode.microbit.org:

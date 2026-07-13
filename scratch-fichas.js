@@ -1644,7 +1644,7 @@ async function procesarCuestionarioIA() {
 // ============================================================
 // Selección de personajes/fondo para el prompt de IA
 // ============================================================
-const seleccionIA = { personajes: [], fondo: null };
+const seleccionIA = { personajes: [], fondo: null, sonidos: [] };
 
 function pintarChipsIA() {
   const cont = document.getElementById('chipsIaCatalogo');
@@ -1652,6 +1652,7 @@ function pintarChipsIA() {
   cont.innerHTML = '';
   const chips = seleccionIA.personajes.map(p => ({ texto: p, tipo: 'personaje' }));
   if (seleccionIA.fondo) chips.push({ texto: '🖼 ' + seleccionIA.fondo, tipo: 'fondo' });
+  seleccionIA.sonidos.forEach(so => chips.push({ texto: '🔊 ' + so, tipo: 'sonido' }));
   chips.forEach(ch => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -1660,6 +1661,7 @@ function pintarChipsIA() {
     b.textContent = ch.texto + ' ✕';
     b.addEventListener('click', () => {
       if (ch.tipo === 'fondo') seleccionIA.fondo = null;
+      else if (ch.tipo === 'sonido') seleccionIA.sonidos = seleccionIA.sonidos.filter(so => '🔊 ' + so !== ch.texto);
       else seleccionIA.personajes = seleccionIA.personajes.filter(p => p !== ch.texto);
       pintarChipsIA();
     });
@@ -1913,6 +1915,8 @@ function init() {
       alElegir: ({ tipo, nombre }) => {
         if (tipo === 'fondo') {
           seleccionIA.fondo = nombre;
+        } else if (tipo === 'sonido') {
+          if (!seleccionIA.sonidos.includes(nombre)) seleccionIA.sonidos.push(nombre);
         } else if (!seleccionIA.personajes.includes(nombre)) {
           if (seleccionIA.personajes.length >= 6) { toast('Hasta 6 personajes por documento — quitá alguno primero.'); return; }
           seleccionIA.personajes.push(nombre);
@@ -1933,7 +1937,7 @@ function init() {
       enfoque: iaGeneraGuia ? 'guia' : document.getElementById('iaFichasEnfoque').value,
       notas: document.getElementById('iaFichasNotas').value.trim(),
       infantil: !!document.getElementById('iaFichasInfantil')?.checked,
-      catalogo: { personajes: seleccionIA.personajes.slice(), fondo: seleccionIA.fondo }
+      catalogo: { personajes: seleccionIA.personajes.slice(), fondo: seleccionIA.fondo, sonidos: seleccionIA.sonidos.slice() }
     });
     let cambio = false;
     if (document.getElementById('iaFichasInfantil')?.checked && state.opciones.estiloDoc !== 'infantil') {

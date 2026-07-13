@@ -3,6 +3,7 @@
 // y un clic para insertar "personaje: X" / "fondo: X" en el código de la ficha.
 
 import { CATALOGO_PERSONAJES_TODOS, CATALOGO_FONDOS_TODOS, urlMiniatura } from './scratch-catalogo.js';
+import { CATALOGO_SONIDOS_TODOS, urlSonido } from './scratch-sonidos.js';
 import { PERSONAJES, FONDOS, buscarPersonaje, buscarFondo } from './scratch-personajes.js';
 import { GATO1_SVG } from './scratch-sb3-assets.js';
 
@@ -45,6 +46,7 @@ export function abrirCatalogo(opciones) {
       <div class="catalogo-barra">
         <button type="button" class="sim-sc__btn catalogo-tab catalogo-tab--activa" data-cat-tab="personajes">Personajes (${CATALOGO_PERSONAJES_TODOS.length + 1})</button>
         <button type="button" class="sim-sc__btn catalogo-tab" data-cat-tab="fondos">Fondos (${CATALOGO_FONDOS_TODOS.length})</button>
+        <button type="button" class="sim-sc__btn catalogo-tab" data-cat-tab="sonidos">Sonidos (${CATALOGO_SONIDOS_TODOS.length})</button>
         <input type="search" class="campo__input catalogo-buscar" placeholder="Buscar por nombre…" aria-label="Buscar">
       </div>
       <p class="catalogo-nota">Los marcados con ✓ están guardados en la página y funcionan <strong>sin internet</strong> (podés nombrarlos en español). El resto de la biblioteca oficial se descarga solo al usarlo — necesita conexión, y se nombra en inglés tal como aparece acá.</p>
@@ -58,6 +60,12 @@ export function abrirCatalogo(opciones) {
   let tab = 'personajes';
 
   function itemsDe() {
+    if (tab === 'sonidos') {
+      return CATALOGO_SONIDOS_TODOS.map(([nombre, md5ext]) => ({
+        nombre, md5ext, linea: 'iniciar sonido [' + nombre + ' v]', sonido: true,
+        offline: nombre === 'Meow'
+      }));
+    }
     if (tab === 'personajes') {
       return CATALOGO_PERSONAJES_TODOS.map(([nombre, disfraces]) => {
         const local = miniaturaLocal(nombre, true);
@@ -79,6 +87,33 @@ export function abrirCatalogo(opciones) {
       b.type = 'button';
       b.className = 'catalogo-item';
       b.title = 'Insertar "' + it.linea + '"';
+      if (it.sonido) {
+        // sonidos: sin miniatura — ícono + botón para escucharlo (necesita internet)
+        const icono = document.createElement('span');
+        icono.className = 'catalogo-item__sonido';
+        icono.textContent = '🔊';
+        const oir = document.createElement('span');
+        oir.className = 'catalogo-item__oir';
+        oir.textContent = '▶ escuchar';
+        oir.title = 'Escuchar el sonido (necesita internet)';
+        oir.addEventListener('click', (e) => {
+          e.stopPropagation();
+          try {
+            const audio = new Audio(urlSonido(it.md5ext));
+            audio.play().catch(() => { oir.textContent = '🌐✕ sin conexión'; });
+          } catch (err) { /* sin audio */ }
+        });
+        const nom = document.createElement('span');
+        nom.textContent = (it.offline ? '✓ ' : '') + it.nombre;
+        b.title = 'Insertar "' + it.linea + '"';
+        b.append(icono, nom, oir);
+        b.addEventListener('click', () => {
+          cerrarCatalogo();
+          if (opts.alElegir) opts.alElegir({ tipo: 'sonido', nombre: it.nombre, linea: it.linea });
+        });
+        grilla.appendChild(b);
+        return;
+      }
       const img = document.createElement('img');
       img.loading = 'lazy';
       // los embebidos usan su dibujo local (sin internet); el resto viene del CDN
