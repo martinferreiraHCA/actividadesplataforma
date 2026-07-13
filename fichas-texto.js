@@ -75,10 +75,19 @@ function lineaAplastada(linea) {
 // prefijos de bloque (del catálogo verificado) con los que puede EMPEZAR una
 // línea de código Scratch — para volver a partir código aplastado en líneas
 const INICIOS_BLOQUE = (() => {
-  const reporteros = new Set(['posición en x', 'dirección', 'respuesta']);
+  // los REPORTERS (valores que van dentro de otros bloques) no pueden ser
+  // puntos de corte: "tamaño" partiría "fijar tamaño al (100) %" al medio
+  const reporteros = new Set([
+    'posición en x', 'posición en y', 'dirección', 'respuesta', 'tamaño',
+    'volumen', 'volumen del sonido', 'cronómetro', 'días desde el 2000',
+    'nombre de usuario', 'tempo', 'posición x del ratón', 'posición y del ratón',
+    'distancia a [puntero del ratón v]', 'letra (1) de [mundo]', 'longitud de [mundo]',
+    'redondear (2.5)', 'elemento (1) de [lista v]', '# de elemento de [cosa] en [lista v]',
+    'longitud de [lista v]', '[número v] de disfraz', '[número v] de fondo', '[hora v] actual'
+  ]);
   const prefijos = new Set(['personaje:', 'fondo:', 'fin', 'si no', 'si ']);
   Object.values(CATALOGO).flat().forEach(b => {
-    if (reporteros.has(b) || /^[¿(]|^n[uú]mero aleatorio|^unir/i.test(b)) return;
+    if (reporteros.has(b) || /^[¿(<]|^n[uú]mero aleatorio|^unir/i.test(b)) return;
     const pref = b.split(/[([<]/)[0].trim();
     if (pref) prefijos.add(pref.toLowerCase());
   });
