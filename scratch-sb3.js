@@ -24,6 +24,7 @@ function nuevoContexto() {
     broadcasts: new Map(),// nombre → id
     avisos: [],
     usaPen: false,
+    usaMusic: false,
     n: 0
   };
 }
@@ -61,6 +62,16 @@ const DETENER = {
 const DISFRACES = { 'costume1': 'disfraz1', 'costume2': 'disfraz2', 'disfraz1': 'disfraz1', 'disfraz2': 'disfraz2' };
 const FONDOS = { 'backdrop1': 'fondo1', 'fondo1': 'fondo1', 'fondo2': 'fondo1', 'siguiente fondo': 'next backdrop', 'next backdrop': 'next backdrop' };
 const SONIDOS = { 'miau': 'Miau', 'meow': 'Miau' };
+const EFECTOS_SONIDO = {
+  'altura': 'PITCH', 'tono': 'PITCH', 'pitch': 'PITCH',
+  'paneo izquierda/derecha': 'PAN', 'paneo': 'PAN', 'pan left/right': 'PAN', 'pan': 'PAN'
+};
+// "(1) Caja" / "(18) Claves" → número del menú de tambor/instrumento
+function numeroDeMenu(v, max) {
+  const m = String(v == null ? '' : v).match(/\d+/);
+  const n = m ? parseInt(m[0], 10) : 1;
+  return String(Math.min(Math.max(n, 1), max));
+}
 
 function trad(mapa, v, def) {
   const k = String(v == null ? '' : v).trim().toLowerCase();
@@ -122,6 +133,9 @@ const BLOQUES = {
   SOUND_PLAY: { op: 'sound_play', menuInput: ['SOUND_MENU', 'sound_sounds_menu', 'SOUND_MENU', v => trad(SONIDOS, v, String(v))] },
   SOUND_PLAYUNTILDONE: { op: 'sound_playuntildone', menuInput: ['SOUND_MENU', 'sound_sounds_menu', 'SOUND_MENU', v => trad(SONIDOS, v, String(v))] },
   SOUND_STOPALLSOUNDS: { op: 'sound_stopallsounds' },
+  SOUND_CHANGEEFFECTBY: { op: 'sound_changeeffectby', fields: [['EFFECT', v => trad(EFECTOS_SONIDO, v, 'PITCH')]], inputs: [['VALUE', 'num']] },
+  SOUND_SETEFFECTO: { op: 'sound_seteffectto', fields: [['EFFECT', v => trad(EFECTOS_SONIDO, v, 'PITCH')]], inputs: [['VALUE', 'num']] },
+  SOUND_CLEAREFFECTS: { op: 'sound_cleareffects' },
   SOUND_CHANGEVOLUMEBY: { op: 'sound_changevolumeby', inputs: [['VOLUME', 'num']] },
   SOUND_SETVOLUMETO: { op: 'sound_setvolumeto', inputs: [['VOLUME', 'num']] },
 
@@ -181,7 +195,16 @@ const BLOQUES = {
   'pen.penUp': { op: 'pen_penUp', pen: true },
   'pen.stamp': { op: 'pen_stamp', pen: true },
   'pen.setSize': { op: 'pen_setPenSizeTo', pen: true, inputs: [['SIZE', 'num']] },
-  'pen.changeSize': { op: 'pen_changePenSizeBy', pen: true, inputs: [['SIZE', 'num']] }
+  'pen.changeSize': { op: 'pen_changePenSizeBy', pen: true, inputs: [['SIZE', 'num']] },
+
+  // MÚSICA (extensión, incluida en el motor del simulador)
+  'music.playDrumForBeats': { op: 'music_playDrumForBeats', music: true, menuInput: ['DRUM', 'music_menu_DRUM', 'DRUM', v => numeroDeMenu(v, 18)], inputs: [['BEATS', 'num']] },
+  'music.restForBeats': { op: 'music_restForBeats', music: true, inputs: [['BEATS', 'num']] },
+  'music.playNoteForBeats': { op: 'music_playNoteForBeats', music: true, inputs: [['NOTE', 'num'], ['BEATS', 'num']] },
+  'music.setInstrument': { op: 'music_setInstrument', music: true, menuInput: ['INSTRUMENT', 'music_menu_INSTRUMENT', 'INSTRUMENT', v => numeroDeMenu(v, 21)] },
+  'music.changeTempo': { op: 'music_changeTempo', music: true, inputs: [['TEMPO', 'num']] },
+  'music.setTempo': { op: 'music_setTempo', music: true, inputs: [['TEMPO', 'num']] },
+  'music.getTempo': { op: 'music_getTempo', music: true, reporter: true }
 };
 
 // alias frecuentes (ids alternativos que aparecen según versión/idioma)
@@ -360,6 +383,7 @@ function llenarArgs(ctx, block, spec, b, bid) {
     b.mutation = { tagName: 'mutation', children: [], hasnext: hasNext ? 'true' : 'false' };
   }
   if (spec.pen) ctx.usaPen = true;
+  if (spec.music) ctx.usaMusic = true;
 }
 
 // emite una pila de bloques (array de bloques del AST); devuelve id del primero
@@ -645,7 +669,7 @@ export async function convertirAProyecto(codigo) {
   const proyecto = {
     targets: [stage].concat(targets),
     monitors: [],
-    extensions: ctx.usaPen ? ['pen'] : [],
+    extensions: [].concat(ctx.usaPen ? ['pen'] : [], ctx.usaMusic ? ['music'] : []),
     meta: { semver: '3.0.0', vm: '0.2.0', agent: 'Generador de Actividades' }
   };
 
