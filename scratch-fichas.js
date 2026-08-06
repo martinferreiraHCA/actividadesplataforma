@@ -1946,6 +1946,38 @@ function init() {
   });
   refrescarIaTipo();
 
+  // extensiones micro:bit en el asistente IA: el campo aparece solo si la
+  // plataforma elegida puede llevar fichas micro:bit
+  const campoExtIA = document.getElementById('campoExtensionesIA');
+  const inputExtIA = document.getElementById('iaFichasExtensiones');
+  const selExtIA = document.getElementById('selIaExtConocida');
+  if (selExtIA) {
+    selExtIA.innerHTML = '';
+    [['', 'Agregar extensión conocida…']].concat(Object.keys(EXTENSIONES_CONOCIDAS).map(k =>
+      [k, k + '  (' + EXTENSIONES_CONOCIDAS[k].replace('github:', '') + ')'])).forEach(([v, t]) => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = t;
+      selExtIA.appendChild(o);
+    });
+    selExtIA.addEventListener('change', () => {
+      const v = selExtIA.value;
+      selExtIA.value = '';
+      if (!v) return;
+      const actuales = normalizarExtensiones(inputExtIA.value).map(e => e.nombre);
+      if (actuales.includes(v.replace(/-/g, ''))) return;
+      inputExtIA.value = inputExtIA.value.trim()
+        ? inputExtIA.value.trim().replace(/,\s*$/, '') + ', ' + v
+        : v;
+    });
+  }
+  function refrescarExtensionesIA() {
+    if (!campoExtIA) return;
+    const p = document.getElementById('iaFichasPlataforma').value;
+    campoExtIA.style.display = (p === 'microbit' || p === 'mixto') ? '' : 'none';
+  }
+  document.getElementById('iaFichasPlataforma')?.addEventListener('change', refrescarExtensionesIA);
+  refrescarExtensionesIA();
+
   document.getElementById('btnIaCatalogo')?.addEventListener('click', async () => {
     const mod = await import('./catalogo-ui.js');
     mod.abrirCatalogo({
@@ -1974,7 +2006,8 @@ function init() {
       enfoque: iaGeneraGuia ? 'guia' : document.getElementById('iaFichasEnfoque').value,
       notas: document.getElementById('iaFichasNotas').value.trim(),
       infantil: !!document.getElementById('iaFichasInfantil')?.checked,
-      catalogo: { personajes: seleccionIA.personajes.slice(), fondo: seleccionIA.fondo, sonidos: seleccionIA.sonidos.slice() }
+      catalogo: { personajes: seleccionIA.personajes.slice(), fondo: seleccionIA.fondo, sonidos: seleccionIA.sonidos.slice() },
+      extensiones: (campoExtIA && campoExtIA.style.display !== 'none' && inputExtIA) ? inputExtIA.value.trim() : ''
     });
     let cambio = false;
     if (document.getElementById('iaFichasInfantil')?.checked && state.opciones.estiloDoc !== 'infantil') {
