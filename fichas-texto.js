@@ -340,7 +340,7 @@ basic.forever(function () {
 // ============================================================
 // Prompt para que una IA genere fichas en este formato
 // ============================================================
-export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque, notas, catalogo, infantil, refuerzo }) {
+export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque, notas, catalogo, infantil, refuerzo, extensiones }) {
   const plataformaTexto = {
     scratch: 'Scratch (todas las fichas con tipo: scratch)',
     microbit: 'micro:bit con MakeCode (todas las fichas con tipo: microbit)',
@@ -369,6 +369,9 @@ export function generarPromptFichas({ tema, nivel, cantidad, plataforma, enfoque
 - **Plataforma:** ${plataformaTexto}
 - **Tipo de actividad:** ${enfoqueTexto}`;
   if (notas) prompt += `\n- **Indicaciones extra:** ${notas}`;
+  if ((extensiones || '').trim()) {
+    prompt += `\n- **Extensiones de MakeCode elegidas por el docente (micro:bit — usalas, son OBLIGATORIAS):** ${extensiones.trim()}. Cada ficha micro:bit debe llevar la línea "extensiones: ${extensiones.trim()}" después de "tipo: microbit", y el código debe usar la API de esas extensiones (además de la API estándar) para trabajar con la placa o kit.`;
+  }
   if (infantil) {
     prompt += `\n- **Destinatarios: NIÑOS DE ESCUELA PRIMARIA.** Escribí para que un niño pueda seguir la guía SOLO, sin ayuda del docente:
   - Lenguaje MUY simple y directo, frases cortas, vocabulario cotidiano. Hablale al niño con tono alegre y motivador ("¡Vas muy bien!", "¡Ahora viene lo más divertido!").
@@ -466,7 +469,7 @@ Escribí JavaScript de MakeCode que compile en makecode.microbit.org:
   Azar y variables: Math.randomRange(1, 6), let puntaje = 0
 - El código debe COMPILAR en makecode.microbit.org tal cual: declarar variables con "let", callbacks con "function () { ... }", sin librerías externas ni APIs inventadas.
 - Podés agregar la línea "muestra: ambos" para que la ficha muestre bloques y código, o "muestra: codigo" para solo código.
-- EXTENSIONES: solo si el tema pide una placa o kit específico, agregá la línea "extensiones: ..." después de "tipo: microbit" y usá la API de esa extensión. Valores admitidos: cutebot, cutebot-pro, wukong, nezha, ringbitcar, maqueen, neopixel, sonar, tinybit — o el repo completo con el formato github:usuario/repo (varias separadas por coma). Ejemplo: "extensiones: cutebot" permite usar cuteBot.moveTime(...), etc. Sin esa línea, NO uses APIs de extensiones.
+- EXTENSIONES: si el docente eligió extensiones (arriba), usá EXACTAMENTE esas en cada ficha micro:bit. Si no eligió y el tema pide una placa o kit específico, agregá la línea "extensiones: ..." después de "tipo: microbit" y usá la API de esa extensión. Valores admitidos: cutebot, cutebot-pro, wukong, nezha, ringbitcar, maqueen, neopixel, sonar, tinybit — o el repo completo con el formato github:usuario/repo (varias separadas por coma). Ejemplo: "extensiones: cutebot" permite usar cuteBot.moveTime(...), etc. Sin esa línea, NO uses APIs de extensiones.
 
 ## REGLAS DEL CÓDIGO EN TEXTO PLANO (tipo: codigo)
 Para lenguajes de texto (Python, JavaScript, Java, C, C++, C#, HTML, CSS, SQL, PHP, Bash...):

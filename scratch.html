@@ -325,6 +325,15 @@
           </label>
         </div>
 
+        <div class="campo" id="campoExtensionesIA" style="display:none">
+          <label class="campo__etiqueta" for="iaFichasExtensiones">Extensiones de micro:bit (opcional — Cutebot, Maqueen...)</label>
+          <div class="ia-catalogo">
+            <select class="campo__input" id="selIaExtConocida" style="max-width:22rem"></select>
+            <input class="campo__input" type="text" id="iaFichasExtensiones" placeholder="Ej: cutebot — o github:usuario/repo, separadas por coma" style="flex:1;min-width:14rem">
+          </div>
+          <p class="ia-catalogo__ayuda">Si la actividad usa una placa o kit (robot Cutebot, tira NeoPixel...), indicá la extensión: el prompt le dice a la IA que use su API y las fichas salen con la línea "extensiones:" ya puesta, para que los bloques se dibujen bien.</p>
+        </div>
+
         <div class="campo" id="campoCatalogoIA">
           <label class="campo__etiqueta">Personajes y fondo para las fichas (opcional — solo Scratch)</label>
           <div class="ia-catalogo">
