@@ -20,6 +20,7 @@
 //   tipo: microbit
 //   lenguaje: javascript                 <- solo microbit: javascript | python
 //   muestra: ambos                       <- solo microbit: bloques | codigo | ambos
+//   extensiones: cutebot                 <- solo microbit: extensiones MakeCode (alias o github:owner/repo, separadas por coma)
 //   codigo:
 //   basic.forever(function () {
 //       basic.showIcon(IconNames.Heart)
@@ -28,7 +29,7 @@
 import { sintaxisScratchPrompt, CATALOGO } from './scratch-correcciones.js';
 
 const RE_SEPARADOR = /^\s*[=#\-]{2,}\s*(?:FICHA|PASO)\s*\d*\s*:?\s*(.*?)[\s=#\-]*$/i;
-const RE_CLAVE = /^(tipo|versi[oó]n|version|lenguaje|muestra|vista|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s*(.*)$/i;
+const RE_CLAVE = /^(tipo|versi[oó]n|version|lenguaje|muestra|vista|extensi[oó]n(?:es)?|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s*(.*)$/i;
 const CLAVES_MULTILINEA = ['teoria', 'consigna', 'codigo', 'notas'];
 
 // mapea nombres comunes de lenguaje al id que usa el resaltador
@@ -52,6 +53,7 @@ function normalizarClave(k) {
   if (c === 'version') return 'version';
   if (c === 'codigo') return 'codigo';
   if (c === 'vista') return 'muestra';
+  if (c === 'extension' || c === 'extensiones') return 'extensiones';
   if (c === 'teoria') return 'teoria';
   if (c === 'epigrafe') return 'epigrafe';
   return c;
@@ -63,12 +65,12 @@ function normalizarClave(k) {
 // funciones vuelven a armar la estructura (claves y bloques por línea).
 // ============================================================
 
-const RE_CLAVES_TODAS = /\s+(?=(?:t[ií]tulo|nivel|grupo|modo|descripci[oó]n|din[aá]mica|tipo|versi[oó]n|version|lenguaje|muestra|vista|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s)/gi;
+const RE_CLAVES_TODAS = /\s+(?=(?:t[ií]tulo|nivel|grupo|modo|descripci[oó]n|din[aá]mica|tipo|versi[oó]n|version|lenguaje|muestra|vista|extensi[oó]n(?:es)?|teor[ií]a|teoria|consigna|c[oó]digo|codigo|notas|ep[ií]grafe|epigrafe)\s*:\s)/gi;
 const RE_SEP_INLINE = /\s+(?===+\s*(?:FICHA|PASO)\b)/gi;
 
 // una línea "aplastada" tiene 2+ claves o un separador con cola de contenido
 function lineaAplastada(linea) {
-  const claves = (linea.match(/\b(tipo|teor[ií]a|consigna|c[oó]digo|notas|nivel|descripci[oó]n|modo|lenguaje|muestra)\s*:\s/gi) || []).length;
+  const claves = (linea.match(/\b(tipo|teor[ií]a|consigna|c[oó]digo|notas|nivel|descripci[oó]n|modo|lenguaje|muestra|extensi[oó]n(?:es)?)\s*:\s/gi) || []).length;
   return claves >= 2 || (RE_SEPARADOR.test(linea) === false && /==+\s*(?:FICHA|PASO)/i.test(linea));
 }
 
@@ -203,7 +205,7 @@ export function parsearFichasTexto(texto) {
 
     const clave = linea.match(RE_CLAVE);
     // dentro de "codigo:" solo cortan las claves que no pueden ser código
-    const esCorte = clave && (claveAbierta !== 'codigo' || /^(notas|consigna|teor|tipo|versi|lenguaje|muestra|vista|ep[ií]grafe)/i.test(clave[1]));
+    const esCorte = clave && (claveAbierta !== 'codigo' || /^(notas|consigna|teor|tipo|versi|lenguaje|muestra|vista|extensi|ep[ií]grafe)/i.test(clave[1]));
 
     if (esCorte) {
       cerrarClave();
@@ -251,6 +253,7 @@ export function parsearFichasTexto(texto) {
       ficha.lenguaje = /py/i.test(f.lenguaje || '') ? 'python' : 'javascript';
       const m = (f.muestra || '').toLowerCase();
       ficha.vista = /ambos|both/.test(m) ? 'ambos' : (/cod/.test(m) ? 'codigo' : 'bloques');
+      ficha.extensiones = (f.extensiones || '').trim();
     }
     if (!ficha.codigo && !ficha.consigna) {
       avisos.push(`La ficha ${i + 1}${ficha.titulo ? ' ("' + ficha.titulo + '")' : ''} quedó vacía (sin código ni consigna).`);
@@ -284,6 +287,7 @@ export function fichasComoTexto(state) {
       out.push('tipo: microbit');
       if (f.lenguaje === 'python') out.push('lenguaje: python');
       if (f.vista && f.vista !== 'bloques') out.push('muestra: ' + f.vista);
+      if ((f.extensiones || '').trim()) out.push('extensiones: ' + f.extensiones.trim());
     } else if (f.tipo === 'codigo') {
       out.push('tipo: codigo');
       if (f.lenguaje && f.lenguaje !== 'auto') out.push('lenguaje: ' + f.lenguaje);
@@ -462,6 +466,7 @@ Escribí JavaScript de MakeCode que compile en makecode.microbit.org:
   Azar y variables: Math.randomRange(1, 6), let puntaje = 0
 - El código debe COMPILAR en makecode.microbit.org tal cual: declarar variables con "let", callbacks con "function () { ... }", sin librerías externas ni APIs inventadas.
 - Podés agregar la línea "muestra: ambos" para que la ficha muestre bloques y código, o "muestra: codigo" para solo código.
+- EXTENSIONES: solo si el tema pide una placa o kit específico, agregá la línea "extensiones: ..." después de "tipo: microbit" y usá la API de esa extensión. Valores admitidos: cutebot, cutebot-pro, wukong, nezha, ringbitcar, maqueen, neopixel, sonar, tinybit — o el repo completo con el formato github:usuario/repo (varias separadas por coma). Ejemplo: "extensiones: cutebot" permite usar cuteBot.moveTime(...), etc. Sin esa línea, NO uses APIs de extensiones.
 
 ## REGLAS DEL CÓDIGO EN TEXTO PLANO (tipo: codigo)
 Para lenguajes de texto (Python, JavaScript, Java, C, C++, C#, HTML, CSS, SQL, PHP, Bash...):

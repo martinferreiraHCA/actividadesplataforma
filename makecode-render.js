@@ -9,6 +9,72 @@ const ORIGEN = 'https://makecode.microbit.org';
 const URL_RENDER = ORIGEN + '/--docs?render=1';
 const TIMEOUT_MS = 30000;
 
+// ============================================================
+// Extensiones (paquetes) de MakeCode: permiten dibujar los bloques de
+// placas y kits como el Cutebot, Maqueen, NeoPixel, etc.
+// ============================================================
+
+// alias cortos → repo de GitHub (extensiones verificadas, las más usadas en aula)
+export const EXTENSIONES_CONOCIDAS = {
+  'cutebot': 'github:elecfreaks/pxt-cutebot',
+  'cutebot-pro': 'github:elecfreaks/pxt-cutebot-pro',
+  'wukong': 'github:elecfreaks/pxt-wukong',
+  'nezha': 'github:elecfreaks/pxt-nezha',
+  'ringbitcar': 'github:elecfreaks/pxt-ringbitcar',
+  'maqueen': 'github:DFRobot/pxt-maqueen',
+  'neopixel': 'github:microsoft/pxt-neopixel',
+  'sonar': 'github:microsoft/pxt-sonar',
+  'tinybit': 'github:lzty634158/Tiny-bit'
+};
+
+// Normaliza lo que escribió el docente a una lista [{nombre, repo}].
+// Acepta, separadas por coma / punto y coma / salto de línea:
+//   cutebot                                (alias conocido)
+//   github:elecfreaks/pxt-cutebot          (repo de MakeCode)
+//   https://github.com/elecfreaks/pxt-cutebot
+//   cutebot=github:elecfreaks/pxt-cutebot  (nombre=repo, formato MakeCode)
+export function normalizarExtensiones(texto) {
+  const out = [];
+  const vistos = new Set();
+  String(texto || '').split(/[,;\n]+/).map(s => s.trim()).filter(Boolean).forEach(item => {
+    let nombre = '';
+    let repo = '';
+    const igual = item.indexOf('=');
+    if (igual > 0) {
+      nombre = item.slice(0, igual).trim();
+      repo = item.slice(igual + 1).trim();
+    } else {
+      repo = item;
+    }
+    // URL de GitHub → github:owner/repo
+    const url = repo.match(/^https?:\/\/(?:www\.)?github\.com\/([^\/\s]+\/[^\/\s#?]+)/i);
+    if (url) repo = 'github:' + url[1].replace(/\.git$/i, '');
+    // alias conocido (sin "github:" ni "/")
+    if (!/[:\/]/.test(repo)) {
+      const alias = repo.toLowerCase().replace(/[\s_]+/g, '-').replace(/:/g, '');
+      if (!EXTENSIONES_CONOCIDAS[alias]) return; // alias desconocido: se ignora
+      if (!nombre) nombre = alias.replace(/-/g, '');
+      repo = EXTENSIONES_CONOCIDAS[alias];
+    } else if (!/^github:/i.test(repo)) {
+      repo = 'github:' + repo.replace(/^\/+/, '');
+    }
+    if (!nombre) {
+      // nombre a partir del repo: "github:elecfreaks/pxt-cutebot" → "cutebot"
+      nombre = repo.split(/[\/#]/).filter(Boolean).pop().replace(/^pxt[-_]/i, '').replace(/[^a-zA-Z0-9_-]/g, '');
+    }
+    nombre = nombre.replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!nombre || vistos.has(nombre)) return;
+    vistos.add(nombre);
+    out.push({ nombre, repo });
+  });
+  return out;
+}
+
+// cadena para la opción "package" del renderer: "nombre=repo,nombre=repo"
+function paqueteRender(extensiones) {
+  return normalizarExtensiones(extensiones).map(e => e.nombre + '=' + e.repo).join(',');
+}
+
 let iframe = null;
 let listo = false;
 const esperandoListo = [];
@@ -63,9 +129,11 @@ function medir(info) {
   });
 }
 
-export function obtenerBloquesMicrobit(codigo) {
-  const clave = codigo.trim();
-  if (!clave) return Promise.reject(new Error('sin código'));
+export function obtenerBloquesMicrobit(codigo, extensiones) {
+  const cod = codigo.trim();
+  if (!cod) return Promise.reject(new Error('sin código'));
+  const paquete = paqueteRender(extensiones);
+  const clave = paquete ? cod + '\u0000' + paquete : cod;
   const hit = cache.get(clave);
   if (hit) return hit.promesa;
 
@@ -78,7 +146,9 @@ export function obtenerBloquesMicrobit(codigo) {
     }, TIMEOUT_MS);
     pendientes.set(id, { resolve, reject, timer });
     cuandoEsteListo().then(() => {
-      iframe.contentWindow.postMessage({ type: 'renderblocks', id, code: clave }, ORIGEN);
+      const msg = { type: 'renderblocks', id, code: cod };
+      if (paquete) msg.options = { package: paquete };
+      iframe.contentWindow.postMessage(msg, ORIGEN);
     });
   }).then(medir).then(
     info => { entrada.estado = 'ok'; entrada.valor = info; return info; },
@@ -89,8 +159,10 @@ export function obtenerBloquesMicrobit(codigo) {
 }
 
 // consulta sincrónica del cache: null si nunca se pidió o sigue pendiente
-export function bloquesMicrobitEnCache(codigo) {
-  const hit = cache.get((codigo || '').trim());
+export function bloquesMicrobitEnCache(codigo, extensiones) {
+  const cod = (codigo || '').trim();
+  const paquete = paqueteRender(extensiones);
+  const hit = cache.get(paquete ? cod + '\u0000' + paquete : cod);
   if (!hit) return null;
   return { estado: hit.estado, valor: hit.estado === 'ok' ? hit.valor : null };
 }
