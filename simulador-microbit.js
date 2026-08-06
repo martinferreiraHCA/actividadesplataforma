@@ -5,6 +5,8 @@
 // (endpoint /---run?id=...). Es el método más confiable: no depende de
 // handshakes entre ventanas. Requiere conexión a internet.
 
+import { normalizarExtensiones } from './makecode-render.js';
+
 const API_PUBLICAR = 'https://makecode.com/api/scripts';
 const ORIGEN_EDITOR = 'https://makecode.microbit.org';
 
@@ -21,8 +23,11 @@ if (typeof window !== 'undefined') {
   window.addEventListener('fichas:renderizando', () => cerrarSimuladorMicrobit());
 }
 
-async function publicarProyecto(codigo, señal) {
-  const clave = codigo.trim();
+async function publicarProyecto(codigo, extensiones, señal) {
+  // extensiones (ej. Cutebot): van como dependencias del proyecto publicado
+  const deps = { core: '*' };
+  normalizarExtensiones(extensiones).forEach(e => { deps[e.nombre] = e.repo; });
+  const clave = codigo.trim() + '\u0000' + JSON.stringify(deps);
   if (publicados.has(clave)) return publicados.get(clave);
 
   const resp = await fetch(API_PUBLICAR, {
@@ -40,7 +45,7 @@ async function publicarProyecto(codigo, señal) {
         'README.md': '',
         'pxt.json': JSON.stringify({
           name: 'Ficha micro:bit',
-          dependencies: { core: '*' },
+          dependencies: deps,
           files: ['main.blocks', 'main.ts', 'README.md']
         })
       },
@@ -117,7 +122,7 @@ export async function abrirSimuladorMicrobit(ficha, opciones) {
   const miPanel = panel;
   const timeout = setTimeout(() => abortController && abortController.abort(), 30000);
   try {
-    const id = await publicarProyecto(ficha.codigo, abortController.signal);
+    const id = await publicarProyecto(ficha.codigo, ficha.extensiones, abortController.signal);
     clearTimeout(timeout);
     if (panel !== miPanel) return; // lo cerraron mientras publicaba
 

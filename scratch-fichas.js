@@ -1,6 +1,6 @@
 // Editor de fichas didácticas con bloques de Scratch (scratchblocks) y micro:bit (MakeCode)
 import { exportarFichasDOCX } from './export-fichas-docx.js';
-import { obtenerBloquesMicrobit, bloquesMicrobitEnCache } from './makecode-render.js';
+import { obtenerBloquesMicrobit, bloquesMicrobitEnCache, EXTENSIONES_CONOCIDAS, normalizarExtensiones } from './makecode-render.js';
 import { parsearFichasTexto, fichasComoTexto, generarPromptFichas, EJEMPLO_FICHAS_TEXTO } from './fichas-texto.js';
 import { retratosDeFicha, retratosDeFichaDataUrl, interaccionesDeFicha, retratoDeNombre, retratoDataUrlDeNombre, fondoDeFicha, fondoDataUrlDeFicha } from './personaje-retrato.js';
 import { construirPortada, datosPortada } from './portada-guia.js';
@@ -117,6 +117,7 @@ function nuevaFicha(codigo, tipo) {
     estilo: 'scratch3',      // versión de Scratch: scratch3 | scratch2 | scratch3-high-contrast
     vista: 'bloques',        // micro:bit: bloques | codigo | ambos
     lenguaje: tipo === 'codigo' ? 'auto' : 'javascript', // micro:bit: javascript|python — codigo: auto|python|java|...
+    extensiones: '',         // micro:bit: extensiones MakeCode ("cutebot" o "github:owner/repo", separadas por coma)
     notas: '',
     imagen: null,            // { data: dataURL, nombre }
     imgPos: 'derecha',       // derecha | izquierda | arriba | abajo
@@ -433,7 +434,7 @@ function llenarZonaMicrobit(zona, ficha) {
       if (!conCodigo) cont.appendChild(preCodigo(ficha));
     };
 
-    const cacheado = bloquesMicrobitEnCache(ficha.codigo);
+    const cacheado = bloquesMicrobitEnCache(ficha.codigo, ficha.extensiones);
     if (cacheado && cacheado.estado === 'ok') {
       pintarImg(cacheado.valor);
     } else if (cacheado && cacheado.estado === 'error') {
@@ -441,9 +442,11 @@ function llenarZonaMicrobit(zona, ficha) {
     } else {
       cont.innerHTML = '<div class="ficha-view__mb-cargando">Dibujando bloques con MakeCode…</div>';
       const codigoPedido = ficha.codigo;
-      obtenerBloquesMicrobit(codigoPedido).then(
-        info => { if (ficha.codigo === codigoPedido) pintarImg(info); },
-        err => { if (ficha.codigo === codigoPedido) pintarError(err); }
+      const extPedidas = ficha.extensiones;
+      const vigente = () => ficha.codigo === codigoPedido && ficha.extensiones === extPedidas;
+      obtenerBloquesMicrobit(codigoPedido, extPedidas).then(
+        info => { if (vigente()) pintarImg(info); },
+        err => { if (vigente()) pintarError(err); }
       );
     }
   }
@@ -597,6 +600,36 @@ function construirTarjeta(ficha, i) {
   }
   filaEscala.appendChild(campoRango(esCodigo ? 'Tamaño del texto' : 'Tamaño de los bloques', ficha.escala, 0.6, 1.6, 0.1, v => `×${v}`, v => { ficha.escala = v; refrescar(card, ficha, i); }));
   form.appendChild(filaEscala);
+
+  // extensiones MakeCode (solo micro:bit): para que se dibujen bien los bloques
+  // de placas y kits (Cutebot, Maqueen, NeoPixel...) en la ficha y el simulador
+  if (esMicrobit) {
+    const filaExt = document.createElement('div');
+    filaExt.className = 'ficha-card__fila';
+    const campoExt = campoTexto('Extensiones de MakeCode (opcional)', ficha.extensiones || '',
+      'Ej: cutebot — o github:usuario/repo, separadas por coma',
+      v => { ficha.extensiones = v; refrescar(card, ficha, i); });
+    const inputExt = campoExt.querySelector('input');
+    filaExt.appendChild(campoExt);
+    const selExtDiv = campoSelect('Agregar extensión conocida', '',
+      [['', 'Elegir de la lista…']].concat(Object.keys(EXTENSIONES_CONOCIDAS).map(k =>
+        [k, k + '  (' + EXTENSIONES_CONOCIDAS[k].replace('github:', '') + ')'])),
+      v => {
+        if (!v) return;
+        const actuales = normalizarExtensiones(ficha.extensiones).map(e => e.nombre);
+        if (!actuales.includes(v.replace(/-/g, ''))) {
+          ficha.extensiones = ficha.extensiones && ficha.extensiones.trim()
+            ? ficha.extensiones.trim().replace(/,\s*$/, '') + ', ' + v
+            : v;
+          inputExt.value = ficha.extensiones;
+          refrescar(card, ficha, i);
+          toast('Extensión "' + v + '" agregada: los bloques se vuelven a dibujar con MakeCode.');
+        }
+        selExtDiv.querySelector('select').value = ''; // vuelve a "Elegir…"
+      });
+    filaExt.appendChild(selExtDiv);
+    form.appendChild(filaExt);
+  }
 
   // imagen
   form.appendChild(zonaImagen(ficha, card, i));
@@ -1161,7 +1194,7 @@ async function imagenBloquesScratch(ficha) {
 function esperarBloquesMicrobit() {
   const pedidos = state.fichas
     .filter(f => f.tipo === 'microbit' && f.codigo.trim() && microbitMuestraBloques(f))
-    .map(f => obtenerBloquesMicrobit(f.codigo).catch(() => null));
+    .map(f => obtenerBloquesMicrobit(f.codigo, f.extensiones).catch(() => null));
   return Promise.all(pedidos);
 }
 
@@ -1231,7 +1264,7 @@ async function exportarDOCX() {
       if (f.tipo === 'microbit') {
         if (f.codigo.trim() && microbitMuestraBloques(f)) {
           nota.textContent = 'Dibujando los bloques de micro:bit con MakeCode…';
-          bloques = await obtenerBloquesMicrobit(f.codigo)
+          bloques = await obtenerBloquesMicrobit(f.codigo, f.extensiones)
             .then(info => ({ dataUrl: info.uri, width: info.width, height: info.height }))
             .catch(() => null); // sin conexión: el Word lleva el código como texto
         }
@@ -1395,12 +1428,16 @@ REGLAS:
   }
   if (ficha.tipo === 'microbit') {
     const lenguaje = ficha.lenguaje === 'python' ? 'Python de MakeCode (micro:bit)' : 'JavaScript de MakeCode (micro:bit)';
+    const ext = normalizarExtensiones(ficha.extensiones);
+    const lineaExt = ext.length
+      ? `\n- El proyecto tiene cargadas estas extensiones de MakeCode, podés usar su API: ${ext.map(e => e.nombre + ' (' + e.repo + ')').join(', ')}.`
+      : '';
     const prompt = `Escribí un programa en ${lenguaje} para esto:
 
 ${tema}
 
 REGLAS:
-- Usá SOLO la API de MakeCode para micro:bit (basic, input, music, led, radio, pins...).
+- Usá SOLO la API de MakeCode para micro:bit (basic, input, music, led, radio, pins...).${lineaExt}
 - Ejemplos de la API: basic.showString("..."), basic.showIcon(IconNames.Heart), input.onButtonPressed(Button.A, ...), basic.forever(...), basic.pause(500).
 - Código completo y que compile en makecode.microbit.org.
 - No uses bloques de código markdown ni explicaciones.
@@ -1457,7 +1494,7 @@ async function imagenesDeFichas(nota) {
       if (f.tipo === 'microbit') {
         if (f.lenguaje !== 'python') {
           if (nota) nota.textContent = `Dibujando los bloques de la ficha ${i + 1} con MakeCode…`;
-          dataUrl = await obtenerBloquesMicrobit(f.codigo).then(x => x.uri).catch(() => null);
+          dataUrl = await obtenerBloquesMicrobit(f.codigo, f.extensiones).then(x => x.uri).catch(() => null);
         }
       } else if (f.tipo === 'codigo') {
         dataUrl = codigoAPng(f.codigo, f.lenguaje, f.escala).dataUrl; // código coloreado como imagen
