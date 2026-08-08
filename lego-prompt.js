@@ -135,29 +135,46 @@ REGLAS FÍSICAS OBLIGATORIAS (el modelo tiene que poder armarse de verdad)
 5. Armá de abajo hacia arriba: los primeros pasos son la base y la estructura, los últimos los detalles${infoKit ? ' (los sensores y cables al final)' : ' de arriba'}.
 6. Usá pocas piezas distintas y colores consistentes, como un set real.
 
-MECANISMOS PROLIJOS: EJES, PINES, RUEDAS Y ENGRANAJES (seguí estas recetas al pie de la letra)
-La herramienta POSICIONA piezas pero no las "encastra": está PERMITIDO y es CORRECTO superponer un eje o pin con la pieza que atraviesa (el dibujo no choca). Limitación importante: todas las piezas se dibujan ACOSTADAS sobre la cuadrícula y solo giran en horizontal (rotar 90/180/270) — NO existe forma de dibujar un eje o pin parado en vertical, no lo intentes.
+ORIENTACIÓN DE LAS PIEZAS DIRECCIONALES (verificado pieza por pieza — memorizalo antes de ubicar nada)
+Cada pieza direccional tiene una orientación fija sin rotar; "rotar" la gira en horizontal. Guía:
+- pendientes, pendiente invertida, techo curvo y soporte (bracket): la cara inclinada / el voladizo / los studs laterales miran hacia -Z (hacia el fondo). rotar 90 → miran a -X (izquierda) · rotar 180 → +Z (al frente) · rotar 270 → +X (derecha). Para un techo a dos aguas sobre una pared que corre a lo largo de X: la fila de atrás sin rotar y la fila de adelante con rotar 180, enfrentadas.
+- faro 1x1: el stud lateral mira a -Z (misma regla de rotación).
+- sensores NXT (ultrasónico, contacto, sonido, luz): la "cara" del sensor (ojos, botón naranja) mira a -Z; los agujeros de montaje quedan atrás (+Z). Para que el sensor mire al frente del robot usá rotar 180.
+- bloque nxt: pantalla hacia arriba, los 4 puertos de sensores miran a -Z y el puerto USB a +Z. Ocupa 9×14 studs: reservale lugar.
+- motor nxt: ocupa 5 studs de ancho (X) por ~14 de largo (Z); el EJE naranja queda en el extremo de MAYOR Z y el conector del cable en el extremo de la esquina X Z. Para dos motores enfrentados (robot con dos ruedas), poné uno sin rotar y el otro rotar 180.
+- vigas rectas: a lo largo de X sin rotar. Vigas angulares y curvas: el brazo LARGO corre a lo largo de Z sin rotar (huella según la tabla de piezas).
+- ejes y pines: acostados a lo largo de X sin rotar; rotar 90 los pone a lo largo de Z. NO se pueden parar en vertical.
+
+MECANISMOS PROLIJOS: EJES, PINES, RUEDAS Y ENGRANAJES (recetas verificadas — seguilas al pie de la letra)
+La herramienta POSICIONA piezas pero no las "encastra": está PERMITIDO y es CORRECTO superponer un eje o pin con la pieza que atraviesa (el dibujo no choca).
 
 · PINES: cuando un pin une dos vigas, dibujalo superpuesto justo donde está la unión (mismo X Z aproximado, mismo nivel que las vigas). Si un pin o eje del mecanismo no se puede dibujar en su posición real (porque iría en vertical), ponelo ACOSTADO en un costado libre del modelo, como "pieza suelta junto al modelo" (los manuales reales hacen esto), y aclará en la consigna dónde se encastra de verdad.
 
-· RUEDAS: llanta y neumático van en la MISMA coordenada y encajan solos, parados como una rueda real, con su eje de giro a lo largo de X. Para dibujar el eje atravesando una "llanta nxt" puesta en X Z: el eje va acostado sin rotar, con nivel 3.5 (el centro de la rueda) y con Z = (Z de la llanta) + 1.5. Ejemplo completo de rueda con eje:
-llanta nxt gris claro en 0 0
-neumatico nxt negro en 0 0
-eje 8 negro en -2 1.5 nivel 3.5
+· RUEDAS NXT: quedan paradas con su eje de giro a lo largo de Z. El neumático y la llanta NO van en la misma coordenada (cada una se ubica por su esquina): usá estas recetas exactas, todo a nivel 0:
+  Rueda grande (con "neumatico nxt" en X Z):  llanta nxt en X+1.5 Z+0.5  ·  y el eje que la atraviesa: eje 6 negro en X+3 Z-1.5 nivel 3 rotar 90
+  Rueda chica (con "neumatico chico nxt" en X Z):  llanta chica nxt en X+0.5 Z+0.5  ·  eje: eje 4 negro en X+1 Z-1 nivel 1.5 rotar 90
+  Ejemplo completo de rueda grande con su eje:
+  neumatico nxt negro en 10 0
+  llanta nxt gris claro en 11.5 0.5
+  eje 6 negro en 13 -1.5 nivel 3 rotar 90
 
-· ENGRANAJES EN SERIE (trenes de engranajes): los engranajes se dibujan planos sobre la cuadrícula (como un reloj visto desde arriba) — un tren se arma poniendo TODOS los engranajes al MISMO nivel, con la separación EXACTA entre centros = (dientes1 + dientes2) / 16 studs. Como "en X Z" es la esquina, usá estas recetas ya calculadas (primer engranaje "en X Z", el siguiente a su derecha):
-  - engranaje 8  + engranaje 8  → el segundo en X+1, Z
-  - engranaje 16 + engranaje 16 → el segundo en X+2, Z
-  - engranaje 24 + engranaje 24 → el segundo en X+3, Z
-  - engranaje 40 + engranaje 40 → el segundo en X+5, Z
-  - engranaje 8  + engranaje 24 → el 24 en X+1, Z-1
-  - engranaje 8  + engranaje 40 → el 40 en X+1, Z-2
-  - engranaje 8  + engranaje 16 → el 16 en X+1, Z-0.5
-  - engranaje 16 + engranaje 24 → el 24 en X+2, Z-0.5
-  - engranaje 16 + engranaje 40 → el 40 en X+2, Z-1.5
-  - engranaje 24 + engranaje 40 → el 40 en X+3, Z-1
-  Para seguir la serie, encadená las recetas (ej: 8 en 0 0, 24 en 1 -1, 40 en 4 -2). Estas mismas separaciones valen en vertical (sumando en Z y compensando en X). NO acerques ni alejes los engranajes "a ojo": si la separación no es exacta quedan mordidos o sueltos y el manual sale mal. Los ejes de un tren plano irían en vertical: no los dibujes atravesando los engranajes — listalos como piezas sueltas a un costado (regla de PINES) y explicá el armado real en la consigna o las notas.
-  Combinaciones que engranan sobre los agujeros estándar de las vigas (separación entera, preferilas): 8+24, 16+16, 24+24, 8+40, 24+40.
+· ENGRANAJES: se dibujan PARADOS, de frente al lector (su eje de giro corre a lo largo de Z), apoyados por su borde en su nivel. Un tren de engranajes en serie se arma así:
+  1. Todos los engranajes del tren en la MISMA fila Z (mismo valor de Z) — así quedan en el mismo plano y se ven engranados de frente.
+  2. La separación horizontal entre CENTROS debe ser EXACTA: (dientes1 + dientes2) / 16 studs. Y como cada engranaje apoya por su borde, los tamaños distintos se compensan con "nivel" para que los centros queden a la misma altura (como si compartieran una viga horizontal).
+  3. Recetas ya calculadas (primer engranaje "en X Z nivel N", el siguiente a su derecha, misma Z):
+  - engranaje 8  + engranaje 8  → el segundo en X+1, mismo nivel
+  - engranaje 16 + engranaje 16 → el segundo en X+2, mismo nivel
+  - engranaje 24 + engranaje 24 → el segundo en X+3, mismo nivel
+  - engranaje 40 + engranaje 40 → el segundo en X+5, mismo nivel
+  - engranaje 24 + engranaje 8  → el 8 en X+3, nivel N+2.5
+  - engranaje 24 + engranaje 40 → el 40 en X+3, nivel N-2.5 (el 24 debe estar a nivel 2.5 o más)
+  - engranaje 40 + engranaje 8  → el 8 en X+5, nivel N+5
+  NO acerques ni alejes los engranajes "a ojo": si la separación no es exacta quedan mordidos o sueltos y el manual sale mal. Preferí 8, 24 y 40 (sus diferencias de nivel son múltiplos exactos de 2.5 placas = 1 agujero de viga).
+  4. El eje de un engranaje va a lo largo de Z (rotar 90), pasando por su centro. Para "engranaje 24 en X Z nivel N": su centro está en (X+1.5, Z+0.5) a la altura N+4 placas → eje 4 negro en X+1 Z-1.5 nivel N+3.5 rotar 90. Ejemplo completo de tren 24→40 con eje en el 24:
+  engranaje 24 gris claro en 0 0 nivel 2.5
+  engranaje 40 gris oscuro en 3 0 nivel 0
+  eje 4 negro en 1 -1.5 nivel 6 rotar 90
+  5. Los engranajes cónicos y el tornillo sin fin cambian el eje de giro 90°: usalos solo si hace falta y aclaralo en las notas; el tornillo sin fin se dibuja junto al engranaje que mueve, tocándolo.
 
 FORMATO DE LA RESPUESTA (exactamente así, sin nada fuera de este formato)
 titulo: ${titulo.trim() || '<un título corto y atractivo para la guía>'}
