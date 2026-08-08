@@ -61,7 +61,8 @@ async function crearEditor(opciones) {
       <button class="ficha-card__accion" data-ed3d-mover="+y">⬆ Subir</button>
       <button class="ficha-card__accion" data-ed3d-mover="-y">⬇ Bajar</button>
       <button class="ficha-card__accion ed3d__rotar">↻ Rotar 90°</button>
-      <button class="ficha-card__accion ed3d__parado" title="Vuelca la pieza 90° hacia arriba (vigas de pie, etc.)">⤒ Parado</button>
+      <button class="ficha-card__accion ed3d__parado" title="Vuelca la pieza 90° hacia arriba (viga de pie a lo largo de X)">⤒ Parado</button>
+      <button class="ficha-card__accion ed3d__volcado" title="Vuelca la pieza 90° de costado (viga a lo largo de Z con agujeros hacia X; eje vertical)">⤵ Volcado</button>
     </div>
     <div class="calib__barra">
       <select class="campo__input ed3d__pieza" style="max-width:13rem" title="Cambiar el tipo de pieza"></select>
@@ -183,15 +184,18 @@ async function crearEditor(opciones) {
       const col = colorPorCodigoLdraw(e.pieza.color);
       hud.textContent = `PASO ${e.pasoIdx + 1} · ${info ? info.nombre : e.pieza.pieza} · ${col ? col.nombre : e.pieza.color}\n` +
         `x ${e.pieza.x}  z ${e.pieza.z}  nivel ${e.pieza.nivel || 0}` +
-        (e.pieza.rot ? `  rotar ${e.pieza.rot}` : '') + (e.pieza.parado ? '  parado' : '');
+        (e.pieza.rot ? `  rotar ${e.pieza.rot}` : '') +
+        (e.pieza.volcado ? '  volcado' : e.pieza.parado ? '  parado' : '');
       raiz.querySelector('.ed3d__pieza').value = e.pieza.pieza;
       raiz.querySelector('.ed3d__color').value = String(e.pieza.color);
       raiz.querySelector('.ed3d__paso').value = String(e.pasoIdx);
       raiz.querySelector('.ed3d__parado').classList.toggle('lego-colocando', !!e.pieza.parado);
+      raiz.querySelector('.ed3d__volcado').classList.toggle('lego-colocando', !!e.pieza.volcado);
     } else {
       cajaSel.visible = false;
       hud.textContent = 'Clic en una pieza del modelo para editarla';
       raiz.querySelector('.ed3d__parado').classList.remove('lego-colocando');
+      raiz.querySelector('.ed3d__volcado').classList.remove('lego-colocando');
     }
   }
 
@@ -232,6 +236,12 @@ async function crearEditor(opciones) {
   raiz.querySelector('.ed3d__parado').addEventListener('click', () => editar((e) => {
     e.pieza.parado = !e.pieza.parado;
     if (!e.pieza.parado) delete e.pieza.parado;
+    else delete e.pieza.volcado;
+  }));
+  raiz.querySelector('.ed3d__volcado').addEventListener('click', () => editar((e) => {
+    e.pieza.volcado = !e.pieza.volcado;
+    if (!e.pieza.volcado) delete e.pieza.volcado;
+    else delete e.pieza.parado;
   }));
 
   const selPieza = raiz.querySelector('.ed3d__pieza');
