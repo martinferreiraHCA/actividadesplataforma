@@ -111,20 +111,6 @@
       <textarea class="campo__textarea" id="ldDescripcion" rows="3" placeholder="Ej: Vamos a construir un carrito con base, motor y techo. Trabajamos ubicación espacial, conteo y seguimiento de instrucciones..."></textarea>
       <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Aparece al principio del documento impreso, antes del primer paso. El Asistente IA la puede escribir por vos.</p>
     </div>
-    <div class="campo" style="max-width:700px;margin-top:1.2rem">
-      <label class="campo__etiqueta" for="ldKit">Juego de piezas disponible</label>
-      <div class="scratch-opciones" style="margin-top:0.4rem">
-        <select class="campo__input" id="ldKit" style="max-width:380px">
-          <option value="todas">Todas las piezas del catálogo (ladrillos clásicos + NXT)</option>
-          <option value="nxt">Solo kit LEGO Mindstorms NXT (Education 9797)</option>
-        </select>
-        <span id="campoKitsNxt" style="display:none">
-          <label class="campo__etiqueta" for="ldKitsNxt" style="display:inline;margin-right:0.4rem">¿Cuántos kits NXT tenés?</label>
-          <input class="campo__input" type="number" id="ldKitsNxt" min="1" max="50" placeholder="sin límite" style="width:7rem">
-        </span>
-      </div>
-      <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Con el kit NXT elegido, el editor, el asistente IA y las validaciones se limitan a las piezas de ese kit (vigas, pines, ejes, engranajes, ruedas, bloque NXT, motores y sensores). Si además indicás cuántos kits tenés, también se controlan las <strong>cantidades</strong>: dejalo vacío si tenés varios y no querés límite.</p>
-    </div>
   </div>
 </section>
 
@@ -289,6 +275,19 @@
             <input type="checkbox" id="iaLegoInfantil">
             🎈 Para niños de escuela (pasos chiquitos de 2 a 4 piezas, consignas simples y lúdicas)
           </label>
+        </div>
+
+        <div class="campo" style="border:1.5px solid rgba(128,128,128,0.35);border-radius:8px;padding:0.9rem 1rem">
+          <label class="scratch-check" style="font-size:0.95rem">
+            <input type="checkbox" id="iaKitNxt">
+            🧱 <strong>Usar solo el kit LEGO Mindstorms NXT (Education 9797)</strong>
+          </label>
+          <p class="ia-catalogo__ayuda" style="margin-top:0.4rem">Con el tick puesto, el prompt sale con el catálogo <strong>limitado a las piezas del kit NXT</strong> (vigas, pines, ejes, engranajes, ruedas, bloque NXT, motores y sensores) y la regla explícita de no usar ninguna otra — así la IA diseña solo con lo que hay en la caja. También se filtran los selectores del editor y se marcan con ⚠ las piezas ajenas al kit.</p>
+          <div id="campoKitsNxt" style="display:none;margin-top:0.7rem">
+            <label class="campo__etiqueta" for="ldKitsNxt" style="display:inline-block;margin-right:0.5rem">¿Cuántos kits NXT tenés?</label>
+            <input class="campo__input" type="number" id="ldKitsNxt" min="1" max="50" placeholder="sin límite" style="width:7.5rem">
+            <p class="ia-catalogo__ayuda" style="margin-top:0.4rem">Si ponés un número, el prompt indica la <strong>cantidad máxima disponible de cada pieza</strong> (lo que traen esos kits) y le exige a la IA no pasarse — y la vista previa controla el inventario. Dejalo <strong>vacío</strong> si tenés varios kits y no querés límite de piezas.</p>
+          </div>
         </div>
 
         <button class="btn btn--primary" type="submit">Generá el Prompt</button>
