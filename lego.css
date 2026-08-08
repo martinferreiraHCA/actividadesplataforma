@@ -1,0 +1,181 @@
+/* Estilos de la sección "Ensamble con LEGO" (lego.html).
+   Reutiliza la estética de las fichas (scratch.css / generador.css) y agrega
+   lo propio: cuadrícula de colocación, vista 3D, panel "buscá estas piezas"
+   y comparador de piezas a escala 1:1 para imprimir. */
+
+/* ---------- editor de pasos ---------- */
+.lego-paso__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 1.2rem;
+  padding: 1rem 1.2rem 1.2rem;
+}
+@media (max-width: 900px) {
+  .lego-paso__grid { grid-template-columns: 1fr; }
+}
+
+.lego-badge { background: #d0a000; color: #fff; }
+
+.lego-piezas { margin: 0.6rem 0; }
+
+.lego-fila-pieza {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+.lego-fila-pieza__pieza { flex: 2 1 11rem; min-width: 9rem; }
+.lego-fila-pieza__color {
+  flex: 1 1 6.5rem;
+  min-width: 6rem;
+  border-left: 0.9em solid var(--chip, #888) !important;
+}
+.lego-fila-pieza__num {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+.lego-fila-pieza__num input { width: 3.6rem; padding: 0.35em 0.3em; }
+.lego-fila-pieza__rot { width: 4.4rem; }
+.lego-fila-pieza__raw { flex: 1 1 100%; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+.lego-fila-pieza .ficha-card__accion { padding: 0.35em 0.55em; }
+.lego-colocando { outline: 2px solid #d0a000; background: rgba(208, 160, 0, 0.18); }
+
+/* cuadrícula (vista desde arriba) */
+.lego-grid {
+  display: block;
+  max-width: 100%;
+  border-radius: 6px;
+  cursor: crosshair;
+  margin-bottom: 0.9rem;
+}
+
+/* vista 3D del paso */
+.lego-vista3d {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  min-height: 120px;
+  border: 1px dashed rgba(128, 128, 128, 0.4);
+  border-radius: 8px;
+  background:
+    linear-gradient(45deg, rgba(128,128,128,0.06) 25%, transparent 25%, transparent 75%, rgba(128,128,128,0.06) 75%),
+    linear-gradient(45deg, rgba(128,128,128,0.06) 25%, transparent 25%, transparent 75%, rgba(128,128,128,0.06) 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 9px 9px;
+  margin-bottom: 0.5rem;
+}
+.lego-vista3d--cargando { opacity: 0.45; }
+
+/* ---------- ficha (vista previa + impresión) ---------- */
+.lego-busca {
+  border: 1.5px solid rgba(128, 128, 128, 0.35);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  margin: 0.4rem 0 0.9rem;
+}
+.ficha-view--infantil .lego-busca { border-radius: 16px; border-color: var(--acento, #F6416C); }
+.lego-busca__label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.55rem;
+}
+.lego-busca__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem 1.4rem;
+  align-items: flex-end;
+}
+.lego-busca__item {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas: "img cant" "img nombre" "cmp cmp";
+  align-items: center;
+  column-gap: 0.5rem;
+}
+.lego-busca__img {
+  grid-area: img;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+.lego-busca__img--mini { width: 46px; height: 46px; }
+.lego-busca__cant {
+  grid-area: cant;
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.1;
+}
+.lego-busca__nombre {
+  grid-area: nombre;
+  font-size: 0.78rem;
+  opacity: 0.85;
+  max-width: 12rem;
+}
+
+/* comparador a escala 1:1 (las medidas del SVG están en mm) */
+.lego-cmp {
+  grid-area: cmp;
+  margin-top: 0.45rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+.lego-cmp__svg { display: block; }
+.lego-cmp__label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  writing-mode: initial;
+}
+.lego-cmp__nota {
+  margin: 0.6rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.75;
+  font-style: italic;
+}
+
+/* zona del armado */
+.lego-armado { display: block; }
+.lego-armado__figura {
+  margin: 0;
+  text-align: center;
+}
+.lego-armado__figura img {
+  max-width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+}
+.lego-armado__figura figcaption {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  margin-top: 0.2rem;
+}
+
+/* portada */
+.lego-portada__cuerpo { display: block; }
+.lego-portada__img {
+  display: block;
+  margin: 0 auto;
+  max-width: 80%;
+  max-height: 420px;
+  object-fit: contain;
+}
+.lego-portada__inventario { margin-top: 1rem; }
+
+/* vista previa en pantalla */
+.lego-preview { margin-top: 1rem; }
+.lego-preview .ficha-view { margin-bottom: 1.2rem; }
+
+/* ---------- impresión ---------- */
+@media print {
+  /* el comparador tiene que salir a tamaño real: nada de reescalar */
+  .lego-cmp__svg { width: auto; height: auto; }
+}

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ensamble con LEGO — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Creá manuales de ensamblado LEGO paso a paso desde texto plano o con IA: guía visual 3D, lista de piezas con comparador a tamaño real y descarga en PDF o LDraw.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="lego.css">
+<script type="importmap">
+{ "imports": { "three": "./lego/vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <a href="scratch.html">Fichas Scratch · micro:bit</a>
+      <a href="lego.html" class="active">Ensamble con LEGO</a>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Manuales de construcción</div>
+      <h2 class="section__title">Ensamble<br>con LEGO<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Escribí el modelo como texto plano (o pedíselo a una IA) y se dibuja en <strong>3D paso a paso</strong>, como un
+      manual oficial de LEGO: cada paso muestra <strong>qué piezas buscar</strong> (con un <strong>comparador a tamaño
+      real 1:1</strong> para apoyar la pieza encima y verificarla), la <strong>guía visual del armado</strong> y las
+      explicaciones para el estudiante. El motor de dibujo (three.js + LDraw) y la biblioteca de piezas viven en esta
+      misma página: funciona sin depender de servicios externos. El documento se imprime en <strong>PDF</strong> y el
+      modelo también se descarga en formato <strong>LDraw (.ldr)</strong>, compatible con LPub3D, LDView y BrickLink Studio.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">El documento</span>
+        <span class="paso-rapido__texto">Poné título y grupo, y contá qué se va a construir.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Los pasos</span>
+        <span class="paso-rapido__texto">Armá el modelo paso a paso: a mano con el editor visual, pegando texto o con ayuda de una IA.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Diseño y fichas</span>
+        <span class="paso-rapido__texto">Elegí el estilo, mirá la vista previa de las fichas con las imágenes 3D y el comparador de piezas.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 04</span>
+        <span class="paso-rapido__titulo">Descargá</span>
+        <span class="paso-rapido__texto">PDF para repartir en clase, .ldr para LPub3D/Studio, o borrador .json para seguir después.</span>
+      </div>
+    </div>
+    <div class="cta-guia" style="margin-top:1.5rem">
+      <p class="cta-guia__texto"><strong>¿Primera vez con las guías LEGO?</strong><br>La guía explica la sintaxis del texto (piezas, colores, coordenadas y niveles), el asistente IA y el comparador 1:1.</p>
+      <button class="btn btn--primary" data-abrir-guia="lego">Abrir la guía</button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 1: EL DOCUMENTO ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — El documento</div>
+    <p class="wiz-explica">Empecemos por lo fácil: un <strong>título</strong>, el <strong>grupo</strong> y una descripción de lo que se va a armar. Todo se puede cambiar en cualquier momento.</p>
+    <div class="campo-grid" style="max-width:700px">
+      <div class="campo">
+        <label class="campo__etiqueta" for="ldTitulo">Título del documento</label>
+        <input class="campo__input" type="text" id="ldTitulo" placeholder="Ej: Armamos un carrito de carrera">
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="ldSubtitulo">Nivel / Grupo (opcional)</label>
+        <input class="campo__input" type="text" id="ldSubtitulo" placeholder="Ej: 3° año, taller de robótica...">
+      </div>
+    </div>
+    <div class="campo" style="max-width:700px;margin-top:1rem">
+      <label class="campo__etiqueta" for="ldDescripcion">Descripción del proyecto (opcional)</label>
+      <textarea class="campo__textarea" id="ldDescripcion" rows="3" placeholder="Ej: Vamos a construir un carrito con base, motor y techo. Trabajamos ubicación espacial, conteo y seguimiento de instrucciones..."></textarea>
+      <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Aparece al principio del documento impreso, antes del primer paso. El Asistente IA la puede escribir por vos.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 2: TABS DE MODO ====== -->
+<section class="editor-section" style="padding-bottom:0">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Armá el modelo paso a paso</div>
+    <p class="wiz-explica" style="margin-bottom:1rem"><strong>Elegí cómo crear los pasos</strong> — las tres formas se pueden combinar y todo se edita después:</p>
+    <div class="tabs-modo tabs-modo--cards">
+      <button class="tab-modo active" data-modo="visual">
+        <span class="tab-modo__icono">◎</span>
+        <span class="tab-modo__cuerpo">
+          <span class="tab-modo__nombre">Editor Visual</span>
+          <span class="tab-modo__desc">Agregá piezas con selectores, ubicalas con clic en la cuadrícula y mirá el modelo en 3D mientras armás.</span>
+        </span>
+      </button>
+      <button class="tab-modo" data-modo="texto">
+        <span class="tab-modo__icono">≡</span>
+        <span class="tab-modo__cuerpo">
+          <span class="tab-modo__nombre">Importar Texto</span>
+          <span class="tab-modo__desc">Pegá un solo texto con todos los pasos y las piezas, y la guía entera se carga de golpe.</span>
+        </span>
+      </button>
+      <button class="tab-modo" data-modo="ia">
+        <span class="tab-modo__icono">✦</span>
+        <span class="tab-modo__cuerpo">
+          <span class="tab-modo__nombre">Asistente IA</span>
+          <span class="tab-modo__desc">Describí qué querés armar, pasale el prompt a tu IA y su respuesta se convierte en la guía completa.</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PANEL: EDITOR VISUAL ====== -->
+<section class="editor-section panel-modo" id="panel-lego-visual">
+  <div class="container">
+
+    <div class="ve-barra-agregar">
+      <span class="ve-barra-label">Agregar:</span>
+      <button class="tag tag--filled" id="btnAgregarPaso">+ Paso de armado</button>
+      <span class="ve-barra-sep"></span>
+      <span class="ve-barra-label">O empezá con un ejemplo:</span>
+      <button class="tag" id="btnEjemploLego" title="Carga una guía completa de 4 pasos: un carrito con base, motor, cabina y techo">🏎 El carrito veloz (4 pasos)</button>
+    </div>
+
+    <div id="listaPasos" style="margin-top:1.5rem"></div>
+
+    <div class="scratch-agregar">
+      <button class="btn btn--primary" id="btnAgregarPasoAbajo">+ Agregar paso</button>
+      <button class="btn btn--ghost" id="btnImportarLegoJson">Importar borrador .json</button>
+      <input type="file" id="inputLegoJson" accept=".json" style="display:none">
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PANEL: IMPORTAR TEXTO ====== -->
+<section class="editor-section panel-modo" id="panel-lego-texto" style="display:none">
+  <div class="container">
+
+    <div class="paso-card">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">≡</div>
+        <h2 class="paso-card__titulo">La guía entera<br>desde Texto</h2>
+      </div>
+
+      <div class="alerta alerta--info" style="margin-bottom:1.2rem">
+        <strong>Para crear toda la guía de una vez.</strong> Escribí (o generá con una IA) un solo texto con todos los
+        pasos y pegalo acá. Cada paso empieza con <code>=== PASO: Título ===</code>. También sirve para editar rápido:
+        con «Copiar como texto» (en Descargar) bajás la guía actual, la retocás en cualquier editor y la volvés a pegar.
+      </div>
+
+      <details class="formato-ayuda" style="margin-bottom:1.5rem">
+        <summary class="formato-ayuda__titulo">Ver el formato completo (referencia)</summary>
+        <div class="formato-ayuda__contenido">
+          <p style="margin-bottom:0.8rem">Antes del primer paso podés poner <code>titulo:</code>, <code>nivel:</code> y <code>descripcion:</code> para el documento. Cada paso entiende estas líneas:</p>
+          <ul class="scratch-como__lista">
+            <li><code>=== PASO: Título ===</code> — empieza un paso nuevo</li>
+            <li><code>consigna:</code> — lo que tiene que hacer el estudiante (va arriba de la guía visual)</li>
+            <li><code>piezas:</code> — y una pieza por línea: <code>&lt;pieza&gt; &lt;color&gt; en &lt;x&gt; &lt;z&gt; [nivel &lt;n&gt;] [rotar &lt;90&gt;]</code></li>
+            <li><code>notas:</code> — pista o explicación que va al pie de la ficha</li>
+          </ul>
+          <p style="margin-top:0.8rem">Ejemplo de pieza: <code>ladrillo 2x4 rojo en 0 0 nivel 3</code> — <code>x</code> y <code>z</code> son la esquina en la cuadrícula (en studs), <code>nivel</code> es la altura en placas (3 placas = 1 ladrillo, 0 = suelo) y <code>rotar</code> gira la pieza (90, 180 o 270). La lista completa de piezas y colores está en la <a href="#" data-abrir-guia="lego">guía</a>.</p>
+        </div>
+      </details>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="textareaLegoTexto">Pegá acá tu guía</label>
+        <textarea class="campo__textarea campo__textarea--grande" id="textareaLegoTexto"
+          placeholder="titulo: El carrito veloz&#10;&#10;=== PASO: La base ===&#10;consigna: Armá la base del carrito.&#10;piezas:&#10;placa 2x6 gris claro en 0 0&#10;ladrillo 2x4 rojo en 1 0 nivel 1"></textarea>
+      </div>
+
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
+        <button class="btn btn--ghost" id="btnEjemploLegoTexto" style="padding:0.5em 1.2em">Cargar un ejemplo</button>
+        <label class="scratch-check"><input type="checkbox" id="chkReemplazarLego"> Reemplazar los pasos actuales (si no, se agregan al final)</label>
+      </div>
+
+      <button class="btn btn--primary" id="btnProcesarLegoTexto">Procesar y cargar la guía</button>
+      <div id="avisosLegoTexto" style="margin-top:1.5rem"></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PANEL: ASISTENTE IA ====== -->
+<section class="editor-section panel-modo" id="panel-lego-ia" style="display:none">
+  <div class="container">
+
+    <div class="paso-card" style="margin-bottom:var(--gap)">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">✦</div>
+        <h2 class="paso-card__titulo">Asistente IA<br><span style="font-size:0.6em;opacity:0.5;text-transform:none">para guías LEGO</span></h2>
+      </div>
+
+      <div class="alerta alerta--info" style="margin-bottom:1.2rem">
+        <strong>¿Cómo funciona?</strong> Describí bien qué querés armar, generá el prompt (sale con toda la sintaxis,
+        el catálogo de piezas y las reglas físicas explicadas para la IA), abrí tu IA al costado — el prompt se copia
+        solo —, pegá la respuesta abajo y la guía completa se carga de una, lista para editar.
+      </div>
+
+      <div class="ia-accesos" style="margin-bottom:1.5rem">
+        <span class="ia-accesos__label">Abrí tu IA aquí:</span>
+        <button class="ia-acceso ia-btn" data-ia-abrir="chatgpt">ChatGPT</button>
+        <button class="ia-acceso ia-btn" data-ia-abrir="claude">Claude</button>
+        <button class="ia-acceso ia-btn" data-ia-abrir="gemini">Gemini</button>
+      </div>
+
+      <form id="formPromptLego" autocomplete="off">
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaLegoQue">¿Qué hay que armar? Describilo lo mejor que puedas</label>
+          <textarea class="campo__textarea" id="iaLegoQue" rows="3" required
+            placeholder="Ej: Un carrito de carrera compacto: base con 4 ruedas, motor rojo en el medio, cabina azul adelante y un alerón atrás. Que use pocas piezas y quede firme."></textarea>
+          <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Cuanto mejor la descripción (forma, colores, tamaño aproximado, qué partes tiene), mejor sale el modelo. La IA recibe además el catálogo completo de piezas y las reglas para que nada flote ni se superponga.</p>
+        </div>
+
+        <div class="campo-grid">
+          <div class="campo">
+            <label class="campo__etiqueta" for="iaLegoPasos">Cantidad de pasos</label>
+            <input class="campo__input" type="number" id="iaLegoPasos" min="1" max="30" placeholder="Auto — la IA decide">
+            <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Dejalo vacío para que la IA elija cuántos hacen falta.</p>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="iaLegoPiezas">Piezas disponibles (opcional)</label>
+            <input class="campo__input" type="text" id="iaLegoPiezas" placeholder="Ej: solo ladrillos y placas básicas, sin técnicas...">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaLegoExtra">Indicaciones extra (opcional)</label>
+          <input class="campo__input" type="text" id="iaLegoExtra" placeholder="Ej: usar colores de bandera, máximo 30 piezas, simétrico...">
+        </div>
+
+        <div class="campo">
+          <label class="scratch-check" style="font-size:0.95rem">
+            <input type="checkbox" id="iaLegoInfantil">
+            🎈 Para niños de escuela (pasos chiquitos de 2 a 4 piezas, consignas simples y lúdicas)
+          </label>
+        </div>
+
+        <button class="btn btn--primary" type="submit">Generá el Prompt</button>
+      </form>
+
+      <div class="caja-prompt" id="cajaPrompt"></div>
+      <div class="caja-prompt__acciones" id="accionesPromptLego" style="display:none">
+        <button class="btn btn--primary" id="btnCopiarPromptLego" type="button">Copiar Prompt</button>
+        <p class="caja-prompt__ayuda">Copiá el prompt, pegalo en tu IA y traé la respuesta al paso 02.</p>
+      </div>
+    </div>
+
+    <div class="paso-card">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">02</div>
+        <h2 class="paso-card__titulo">Respuesta<br>de la IA</h2>
+      </div>
+
+      <div class="campo">
+        <label class="campo__etiqueta" for="textareaRespuestaIALego">Pegá lo que te devolvió la IA</label>
+        <textarea class="campo__textarea campo__textarea--grande" id="textareaRespuestaIALego"
+          placeholder="Pegá acá la guía que generó la IA (titulo:, === PASO: ... ===, piezas:...)"></textarea>
+      </div>
+
+      <label class="scratch-check" style="margin-bottom:1.2rem"><input type="checkbox" id="chkReemplazarLegoIA" checked> Reemplazar los pasos actuales</label>
+      <div>
+        <button class="btn btn--primary" id="btnProcesarIALego">Procesar</button>
+      </div>
+      <div id="avisosLegoIA" style="margin-top:1.5rem"></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PASO 3: DISEÑO ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 3 — El diseño</div>
+    <p class="wiz-explica">Elegí <strong>cómo se van a ver</strong> las fichas impresas y qué llevan adentro. Después mirá la vista previa de abajo.</p>
+    <div class="scratch-opciones">
+      <span class="scratch-opciones__label">Diseño:</span>
+      <select class="campo__input" id="ldEstiloDoc" style="max-width:280px">
+        <option value="clasico">Clásico (marcos negros, sobrio)</option>
+        <option value="colorido">Colorido (acentos de color, prolijo)</option>
+        <option value="bn">Blanco y negro (para fotocopias)</option>
+        <option value="infantil">Infantil 🎈 (colorido, para escuela)</option>
+      </select>
+    </div>
+    <div class="scratch-opciones" style="margin-top:1rem">
+      <span class="scratch-opciones__label">Presentación:</span>
+      <label class="scratch-check"><input type="checkbox" id="ldNumerar" checked> Numerar pasos</label>
+      <label class="scratch-check"><input type="checkbox" id="ldBordes" checked> Borde alrededor de cada paso</label>
+      <label class="scratch-check"><input type="checkbox" id="ldSalto" checked> Un paso por página</label>
+      <label class="scratch-check" title="Dibuja cada pieza a tamaño real (1 stud = 8 mm) para que el estudiante apoye la pieza encima y verifique que es la correcta. Imprimir al 100 %."><input type="checkbox" id="ldComparador" checked> Comparador de piezas 1:1</label>
+      <label class="scratch-check" title="En la vista 3D de cada paso, las piezas de los pasos anteriores salen translúcidas para resaltar las nuevas"><input type="checkbox" id="ldAtenuar"> Atenuar pasos anteriores en el 3D</label>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 4: VISTA PREVIA ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 4 — Las fichas</div>
+    <p class="wiz-explica">Así quedan las fichas que van a seguir los estudiantes: la <strong>portada</strong> con el modelo terminado y todas las piezas, y un <strong>paso por ficha</strong> con las piezas a buscar (con comparador a tamaño real), la guía visual del armado y tus explicaciones.</p>
+    <button class="btn btn--primary" id="btnActualizarFichas">🔄 Generar / actualizar la vista previa</button>
+    <p class="scratch-export-nota" id="notaFichasLego" style="display:none"></p>
+    <div id="vistaFichasLego" class="lego-preview"></div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 5: DESCARGAS ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 5 — Descargar</div>
+    <p class="wiz-explica">¡Ya está! Descargá el manual para repartir en clase — o guardá un borrador para seguir otro día.</p>
+    <p class="exportar-intro">El PDF sale de la vista de impresión del navegador (imprimí al <strong>100 %</strong> para que el comparador de piezas quede a tamaño real). El archivo <strong>.ldr</strong> es el modelo en formato LDraw con los pasos incluidos: se abre con LPub3D, LDView o BrickLink Studio para renders y manuales profesionales.</p>
+
+    <div class="descargas__grid">
+      <button class="btn--descarga" id="btnLegoPDF">
+        <div class="btn__etiqueta">PDF — Imprimir</div>
+        <div class="btn__subtexto">Portada + un paso por ficha, con el comparador 1:1. Elegí «Guardar como PDF»</div>
+      </button>
+      <button class="btn--descarga" id="btnLegoLDR">
+        <div class="btn__etiqueta">🧱 Modelo LDraw .ldr</div>
+        <div class="btn__subtexto">El modelo con sus pasos, para LPub3D, LDView o BrickLink Studio</div>
+      </button>
+    </div>
+
+    <div style="margin-top:1.2rem;display:flex;gap:1rem;flex-wrap:wrap">
+      <button class="btn btn--ghost" id="btnLegoCopiarTexto">Copiar como texto (para editar en lote y reimportar)</button>
+      <button class="btn btn--ghost" id="btnLegoJSON">Guardar borrador .json (para reeditar después)</button>
+    </div>
+    <p class="scratch-export-nota" id="notaExportLego" style="display:none"></p>
+  </div>
+</section>
+
+
+<!-- ====== ÁREA DE IMPRESIÓN (solo visible al imprimir) ====== -->
+<div id="areaImpresion" class="fichas-impresion" aria-hidden="true"></div>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="#" data-abrir-guia>Guía</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Modelos dibujados con <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT) y la biblioteca de piezas <a href="https://www.ldraw.org" target="_blank" rel="noopener">LDraw</a> (CC-BY-2.0). LEGO® es una marca de LEGO Group, que no patrocina ni avala este sitio.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="ia-panel.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script type="module" src="lego-fichas.js"></script>
+
+</body>
+</html>
