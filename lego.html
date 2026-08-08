@@ -57,6 +57,9 @@
       explicaciones para el estudiante. El motor de dibujo (three.js + LDraw) y la biblioteca de piezas viven en esta
       misma página: funciona sin depender de servicios externos. El documento se imprime en <strong>PDF</strong> y el
       modelo también se descarga en formato <strong>LDraw (.ldr)</strong>, compatible con LPub3D, LDView y BrickLink Studio.
+      Incluye el catálogo completo del <strong>kit LEGO Mindstorms NXT (Education 9797)</strong> — vigas, pines, ejes,
+      engranajes, ruedas, el bloque NXT, motores y sensores — con la opción de <strong>limitar el diseño a ese kit</strong>
+      y a la cantidad de kits que tengas.
     </p>
     <div class="primeros-pasos">
       <div class="paso-rapido">
@@ -107,6 +110,20 @@
       <label class="campo__etiqueta" for="ldDescripcion">Descripción del proyecto (opcional)</label>
       <textarea class="campo__textarea" id="ldDescripcion" rows="3" placeholder="Ej: Vamos a construir un carrito con base, motor y techo. Trabajamos ubicación espacial, conteo y seguimiento de instrucciones..."></textarea>
       <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Aparece al principio del documento impreso, antes del primer paso. El Asistente IA la puede escribir por vos.</p>
+    </div>
+    <div class="campo" style="max-width:700px;margin-top:1.2rem">
+      <label class="campo__etiqueta" for="ldKit">Juego de piezas disponible</label>
+      <div class="scratch-opciones" style="margin-top:0.4rem">
+        <select class="campo__input" id="ldKit" style="max-width:380px">
+          <option value="todas">Todas las piezas del catálogo (ladrillos clásicos + NXT)</option>
+          <option value="nxt">Solo kit LEGO Mindstorms NXT (Education 9797)</option>
+        </select>
+        <span id="campoKitsNxt" style="display:none">
+          <label class="campo__etiqueta" for="ldKitsNxt" style="display:inline;margin-right:0.4rem">¿Cuántos kits NXT tenés?</label>
+          <input class="campo__input" type="number" id="ldKitsNxt" min="1" max="50" placeholder="sin límite" style="width:7rem">
+        </span>
+      </div>
+      <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Con el kit NXT elegido, el editor, el asistente IA y las validaciones se limitan a las piezas de ese kit (vigas, pines, ejes, engranajes, ruedas, bloque NXT, motores y sensores). Si además indicás cuántos kits tenés, también se controlan las <strong>cantidades</strong>: dejalo vacío si tenés varios y no querés límite.</p>
     </div>
   </div>
 </section>
@@ -239,6 +256,8 @@
         <button class="ia-acceso ia-btn" data-ia-abrir="claude">Claude</button>
         <button class="ia-acceso ia-btn" data-ia-abrir="gemini">Gemini</button>
       </div>
+
+      <div class="alerta alerta--info" id="iaKitInfo" style="display:none;margin-bottom:1.2rem"></div>
 
       <form id="formPromptLego" autocomplete="off">
         <div class="campo">

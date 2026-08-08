@@ -65,6 +65,17 @@ async function crearMotor() {
     for (const dat of dats) await medir(dat);
   }
 
+  // Caja de la pieza ya rotada alrededor de Y (solo cambian x/z)
+  function cajaRotada(caja, rot) {
+    const { min, max } = caja;
+    switch (rot) {
+      case 90: return { minX: min.z, maxX: max.z, minZ: -max.x, maxZ: -min.x };
+      case 180: return { minX: -max.x, maxX: -min.x, minZ: -max.z, maxZ: -min.z };
+      case 270: return { minX: -max.z, maxX: -min.z, minZ: min.x, maxZ: max.x };
+      default: return { minX: min.x, maxX: max.x, minZ: min.z, maxZ: max.z };
+    }
+  }
+
   const MATRICES_ROT = {
     0: '1 0 0 0 1 0 0 0 1',
     90: '0 0 1 0 1 0 -1 0 0',
@@ -84,10 +95,18 @@ async function crearMotor() {
     const caja = medidas.get(info.dat);
     if (!caja) return null;
     const rot = z.rot || 0;
-    let w = info.w, d = info.d;
-    if (rot === 90 || rot === 270) [w, d] = [d, w];
-    const ox = (z.x + w / 2) * 20;
-    const oz = (z.z + d / 2) * 20;
+    let ox, oz;
+    if (info.bbox) {
+      // piezas con origen no centrado: la esquina de la caja medida va en (x, z)
+      const r = cajaRotada(caja, rot);
+      ox = z.x * 20 - r.minX;
+      oz = z.z * 20 - r.minZ;
+    } else {
+      let w = info.w, d = info.d;
+      if (rot === 90 || rot === 270) [w, d] = [d, w];
+      ox = (z.x + w / 2) * 20;
+      oz = (z.z + d / 2) * 20;
+    }
     const oy = -(z.nivel || 0) * 8 - caja.max.y; // la base de la pieza apoya en el nivel
     const num = (v) => Math.round(v * 100) / 100;
     return `1 ${z.color} ${num(ox)} ${num(oy)} ${num(oz)} ${MATRICES_ROT[rot]} parts/${info.dat}.dat`;

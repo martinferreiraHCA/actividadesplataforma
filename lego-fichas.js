@@ -3,7 +3,7 @@
 // asistente IA, fichas imprimibles con comparador de piezas a escala 1:1,
 // y exportación a PDF (impresión), LDraw (.ldr) y borrador .json.
 
-import { PIEZAS, COLORES, CATEGORIAS, piezaPorClave, colorPorCodigoLdraw } from './lego-catalogo.js';
+import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw, piezaEnKit, piezasDeKit, cantidadEnKit } from './lego-catalogo.js';
 import { parsearTexto, serializarDoc, nuevoPaso, nuevaPieza, piezasAgrupadas } from './lego-modelo.js';
 import { motorLego } from './lego-render.js';
 import { generarPromptLego } from './lego-prompt.js';
@@ -15,8 +15,10 @@ let state = {
   subtitulo: '',
   descripcion: '',
   pasos: [],
-  opciones: { estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, atenuar: false }
+  opciones: { estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, atenuar: false, kit: 'todas', kitsNxt: '' }
 };
+
+const OPCIONES_DEF = { estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, atenuar: false, kit: 'todas', kitsNxt: '' };
 
 let uid = 1;
 function conId(paso) {
@@ -107,7 +109,7 @@ function cargar() {
     const s = JSON.parse(raw);
     if (s && Array.isArray(s.pasos)) {
       state = Object.assign(state, s);
-      state.opciones = Object.assign({ estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, atenuar: false }, s.opciones || {});
+      state.opciones = Object.assign({}, OPCIONES_DEF, s.opciones || {});
       state.pasos.forEach(conId);
     }
   } catch (e) { /* borrador corrupto: se arranca vacío */ }
@@ -190,13 +192,61 @@ function renderLista() {
 }
 
 function opcionesPiezaSelect(valor) {
-  return CATEGORIAS.map(cat => {
-    const lista = PIEZAS.filter(p => p.cat === cat);
+  const disponibles = piezasDeKit(state.opciones.kit);
+  let html = CATEGORIAS.map(cat => {
+    const lista = disponibles.filter(p => p.cat === cat);
     if (!lista.length) return '';
     return `<optgroup label="${cat}">` + lista.map(p =>
       `<option value="${p.clave}"${p.clave === valor ? ' selected' : ''}>${p.nombre}</option>`
     ).join('') + '</optgroup>';
   }).join('');
+  // la pieza actual no está en el kit activo: se muestra igual, marcada
+  if (valor && !disponibles.some(p => p.clave === valor)) {
+    const info = piezaPorClave(valor);
+    html = `<option value="${valor}" selected>⚠ ${info ? info.nombre : valor} (fuera del kit)</option>` + html;
+  }
+  return html;
+}
+
+// Avisos de restricción de kit sobre una lista de pasos
+function avisosDeKit(pasos) {
+  const kit = state.opciones.kit;
+  if (!kit || kit === 'todas') return [];
+  const fuera = new Map();
+  pasos.forEach((p, i) => {
+    for (const z of p.piezas) {
+      if (z.raw) { fuera.set('LDraw crudo', (fuera.get('LDraw crudo') || 0) + 1); continue; }
+      const info = piezaPorClave(z.pieza);
+      if (!piezaEnKit(info, kit)) {
+        const nombre = info ? info.nombre : z.pieza;
+        fuera.set(nombre, (fuera.get(nombre) || 0) + 1);
+      }
+    }
+  });
+  const avisos = [...fuera.entries()].map(([nombre, n]) =>
+    `⚠ "${nombre}" (×${n}) no viene en el ${KITS[kit] ? KITS[kit].nombre : 'kit'} — cambiala o quitala.`);
+  return avisos;
+}
+
+// Control de inventario: ¿alcanzan las piezas con los kits disponibles?
+function avisosDeInventario() {
+  const kit = state.opciones.kit;
+  const nKits = kit === 'nxt' ? parseInt(state.opciones.kitsNxt, 10) || 0 : 0;
+  if (!nKits) return [];
+  const uso = new Map();
+  for (const p of state.pasos) for (const z of p.piezas) {
+    if (z.raw) continue;
+    uso.set(z.pieza, (uso.get(z.pieza) || 0) + 1);
+  }
+  const avisos = [];
+  for (const [clave, usadas] of uso) {
+    const info = piezaPorClave(clave);
+    const max = cantidadEnKit(info, kit, nKits);
+    if (max !== null && usadas > max) {
+      avisos.push(`⚠ "${info ? info.nombre : clave}": el modelo usa ${usadas} pero con ${nKits} kit(s) hay ${max}.`);
+    }
+  }
+  return avisos;
 }
 
 function opcionesColorSelect(valor) {
@@ -327,7 +377,12 @@ function filaPieza(card, paso, i, z, j) {
     const selP = document.createElement('select');
     selP.className = 'campo__input lego-fila-pieza__pieza';
     selP.innerHTML = opcionesPiezaSelect(z.pieza);
-    selP.addEventListener('change', () => { z.pieza = selP.value; cambioPieza(card, paso, i); });
+    if (!piezaEnKit(piezaPorClave(z.pieza), state.opciones.kit)) selP.classList.add('lego-fuera-kit');
+    selP.addEventListener('change', () => {
+      z.pieza = selP.value;
+      selP.classList.toggle('lego-fuera-kit', !piezaEnKit(piezaPorClave(z.pieza), state.opciones.kit));
+      cambioPieza(card, paso, i);
+    });
     fila.appendChild(selP);
 
     const selC = document.createElement('select');
@@ -877,6 +932,14 @@ async function actualizarVistaPrevia() {
   }
   const setNota = (t) => { nota.style.display = t ? 'block' : 'none'; nota.textContent = t; };
   await generarFichas(cont, setNota);
+  // control de kit e inventario arriba de la vista previa
+  const avisos = avisosDeKit(state.pasos).concat(avisosDeInventario());
+  if (avisos.length) {
+    const div = document.createElement('div');
+    div.className = 'alerta alerta--info';
+    div.innerHTML = '<strong>Control del kit:</strong><br>' + avisos.map(escHtml).join('<br>');
+    cont.prepend(div);
+  }
 }
 
 // ============================================================
@@ -940,6 +1003,7 @@ function mostrarAvisos(contId, avisos) {
 }
 
 function cargarDocParseado(res, reemplazar, avisosId) {
+  if (res.doc) res.avisos = res.avisos.concat(avisosDeKit(res.doc.pasos));
   mostrarAvisos(avisosId, res.avisos);
   if (!res.doc) {
     toast('No se encontraron pasos en el texto. ¿Están los "=== PASO: ... ==="?');
@@ -976,6 +1040,27 @@ function sincronizarCampos() {
   document.getElementById('ldSalto').checked = !!state.opciones.salto;
   document.getElementById('ldComparador').checked = !!state.opciones.comparador;
   document.getElementById('ldAtenuar').checked = !!state.opciones.atenuar;
+  document.getElementById('ldKit').value = state.opciones.kit || 'todas';
+  document.getElementById('ldKitsNxt').value = state.opciones.kitsNxt || '';
+  refrescarCamposKit();
+}
+
+// muestra/oculta el campo "¿cuántos kits?" y la nota del kit en el panel IA
+function refrescarCamposKit() {
+  const esNxt = state.opciones.kit === 'nxt';
+  document.getElementById('campoKitsNxt').style.display = esNxt ? '' : 'none';
+  const nota = document.getElementById('iaKitInfo');
+  if (nota) {
+    if (esNxt) {
+      const n = parseInt(state.opciones.kitsNxt, 10) || 0;
+      nota.style.display = '';
+      nota.innerHTML = '🤖 <strong>Kit activo:</strong> ' + escHtml(KITS.nxt.nombre) +
+        (n ? ` × ${n} — el prompt limita las piezas y sus cantidades a lo que traen ${n} kit(s).`
+           : ' — el prompt limita el diseño a las piezas de ese kit (sin límite de cantidad).');
+    } else {
+      nota.style.display = 'none';
+    }
+  }
 }
 
 // ============================================================
@@ -997,6 +1082,19 @@ function init() {
   document.getElementById('ldAtenuar').addEventListener('change', e => {
     state.opciones.atenuar = e.target.checked;
     cacheFotos.clear();
+    guardarLuego();
+  });
+  document.getElementById('ldKit').addEventListener('change', e => {
+    state.opciones.kit = e.target.value;
+    refrescarCamposKit();
+    renderLista(); // los selectores de pieza se filtran por kit
+    guardarLuego();
+    const avisos = avisosDeKit(state.pasos);
+    if (avisos.length) toast(avisos.length + ' tipo(s) de pieza cargados no vienen en el kit — quedan marcados con ⚠ en el editor.');
+  });
+  document.getElementById('ldKitsNxt').addEventListener('input', e => {
+    state.opciones.kitsNxt = e.target.value;
+    refrescarCamposKit();
     guardarLuego();
   });
 
@@ -1065,7 +1163,9 @@ function init() {
       piezasDisponibles: document.getElementById('iaLegoPiezas').value,
       extra: document.getElementById('iaLegoExtra').value,
       titulo: state.titulo,
-      nivel: state.subtitulo
+      nivel: state.subtitulo,
+      kit: state.opciones.kit,
+      cantidadKits: state.opciones.kit === 'nxt' ? (parseInt(state.opciones.kitsNxt, 10) || 0) : 0
     });
     const caja = document.getElementById('cajaPrompt');
     caja.textContent = prompt;

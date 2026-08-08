@@ -43,6 +43,7 @@
 .lego-fila-pieza__raw { flex: 1 1 100%; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
 .lego-fila-pieza .ficha-card__accion { padding: 0.35em 0.55em; }
 .lego-colocando { outline: 2px solid #d0a000; background: rgba(208, 160, 0, 0.18); }
+.lego-fuera-kit { outline: 2px solid #d9534f; }
 
 /* cuadrícula (vista desde arriba) */
 .lego-grid {
