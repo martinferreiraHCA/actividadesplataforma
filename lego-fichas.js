@@ -425,14 +425,32 @@ function filaPieza(card, paso, i, z, j) {
     btnParado.type = 'button';
     btnParado.className = 'ficha-card__accion';
     btnParado.textContent = '⤒';
-    btnParado.title = 'Parado: gira la pieza 90° hacia arriba (viga de pie con los agujeros de frente, eje vertical)';
+    btnParado.title = 'Parado: vuelca la pieza 90° hacia arriba (viga de pie a lo largo de X, agujeros de frente)';
     if (z.parado) btnParado.classList.add('lego-colocando');
+    fila.appendChild(btnParado);
+
+    const btnVolcado = document.createElement('button');
+    btnVolcado.type = 'button';
+    btnVolcado.className = 'ficha-card__accion';
+    btnVolcado.textContent = '⤵';
+    btnVolcado.title = 'Volcado: vuelca la pieza 90° de costado (viga a lo largo de Z con agujeros hacia X — para clavarle pines; eje vertical)';
+    if (z.volcado) btnVolcado.classList.add('lego-colocando');
+    fila.appendChild(btnVolcado);
+
     btnParado.addEventListener('click', () => {
       z.parado = !z.parado;
+      if (z.parado) delete z.volcado;
       btnParado.classList.toggle('lego-colocando', !!z.parado);
+      btnVolcado.classList.remove('lego-colocando');
       cambioPieza(card, paso, i);
     });
-    fila.appendChild(btnParado);
+    btnVolcado.addEventListener('click', () => {
+      z.volcado = !z.volcado;
+      if (z.volcado) delete z.parado;
+      btnVolcado.classList.toggle('lego-colocando', !!z.volcado);
+      btnParado.classList.remove('lego-colocando');
+      cambioPieza(card, paso, i);
+    });
 
     const btnColocar = document.createElement('button');
     btnColocar.type = 'button';

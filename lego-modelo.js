@@ -78,12 +78,16 @@ export function parsearLineaPieza(linea) {
     if (g % 90 !== 0) return { error: 'solo se puede rotar 0, 90, 180 o 270 grados' };
     r.rot = g;
   }
-  // "parado": la pieza se gira 90° hacia arriba (una viga queda de pie con los
-  // agujeros a lo largo de Z; un eje queda vertical)
-  if (/\b(?:parado|parada|de pie|vertical)\b/i.test(resto)) r.parado = true;
+  // "parado": la pieza se vuelca 90° hacia arriba (viga de pie a lo largo de X
+  // con agujeros hacia Z). "volcado": se vuelca 90° de costado (viga acostada
+  // a lo largo de Z con agujeros hacia X — como se montan los pines en los
+  // robots reales; un eje volcado queda vertical).
+  if (/\b(?:volcado|volcada|de costado|de canto)\b/i.test(resto)) r.volcado = true;
+  else if (/\b(?:parado|parada|de pie|vertical)\b/i.test(resto)) r.parado = true;
   const sobra = resto
     .replace(/\b(?:nivel|altura)\s+-?\d+(?:\.\d+)?/i, '')
     .replace(/\b(?:rotar|rot|girar)\s+\d+/i, '')
+    .replace(/\b(?:volcado|volcada|de costado|de canto)\b/i, '')
     .replace(/\b(?:parado|parada|de pie|vertical)\b/i, '')
     .trim();
   if (sobra) return { error: `no se entiende "${sobra}" (después de las coordenadas van "nivel N" y/o "rotar N")` };
@@ -183,7 +187,8 @@ export function serializarPieza(z) {
   let s = `${z.pieza} ${color ? color.clave : z.color} en ${z.x} ${z.z}`;
   if (z.nivel) s += ` nivel ${z.nivel}`;
   if (z.rot) s += ` rotar ${z.rot}`;
-  if (z.parado) s += ' parado';
+  if (z.volcado) s += ' volcado';
+  else if (z.parado) s += ' parado';
   return s;
 }
 

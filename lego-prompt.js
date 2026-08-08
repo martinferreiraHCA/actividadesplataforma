@@ -141,54 +141,75 @@ Cada pieza direccional tiene una orientación fija sin rotar; "rotar" la gira en
 - faro 1x1: el stud lateral mira a -Z (misma regla de rotación).
 - sensores NXT (ultrasónico, contacto, sonido, luz): la "cara" del sensor (ojos, botón naranja) mira a -Z; los agujeros de montaje quedan atrás (+Z). Para que el sensor mire al frente del robot usá rotar 180.
 - bloque nxt: pantalla hacia arriba, los 4 puertos de sensores miran a -Z y el puerto USB a +Z. Ocupa 9×14 studs: reservale lugar.
-- motor nxt: ocupa 5 studs de ancho (X) por ~14 de largo (Z); el EJE naranja queda en el extremo de MAYOR Z y el conector del cable en el extremo de la esquina X Z. Para dos motores enfrentados (robot con dos ruedas), poné uno sin rotar y el otro rotar 180.
+- motor nxt: ocupa 5 studs de ancho (X) por ~14 de largo (Z); su EJE naranja sale hacia +X, a ~9.6 placas de altura, cerca del extremo de mayor Z del cuerpo (medido con piezas reales — las recetas de abajo traen los números exactos). Para dos motores enfrentados (robot con dos ruedas), uno sin rotar y el otro rotar 180.
 - vigas rectas: a lo largo de X sin rotar, ACOSTADAS, con sus agujeros mirando hacia arriba. Vigas angulares y curvas: el brazo LARGO corre a lo largo de Z sin rotar (huella según la tabla de piezas).
 - ejes y pines: acostados a lo largo de X sin rotar; rotar 90 los pone a lo largo de Z.
-- LA PALABRA "parado": agregada AL FINAL de una línea de pieza (después de nivel y rotar) la vuelca 90° hacia arriba. Una "viga 9 ... parado" queda de pie, a lo largo de X, con sus AGUJEROS de frente (a lo largo de Z, igual que los engranajes) — es la forma correcta de dibujar una viga que sostiene ejes y engranajes. Un eje VERTICAL se escribe "eje 4 ... rotar 90 parado". Ejemplo: viga 9 gris oscuro en 0 0 nivel 3 parado
+- LA PALABRA "parado" (al final de la línea, después de nivel y rotar): vuelca la pieza 90° hacia arriba. Una "viga 9 ... parado" queda de pie a lo largo de X con sus AGUJEROS de frente (hacia Z).
+- LA PALABRA "volcado" (misma posición): vuelca la pieza 90° de costado. Una "viga 9 ... volcado" queda acostada A LO LARGO DE Z con sus AGUJEROS de costado (hacia X) — ESTA es la orientación con la que se montan pines, ejes y motores en los robots reales: preferila para el chasis. Un "eje 4 ... volcado" queda VERTICAL.
 
-MECANISMOS PROLIJOS: EJES, PINES, RUEDAS Y ENGRANAJES (recetas verificadas — seguilas al pie de la letra)
+MECANISMOS PROLIJOS (recetas CALIBRADAS con piezas reales — seguilas al pie de la letra)
 La herramienta POSICIONA piezas pero no las "encastra": está PERMITIDO y es CORRECTO superponer un eje o pin con la pieza que atraviesa (el dibujo no choca).
 
-· PINES: cuando un pin une dos vigas, dibujalo superpuesto justo donde está la unión (mismo X Z aproximado, mismo nivel que las vigas). Si un pin o eje del mecanismo no se puede dibujar en su posición real (porque iría en vertical), ponelo ACOSTADO en un costado libre del modelo, como "pieza suelta junto al modelo" (los manuales reales hacen esto), y aclará en la consigna dónde se encastra de verdad.
+· MONTAR PIEZAS EN UN EJE ACOSTADO (regla maestra, calibrada): con un "eje N (sin rotar) en X Z nivel V", cualquier pieza redonda montada en él (buje, engranaje, polea, knob, cónico, tornillo) va con "rotar 90", su posición a lo largo del eje es LIBRE (elegí cualquier x sobre el eje), y para quedar CENTRADA en el eje usa:
+  z = Z + 0.5 - (ancho de la pieza / 2)     ·     nivel = V + 0.75 - (alto de la pieza / 2)
+  Ya calculado para cada pieza (relativo al eje en X Z nivel V):
+  - buje / medio buje:        z = Z,     nivel V-0.5
+  - engranaje 8:              z = Z,     nivel V-0.75
+  - engranaje 16:             z = Z-0.5, nivel V-2
+  - engranaje 24 / corona 24: z = Z-1,   nivel V-3.25
+  - engranaje 40:             z = Z-2,   nivel V-5.75
+  - engranaje conico 12:      z = Z-0.5, nivel V-1.5
+  - engranaje conico 20:      z = Z-1,   nivel V-2.75
+  - engranaje conico 36:      z = Z-2,   nivel V-5.25
+  - rueda de mando / polea:   z = Z-1,   nivel V-3
+  - neumatico de polea:       z = Z-1.5, nivel V-4
+  - tornillo sin fin:         z = Z,     nivel V-0.75
+  El eje necesita altura para que la pieza grande no toque el piso: para un engranaje 24 el eje va a nivel 3.25 o más; para un 40, a nivel 5.75 o más. Ejemplo completo calibrado (eje con buje de tope y engranaje 24):
+  eje 5 gris claro en 0 0 nivel 4
+  buje gris claro en 4 0 nivel 3.5 rotar 90
+  engranaje 24 gris claro en 1.5 -1 nivel 0.75 rotar 90
 
-· RUEDAS NXT: quedan paradas con su eje de giro a lo largo de Z. El neumático y la llanta NO van en la misma coordenada (cada una se ubica por su esquina): usá estas recetas exactas, todo a nivel 0:
-  Rueda grande (con "neumatico nxt" en X Z):  llanta nxt en X+1.5 Z+0.5  ·  y el eje que la atraviesa: eje 6 negro en X+3 Z-1.5 nivel 3 rotar 90
-  Rueda chica (con "neumatico chico nxt" en X Z):  llanta chica nxt en X+0.5 Z+0.5  ·  eje: eje 4 negro en X+1 Z-1 nivel 1.5 rotar 90
-  Ejemplo completo de rueda grande con su eje:
-  neumatico nxt negro en 10 0
-  llanta nxt gris claro en 11.5 0.5
-  eje 6 negro en 13 -1.5 nivel 3 rotar 90
+· PINES EN VIGAS (calibrado): la viga que recibe pines va VOLCADA. "viga N en X Z nivel V volcado" ocupa x = X a X+1 y z = Z a Z+N, con sus agujeros hacia X en z = Z+0.5+k (k = 0...N-1) a la altura V+1.25 placas. El pin entra sin rotar (a lo largo de X), centrado en la viga:
+  pin negro en X-0.5 Z+k nivel V+0.25
+  Para unir DOS vigas volcadas paralelas (pegadas: una en X y otra en X+1, mismo Z y nivel), el pin largo las atraviesa: pin largo azul en X-0.5 Z+k nivel V+0.25. Ejemplo completo calibrado:
+  viga 5 gris oscuro en 0 0 volcado
+  viga 5 gris oscuro en 1 0 volcado
+  pin largo azul en -0.5 1 nivel 0.25
+  pin largo azul en -0.5 3 nivel 0.25
+  Un "pin eje" o "medio pin" sigue la misma receta; si en la punta del pin eje va un engranaje, montalo con la regla del eje (rotar 90, centrado a la altura del pin: nivel del pin + 0.25 - alto/2 + 0.75... usá: engranaje 8 → nivel V-0.75 respecto del NIVEL DEL AGUJERO menos 1.25).
 
-· ENGRANAJES: se dibujan PARADOS, de frente al lector (su eje de giro corre a lo largo de Z), apoyados por su borde en su nivel. Un tren de engranajes en serie se arma así:
-  1. Todos los engranajes del tren en la MISMA fila Z (mismo valor de Z) — así quedan en el mismo plano y se ven engranados de frente.
-  2. La separación horizontal entre CENTROS debe ser EXACTA: (dientes1 + dientes2) / 16 studs. Y como cada engranaje apoya por su borde, los tamaños distintos se compensan con "nivel" para que los centros queden a la misma altura (como si compartieran una viga horizontal).
-  3. Recetas ya calculadas (primer engranaje "en X Z nivel N", el siguiente a su derecha, misma Z):
-  - engranaje 8  + engranaje 8  → el segundo en X+1, mismo nivel
-  - engranaje 16 + engranaje 16 → el segundo en X+2, mismo nivel
-  - engranaje 24 + engranaje 24 → el segundo en X+3, mismo nivel
-  - engranaje 40 + engranaje 40 → el segundo en X+5, mismo nivel
+· RUEDAS NXT (calibrado, concéntrico exacto — el eje de giro queda a lo largo de Z):
+  Rueda grande rodando por el piso, con "llanta nxt" en X Z:
+  llanta nxt gris claro en X Z nivel 4.125
+  neumatico nxt negro en X-1.65 Z-0.35 nivel 0
+  eje 6 negro en X+1.4 Z-3.75 nivel 8.125 rotar 270
+  Rueda chica rodando por el piso, con "llanta chica nxt" en X Z:
+  llanta chica nxt gris claro en X Z nivel 1.125
+  neumatico chico nxt negro en X-0.45 Z+0.15 nivel 0
+  eje 4 negro en X+0.55 Z-1 nivel 3.125 rotar 90
+
+· MOTOR NXT (calibrado): con "motor nxt en X Z nivel 0", su eje naranja sale hacia +X. Recetas exactas:
+  - eje en el motor:  eje 6 negro en X+1 Z+11.55 nivel 9.625
+  - rueda motriz completa en ese eje (la rueda queda vertical, mirando a X, sin tocar el piso — el robot apoya en ella al terminar):
+    llanta nxt gris claro en X+3.25 Z+10.15 nivel 5.625 rotar 270
+    neumatico nxt negro en X+2.9 Z+8.5 nivel 1.5 rotar 270
+  - pines para sujetar el motor por su costado (la viga del chasis va volcada, pegada al costado del motor):
+    pin negro en X+3.5 Z+11.5 nivel 6.875   y   pin negro en X+3.5 Z+11.5 nivel 12
+  Para el robot clásico de dos ruedas: un motor sin rotar (rueda hacia +X) y el otro con rotar 180 (rueda hacia -X), y el bloque nxt apoyado arriba.
+
+· ENGRANAJES ENGRANADOS ENTRE SÍ: se dibujan parados (de frente al lector, eje de giro a lo largo de Z). Misma fila Z, separación horizontal entre CENTROS = (dientes1 + dientes2) / 16 studs, y los tamaños distintos se compensan con "nivel" para que los centros queden a la misma altura. Recetas (primer engranaje "en X Z nivel N", el siguiente a su derecha, misma Z):
+  - engranaje 8 + engranaje 8  → el segundo en X+1, mismo nivel  ·  16+16 → X+2  ·  24+24 → X+3  ·  40+40 → X+5
   - engranaje 24 + engranaje 8  → el 8 en X+3, nivel N+2.5
-  - engranaje 24 + engranaje 40 → el 40 en X+3, nivel N-2.5 (el 24 debe estar a nivel 2.5 o más)
+  - engranaje 24 + engranaje 40 → el 40 en X+3, nivel N-2.5 (el 24 a nivel 2.5 o más)
   - engranaje 40 + engranaje 8  → el 8 en X+5, nivel N+5
-  NO acerques ni alejes los engranajes "a ojo": si la separación no es exacta quedan mordidos o sueltos y el manual sale mal. Preferí 8, 24 y 40 (sus diferencias de nivel son múltiplos exactos de 2.5 placas = 1 agujero de viga).
-  4. El eje de un engranaje va a lo largo de Z (rotar 90), pasando por su centro. Para "engranaje 24 en X Z nivel N": su centro está en (X+1.5, Z+0.5) a la altura N+4 placas → eje 4 negro en X+1 Z-1.5 nivel N+3.5 rotar 90. Ejemplo completo de tren 24→40 con eje en el 24:
-  engranaje 24 gris claro en 0 0 nivel 2.5
-  engranaje 40 gris oscuro en 3 0 nivel 0
-  eje 4 negro en 1 -1.5 nivel 6 rotar 90
-  5. Los engranajes cónicos y el tornillo sin fin cambian el eje de giro 90°: usalos solo si hace falta y aclaralo en las notas; el tornillo sin fin se dibuja junto al engranaje que mueve, tocándolo.
+  - engranaje conico 12 + conico 12 (en el mismo plano) → el segundo en X+1.5, mismo nivel (calibrado)
+  NO acerques ni alejes los engranajes "a ojo": si la separación no es exacta quedan mordidos o sueltos. Preferí 8, 24 y 40. Lo más prolijo es que cada engranaje del tren esté además montado en su eje con la regla maestra, y los ejes claven en los agujeros de una viga volcada o parada.
+  El eje de un engranaje suelto va a lo largo de Z (rotar 90) por su centro: para "engranaje 24 en X Z nivel N" → eje 4 negro en X+1 Z-1.5 nivel N+3.5 rotar 90.
 
-· ENGRANAJES MONTADOS EN UNA VIGA PARADA (mecanismo completo, el más prolijo):
-  Una "viga N en X Z nivel V parado" queda de pie con sus agujeros de frente (ocupa x = X a X+N, z = Z a Z+1). Sus agujeros están en x = X+0.5+k (k = 0, 1, 2... contando desde su esquina) a la altura V+1.25 placas. Para montar cosas en el agujero k:
-  - engranaje centrado en ese agujero, DELANTE de la viga (en z = Z-1): esquina en x = (X+0.5+k)-(ancho/2), nivel = V+1.25-(alto/2) (ancho y alto del engranaje según la tabla de piezas).
-  - eje que atraviesa engranaje y viga: eje 3 en x = X+k, z = Z-1.5, nivel V+1, rotar 90.
-  Los agujeros están cada 1 stud, así que dos engranajes que engranan con separación entera (8+24 → 2 agujeros; 24+24 → 3; 8+40 → 3; 24+40 → 4) caen JUSTO en agujeros de la misma viga.
-  Ejemplo completo verificado — viga parada con un 24 (agujero k=2) y un 8 (agujero k=4) engranados, cada uno con su eje:
-  viga 9 gris oscuro en 0 0 nivel 3 parado
-  engranaje 24 gris claro en 1 -1 nivel 0.25
-  engranaje 8 amarillo en 4 -1 nivel 2.7
-  eje 3 negro en 2 -1.5 nivel 4 rotar 90
-  eje 3 negro en 4 -1.5 nivel 4 rotar 90
-  (separación 2 studs, exacta para 8+24; la viga va a nivel 3 para que el engranaje grande no toque el suelo)
+· AGUJEROS DE BLOQUES Y LADRILLOS TÉCNICOS (calibrado):
+  - "bloque cruz 1x2 en X Z nivel V": el eje por su agujero-cruz va: eje 3 negro en (x libre) Z nivel V+2.875 · y un pin en su agujero-pin: pin negro en X Z+0.6 nivel V+0.2 rotar 270
+  - "tecnico 1x2 en X Z nivel V rotar 90" (el ladrillo se rota para que el agujero mire a X): pin negro en (x libre) Z+0.5 nivel V+0.75
+  - "ladrillo con cruz en X Z nivel V rotar 270": eje 3 negro en (x libre) Z+0.5 nivel V+0.94
 
 FORMATO DE LA RESPUESTA (exactamente así, sin nada fuera de este formato)
 titulo: ${titulo.trim() || '<un título corto y atractivo para la guía>'}

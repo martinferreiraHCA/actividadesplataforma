@@ -29,6 +29,12 @@ const MATRICES_PARADO = {
   180: [-1, 0, 0, 0, 0, 1, 0, 1, 0],
   270: [0, 0, -1, -1, 0, 0, 0, 1, 0],
 };
+const MATRICES_VOLCADO = {
+  0: [0, -1, 0, 1, 0, 0, 0, 0, 1],
+  90: [0, 0, 1, 1, 0, 0, 0, 1, 0],
+  180: [0, 1, 0, 1, 0, 0, 0, 0, -1],
+  270: [0, 0, -1, 1, 0, 0, 0, -1, 0],
+};
 
 function multiplicar(a, b) {
   const r = new Array(9).fill(0);
@@ -59,16 +65,20 @@ function cajaTransformada(caja, m) {
   return { minX, maxX, minY, maxY, minZ, maxZ };
 }
 
-// ¿Esta matriz equivale a alguna combinación rot × parado del sistema?
+// ¿Esta matriz equivale a alguna combinación rot × parado/volcado del sistema?
 function orientacionSistema(info, mat) {
   const preRot = info.preRot || 0;
-  for (const parado of [false, true]) {
+  const iguales = (m) => {
+    for (let i = 0; i < 9; i++) if (Math.abs(m[i] - mat[i]) > 0.001) return false;
+    return true;
+  };
+  for (const modo of ['normal', 'parado', 'volcado']) {
     for (const rot of [0, 90, 180, 270]) {
       const efectiva = (rot + preRot) % 360;
-      const m = parado ? MATRICES_PARADO[efectiva] : MATRICES_ROT[efectiva];
-      let igual = true;
-      for (let i = 0; i < 9; i++) if (Math.abs(m[i] - mat[i]) > 0.001) { igual = false; break; }
-      if (igual) return { rot, parado };
+      const m = modo === 'volcado' ? MATRICES_VOLCADO[rot]
+        : modo === 'parado' ? MATRICES_PARADO[efectiva]
+        : MATRICES_ROT[efectiva];
+      if (iguales(m)) return { rot, parado: modo === 'parado', volcado: modo === 'volcado' };
     }
   }
   return null;
@@ -81,9 +91,11 @@ function lineaSistema(p, caja) {
   const o = orientacionSistema(info, p.mat);
   if (!o) return null;
   const efectiva = (o.rot + (info.preRot || 0)) % 360;
-  const m = o.parado ? MATRICES_PARADO[efectiva] : MATRICES_ROT[efectiva];
+  const m = o.volcado ? MATRICES_VOLCADO[o.rot]
+    : o.parado ? MATRICES_PARADO[efectiva]
+    : MATRICES_ROT[efectiva];
   let x, z, nivel;
-  if (o.parado || info.bbox) {
+  if (o.volcado || o.parado || info.bbox) {
     const r = cajaTransformada(caja, m);
     x = (p.pos[0] + r.minX) / 20;
     z = (p.pos[2] + r.minZ) / 20;
@@ -103,7 +115,8 @@ function lineaSistema(p, caja) {
   let linea = `${p.pieza} ${color ? color.clave : p.color} en ${num(x)} ${num(z)}`;
   if (num(nivel) !== 0) linea += ` nivel ${num(nivel)}`;
   if (o.rot) linea += ` rotar ${o.rot}`;
-  if (o.parado) linea += ' parado';
+  if (o.volcado) linea += ' volcado';
+  else if (o.parado) linea += ' parado';
   return linea;
 }
 

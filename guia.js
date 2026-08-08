@@ -304,8 +304,9 @@ notas: Las placas son las piezas finitas.</pre>
           El suelo es 0; un ladrillo apoyado ocupa los niveles 0-2 y lo que va arriba usa <code>nivel 3</code>.</li>
           <li><code>rotar 90</code> — gira la pieza (90, 180 o 270).</li>
           <li><code>parado</code> — al final de la línea, vuelca la pieza 90° hacia arriba: una viga queda de pie
-          con los agujeros de frente (para montarle ejes y engranajes) y <code>rotar 90 parado</code> pone un eje
-          en vertical.</li>
+          a lo largo de x con los agujeros de frente.</li>
+          <li><code>volcado</code> — vuelca la pieza 90° de costado: una viga queda a lo largo de z con los
+          agujeros hacia x (la orientación real para clavarle pines y montar motores) y un eje queda vertical.</li>
           <li>Piezas: <code>ladrillo</code>, <code>placa</code>, <code>lisa</code> (tile) y <code>pendiente</code> en los
           tamaños clásicos (1x1 a 2x8 y placas grandes), redondas, técnicas, ruedas y especiales — los nombres exactos
           están en los selectores del editor visual. Colores: rojo, azul, amarillo, verde, naranja, blanco, negro,

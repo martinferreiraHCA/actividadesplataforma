@@ -81,6 +81,16 @@ async function crearMotor() {
     180: [-1, 0, 0, 0, 0, 1, 0, 1, 0],
     270: [0, 0, -1, -1, 0, 0, 0, 1, 0],
   };
+  // "volcado": la pieza se vuelca 90° de costado (M = RotY(rot) · RotZ(90),
+  // sin preRot). Una viga volcada queda acostada A LO LARGO DE Z con los
+  // agujeros hacia X — la orientación calibrada para clavarle pines. Un eje
+  // volcado queda vertical.
+  const MATRICES_VOLCADO = {
+    0: [0, -1, 0, 1, 0, 0, 0, 0, 1],
+    90: [0, 0, 1, 1, 0, 0, 0, 1, 0],
+    180: [0, 1, 0, 1, 0, 0, 0, 0, -1],
+    270: [0, 0, -1, 1, 0, 0, 0, -1, 0],
+  };
 
   // Caja transformada por una matriz 3x3 (fila-mayor, convención LDraw)
   function cajaTransformada(caja, m) {
@@ -114,9 +124,11 @@ async function crearMotor() {
     // corren sobre Z); se compensa acá para que "sin rotar" sea siempre el
     // lado largo sobre X, como dice la documentación
     const efectiva = (rot + (info.preRot || 0)) % 360;
-    const m = z.parado ? MATRICES_PARADO[efectiva] : MATRICES_ROT[efectiva];
+    const m = z.volcado ? MATRICES_VOLCADO[rot]
+      : z.parado ? MATRICES_PARADO[efectiva]
+      : MATRICES_ROT[efectiva];
     let ox, oz, oy;
-    if (z.parado || info.bbox) {
+    if (z.volcado || z.parado || info.bbox) {
       // piezas paradas u origen no centrado: la esquina de la caja
       // transformada va en (x, z) y su base apoya en el nivel
       const r = cajaTransformada(caja, m);
@@ -157,6 +169,7 @@ async function crearMotor() {
     if (!info) return null;
     let w = info.w, d = info.d;
     if (z.parado) d = Math.max(1, Math.round((info.alto || 1) * 0.4)); // el fondo pasa a ser el alto original
+    if (z.volcado) [w, d] = [d, w]; // el largo pasa al eje Z
     if (z.rot === 90 || z.rot === 270) [w, d] = [d, w];
     return { x: z.x, z: z.z, w, d };
   }
