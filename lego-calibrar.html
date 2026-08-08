@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calibración LEGO (herramienta interna)</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="lego.css">
+<script type="importmap">
+{ "imports": { "three": "./lego/vendor/three.module.min.js" } }
+</script>
+<style>
+  .calib { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 1rem; align-items: start; }
+  @media (max-width: 1000px) { .calib { grid-template-columns: 1fr; } }
+  .calib__panel { border: 1.5px solid rgba(128,128,128,0.4); border-radius: 8px; padding: 0.9rem; }
+  .calib__panel h3 { margin: 0 0 0.6rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .calib__lista { max-height: 300px; overflow: auto; margin-bottom: 0.8rem; }
+  .calib__caso { display: flex; gap: 0.4rem; align-items: center; padding: 0.25rem 0.4rem; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
+  .calib__caso:hover { background: rgba(128,128,128,0.12); }
+  .calib__caso--actual { background: rgba(208,160,0,0.18); outline: 1px solid #d0a000; }
+  .calib__estado { font-size: 0.7rem; padding: 0.05em 0.5em; border-radius: 99px; border: 1px solid; white-space: nowrap; }
+  .calib__estado--pendiente { color: #a08000; }
+  .calib__estado--valido { color: #2a8a2a; }
+  .calib__estado--corregido { color: #2a6a9a; }
+  .calib__estado--imposible { color: #b04040; }
+  .calib__viewport { position: relative; border: 1.5px solid rgba(128,128,128,0.4); border-radius: 8px; overflow: hidden; background: #f2f2ee; }
+  .calib__viewport canvas { display: block; width: 100%; height: 560px; touch-action: none; }
+  .calib__hud { position: absolute; left: 8px; top: 8px; font: 500 11px 'JetBrains Mono', monospace; background: rgba(255,255,255,0.85); color: #222; padding: 4px 8px; border-radius: 4px; pointer-events: none; white-space: pre; }
+  .calib__barra { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.6rem; }
+  .calib__barra .ficha-card__accion { padding: 0.4em 0.6em; }
+  .calib__barra label { font-size: 0.72rem; opacity: 0.85; }
+  .calib__piezas { margin: 0.5rem 0; }
+  .calib__pieza { display: flex; gap: 0.3rem; align-items: center; font-size: 0.78rem; padding: 0.2rem 0.3rem; border-radius: 4px; cursor: pointer; }
+  .calib__pieza--sel { background: rgba(208,160,0,0.2); outline: 1px solid #d0a000; }
+  .calib__chip { width: 0.9em; height: 0.9em; border-radius: 3px; border: 1px solid rgba(0,0,0,0.35); display: inline-block; }
+  .calib__ayuda { font-size: 0.72rem; opacity: 0.75; line-height: 1.5; }
+  .calib textarea.campo__textarea { font-size: 0.78rem; }
+  .calib select.campo__input, .calib input.campo__input { padding: 0.35em 0.5em; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">🔧 Calibración LEGO — herramienta interna (no publicada)</span>
+    <nav class="header__nav"><a href="lego.html">← Volver a Ensamble con LEGO</a></nav>
+  </div>
+</header>
+
+<section class="editor-section">
+  <div class="container" style="max-width:1500px">
+    <div class="section__eyebrow" style="margin-bottom:0.8rem">// Banco de calibración de piezas y encastres</div>
+    <p class="calib__ayuda" style="max-width:900px;margin-bottom:1rem">
+      Armá acá cada combinación de piezas <strong>como debe quedar en la realidad</strong> (mové y rotá hasta que encastre
+      perfecto), marcá el caso como <strong>válido</strong> y al final descargá el <strong>análisis .txt</strong> para pasárselo a la IA
+      del asistente de desarrollo: con ese archivo se fijan las reglas de encastre en el sistema. Nada de esta página
+      aparece en el sistema publicado.
+    </p>
+
+    <div class="calib">
+      <!-- ===== Panel izquierdo: casos y piezas ===== -->
+      <div>
+        <div class="calib__panel" style="margin-bottom:1rem">
+          <h3>Casos de calibración</h3>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.6rem">
+            <button class="ficha-card__accion" id="btnCasosSugeridos" title="Agrega todas las combinaciones sugeridas del kit NXT como casos pendientes">✨ Cargar combinaciones sugeridas</button>
+            <button class="ficha-card__accion" id="btnCasoNuevo">+ Caso vacío</button>
+          </div>
+          <div class="calib__lista" id="listaCasos"></div>
+          <div class="campo" style="margin-bottom:0.5rem">
+            <span class="ficha-card__mini-label">Título del caso</span>
+            <input class="campo__input" id="casoTitulo" type="text">
+          </div>
+          <div style="display:flex;gap:0.4rem;align-items:center;margin-bottom:0.5rem">
+            <span class="ficha-card__mini-label" style="margin:0">Estado:</span>
+            <select class="campo__input" id="casoEstado" style="max-width:11rem">
+              <option value="pendiente">⏳ pendiente</option>
+              <option value="valido">✅ válido (así va)</option>
+              <option value="corregido">✏️ corregido (era distinto)</option>
+              <option value="imposible">🚫 imposible de representar</option>
+            </select>
+            <button class="ficha-card__accion ficha-card__accion--peligro" id="btnCasoEliminar" title="Eliminar caso">✕</button>
+          </div>
+          <div class="campo">
+            <span class="ficha-card__mini-label">Notas del caso (qué conecta con qué, qué había que corregir…)</span>
+            <textarea class="campo__textarea" id="casoNotas" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="calib__panel" style="margin-bottom:1rem">
+          <h3>Piezas del caso</h3>
+          <div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-bottom:0.5rem">
+            <select class="campo__input" id="selPieza" style="flex:1;min-width:10rem"></select>
+            <select class="campo__input" id="selColor" style="width:8rem"></select>
+            <button class="ficha-card__accion" id="btnAgregarPieza">+ Agregar</button>
+          </div>
+          <div class="calib__piezas" id="listaPiezas"></div>
+          <div style="display:flex;gap:0.35rem;flex-wrap:wrap">
+            <button class="ficha-card__accion" id="btnDuplicarPieza">⧉ Duplicar</button>
+            <button class="ficha-card__accion ficha-card__accion--peligro" id="btnQuitarPieza">✕ Quitar</button>
+          </div>
+        </div>
+
+        <div class="calib__panel">
+          <h3>Análisis (texto plano)</h3>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem">
+            <button class="btn btn--primary" id="btnExportar" style="padding:0.5em 1em;font-size:0.8rem">⬇ Descargar análisis .txt</button>
+            <button class="ficha-card__accion" id="btnCopiarAnalisis">Copiar al portapapeles</button>
+          </div>
+          <div class="campo">
+            <span class="ficha-card__mini-label">Importar análisis (pegá un .txt exportado antes y procesalo)</span>
+            <textarea class="campo__textarea" id="taImportar" rows="3" placeholder="# CALIBRACION LEGO NXT v1 ..."></textarea>
+            <button class="ficha-card__accion" id="btnImportar" style="margin-top:0.4rem">Importar casos</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Panel derecho: visor 3D + manipulación ===== -->
+      <div>
+        <div class="calib__viewport">
+          <canvas id="lienzo"></canvas>
+          <div class="calib__hud" id="hud"></div>
+        </div>
+
+        <div class="calib__barra">
+          <span class="ficha-card__mini-label" style="margin:0">Paso XZ:</span>
+          <select class="campo__input" id="pasoXZ" style="width:9.5rem">
+            <option value="20">1 stud (8 mm)</option>
+            <option value="10">½ stud (4 mm)</option>
+            <option value="5">¼ stud (2 mm)</option>
+            <option value="2.5">1 mm</option>
+            <option value="0.5">0.2 mm</option>
+          </select>
+          <span class="ficha-card__mini-label" style="margin:0">Paso altura:</span>
+          <select class="campo__input" id="pasoY" style="width:10rem">
+            <option value="8">1 placa (3.2 mm)</option>
+            <option value="4">½ placa (1.6 mm)</option>
+            <option value="2.5">1 mm</option>
+            <option value="0.5">0.2 mm</option>
+          </select>
+          <span class="ficha-card__mini-label" style="margin:0">Giro:</span>
+          <select class="campo__input" id="pasoGiro" style="width:6.5rem">
+            <option value="90">90°</option>
+            <option value="45">45°</option>
+            <option value="5">5°</option>
+            <option value="1">1°</option>
+          </select>
+        </div>
+
+        <div class="calib__barra">
+          <span class="ficha-card__mini-label" style="margin:0">Mover:</span>
+          <button class="ficha-card__accion" data-mover="-x">◀ X−</button>
+          <button class="ficha-card__accion" data-mover="+x">X+ ▶</button>
+          <button class="ficha-card__accion" data-mover="-z">▲ Z−</button>
+          <button class="ficha-card__accion" data-mover="+z">Z+ ▼</button>
+          <button class="ficha-card__accion" data-mover="+y">⬆ Subir</button>
+          <button class="ficha-card__accion" data-mover="-y">⬇ Bajar</button>
+          <span class="ficha-card__mini-label" style="margin:0 0 0 0.6rem">Rotar:</span>
+          <button class="ficha-card__accion" data-girar="y+">↻ Y</button>
+          <button class="ficha-card__accion" data-girar="y-">↺ Y</button>
+          <button class="ficha-card__accion" data-girar="x+">↻ X</button>
+          <button class="ficha-card__accion" data-girar="x-">↺ X</button>
+          <button class="ficha-card__accion" data-girar="z+">↻ Z</button>
+          <button class="ficha-card__accion" data-girar="z-">↺ Z</button>
+        </div>
+
+        <div class="calib__barra">
+          <span class="ficha-card__mini-label" style="margin:0">Snap:</span>
+          <button class="ficha-card__accion" id="btnSnapStud" title="Redondea X/Z al ½ stud más cercano">⌗ a la cuadrícula</button>
+          <button class="ficha-card__accion" id="btnSnapPiso" title="Baja la pieza hasta apoyar en el piso">⤓ al piso</button>
+          <button class="ficha-card__accion" id="btnSnapCentro" title="Centra el origen de la pieza seleccionada con el de la pieza anterior de la lista (para alinear ejes con engranajes/ruedas)">◎ centrar con la anterior</button>
+          <button class="ficha-card__accion" id="btnResetOrientacion" title="Vuelve la pieza a su orientación original">↩ orientación 0</button>
+        </div>
+
+        <p class="calib__ayuda" style="margin-top:0.6rem">
+          <strong>Mouse:</strong> arrastrar = orbitar · rueda = zoom · clic en una pieza = seleccionarla ·
+          <strong>Teclado:</strong> flechas = mover en X/Z · RePág/AvPág = subir/bajar · Q/E = girar Y · W/S = girar X · A/D = girar Z · Supr = quitar pieza.
+          El eje <span style="color:#c04040">rojo es +X</span> y el <span style="color:#4060c0">azul es +Z</span> (adelante). La cuadrícula marca studs.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script type="module" src="lego-calibrar.js"></script>
+
+</body>
+</html>
