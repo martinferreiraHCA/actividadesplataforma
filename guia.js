@@ -279,6 +279,10 @@ notas: Pista para el alumno.</pre>
           <li><strong>Importar Texto</strong> — un solo texto carga la guía entera. Ideal para reutilizar y editar en lote.</li>
           <li><strong>Asistente IA</strong> — describís qué querés armar y el prompt sale con el catálogo de piezas, la
           sintaxis y las reglas físicas explicadas; la respuesta de la IA se convierte en la guía completa de una vez.</li>
+          <li><strong>Editor 3D del modelo terminado</strong> — abrís el modelo completo en 3D, hacés clic en cualquier
+          pieza y la movés, girás, cambiás de color o borrás. Como cada pieza pertenece a su paso, <strong>los pasos
+          previos se corrigen automáticamente</strong>: ideal para retocar a gusto lo que generó la IA. El deslizador
+          "ver hasta el paso" muestra el modelo en cualquier etapa intermedia.</li>
         </ul>
 
         <h4 class="guia-h">2 · La sintaxis del texto</h4>

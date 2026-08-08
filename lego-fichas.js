@@ -1198,6 +1198,36 @@ function init() {
     cargarDocParseado(res, document.getElementById('chkReemplazarLegoIA').checked, 'avisosLegoIA');
   });
 
+  // ---- editor 3D del modelo terminado ----
+  let recargaEditor = null;
+  document.getElementById('btnAbrirEditor3D').addEventListener('click', async () => {
+    if (!hayPiezas()) { toast('Todavía no hay pasos con piezas para editar.'); return; }
+    const btn = document.getElementById('btnAbrirEditor3D');
+    btn.disabled = true;
+    btn.textContent = 'Cargando el modelo…';
+    try {
+      const mod = await import('./lego-editor3d.js');
+      await mod.abrirEditor3D({
+        contenedorId: 'editor3dLego',
+        getPasos: () => state.pasos,
+        onCambio: () => {
+          // cada retoque en 3D modifica el paso dueño de la pieza:
+          // se invalidan las fotos y se refresca el editor de pasos
+          cacheFotos.clear();
+          guardarLuego();
+          clearTimeout(recargaEditor);
+          recargaEditor = setTimeout(renderLista, 1200);
+        }
+      });
+      btn.textContent = '🔄 Recargar el editor 3D (si cambiaste pasos a mano)';
+    } catch (e) {
+      console.error(e);
+      toast('No se pudo abrir el editor 3D.');
+      btn.textContent = '🧊 Abrir el editor 3D del modelo';
+    }
+    btn.disabled = false;
+  });
+
   // ---- vista previa ----
   document.getElementById('btnActualizarFichas').addEventListener('click', actualizarVistaPrevia);
 
