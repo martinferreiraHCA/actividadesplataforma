@@ -97,13 +97,14 @@ async function crearMotor() {
     return { minX, maxX, minY, maxY, minZ, maxZ };
   }
 
-  // Una colocación {pieza,color,x,z,nivel,rot} → línea LDraw tipo 1.
-  // El origen de las piezas LDraw estándar está centrado en la huella de studs,
-  // así que el centro se calcula con el tamaño del catálogo (alinea perfecto en
-  // la cuadrícula) y la base con la caja medida de la geometría real.
+  // Transformación de una colocación {pieza,color,x,z,nivel,rot,parado}:
+  // posición del origen LDraw + matriz de orientación. El origen de las piezas
+  // LDraw estándar está centrado en la huella de studs, así que el centro se
+  // calcula con el tamaño del catálogo (alinea perfecto en la cuadrícula) y la
+  // base con la caja medida de la geometría real.
   // Requiere que la pieza ya esté medida (llamar antes a medirTodas).
-  function lineaLdraw(z) {
-    if (z.raw) return z.raw;
+  function transformacion(z) {
+    if (z.raw) return null;
     const info = piezaPorClave(z.pieza);
     if (!info) return null;
     const caja = medidas.get(info.dat);
@@ -129,8 +130,24 @@ async function crearMotor() {
       oz = (z.z + d / 2) * 20;
       oy = -(z.nivel || 0) * 8 - caja.max.y; // la base apoya en el nivel
     }
+    return { pos: [ox, oy, oz], mat: m, dat: info.dat };
+  }
+
+  // Una colocación → línea LDraw tipo 1
+  function lineaLdraw(z) {
+    if (z.raw) return z.raw;
+    const t = transformacion(z);
+    if (!t) return null;
     const num = (v) => Math.round(v * 100) / 100;
-    return `1 ${z.color} ${num(ox)} ${num(oy)} ${num(oz)} ${m.join(' ')} parts/${info.dat}.dat`;
+    return `1 ${z.color} ${t.pos.map(num).join(' ')} ${t.mat.join(' ')} parts/${t.dat}.dat`;
+  }
+
+  // Grupo three.js de una sola pieza (para el editor 3D en vivo)
+  async function grupoPieza(clave, color) {
+    const info = piezaPorClave(clave);
+    if (!info) return null;
+    await medir(info.dat);
+    return parsear(`1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 parts/${info.dat}.dat`);
   }
 
   // Huella en studs de una colocación (para el editor de cuadrícula)
@@ -243,5 +260,5 @@ async function crearMotor() {
     return L.join('\r\n') + '\r\n';
   }
 
-  return { medir, medirTodas, huella, fotoModelo, fotoPieza, exportarLdr, lineaLdraw };
+  return { medir, medirTodas, huella, fotoModelo, fotoPieza, exportarLdr, lineaLdraw, transformacion, grupoPieza };
 }
