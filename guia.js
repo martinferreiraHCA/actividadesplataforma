@@ -310,7 +310,8 @@ notas: Las placas son las piezas finitas.</pre>
         rectas y angulares, pines, ejes, bujes, bloques cruz, <strong>engranajes</strong> (8, 16, 24, 40 dientes,
         cónicos, corona y tornillo sin fin), ruedas con neumáticos, el <strong>bloque inteligente NXT</strong>, los
         <strong>3 servomotores</strong> y los <strong>sensores</strong> (contacto, luz, sonido y ultrasónico). En el
-        Paso 1, la opción <strong>"Juego de piezas"</strong> permite <strong>limitar el diseño al kit NXT</strong>:
+        <strong>Asistente IA</strong>, el tick <strong>"🧱 Usar solo el kit NXT"</strong> permite <strong>limitar el
+        diseño al kit</strong> al generar el prompt:
         los selectores del editor solo muestran esas piezas, las importaciones marcan con ⚠ lo que no viene en el kit,
         y el prompt del Asistente IA sale con el catálogo restringido para que la IA diseñe solo con piezas del kit.
         Si además indicás <strong>cuántos kits tenés</strong>, se controlan las cantidades (ej: con 2 kits hay

@@ -1041,7 +1041,7 @@ function sincronizarCampos() {
   document.getElementById('ldSalto').checked = !!state.opciones.salto;
   document.getElementById('ldComparador').checked = !!state.opciones.comparador;
   document.getElementById('ldAtenuar').checked = !!state.opciones.atenuar;
-  document.getElementById('ldKit').value = state.opciones.kit || 'todas';
+  document.getElementById('iaKitNxt').checked = state.opciones.kit === 'nxt';
   document.getElementById('ldKitsNxt').value = state.opciones.kitsNxt || '';
   refrescarCamposKit();
 }
@@ -1055,7 +1055,7 @@ function refrescarCamposKit() {
     if (esNxt) {
       const n = parseInt(state.opciones.kitsNxt, 10) || 0;
       nota.style.display = '';
-      nota.innerHTML = '🤖 <strong>Kit activo:</strong> ' + escHtml(KITS.nxt.nombre) +
+      nota.innerHTML = '🧱 <strong>Kit activo:</strong> ' + escHtml(KITS.nxt.nombre) +
         (n ? ` × ${n} — el prompt limita las piezas y sus cantidades a lo que traen ${n} kit(s).`
            : ' — el prompt limita el diseño a las piezas de ese kit (sin límite de cantidad).');
     } else {
@@ -1085,8 +1085,8 @@ function init() {
     cacheFotos.clear();
     guardarLuego();
   });
-  document.getElementById('ldKit').addEventListener('change', e => {
-    state.opciones.kit = e.target.value;
+  document.getElementById('iaKitNxt').addEventListener('change', e => {
+    state.opciones.kit = e.target.checked ? 'nxt' : 'todas';
     refrescarCamposKit();
     renderLista(); // los selectores de pieza se filtran por kit
     guardarLuego();
