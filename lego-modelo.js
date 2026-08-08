@@ -45,7 +45,9 @@ export function parsearLineaPieza(linea) {
     return { pieza: { raw: cruda } };
   }
   const limpia = cruda.replace(/[(),;]/g, ' ').replace(/\s+/g, ' ');
-  const m = limpia.match(/^(.*?)\s+en\s+(-?\d+)\s+(-?\d+)(.*)$/i);
+  // coordenadas y nivel aceptan decimales con punto (ej: 2.5) para ajustes
+  // finos: engranar engranajes o centrar un eje en una rueda
+  const m = limpia.match(/^(.*?)\s+en\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)(.*)$/i);
   if (!m) return { error: 'no se entiende — el formato es: <pieza> <color> en <x> <z> [nivel <n>] [rotar <90>]' };
   const [, nombreYColor, xs, zs, resto] = m;
 
@@ -67,16 +69,16 @@ export function parsearLineaPieza(linea) {
     return { error: `pieza o color desconocido en "${nombreYColor.trim()}"` };
   }
 
-  const r = { pieza: pieza.clave, color: color.codigo, x: parseInt(xs, 10), z: parseInt(zs, 10), nivel: 0, rot: 0 };
-  const mNivel = resto.match(/\b(?:nivel|altura)\s+(-?\d+)/i);
-  if (mNivel) r.nivel = parseInt(mNivel[1], 10);
+  const r = { pieza: pieza.clave, color: color.codigo, x: parseFloat(xs), z: parseFloat(zs), nivel: 0, rot: 0 };
+  const mNivel = resto.match(/\b(?:nivel|altura)\s+(-?\d+(?:\.\d+)?)/i);
+  if (mNivel) r.nivel = parseFloat(mNivel[1]);
   const mRot = resto.match(/\b(?:rotar|rot|girar)\s+(\d+)/i);
   if (mRot) {
     const g = ((parseInt(mRot[1], 10) % 360) + 360) % 360;
     if (g % 90 !== 0) return { error: 'solo se puede rotar 0, 90, 180 o 270 grados' };
     r.rot = g;
   }
-  const sobra = resto.replace(/\b(?:nivel|altura)\s+-?\d+/i, '').replace(/\b(?:rotar|rot|girar)\s+\d+/i, '').trim();
+  const sobra = resto.replace(/\b(?:nivel|altura)\s+-?\d+(?:\.\d+)?/i, '').replace(/\b(?:rotar|rot|girar)\s+\d+/i, '').trim();
   if (sobra) return { error: `no se entiende "${sobra}" (después de las coordenadas van "nivel N" y/o "rotar N")` };
   return { pieza: r };
 }
