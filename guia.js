@@ -264,6 +264,65 @@ notas: Pista para el alumno.</pre>
       `
     },
     {
+      id: "lego",
+      titulo: "Ensamble LEGO",
+      html: `
+        <p class="guia-p">La sección <strong>Ensamble con LEGO</strong> crea manuales de construcción paso a paso,
+        como los de las cajas oficiales: el modelo se describe como <strong>texto plano</strong> (o lo genera una IA)
+        y se dibuja en <strong>3D</strong> con el motor LDraw + three.js que vive en la propia página — no depende
+        de servicios externos.</p>
+
+        <h4 class="guia-h">1 · Crear la guía (tres formas combinables)</h4>
+        <ul class="guia-lista">
+          <li><strong>Editor Visual</strong> — agregás pasos y piezas con selectores, ubicás cada pieza con clic en la
+          cuadrícula (vista desde arriba) y mirás el modelo en 3D mientras armás.</li>
+          <li><strong>Importar Texto</strong> — un solo texto carga la guía entera. Ideal para reutilizar y editar en lote.</li>
+          <li><strong>Asistente IA</strong> — describís qué querés armar y el prompt sale con el catálogo de piezas, la
+          sintaxis y las reglas físicas explicadas; la respuesta de la IA se convierte en la guía completa de una vez.</li>
+        </ul>
+
+        <h4 class="guia-h">2 · La sintaxis del texto</h4>
+        <p class="guia-p">Cada paso empieza con <code>=== PASO: Título ===</code> y lleva <code>consigna:</code>,
+        <code>piezas:</code> y <code>notas:</code>. Cada línea de pieza dice qué pieza, de qué color y dónde va:</p>
+        <pre class="guia-pre">=== PASO: La base ===
+consigna: Armá la base del carrito.
+piezas:
+placa 2x6 gris claro en 0 0
+ladrillo 2x4 rojo en 1 0 nivel 1
+ladrillo 2x2 azul en 1 0 nivel 4 rotar 90
+notas: Las placas son las piezas finitas.</pre>
+        <ul class="guia-lista">
+          <li><code>en x z</code> — la esquina de la pieza en la cuadrícula, en studs (los "botones"). x crece a la
+          derecha, z hacia abajo; desde ahí la pieza se extiende hacia +x y +z. Sin rotar, el lado largo va sobre x.</li>
+          <li><code>nivel n</code> — la altura de la base de la pieza, en placas: <strong>3 placas = 1 ladrillo</strong>.
+          El suelo es 0; un ladrillo apoyado ocupa los niveles 0-2 y lo que va arriba usa <code>nivel 3</code>.</li>
+          <li><code>rotar 90</code> — gira la pieza (90, 180 o 270).</li>
+          <li>Piezas: <code>ladrillo</code>, <code>placa</code>, <code>lisa</code> (tile) y <code>pendiente</code> en los
+          tamaños clásicos (1x1 a 2x8 y placas grandes), redondas, técnicas, ruedas y especiales — los nombres exactos
+          están en los selectores del editor visual. Colores: rojo, azul, amarillo, verde, naranja, blanco, negro,
+          gris claro, gris oscuro, beige y más.</li>
+        </ul>
+
+        <h4 class="guia-h">3 · Las fichas y el comparador 1:1</h4>
+        <p class="guia-p">Cada paso se imprime como una ficha: <strong>"Buscá estas piezas"</strong> (miniaturas 3D con
+        cantidades y el <strong>comparador a tamaño real</strong>: el dibujo de la huella de cada pieza a escala 1:1,
+        para apoyar la pieza encima y verificar que es la correcta), la <strong>guía visual del armado</strong> hasta ese
+        paso, y la consigna y notas que escribas. La portada muestra el modelo terminado con el inventario completo.</p>
+        <div class="guia-aviso">Para que el comparador salga a tamaño real, imprimí al <strong>100 %</strong> (sin
+        "ajustar a la página"). 1 stud = 8 mm.</div>
+
+        <h4 class="guia-h">4 · Descargas</h4>
+        <ul class="guia-lista">
+          <li><strong>PDF</strong> — desde la impresión del navegador, listo para repartir.</li>
+          <li><strong>Modelo LDraw .ldr</strong> — el modelo con sus pasos, compatible con
+          <strong>LPub3D</strong>, <strong>LDView</strong> y <strong>BrickLink Studio</strong> para renders y manuales
+          profesionales.</li>
+          <li><strong>Copiar como texto / borrador .json</strong> — para editar en lote o retomar otro día (también se
+          autoguarda en el navegador).</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `

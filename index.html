@@ -23,6 +23,7 @@
       <a href="index.html" class="active">Inicio</a>
       <a href="editor.html?tipo=cuestionario">Editor</a>
       <a href="scratch.html">Fichas Scratch · micro:bit</a>
+      <a href="lego.html">Ensamble con LEGO</a>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
     </nav>
     <div class="tema-switcher" id="temaSwitcher">
@@ -171,6 +172,7 @@
         <a href="index.html">Inicio</a>
         <a href="editor.html?tipo=cuestionario">Editor</a>
         <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
@@ -215,6 +217,20 @@
   `;
   grid.appendChild(cardScratch);
   nuevasCards.push(cardScratch);
+  idx++;
+
+  // Ficha especial: guías de ensamble LEGO (página propia)
+  const cardLego = document.createElement('a');
+  cardLego.href = 'lego.html';
+  cardLego.className = 'actividad-card reveal';
+  cardLego.setAttribute('role', 'listitem');
+  cardLego.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Ensamble con LEGO</h3>
+    <p class="actividad-card__desc">Manuales de construcción paso a paso dibujados en 3D desde texto plano o con IA, con lista de piezas y comparador a tamaño real 1:1. Exportables a PDF o LDraw.</p>
+  `;
+  grid.appendChild(cardLego);
+  nuevasCards.push(cardLego);
 
   // Las tarjetas se crean por JS DESPUÉS de que el observer del template ya
   // capturó su lista estática de .reveal, así que las animamos nosotros mismos.
