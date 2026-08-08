@@ -73,6 +73,54 @@ ladrillo 2x2 azul en 0 0 nivel 4 rotar 90
 pendiente 2x2 rojo en 2 0 nivel 7 rotar 180`}
 Cada línea es UNA pieza. Si van dos iguales, escribí dos líneas.
 
+REGLAS DE ESCRITURA EXACTAS (el texto se procesa automáticamente: respetalas TODAS)
+1. Todo en minúsculas salvo los textos libres (título, consignas, notas). Los nombres de pieza y color van EXACTOS como en el catálogo: en minúsculas, sin comillas, sin tildes inventadas, sin plural (${infoKit ? '"viga 9", no "Vigas 9"' : '"ladrillo 2x4", no "Ladrillos 2X4"'}).
+2. Separá las palabras con UN solo espacio. Sin tabulaciones, sin sangría al inicio de línea, sin espacios al final. Ninguna línea de pieza empieza con guión, viñeta, número ni asterisco: empieza directo con el nombre de la pieza.
+3. En los tamaños la letra x va pegada a los números y sin espacios: "2x4" (no "2 x 4", no "2×4").
+4. La palabra "en" es obligatoria antes de las coordenadas: <pieza> <color> en <X> <Z>. X y Z separados por espacio (no coma). Decimales con PUNTO: "2.5" (nunca "2,5"). Negativos con guión pegado: "-3".
+5. "nivel" y "rotar" van después de las coordenadas, en ese orden si están los dos, en minúsculas y con su número separado por espacio: "nivel 3 rotar 90". No escribas "nivel:3", "Nivel 3" ni "rotado 90".
+6. El encabezado de paso es exactamente: === PASO: Título === (tres signos igual, espacio, PASO en mayúsculas, dos puntos, el título, espacio, tres signos igual). Sin numerar: "=== PASO: La base ===", no "=== PASO 1: La base ===".
+7. Las claves de cada paso van al comienzo de línea, en minúsculas y con dos puntos: "consigna:", "piezas:", "notas:". Después de "piezas:" NO va nada en esa misma línea: las piezas empiezan en la línea siguiente, una por línea, sin líneas en blanco entre medio.
+8. "consigna:" y "notas:" llevan su texto en la misma línea (puede continuar en líneas siguientes sin clave). No agregues claves nuevas ("paso:", "imagen:", "cantidad:") — no existen.
+9. Dejá exactamente UNA línea en blanco entre el encabezado del documento y el primer paso, y UNA entre paso y paso. No dejes líneas en blanco dentro de un paso.
+10. Respuesta en texto plano puro: sin markdown, sin \`\`\`, sin negritas con asteriscos, sin tablas, sin emojis en las líneas de piezas, sin comentarios entre paréntesis en las líneas de piezas, y sin ningún texto antes de "titulo:" ni después del último paso.
+
+EJEMPLO COMPLETO DE RESPUESTA BIEN ESCRITA (fijate en los espacios y las líneas en blanco; el tuyo debe verse exactamente así, con tu contenido):
+titulo: ${infoKit ? 'El auto explorador' : 'La casita del árbol'}
+nivel: 5° año
+descripcion: Un modelo sencillo para practicar lectura de instrucciones. En cada paso se agregan pocas piezas.
+
+${infoKit ? `=== PASO: El chasis ===
+consigna: Buscá las dos vigas largas y ponelas en paralelo.
+piezas:
+viga 9 gris oscuro en 0 0
+viga 9 gris oscuro en 0 4
+notas: Las vigas son la columna vertebral del auto.
+
+=== PASO: El motor ===
+consigna: Colocá el servomotor entre las dos vigas.
+piezas:
+motor nxt gris claro en 0 1 nivel 0
+pin negro en 1 0
+pin negro en 1 4
+notas: Los pines de fricción sujetan el motor a las vigas.` : `=== PASO: La base ===
+consigna: Buscá la placa grande y los dos ladrillos y armá el piso.
+piezas:
+placa 4x8 gris claro en 0 0
+ladrillo 2x4 rojo en 0 0 nivel 1
+ladrillo 2x4 rojo en 4 0 nivel 1
+notas: La placa es la pieza finita; los ladrillos van arriba.
+
+=== PASO: Las paredes ===
+consigna: Levantá la segunda hilera trabando las juntas.
+piezas:
+ladrillo 2x4 rojo en 2 0 nivel 4
+ladrillo 2x2 azul en 0 0 nivel 4
+ladrillo 2x2 azul en 6 0 nivel 4
+notas: Fijate que cada ladrillo pise la junta de los de abajo.`}
+
+(fin del ejemplo — tu respuesta sigue este mismo formato, con más pasos si hacen falta)
+
 PIEZAS PERMITIDAS (usá los nombres EXACTOS de la izquierda; no existe ninguna otra pieza)
 ${tablaPiezas(kit, cantidadKits)}
 
