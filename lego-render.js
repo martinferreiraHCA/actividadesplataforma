@@ -65,23 +65,37 @@ async function crearMotor() {
     for (const dat of dats) await medir(dat);
   }
 
-  // Caja de la pieza ya rotada alrededor de Y (solo cambian x/z)
-  function cajaRotada(caja, rot) {
-    const { min, max } = caja;
-    switch (rot) {
-      case 90: return { minX: min.z, maxX: max.z, minZ: -max.x, maxZ: -min.x };
-      case 180: return { minX: -max.x, maxX: -min.x, minZ: -max.z, maxZ: -min.z };
-      case 270: return { minX: -max.z, maxX: -min.z, minZ: min.x, maxZ: max.x };
-      default: return { minX: min.x, maxX: max.x, minZ: min.z, maxZ: max.z };
-    }
-  }
-
   const MATRICES_ROT = {
-    0: '1 0 0 0 1 0 0 0 1',
-    90: '0 0 1 0 1 0 -1 0 0',
-    180: '-1 0 0 0 1 0 0 0 -1',
-    270: '0 0 -1 0 1 0 1 0 0',
+    0: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    90: [0, 0, 1, 0, 1, 0, -1, 0, 0],
+    180: [-1, 0, 0, 0, 1, 0, 0, 0, -1],
+    270: [0, 0, -1, 0, 1, 0, 1, 0, 0],
   };
+  // "parado": primero la rotación horizontal y después un vuelco de 90°
+  // alrededor de X (M = RotX(90) · RotY(rot)). Así una pieza que quedó a lo
+  // largo de X sigue a lo largo de X pero de pie, con su cara superior
+  // mirando ahora hacia Z (los agujeros de una viga quedan de frente).
+  const MATRICES_PARADO = {
+    0: [1, 0, 0, 0, 0, -1, 0, 1, 0],
+    90: [0, 0, 1, 1, 0, 0, 0, 1, 0],
+    180: [-1, 0, 0, 0, 0, 1, 0, 1, 0],
+    270: [0, 0, -1, -1, 0, 0, 0, 1, 0],
+  };
+
+  // Caja transformada por una matriz 3x3 (fila-mayor, convención LDraw)
+  function cajaTransformada(caja, m) {
+    const xs = [caja.min.x, caja.max.x], ys = [caja.min.y, caja.max.y], zs = [caja.min.z, caja.max.z];
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (const x of xs) for (const y of ys) for (const z of zs) {
+      const tx = m[0] * x + m[1] * y + m[2] * z;
+      const ty = m[3] * x + m[4] * y + m[5] * z;
+      const tz = m[6] * x + m[7] * y + m[8] * z;
+      minX = Math.min(minX, tx); maxX = Math.max(maxX, tx);
+      minY = Math.min(minY, ty); maxY = Math.max(maxY, ty);
+      minZ = Math.min(minZ, tz); maxZ = Math.max(maxZ, tz);
+    }
+    return { minX, maxX, minY, maxY, minZ, maxZ };
+  }
 
   // Una colocación {pieza,color,x,z,nivel,rot} → línea LDraw tipo 1.
   // El origen de las piezas LDraw estándar está centrado en la huella de studs,
@@ -95,21 +109,28 @@ async function crearMotor() {
     const caja = medidas.get(info.dat);
     if (!caja) return null;
     const rot = z.rot || 0;
-    let ox, oz;
-    if (info.bbox) {
-      // piezas con origen no centrado: la esquina de la caja medida va en (x, z)
-      const r = cajaRotada(caja, rot);
+    // preRot: algunas piezas LDraw vienen giradas de fábrica (las vigas rectas
+    // corren sobre Z); se compensa acá para que "sin rotar" sea siempre el
+    // lado largo sobre X, como dice la documentación
+    const efectiva = (rot + (info.preRot || 0)) % 360;
+    const m = z.parado ? MATRICES_PARADO[efectiva] : MATRICES_ROT[efectiva];
+    let ox, oz, oy;
+    if (z.parado || info.bbox) {
+      // piezas paradas u origen no centrado: la esquina de la caja
+      // transformada va en (x, z) y su base apoya en el nivel
+      const r = cajaTransformada(caja, m);
       ox = z.x * 20 - r.minX;
       oz = z.z * 20 - r.minZ;
+      oy = -(z.nivel || 0) * 8 - r.maxY;
     } else {
       let w = info.w, d = info.d;
       if (rot === 90 || rot === 270) [w, d] = [d, w];
       ox = (z.x + w / 2) * 20;
       oz = (z.z + d / 2) * 20;
+      oy = -(z.nivel || 0) * 8 - caja.max.y; // la base apoya en el nivel
     }
-    const oy = -(z.nivel || 0) * 8 - caja.max.y; // la base de la pieza apoya en el nivel
     const num = (v) => Math.round(v * 100) / 100;
-    return `1 ${z.color} ${num(ox)} ${num(oy)} ${num(oz)} ${MATRICES_ROT[rot]} parts/${info.dat}.dat`;
+    return `1 ${z.color} ${num(ox)} ${num(oy)} ${num(oz)} ${m.join(' ')} parts/${info.dat}.dat`;
   }
 
   // Huella en studs de una colocación (para el editor de cuadrícula)
@@ -118,6 +139,7 @@ async function crearMotor() {
     const info = piezaPorClave(z.pieza);
     if (!info) return null;
     let w = info.w, d = info.d;
+    if (z.parado) d = Math.max(1, Math.round((info.alto || 1) * 0.4)); // el fondo pasa a ser el alto original
     if (z.rot === 90 || z.rot === 270) [w, d] = [d, w];
     return { x: z.x, z: z.z, w, d };
   }

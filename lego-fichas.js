@@ -421,6 +421,19 @@ function filaPieza(card, paso, i, z, j) {
     selR.addEventListener('change', () => { z.rot = Number(selR.value); cambioPieza(card, paso, i); });
     fila.appendChild(selR);
 
+    const btnParado = document.createElement('button');
+    btnParado.type = 'button';
+    btnParado.className = 'ficha-card__accion';
+    btnParado.textContent = '⤒';
+    btnParado.title = 'Parado: gira la pieza 90° hacia arriba (viga de pie con los agujeros de frente, eje vertical)';
+    if (z.parado) btnParado.classList.add('lego-colocando');
+    btnParado.addEventListener('click', () => {
+      z.parado = !z.parado;
+      btnParado.classList.toggle('lego-colocando', !!z.parado);
+      cambioPieza(card, paso, i);
+    });
+    fila.appendChild(btnParado);
+
     const btnColocar = document.createElement('button');
     btnColocar.type = 'button';
     btnColocar.className = 'ficha-card__accion lego-fila-pieza__colocar';

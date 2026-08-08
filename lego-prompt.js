@@ -142,8 +142,9 @@ Cada pieza direccional tiene una orientación fija sin rotar; "rotar" la gira en
 - sensores NXT (ultrasónico, contacto, sonido, luz): la "cara" del sensor (ojos, botón naranja) mira a -Z; los agujeros de montaje quedan atrás (+Z). Para que el sensor mire al frente del robot usá rotar 180.
 - bloque nxt: pantalla hacia arriba, los 4 puertos de sensores miran a -Z y el puerto USB a +Z. Ocupa 9×14 studs: reservale lugar.
 - motor nxt: ocupa 5 studs de ancho (X) por ~14 de largo (Z); el EJE naranja queda en el extremo de MAYOR Z y el conector del cable en el extremo de la esquina X Z. Para dos motores enfrentados (robot con dos ruedas), poné uno sin rotar y el otro rotar 180.
-- vigas rectas: a lo largo de X sin rotar. Vigas angulares y curvas: el brazo LARGO corre a lo largo de Z sin rotar (huella según la tabla de piezas).
-- ejes y pines: acostados a lo largo de X sin rotar; rotar 90 los pone a lo largo de Z. NO se pueden parar en vertical.
+- vigas rectas: a lo largo de X sin rotar, ACOSTADAS, con sus agujeros mirando hacia arriba. Vigas angulares y curvas: el brazo LARGO corre a lo largo de Z sin rotar (huella según la tabla de piezas).
+- ejes y pines: acostados a lo largo de X sin rotar; rotar 90 los pone a lo largo de Z.
+- LA PALABRA "parado": agregada AL FINAL de una línea de pieza (después de nivel y rotar) la vuelca 90° hacia arriba. Una "viga 9 ... parado" queda de pie, a lo largo de X, con sus AGUJEROS de frente (a lo largo de Z, igual que los engranajes) — es la forma correcta de dibujar una viga que sostiene ejes y engranajes. Un eje VERTICAL se escribe "eje 4 ... rotar 90 parado". Ejemplo: viga 9 gris oscuro en 0 0 nivel 3 parado
 
 MECANISMOS PROLIJOS: EJES, PINES, RUEDAS Y ENGRANAJES (recetas verificadas — seguilas al pie de la letra)
 La herramienta POSICIONA piezas pero no las "encastra": está PERMITIDO y es CORRECTO superponer un eje o pin con la pieza que atraviesa (el dibujo no choca).
@@ -175,6 +176,19 @@ La herramienta POSICIONA piezas pero no las "encastra": está PERMITIDO y es COR
   engranaje 40 gris oscuro en 3 0 nivel 0
   eje 4 negro en 1 -1.5 nivel 6 rotar 90
   5. Los engranajes cónicos y el tornillo sin fin cambian el eje de giro 90°: usalos solo si hace falta y aclaralo en las notas; el tornillo sin fin se dibuja junto al engranaje que mueve, tocándolo.
+
+· ENGRANAJES MONTADOS EN UNA VIGA PARADA (mecanismo completo, el más prolijo):
+  Una "viga N en X Z nivel V parado" queda de pie con sus agujeros de frente (ocupa x = X a X+N, z = Z a Z+1). Sus agujeros están en x = X+0.5+k (k = 0, 1, 2... contando desde su esquina) a la altura V+1.25 placas. Para montar cosas en el agujero k:
+  - engranaje centrado en ese agujero, DELANTE de la viga (en z = Z-1): esquina en x = (X+0.5+k)-(ancho/2), nivel = V+1.25-(alto/2) (ancho y alto del engranaje según la tabla de piezas).
+  - eje que atraviesa engranaje y viga: eje 3 en x = X+k, z = Z-1.5, nivel V+1, rotar 90.
+  Los agujeros están cada 1 stud, así que dos engranajes que engranan con separación entera (8+24 → 2 agujeros; 24+24 → 3; 8+40 → 3; 24+40 → 4) caen JUSTO en agujeros de la misma viga.
+  Ejemplo completo verificado — viga parada con un 24 (agujero k=2) y un 8 (agujero k=4) engranados, cada uno con su eje:
+  viga 9 gris oscuro en 0 0 nivel 3 parado
+  engranaje 24 gris claro en 1 -1 nivel 0.25
+  engranaje 8 amarillo en 4 -1 nivel 2.7
+  eje 3 negro en 2 -1.5 nivel 4 rotar 90
+  eje 3 negro en 4 -1.5 nivel 4 rotar 90
+  (separación 2 studs, exacta para 8+24; la viga va a nivel 3 para que el engranaje grande no toque el suelo)
 
 FORMATO DE LA RESPUESTA (exactamente así, sin nada fuera de este formato)
 titulo: ${titulo.trim() || '<un título corto y atractivo para la guía>'}
