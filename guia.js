@@ -293,7 +293,9 @@ ladrillo 2x2 azul en 1 0 nivel 4 rotar 90
 notas: Las placas son las piezas finitas.</pre>
         <ul class="guia-lista">
           <li><code>en x z</code> — la esquina de la pieza en la cuadrícula, en studs (los "botones"). x crece a la
-          derecha, z hacia abajo; desde ahí la pieza se extiende hacia +x y +z. Sin rotar, el lado largo va sobre x.</li>
+          derecha, z hacia abajo; desde ahí la pieza se extiende hacia +x y +z. Sin rotar, el lado largo va sobre x.
+          Se aceptan decimales con punto (ej: <code>2.5</code>) para ajustes finos: engranar engranajes o centrar un
+          eje en una rueda (<code>nivel 3.5</code>).</li>
           <li><code>nivel n</code> — la altura de la base de la pieza, en placas: <strong>3 placas = 1 ladrillo</strong>.
           El suelo es 0; un ladrillo apoyado ocupa los niveles 0-2 y lo que va arriba usa <code>nivel 3</code>.</li>
           <li><code>rotar 90</code> — gira la pieza (90, 180 o 270).</li>

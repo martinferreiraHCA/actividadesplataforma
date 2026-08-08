@@ -404,8 +404,9 @@ function filaPieza(card, paso, i, z, j) {
       inp.type = 'number';
       inp.className = 'campo__input';
       inp.value = valor;
+      inp.step = '0.5'; // decimales: engranajes y centrado fino de ejes
       if (min !== null) inp.min = min;
-      inp.addEventListener('input', () => { cb(parseInt(inp.value, 10) || 0); cambioPieza(card, paso, i); });
+      inp.addEventListener('input', () => { cb(parseFloat(inp.value) || 0); cambioPieza(card, paso, i); });
       wrap.appendChild(inp);
       return wrap;
     };
