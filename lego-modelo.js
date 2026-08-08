@@ -78,7 +78,14 @@ export function parsearLineaPieza(linea) {
     if (g % 90 !== 0) return { error: 'solo se puede rotar 0, 90, 180 o 270 grados' };
     r.rot = g;
   }
-  const sobra = resto.replace(/\b(?:nivel|altura)\s+-?\d+(?:\.\d+)?/i, '').replace(/\b(?:rotar|rot|girar)\s+\d+/i, '').trim();
+  // "parado": la pieza se gira 90° hacia arriba (una viga queda de pie con los
+  // agujeros a lo largo de Z; un eje queda vertical)
+  if (/\b(?:parado|parada|de pie|vertical)\b/i.test(resto)) r.parado = true;
+  const sobra = resto
+    .replace(/\b(?:nivel|altura)\s+-?\d+(?:\.\d+)?/i, '')
+    .replace(/\b(?:rotar|rot|girar)\s+\d+/i, '')
+    .replace(/\b(?:parado|parada|de pie|vertical)\b/i, '')
+    .trim();
   if (sobra) return { error: `no se entiende "${sobra}" (después de las coordenadas van "nivel N" y/o "rotar N")` };
   return { pieza: r };
 }
@@ -176,6 +183,7 @@ export function serializarPieza(z) {
   let s = `${z.pieza} ${color ? color.clave : z.color} en ${z.x} ${z.z}`;
   if (z.nivel) s += ` nivel ${z.nivel}`;
   if (z.rot) s += ` rotar ${z.rot}`;
+  if (z.parado) s += ' parado';
   return s;
 }
 

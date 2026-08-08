@@ -107,13 +107,13 @@ export const PIEZAS = [
 
   // ================= Kit LEGO Mindstorms NXT (Education 9797) =================
   // --- Vigas técnicas (liftarms, sin studs) ---
-  { clave: 'viga 3', dat: '32523', nombre: 'Viga técnica 3', w: 3, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 10 },
-  { clave: 'viga 5', dat: '32316', nombre: 'Viga técnica 5', w: 5, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 4 },
-  { clave: 'viga 7', dat: '32524', nombre: 'Viga técnica 7', w: 7, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 4 },
-  { clave: 'viga 9', dat: '64289', nombre: 'Viga técnica 9', w: 9, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 6 },
-  { clave: 'viga 11', dat: '64290', nombre: 'Viga técnica 11', w: 11, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 2 },
-  { clave: 'viga 13', dat: '41239', nombre: 'Viga técnica 13', w: 13, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 2 },
-  { clave: 'viga 15', dat: '64871', nombre: 'Viga técnica 15', w: 15, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 4 },
+  { clave: 'viga 3', dat: '32523', nombre: 'Viga técnica 3', w: 3, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 10, preRot: 90 },
+  { clave: 'viga 5', dat: '32316', nombre: 'Viga técnica 5', w: 5, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 4, preRot: 90 },
+  { clave: 'viga 7', dat: '32524', nombre: 'Viga técnica 7', w: 7, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 4, preRot: 90 },
+  { clave: 'viga 9', dat: '64289', nombre: 'Viga técnica 9', w: 9, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 6, preRot: 90 },
+  { clave: 'viga 11', dat: '64290', nombre: 'Viga técnica 11', w: 11, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 2, preRot: 90 },
+  { clave: 'viga 13', dat: '41239', nombre: 'Viga técnica 13', w: 13, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 2, preRot: 90 },
+  { clave: 'viga 15', dat: '64871', nombre: 'Viga técnica 15', w: 15, d: 1, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 4, preRot: 90 },
   { clave: 'viga angular 3x5', dat: '32526', nombre: 'Viga angular 3×5 (90°)', w: 3, d: 5, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 8, bbox: true },
   { clave: 'viga angular 2x4', dat: '32140', nombre: 'Viga angular 2×4 (90°)', w: 2, d: 4, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 4, bbox: true },
   { clave: 'viga angular 4x6', dat: '6629', nombre: 'Viga angular 4×6 (53°)', w: 3, d: 8, alto: 2.5, studs: 'ninguna', cat: 'Vigas NXT', nxt: 4, bbox: true },
