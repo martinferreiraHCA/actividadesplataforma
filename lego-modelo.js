@@ -22,7 +22,7 @@
 //  - rotar: gira la pieza. Sin rotar, el lado largo va horizontal (eje x).
 // También se aceptan líneas LDraw crudas (empiezan con "1 ") dentro de "piezas:".
 
-import { buscarPieza, buscarColor, piezaPorClave, colorPorCodigoLdraw, normalizarTexto } from './lego-catalogo.js';
+import { buscarPieza, buscarColor, piezaPorClave, colorPorCodigoLdraw, normalizarTexto, conectoresDe } from './lego-catalogo.js';
 
 export function nuevoPaso() {
   return { titulo: '', consigna: '', notas: '', piezas: [] };
@@ -205,3 +205,114 @@ export function piezasAgrupadas(piezas) {
 }
 
 export function infoPieza(clave) { return piezaPorClave(clave); }
+
+// ============================================================
+// Validador de conexiones: detecta piezas flotando, apiladas sin
+// conexión real (viga sobre ladrillos, algo sobre una lisa...) y
+// engranajes/bujes/llantas sin eje. Usa la base de datos de
+// conectores del catálogo y una geometría aproximada (huella en
+// studs + alturas en placas), con tolerancias generosas para no
+// molestar con falsos positivos.
+// ============================================================
+
+function geometriaAproximada(z) {
+  const info = piezaPorClave(z.pieza);
+  if (!info) return null;
+  let w = info.w, d = info.d, alto = info.alto || 1;
+  const esBarra = conectoresDe(info).has('ej') || conectoresDe(info).has('pi');
+  if (z.volcado) {
+    if (esBarra) { alto = w * 2.5; w = d; }        // eje/pin volcado: vertical
+    else { [w, d] = [d, w]; }                      // viga volcada: el largo pasa a Z
+  } else if (z.parado) {
+    alto = d * 2.5;
+    d = Math.max(1, (info.alto || 1) * 0.4);
+  }
+  if (z.rot === 90 || z.rot === 270) [w, d] = [d, w];
+  const nivel = z.nivel || 0;
+  return {
+    info, w, d,
+    x0: z.x, x1: z.x + w, z0: z.z, z1: z.z + d,
+    bottom: nivel, top: nivel + alto,
+    cx: z.x + w / 2, cz: z.z + d / 2, cy: nivel + alto / 2,
+  };
+}
+
+function solapeXZ(a, b, margen = 0) {
+  const sx = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) + margen;
+  const sz = Math.min(a.z1, b.z1) - Math.max(a.z0, b.z0) + margen;
+  return sx > 0 && sz > 0;
+}
+
+function seTocan3D(a, b) {
+  // cajas con tolerancia: 0.6 studs en planta, 1 placa en altura
+  return solapeXZ(a, b, 0.6) && (Math.min(a.top, b.top) - Math.max(a.bottom, b.bottom) + 1) > 0;
+}
+
+// ¿la barra q (eje o pin) pasa cerca del centro de la pieza a?
+function barraPasaPorCentro(a, q) {
+  return Math.abs(a.cy - q.cy) <= 1.6 && solapeXZ(a, q, 1.2);
+}
+
+export function validarConexiones(pasos) {
+  const avisos = [];
+  const todas = [];
+  pasos.forEach((p, i) => p.piezas.forEach(z => {
+    if (z.raw) return;
+    const g = geometriaAproximada(z);
+    if (g) todas.push({ g, z, paso: i, con: conectoresDe(g.info) });
+  }));
+
+  for (const a of todas) {
+    if (avisos.length >= 12) { avisos.push('… (hay más avisos de conexión: corregí estos primero)'); break; }
+    const otras = todas.filter(b => b !== a && b.paso <= a.paso);
+    const nombre = `"${a.g.info.nombre}" (paso ${a.paso + 1})`;
+    const esBarra = a.con.has('ej') || a.con.has('pi');
+    const soloCruz = a.con.has('ac') && !a.con.has('st') && !a.con.has('ap') && !a.con.has('pi');
+    const esNeumatico = a.con.has('nl');
+
+    // 1) neumático: necesita su llanta concéntrica
+    if (esNeumatico) {
+      const llanta = otras.find(b => b.con.has('ac') || b.con.has('ap'));
+      if (!llanta || !todas.some(b => b !== a && b.paso <= a.paso && seTocan3D(a.g, b.g))) {
+        avisos.push(`🔩 ${nombre}: un neumático va montado sobre su llanta (receta de rueda calibrada).`);
+      }
+      continue;
+    }
+
+    // 2) engranajes / bujes / llantas / poleas: solo existen montados en un eje o pin-eje
+    if (soloCruz) {
+      const eje = otras.find(b => (b.con.has('ej') || b.con.has('pi')) && barraPasaPorCentro(a.g, b.g));
+      if (!eje) avisos.push(`🔩 ${nombre}: no está montada en ningún eje/pin — agregá el eje con la regla de montaje (o ajustá su posición para que el eje pase por su centro).`);
+      continue;
+    }
+
+    // 3) barras (ejes/pines): tienen que atravesar algún agujero compatible
+    if (esBarra && a.g.info.suelta) {
+      const destino = otras.find(b => {
+        const compatible = (a.con.has('pi') && b.con.has('ap')) || (a.con.has('ej') && (b.con.has('ac') || b.con.has('ap')));
+        return compatible && seTocan3D(a.g, b.g);
+      });
+      if (!destino && otras.length) avisos.push(`🔩 ${nombre}: no atraviesa ningún agujero compatible (pin → agujero de pin de una viga volcada; eje → agujero en cruz).`);
+      continue;
+    }
+
+    // 4) apoyo: ¿flota? ¿o está apoyada sin conexión real?
+    const enElPiso = a.g.bottom <= 0.8;
+    const debajo = otras.filter(b => solapeXZ(a.g, b.g) && Math.abs(a.g.bottom - b.g.top) <= 0.8);
+    const tocaAlgo = otras.some(b => seTocan3D(a.g, b.g));
+
+    if (!enElPiso && !debajo.length && !tocaAlgo) {
+      avisos.push(`🔩 ${nombre}: parece estar flotando — no toca el piso ni ninguna otra pieza.`);
+      continue;
+    }
+    if (debajo.length) {
+      const conStuds = debajo.some(b => b.con.has('st'));
+      if (a.con.has('tu') && !conStuds) {
+        avisos.push(`🔩 ${nombre}: está apoyada sobre piezas SIN studs (lisa, viga...) — ahí no queda agarrada.`);
+      } else if (!a.con.has('tu') && !esBarra) {
+        avisos.push(`🔩 ${nombre}: está apilada como si tuviera tubos, pero no los tiene — las vigas y la electrónica se sujetan con pines (viga volcado + pin), no apoyadas.`);
+      }
+    }
+  }
+  return avisos;
+}

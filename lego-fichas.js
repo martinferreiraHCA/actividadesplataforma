@@ -4,7 +4,7 @@
 // y exportación a PDF (impresión), LDraw (.ldr) y borrador .json.
 
 import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw, piezaEnKit, piezasDeKit, cantidadEnKit } from './lego-catalogo.js';
-import { parsearTexto, serializarDoc, nuevoPaso, nuevaPieza, piezasAgrupadas } from './lego-modelo.js';
+import { parsearTexto, serializarDoc, nuevoPaso, nuevaPieza, piezasAgrupadas, validarConexiones } from './lego-modelo.js';
 import { motorLego } from './lego-render.js';
 import { generarPromptLego } from './lego-prompt.js';
 
@@ -964,12 +964,13 @@ async function actualizarVistaPrevia() {
   }
   const setNota = (t) => { nota.style.display = t ? 'block' : 'none'; nota.textContent = t; };
   await generarFichas(cont, setNota);
-  // control de kit e inventario arriba de la vista previa
-  const avisos = avisosDeKit(state.pasos).concat(avisosDeInventario());
+  // control de kit, inventario y conexiones arriba de la vista previa
+  let avisos = avisosDeKit(state.pasos).concat(avisosDeInventario());
+  try { avisos = avisos.concat(validarConexiones(state.pasos)); } catch (e) { console.error('validar conexiones:', e); }
   if (avisos.length) {
     const div = document.createElement('div');
     div.className = 'alerta alerta--info';
-    div.innerHTML = '<strong>Control del kit:</strong><br>' + avisos.map(escHtml).join('<br>');
+    div.innerHTML = '<strong>Control del modelo (kit, inventario y conexiones):</strong><br>' + avisos.map(escHtml).join('<br>');
     cont.prepend(div);
   }
 }
@@ -1035,7 +1036,10 @@ function mostrarAvisos(contId, avisos) {
 }
 
 function cargarDocParseado(res, reemplazar, avisosId) {
-  if (res.doc) res.avisos = res.avisos.concat(avisosDeKit(res.doc.pasos));
+  if (res.doc) {
+    res.avisos = res.avisos.concat(avisosDeKit(res.doc.pasos));
+    try { res.avisos = res.avisos.concat(validarConexiones(res.doc.pasos)); } catch (e) { console.error('validar conexiones:', e); }
+  }
   mostrarAvisos(avisosId, res.avisos);
   if (!res.doc) {
     toast('No se encontraron pasos en el texto. ¿Están los "=== PASO: ... ==="?');
