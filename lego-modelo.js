@@ -305,12 +305,14 @@ export function validarConexiones(pasos) {
       avisos.push(`🔩 ${nombre}: parece estar flotando — no toca el piso ni ninguna otra pieza.`);
       continue;
     }
-    if (debajo.length) {
+    // pieza con agujeros de pin que tiene un pin tocándola: se considera sujetada
+    const sujetadaConPin = a.con.has('ap') && otras.some(b => b.con.has('pi') && seTocan3D(a.g, b.g));
+    if (debajo.length && !sujetadaConPin) {
       const conStuds = debajo.some(b => b.con.has('st'));
       if (a.con.has('tu') && !conStuds) {
         avisos.push(`🔩 ${nombre}: está apoyada sobre piezas SIN studs (lisa, viga...) — ahí no queda agarrada.`);
       } else if (!a.con.has('tu') && !esBarra) {
-        avisos.push(`🔩 ${nombre}: está apilada como si tuviera tubos, pero no los tiene — las vigas y la electrónica se sujetan con pines (viga volcado + pin), no apoyadas.`);
+        avisos.push(`🔩 ${nombre}: está apilada sin conexión — las vigas y la electrónica se sujetan con pines (viga volcado + pin), no apoyadas.`);
       }
     }
   }
