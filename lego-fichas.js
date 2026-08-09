@@ -1108,6 +1108,18 @@ function init() {
   sincronizarCampos();
   renderLista();
 
+  // Enlace al calibrador, solo para el administrador del sistema:
+  // se habilita en ESTE navegador visitando lego.html?admin=1 (y se
+  // apaga con ?admin=0). Los estudiantes nunca lo ven.
+  try {
+    const admin = new URLSearchParams(location.search).get('admin');
+    if (admin === '1') localStorage.setItem('gen_lego_admin', '1');
+    if (admin === '0') localStorage.removeItem('gen_lego_admin');
+    if (localStorage.getItem('gen_lego_admin') === '1') {
+      document.getElementById('linkCalibrador').style.display = '';
+    }
+  } catch (e) { /* sin localStorage: el enlace queda oculto */ }
+
   document.getElementById('ldTitulo').addEventListener('input', e => { state.titulo = e.target.value; guardarLuego(); });
   document.getElementById('ldSubtitulo').addEventListener('input', e => { state.subtitulo = e.target.value; guardarLuego(); });
   document.getElementById('ldDescripcion').addEventListener('input', e => { state.descripcion = e.target.value; guardarLuego(); });
