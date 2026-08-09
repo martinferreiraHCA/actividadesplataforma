@@ -7,6 +7,7 @@ import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw, 
 import { parsearTexto, serializarDoc, nuevoPaso, nuevaPieza, piezasAgrupadas, validarConexiones } from './lego-modelo.js';
 import { motorLego } from './lego-render.js';
 import { generarPromptLego } from './lego-prompt.js';
+import { PLANTILLAS_LEGO } from './lego-plantillas.js';
 
 const STORAGE_KEY = 'gen_fichas_lego';
 
@@ -1162,11 +1163,20 @@ function init() {
   document.getElementById('btnAgregarPaso').addEventListener('click', agregarPaso);
   document.getElementById('btnAgregarPasoAbajo').addEventListener('click', agregarPaso);
 
-  document.getElementById('btnEjemploLego').addEventListener('click', () => {
-    if (state.pasos.length && !confirm('Se reemplaza lo que tenés cargado por el ejemplo del carrito. ¿Seguimos?')) return;
-    const res = parsearTexto(TEXTO_EJEMPLO);
-    state.pasos = [];
-    cargarDocParseado(res, true, 'avisosLegoTexto');
+  const barraPlantillas = document.getElementById('barraPlantillasLego');
+  PLANTILLAS_LEGO.forEach(pl => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tag';
+    b.textContent = pl.nombre;
+    b.title = pl.descripcion;
+    b.addEventListener('click', () => {
+      if (state.pasos.length && !confirm(`Se reemplaza lo que tenés cargado por "${pl.nombre}". ¿Seguimos?`)) return;
+      const res = parsearTexto(pl.texto);
+      state.pasos = [];
+      cargarDocParseado(res, true, 'avisosLegoTexto');
+    });
+    barraPlantillas.appendChild(b);
   });
 
   document.getElementById('btnImportarLegoJson').addEventListener('click', () => document.getElementById('inputLegoJson').click());
