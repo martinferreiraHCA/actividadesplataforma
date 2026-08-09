@@ -285,3 +285,63 @@ export function cantidadEnKit(pieza, kit, cantidadKits) {
   if (!pieza || !pieza[kit]) return 0;
   return pieza[kit] * cantidadKits;
 }
+
+// ============================================================
+// Base de datos de CONECTORES: qué tiene cada pieza para unirse.
+//   st = studs arriba          tu = tubos abajo (recibe studs)
+//   ap = agujero de pin        ac = agujero en cruz (recibe eje)
+//   pi = pin macho             ej = eje macho
+//   nl = neumático (se monta sobre una llanta)
+// Las únicas uniones físicas válidas: st↔tu · pi↔ap · ej↔ac · nl↔llanta.
+// ============================================================
+
+const CONECTORES_CATEGORIA = {
+  Ladrillos: 'st tu',
+  Placas: 'st tu',
+  Lisas: 'tu',
+  Pendientes: 'st tu',
+  Redondas: 'st tu',
+  'Técnicas': 'st tu ap',
+  'Vigas NXT': 'ap ac',
+  Engranajes: 'ac',
+  Ruedas: 'ac',
+  'Electrónica NXT': 'ap',
+  Especiales: 'st tu',
+};
+
+const CONECTORES_PIEZA = {
+  // ejes y pines
+  'eje 2': 'ej', 'eje 3': 'ej', 'eje 4': 'ej', 'eje 5': 'ej', 'eje 6': 'ej',
+  'eje 8': 'ej', 'eje 10': 'ej', 'eje 12': 'ej', 'eje con tope': 'ej', 'eje 2 con muesca': 'ej',
+  'pin': 'pi', 'pin largo': 'pi', 'pin liso': 'pi', 'pin con tope': 'pi',
+  'medio pin': 'pi st', 'pin eje': 'pi ej', 'pin eje beige': 'pi ej', 'pin doble con cruz': 'pi ac',
+  // conectores con agujero en cruz
+  'buje': 'ac', 'medio buje': 'ac', 'acople de ejes': 'ac', 'acople de ejes liso': 'ac', 'conector recto': 'ac',
+  'bloque cruz 1x2': 'ap ac', 'bloque cruz 1x3': 'ap ac', 'bloque cruz doble': 'ac',
+  'bloque cruz 2x2': 'pi ac',
+  'ladrillo con cruz': 'st tu ac',
+  // vigas con pines propios
+  'viga 3 con pines': 'pi ap', 'viga angular con pines': 'pi ap', 'brazo de direccion 3': 'pi ap',
+  // ruedas
+  'llanta nxt': 'ac', 'llanta chica nxt': 'ac', 'polea': 'ac', 'rueda de mando': 'ac', 'tornillo sin fin': 'ac',
+  'neumatico nxt': 'nl', 'neumatico chico nxt': 'nl', 'neumatico de polea': 'nl',
+  'llanta chica': 'ap', 'neumatico chico': 'nl', 'llanta mediana': 'ap', 'neumatico mediano': 'nl',
+  'placa con ruedas 2x2': 'st tu pi', 'placa con ruedas 1x4': 'st tu pi',
+  // electrónica: el motor además recibe un eje en su cubo naranja
+  'motor nxt': 'ap ac',
+};
+
+const NOMBRES_CONECTORES = {
+  st: 'studs arriba', tu: 'tubos abajo (recibe studs)', ap: 'agujeros de pin',
+  ac: 'agujero en cruz (recibe eje)', pi: 'pin macho', ej: 'eje macho', nl: 'neumático (va sobre llanta)',
+};
+
+export function conectoresDe(pieza) {
+  if (!pieza) return new Set();
+  const codigos = CONECTORES_PIEZA[pieza.clave] || CONECTORES_CATEGORIA[pieza.cat] || '';
+  return new Set(codigos.split(' ').filter(Boolean));
+}
+
+export function conectoresLegibles(pieza) {
+  return [...conectoresDe(pieza)].map(c => NOMBRES_CONECTORES[c] || c).join(', ') || 'ninguno';
+}

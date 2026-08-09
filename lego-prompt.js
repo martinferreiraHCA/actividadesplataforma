@@ -4,7 +4,7 @@
 // Si hay un kit activo (ej: NXT), el catálogo del prompt se limita a sus
 // piezas — y si se indicó cuántos kits hay, también a sus cantidades.
 
-import { COLORES, CATEGORIAS, KITS, piezasDeKit, cantidadEnKit } from './lego-catalogo.js';
+import { COLORES, CATEGORIAS, KITS, piezasDeKit, cantidadEnKit, conectoresLegibles } from './lego-catalogo.js';
 
 function tablaPiezas(kit, cantidadKits) {
   const piezas = piezasDeKit(kit);
@@ -16,7 +16,7 @@ function tablaPiezas(kit, cantidadKits) {
     for (const p of lista) {
       const max = cantidadEnKit(p, kit, cantidadKits);
       const tope = max ? ` — tenés ${max} disponibles como MÁXIMO` : '';
-      filas.push(`    "${p.clave}" — ${p.nombre}, ocupa ${p.w}×${p.d} studs sin rotar, alto ${p.alto} placa(s)${tope}`);
+      filas.push(`    "${p.clave}" — ${p.nombre}, ocupa ${p.w}×${p.d} studs sin rotar, alto ${p.alto} placa(s) · conecta por: ${conectoresLegibles(p)}${tope}`);
     }
   }
   return filas.join('\n');
@@ -127,13 +127,26 @@ ${tablaPiezas(kit, cantidadKits)}
 COLORES PERMITIDOS (nombres exactos): ${listaColores()}
 ${infoKit ? 'En el kit NXT casi todo es "gris claro", "gris oscuro" y "negro" (con detalles en "amarillo", "azul", "rojo" y "beige"): usá esos colores para que el manual coincida con las piezas reales.' : ''}
 
+CÓMO SE CONECTAN LAS PIEZAS (tabla de compatibilidad — NADA se sostiene sin una unión de esta lista)
+Cada pieza de la tabla dice sus conectores ("conecta por:"). Las ÚNICAS uniones físicas válidas son:
+- studs arriba ↔ tubos abajo — ladrillos, placas, pendientes y ladrillos técnicos se apilan entre sí.
+- pin macho ↔ agujero de pin — los pines unen vigas, ladrillos técnicos, bloques cruz, motor, sensores y bloque NXT.
+- eje macho ↔ agujero en cruz — los ejes atraviesan engranajes, bujes, llantas, poleas y bloques cruz.
+- neumático ↔ llanta — con la receta de rueda.
+Antes de escribir cada línea de pieza, preguntate: ¿con cuál de estas 4 uniones queda agarrada esta pieza, y a qué pieza? Si no hay respuesta, interponé la pieza que las conecta (un pin, un eje, una placa...). El sistema valida las conexiones y marca las piezas sueltas.
+PROHIBICIONES (los errores más comunes — no los cometas):
+- Las VIGAS no tienen studs ni tubos: NUNCA apiles una viga sobre ladrillos ni apoyes nada "pegado" sobre una viga. Las vigas se unen SOLO con pines (viga volcado + pin, receta calibrada) o con ejes por sus agujeros.
+- Engranajes, bujes, llantas, poleas y neumáticos NUNCA van apoyados en el piso ni sobre otra pieza: solo existen montados en un eje o pin-eje (regla maestra) — y el neumático sobre su llanta.
+- Motor, sensores y bloque NXT no se pegan por studs: se sujetan con PINES por sus agujeros a vigas (recetas calibradas). El bloque NXT puede además apoyarse sobre la estructura, pero siempre sujetado con pines.
+- Sobre una pieza "lisa" (tile) no se apoya nada: no tiene studs.
+
 REGLAS FÍSICAS OBLIGATORIAS (el modelo tiene que poder armarse de verdad)
-1. Ninguna pieza puede flotar: su base tiene que apoyar sobre el suelo (nivel 0) o sobre piezas de pasos anteriores o del mismo paso.
-2. Dos piezas no pueden ocupar el mismo lugar: cuidá que no se superpongan ni en la cuadrícula ni en altura (un ladrillo en nivel 0 ocupa los niveles 0, 1 y 2; el siguiente arriba va en nivel 3).
-3. Trabá las piezas entre sí para que el modelo quede firme${infoKit ? ' (en Technic: vigas unidas con pines, ejes con bujes)' : ': las piezas de arriba deben cruzar las juntas de las de abajo'}.
-4. Sobre una pieza "lisa" (tile) no se puede apoyar nada: no tiene studs.
-5. Armá de abajo hacia arriba: los primeros pasos son la base y la estructura, los últimos los detalles${infoKit ? ' (los sensores y cables al final)' : ' de arriba'}.
-6. Usá pocas piezas distintas y colores consistentes, como un set real.
+1. Ninguna pieza puede flotar: su base apoya en el suelo (nivel 0) o sobre piezas ya puestas — y además debe quedar CONECTADA con una unión de la tabla de arriba.
+2. Dos piezas no pueden ocupar el mismo lugar: cuidá que no se superpongan ni en la cuadrícula ni en altura (un ladrillo en nivel 0 ocupa los niveles 0, 1 y 2; el siguiente arriba va en nivel 3). Excepción: los ejes/pines superpuestos con la pieza que atraviesan.
+3. Trabá las piezas entre sí para que el modelo quede firme${infoKit ? ' (en Technic: vigas unidas con pines, ejes con bujes de tope)' : ': las piezas de arriba deben cruzar las juntas de las de abajo'}.
+4. Armá de abajo hacia arriba: los primeros pasos son la base y la estructura, los últimos los detalles${infoKit ? ' (los sensores y cables al final)' : ' de arriba'}.
+5. Usá pocas piezas distintas y colores consistentes, como un set real.
+6. En la consigna o las notas de cada paso, decí CON QUÉ y CÓMO se conecta lo nuevo ("los pines entran en los agujeros 2 y 4 de la viga").
 
 ORIENTACIÓN DE LAS PIEZAS DIRECCIONALES (verificado pieza por pieza — memorizalo antes de ubicar nada)
 Cada pieza direccional tiene una orientación fija sin rotar; "rotar" la gira en horizontal. Guía:
