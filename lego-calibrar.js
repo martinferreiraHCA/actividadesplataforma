@@ -10,6 +10,7 @@ import * as THREE from './lego/vendor/three.module.min.js';
 import { LDrawLoader } from './lego/vendor/LDrawLoader.js';
 import { OrbitControls } from './lego/vendor/OrbitControls.js';
 import { PIEZAS, COLORES, CATEGORIAS, piezaPorClave, buscarPieza, buscarColor, colorPorCodigoLdraw } from './lego-catalogo.js';
+import { abrirSelectorPieza } from './lego-picker.js';
 
 const STORAGE_KEY = 'gen_lego_calibracion';
 const RUTA_LDRAW = 'lego/ldraw/';
@@ -680,6 +681,13 @@ function init() {
   const selC = document.getElementById('selColor');
   selC.innerHTML = COLORES.map(c => `<option value="${c.codigo}">${c.nombre}</option>`).join('');
   selC.value = '71';
+
+  document.getElementById('btnPickerCalib').addEventListener('click', () => {
+    abrirSelectorPieza({
+      actual: selP.value,
+      onElegir: (clave) => { selP.value = clave; }
+    });
+  });
 
   cargar();
   pintarListaCasos();
