@@ -188,6 +188,61 @@
 .calib__barra .ficha-card__accion { padding: 0.4em 0.6em; }
 .calib__ayuda { font-size: 0.72rem; opacity: 0.75; line-height: 1.5; }
 
+/* ---------- selector de piezas con miniaturas ---------- */
+.picker-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem 1rem;
+}
+.picker-modal {
+  background: var(--base, #fff); color: inherit;
+  border: 2px solid rgba(128,128,128,0.5); border-radius: 10px;
+  width: min(860px, 96vw); max-height: 86vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.picker-cabecera {
+  display: flex; gap: 0.8rem; align-items: center;
+  padding: 0.8rem 1rem; border-bottom: 1.5px solid rgba(128,128,128,0.3);
+}
+.picker-cabecera strong { white-space: nowrap; }
+.picker-buscar { flex: 1; }
+.picker-cerrar { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: inherit; }
+.picker-cuerpo { overflow: auto; padding: 0.8rem 1rem 1.2rem; }
+.picker-categoria {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+  opacity: 0.7; margin: 0.9rem 0 0.4rem;
+}
+.picker-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 0.45rem;
+}
+.picker-item {
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  padding: 0.45rem 0.3rem; cursor: pointer;
+  background: rgba(128,128,128,0.06);
+  border: 1.5px solid rgba(128,128,128,0.3); border-radius: 8px;
+  color: inherit; font: inherit;
+}
+.picker-item:hover { border-color: #d0a000; background: rgba(208,160,0,0.1); }
+.picker-item--actual { outline: 2px solid #d0a000; }
+.picker-item__img { width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; }
+.picker-item__img img { max-width: 100%; max-height: 100%; }
+.picker-item__espera { font-size: 1.6rem; opacity: 0.3; }
+.picker-item__nombre { font-size: 0.68rem; text-align: center; line-height: 1.25; }
+
+/* ---------- menú desplegable del encabezado (LEGO) ---------- */
+.nav-desplegable { position: relative; display: inline-block; }
+.nav-desplegable__panel {
+  display: none; position: absolute; top: 100%; left: 0; z-index: 900;
+  min-width: 13rem; padding: 0.4rem 0;
+  background: var(--base, #fff);
+  border: 1.5px solid rgba(128,128,128,0.45); border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+.nav-desplegable:hover .nav-desplegable__panel,
+.nav-desplegable:focus-within .nav-desplegable__panel { display: block; }
+.nav-desplegable__panel a { display: block; padding: 0.45em 1em; white-space: nowrap; }
+
 /* ---------- impresión ---------- */
 @media print {
   /* el comparador tiene que salir a tamaño real: nada de reescalar */

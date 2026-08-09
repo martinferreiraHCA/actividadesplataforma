@@ -386,6 +386,27 @@ function filaPieza(card, paso, i, z, j) {
     });
     fila.appendChild(selP);
 
+    const btnPicker = document.createElement('button');
+    btnPicker.type = 'button';
+    btnPicker.className = 'ficha-card__accion';
+    btnPicker.textContent = '🧩';
+    btnPicker.title = 'Elegir la pieza viendo miniaturas';
+    btnPicker.addEventListener('click', async () => {
+      const mod = await import('./lego-picker.js');
+      mod.abrirSelectorPieza({
+        kit: state.opciones.kit,
+        actual: z.pieza,
+        onElegir: (clave) => {
+          z.pieza = clave;
+          renderLista();
+          guardarLuego();
+          const c = document.querySelector(`[data-id="${paso.id}"]`);
+          if (c) refrescarVista3D(c, i);
+        }
+      });
+    });
+    fila.appendChild(btnPicker);
+
     const selC = document.createElement('select');
     selC.className = 'campo__input lego-fila-pieza__color';
     selC.innerHTML = opcionesColorSelect(z.color);
@@ -1117,6 +1138,11 @@ function init() {
     if (admin === '0') localStorage.removeItem('gen_lego_admin');
     if (localStorage.getItem('gen_lego_admin') === '1') {
       document.getElementById('linkCalibrador').style.display = '';
+      const nav = document.getElementById('linkCalibradorNav');
+      if (nav) {
+        nav.style.display = '';
+        document.getElementById('navLego').textContent = 'Ensamble con LEGO ▾';
+      }
     }
   } catch (e) { /* sin localStorage: el enlace queda oculto */ }
 
@@ -1254,6 +1280,7 @@ function init() {
       await mod.abrirEditor3D({
         contenedorId: 'editor3dLego',
         getPasos: () => state.pasos,
+        getEstado: () => state,
         onCambio: () => {
           // cada retoque en 3D modifica el paso dueño de la pieza:
           // se invalidan las fotos y se refresca el editor de pasos
