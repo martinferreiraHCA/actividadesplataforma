@@ -84,48 +84,62 @@ notas: ¡Robot listo! Conectá los cables: motores en B y C, sensor de contacto 
   },
   {
     id: 'reductor-nxt',
-    nombre: '⚙️ Banco de engranajes (reductor 24→40)',
-    descripcion: 'Dos vigas paradas con ejes en sus agujeros, engranajes engranados y manivela. Para estudiar transmisiones.',
+    nombre: '⚙️ Banco de engranajes (24→40→8)',
+    descripcion: 'Base técnica con torres, puente de viga parada pineado y tren de tres engranajes con manivela. Diseño calibrado con piezas reales.',
     texto: `titulo: Banco de engranajes
 nivel: Robótica — kit NXT
-descripcion: Un banco de pruebas de transmisiones: dos vigas sostienen dos ejes con un engranaje chico y uno grande engranados. Girando la manivela se ve la reducción de velocidad y el aumento de fuerza.
+descripcion: Un banco de pruebas de transmisiones sobre una base firme: un puente de viga sostiene tres ejes con un tren de engranajes 24→40→8. Girando la manivela se ve cómo cambian la velocidad y la fuerza en cada engranaje.
 
-=== PASO: Las torres de apoyo ===
-consigna: Armá dos torres de dos ladrillos técnicos cada una: son las patas que van a sostener las vigas del banco.
+=== PASO: La base firme ===
+consigna: Empezá por la base: el ladrillo técnico largo apoyado en la mesa, y un ladrillo corto arriba en cada punta.
 piezas:
-tecnico 1x2 gris claro en 0 0.5 rotar 90
-tecnico 1x2 gris claro en 0 0.5 nivel 3 rotar 90
-tecnico 1x2 gris claro en 8 0.5 rotar 90
-tecnico 1x2 gris claro en 8 0.5 nivel 3 rotar 90
-notas: Dos ladrillos técnicos apilados miden 6 placas: la altura justa para que el engranaje grande no toque la mesa.
+tecnico 1x16 gris oscuro en 0 4
+tecnico 1x2 gris claro en 1 4 nivel 3
+tecnico 1x2 gris claro en 10 4 nivel 3
+notas: La base larga hace de cimiento: cuanto más abajo esté el peso, más firme queda el banco.
 
-=== PASO: Las paredes del banco ===
-consigna: Pará las dos vigas de 9 sobre las torres, una delante de la otra, y unilas con los dos pines largos por los agujeros 1 y 7.
+=== PASO: Subimos las torres ===
+consigna: Un ladrillo técnico más sobre cada torre: necesitamos altura para que el engranaje grande gire sin tocar la mesa.
 piezas:
-viga 9 gris oscuro en 0 0 nivel 6 parado
-viga 9 gris oscuro en 0 2 nivel 6 parado
-pin largo azul en 1 0 nivel 6.5 rotar 90
-pin largo azul en 7 0 nivel 6.5 rotar 90
-notas: Las vigas van de pie, con los agujeros mirando hacia vos. Los pines largos las dejan firmes y paralelas.
+tecnico 1x2 gris claro en 1 4 nivel 6
+tecnico 1x2 gris claro en 10 4 nivel 6
+notas: Cada ladrillo suma 3 placas de altura. Las torres quedan de 9 placas.
 
-=== PASO: El eje de entrada con su engranaje ===
-consigna: Pasá el primer eje por el agujero 2 de las dos vigas y montale el engranaje de 24 dientes en el espacio que queda entre ellas.
+=== PASO: El puente ===
+consigna: La viga de 11 va parada, delante de las torres, con sus agujeros alineados con los de los ladrillos. Sujetala con los pines: entran por la viga y llegan al agujero del ladrillo de atrás.
 piezas:
-eje 6 negro en 2 -1.5 nivel 6.5 rotar 90
-engranaje 24 gris claro en 1 1 nivel 3.25
-notas: El engranaje queda "preso" entre las dos vigas, centrado en su eje.
+viga 11 gris oscuro en 0.5 3 nivel 6.75 parado
+pin negro en 1.5 3.5 nivel 6.7 rotar 90
+pin negro en 10.5 3.5 nivel 6.7 rotar 90
+notas: Truco calibrado: la viga parada a nivel del ladrillo + 0.75 deja sus agujeros justo a la altura de los agujeros del técnico.
 
-=== PASO: El eje de salida con el engranaje grande ===
-consigna: Ahora el segundo eje por el agujero 6, con el engranaje de 40 dientes: tiene que engranar justo con el de 24.
+=== PASO: Los tres ejes ===
+consigna: Tres ejes por los agujeros 2, 6 y 9 del puente. Adelante van a ir los engranajes; atrás, la manivela y los topes.
 piezas:
-eje 4 negro en 6 -0.5 nivel 6.5 rotar 90
-engranaje 40 gris oscuro en 4 1 nivel 0.75
-notas: 24 + 40 dientes = 4 studs justos entre centros: por eso usamos los agujeros 2 y 6. Girá un eje con la mano y mirá el otro.
+eje 6 negro en 1.5 0 nivel 7 rotar 90
+eje 6 negro en 5.5 -1 nivel 7 rotar 90
+eje 6 negro en 8.5 -1 nivel 7 rotar 90
+notas: Los agujeros 2→6 son 4 studs (justo para 24+40) y 6→9 son 3 studs (justo para 40+8).
 
-=== PASO: La manivela ===
-consigna: En la punta del eje de entrada, adelante de todo, poné la rueda de mando como manivela.
+=== PASO: El engranaje de entrada ===
+consigna: En el primer eje: el engranaje de 24 dientes adelante y la rueda de mando atrás, como manivela.
 piezas:
-rueda de mando negro en 1 -1.5 nivel 3.5
-notas: Una vuelta de manivela = 24/40 de vuelta en el eje grande: gira más despacio, pero con más fuerza. ¡Eso es una reducción!`
+engranaje 24 gris claro en 0.5 2 nivel 3.75
+rueda de mando negro en 0.5 5 nivel 4
+notas: Todo lo que gira en este eje, gira junto: la manivela mueve el 24.
+
+=== PASO: El engranaje gigante ===
+consigna: En el eje del medio va el engranaje de 40 dientes, engranado con el de 24. El buje de atrás evita que el eje se salga.
+piezas:
+engranaje 40 gris oscuro en 3.5 2 nivel 1.5
+buje gris claro en 5.5 4 nivel 6.5
+notas: 24→40: el grande gira más despacio pero con más fuerza. Eso es una reducción.
+
+=== PASO: El engranaje veloz ===
+consigna: En el tercer eje, el piñón de 8 dientes engranado con el gigante, con su buje de tope. ¡A girar la manivela!
+piezas:
+engranaje 8 gris oscuro en 8.5 2 nivel 6.25
+buje gris claro en 8.5 4 nivel 6.5
+notas: 40→8: ahora al revés, ¡el chico gira 5 veces por cada vuelta del grande! Multiplicaste la velocidad.`
   },
 ];
