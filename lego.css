@@ -159,6 +159,23 @@
   opacity: 0.7;
   margin-top: 0.2rem;
 }
+.lego-armado__extras {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+.lego-armado__extra {
+  margin: 0;
+  text-align: center;
+  flex: 0 1 44%;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 6px;
+  padding: 0.3rem;
+}
+.lego-armado__extra img { max-width: 100%; max-height: 220px; object-fit: contain; }
+.lego-armado__extra figcaption { font-size: 0.7rem; opacity: 0.65; margin-top: 0.15rem; }
 
 /* portada */
 .lego-portada__cuerpo { display: block; }

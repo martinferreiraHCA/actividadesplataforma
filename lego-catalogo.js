@@ -157,7 +157,7 @@ export const PIEZAS = [
   { clave: 'engranaje conico 12', dat: '32270', nombre: 'Engranaje doble cónico 12 dientes', w: 2, d: 1, alto: 4.5, studs: 'ninguna', cat: 'Engranajes', nxt: 4, suelta: true, redonda: true },
   { clave: 'engranaje conico 20', dat: '32269', nombre: 'Engranaje doble cónico 20 dientes', w: 3, d: 1, alto: 7, studs: 'ninguna', cat: 'Engranajes', nxt: 4, suelta: true, redonda: true },
   { clave: 'engranaje conico 36', dat: '32498', nombre: 'Engranaje doble cónico 36 dientes', w: 5, d: 1, alto: 12, studs: 'ninguna', cat: 'Engranajes', nxt: 2, suelta: true, redonda: true },
-  { clave: 'rueda de mando', dat: '32072', nombre: 'Rueda de mando (knob)', w: 3, d: 1, alto: 7.5, studs: 'ninguna', cat: 'Engranajes', nxt: 4, suelta: true },
+  { clave: 'rueda de mando', dat: '32072', nombre: 'Rueda de mando (knob)', w: 3, d: 1, alto: 7.5, studs: 'ninguna', cat: 'Engranajes', nxt: 4, suelta: true, redonda: true },
   // --- Ruedas y poleas del kit ---
   { clave: 'llanta nxt', dat: '56145', nombre: 'Llanta NXT 30×20 (6 rayos)', w: 4, d: 3, alto: 10, studs: 'ninguna', cat: 'Ruedas', nxt: 4, suelta: true, redonda: true, bbox: true },
   { clave: 'neumatico nxt', dat: '55976', nombre: 'Neumático todoterreno 56×26', w: 7, d: 3, alto: 18, studs: 'ninguna', cat: 'Ruedas', nxt: 4, suelta: true, redonda: true, bbox: true },

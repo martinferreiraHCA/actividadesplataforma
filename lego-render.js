@@ -202,7 +202,7 @@ async function crearMotor() {
   // Foto del modelo formado por "piezas"; las primeras `atenuarHasta` piezas
   // salen translúcidas (pasos anteriores) si atenuarHasta > 0.
   async function fotoModelo(piezas, opciones = {}) {
-    const { ancho = 1000, alto = 780, atenuarHasta = 0, margen = 1.18 } = opciones;
+    const { ancho = 1000, alto = 780, atenuarHasta = 0, margen = 1.18, dir = [0.72, 0.62, 0.9] } = opciones;
     await medirTodas(piezas);
     const texto = textoModelo(piezas);
     const grupo = await parsear(texto);
@@ -225,8 +225,9 @@ async function crearMotor() {
     const fovH = Math.atan(Math.tan(fovV) * camara.aspect);
     const dist = (esfera.radius * margen) / Math.sin(Math.min(fovV, fovH));
     // vista de manual: desde el frente-derecha, un poco desde arriba
-    const dir = new THREE.Vector3(0.72, 0.62, 0.9).normalize();
-    camara.position.copy(esfera.center).addScaledVector(dir, dist);
+    // (o la dirección que pida "dir": otras esquinas, desde arriba...)
+    const vDir = new THREE.Vector3(dir[0], dir[1], dir[2]).normalize();
+    camara.position.copy(esfera.center).addScaledVector(vDir, dist);
     camara.near = Math.max(1, dist - esfera.radius * 4);
     camara.far = dist + esfera.radius * 4;
     camara.lookAt(esfera.center);
