@@ -911,7 +911,7 @@ async function construirFichaPaso(paso, numero, indice) {
   const img = document.createElement('img');
   img.alt = 'Modelo armado hasta el paso ' + numero;
   try {
-    const url = await fotoPaso(indice, { ancho: 1000, alto: 700, margen: 1.06 });
+    const url = await fotoPaso(indice, { ancho: 1400, alto: 1000, margen: 1.05 });
     if (url) img.src = url;
   } catch (e) { /* sin motor */ }
   fig.appendChild(img);
@@ -934,7 +934,7 @@ async function construirFichaPaso(paso, numero, indice) {
       const im = document.createElement('img');
       im.alt = v.titulo;
       try {
-        const url = await fotoPaso(indice, { ancho: 620, alto: 440, dir: v.dir, margen: 1.06 });
+        const url = await fotoPaso(indice, { ancho: 820, alto: 580, dir: v.dir, margen: 1.05 });
         if (url) im.src = url;
       } catch (e) { /* sin motor */ }
       const c = document.createElement('figcaption');
@@ -986,7 +986,7 @@ async function construirPortada() {
   img.className = 'lego-portada__img';
   img.alt = 'Modelo terminado';
   try {
-    const url = await fotoPaso(state.pasos.length - 1, { ancho: 1000, alto: 760 });
+    const url = await fotoPaso(state.pasos.length - 1, { ancho: 1300, alto: 950, margen: 1.05 });
     if (url) img.src = url;
   } catch (e) { /* sin motor */ }
   cuerpo.appendChild(img);
