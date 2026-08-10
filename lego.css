@@ -159,6 +159,23 @@
   opacity: 0.7;
   margin-top: 0.2rem;
 }
+.lego-armado__extras {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+.lego-armado__extra {
+  margin: 0;
+  text-align: center;
+  flex: 0 1 44%;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 6px;
+  padding: 0.3rem;
+}
+.lego-armado__extra img { max-width: 100%; max-height: 220px; object-fit: contain; }
+.lego-armado__extra figcaption { font-size: 0.7rem; opacity: 0.65; margin-top: 0.15rem; }
 
 /* portada */
 .lego-portada__cuerpo { display: block; }
@@ -230,18 +247,49 @@
 .picker-item__espera { font-size: 1.6rem; opacity: 0.3; }
 .picker-item__nombre { font-size: 0.68rem; text-align: center; line-height: 1.25; }
 
-/* ---------- menú desplegable del encabezado (LEGO) ---------- */
-.nav-desplegable { position: relative; display: inline-block; }
+/* ---------- menú desplegable del encabezado (LEGO) ----------
+   El wrapper se comporta como un ítem más del nav (flex de altura completa)
+   y el panel copia la estética industrial del encabezado: fondo oscuro,
+   tipografía mono en mayúsculas y hover amarillo. */
+.header__nav .nav-desplegable {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+.header__nav .nav-desplegable > a { height: 100%; white-space: nowrap; }
 .nav-desplegable__panel {
-  display: none; position: absolute; top: 100%; left: 0; z-index: 900;
-  min-width: 13rem; padding: 0.4rem 0;
-  background: var(--base, #fff);
-  border: 1.5px solid rgba(128,128,128,0.45); border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 900;
+  min-width: 100%;
+  background: #16160f;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 2px solid var(--safety, #e8c400);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
 }
 .nav-desplegable:hover .nav-desplegable__panel,
 .nav-desplegable:focus-within .nav-desplegable__panel { display: block; }
-.nav-desplegable__panel a { display: block; padding: 0.45em 1em; white-space: nowrap; }
+.header__nav .nav-desplegable__panel a {
+  display: block;
+  height: auto;
+  padding: 0.85em 1.3em;
+  border-right: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.85);
+}
+.header__nav .nav-desplegable__panel a:last-child { border-bottom: none; }
+.header__nav .nav-desplegable__panel a:hover {
+  background: var(--safety, #e8c400);
+  color: #16160f;
+}
+/* en el menú móvil (hamburguesa) el panel se muestra plano, sin flotar */
+@media (max-width: 900px) {
+  .header__nav .nav-desplegable { flex-direction: column; align-items: stretch; }
+  .nav-desplegable__panel { position: static; display: block; border: none; box-shadow: none; }
+}
 
 /* ---------- impresión ---------- */
 @media print {

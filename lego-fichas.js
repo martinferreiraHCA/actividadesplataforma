@@ -3,7 +3,7 @@
 // asistente IA, fichas imprimibles con comparador de piezas a escala 1:1,
 // y exportación a PDF (impresión), LDraw (.ldr) y borrador .json.
 
-import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw, piezaEnKit, piezasDeKit, cantidadEnKit } from './lego-catalogo.js';
+import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw, piezaEnKit, piezasDeKit, cantidadEnKit, conectoresDe } from './lego-catalogo.js';
 import { parsearTexto, serializarDoc, nuevoPaso, nuevaPieza, piezasAgrupadas, validarConexiones } from './lego-modelo.js';
 import { motorLego } from './lego-render.js';
 import { generarPromptLego } from './lego-prompt.js';
@@ -16,10 +16,10 @@ let state = {
   subtitulo: '',
   descripcion: '',
   pasos: [],
-  opciones: { estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, atenuar: false, kit: 'todas', kitsNxt: '' }
+  opciones: { estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, vistas3d: true, atenuar: false, kit: 'todas', kitsNxt: '' }
 };
 
-const OPCIONES_DEF = { estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, atenuar: false, kit: 'todas', kitsNxt: '' };
+const OPCIONES_DEF = { estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, vistas3d: true, atenuar: false, kit: 'todas', kitsNxt: '' };
 
 let uid = 1;
 function conId(paso) {
@@ -164,7 +164,7 @@ async function fotoPaso(i, opciones = {}) {
   const piezas = piezasHasta(i);
   if (!piezas.length) return null;
   const atenuarHasta = state.opciones.atenuar ? piezasHasta(i - 1).length : 0;
-  const k = JSON.stringify([piezas, atenuarHasta, opciones.ancho || 0]);
+  const k = JSON.stringify([piezas, atenuarHasta, opciones.ancho || 0, opciones.dir || 0]);
   if (cacheFotos.has(k)) return cacheFotos.get(k);
   const m = await motor();
   const url = await m.fotoModelo(piezas, { atenuarHasta, ...opciones });
@@ -694,44 +694,114 @@ function campoArea(etiqueta, valor, placeholder, filas, onInput) {
 }
 
 // ============================================================
-// Comparador 1:1 — dibujo SVG a tamaño real (mm) para imprimir
-// ============================================================
+// Comparador 1:1 — dibujo SVG a tamaño real (mm) para imprimir.
+// Cada tipo de pieza tiene su silueta: las apilables muestran los
+// studs, las vigas y técnicos sus AGUJEROS, los engranajes/poleas su
+// cara de frente con la cruz del eje, y los ejes/pines su largo real.
 // Medidas reales LEGO: 1 stud = 8 mm de paso, stud Ø 4.8 mm,
-// placa 3.2 mm de alto, ladrillo 9.6 mm.
-function svgComparador(info) {
-  const wmm = info.w * 8, dmm = info.d * 8;
-  const NS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('width', wmm + 'mm');
-  svg.setAttribute('height', dmm + 'mm');
-  svg.setAttribute('viewBox', `0 0 ${wmm} ${dmm}`);
-  svg.setAttribute('class', 'lego-cmp__svg');
-  const borde = document.createElementNS(NS, info.redonda && info.w === info.d ? 'circle' : 'rect');
-  if (info.redonda && info.w === info.d) {
-    borde.setAttribute('cx', wmm / 2); borde.setAttribute('cy', dmm / 2); borde.setAttribute('r', wmm / 2 - 0.3);
-  } else {
-    borde.setAttribute('x', 0.3); borde.setAttribute('y', 0.3);
-    borde.setAttribute('width', wmm - 0.6); borde.setAttribute('height', dmm - 0.6);
-    borde.setAttribute('rx', 0.8);
-  }
-  borde.setAttribute('fill', 'none');
-  borde.setAttribute('stroke', '#333');
-  borde.setAttribute('stroke-width', 0.5);
-  svg.appendChild(borde);
+// agujero Ø 4.9 mm, cruz de eje 4.8 mm, placa 3.2 mm de alto.
+// ============================================================
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
+function svgBase(wmm, hmm) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('width', wmm + 'mm');
+  svg.setAttribute('height', hmm + 'mm');
+  svg.setAttribute('viewBox', `0 0 ${wmm} ${hmm}`);
+  svg.setAttribute('class', 'lego-cmp__svg');
+  return svg;
+}
+
+function svgCirculo(svg, cx, cy, r, grosor = 0.5) {
+  const c = document.createElementNS(SVG_NS, 'circle');
+  c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+  c.setAttribute('fill', 'none');
+  c.setAttribute('stroke', '#333');
+  c.setAttribute('stroke-width', grosor);
+  svg.appendChild(c);
+  return c;
+}
+
+function svgRect(svg, x, y, w, h, rx = 0.8) {
+  const r = document.createElementNS(SVG_NS, 'rect');
+  r.setAttribute('x', x); r.setAttribute('y', y);
+  r.setAttribute('width', w); r.setAttribute('height', h);
+  r.setAttribute('rx', rx);
+  r.setAttribute('fill', 'none');
+  r.setAttribute('stroke', '#333');
+  r.setAttribute('stroke-width', 0.6);
+  svg.appendChild(r);
+  return r;
+}
+
+// cruz de eje (perfil real 4.8 mm) centrada en cx,cy
+function svgCruz(svg, cx, cy) {
+  const b = 0.9; // medio ancho de las aspas
+  const p = document.createElementNS(SVG_NS, 'path');
+  p.setAttribute('d',
+    `M ${cx - b} ${cy - 2.4} h ${2 * b} v ${2.4 - b} h ${2.4 - b} v ${2 * b} h ${-(2.4 - b)} v ${2.4 - b} h ${-2 * b} v ${-(2.4 - b)} h ${-(2.4 - b)} v ${-2 * b} h ${2.4 - b} Z`);
+  p.setAttribute('fill', 'none');
+  p.setAttribute('stroke', '#333');
+  p.setAttribute('stroke-width', 0.5);
+  svg.appendChild(p);
+}
+
+function svgComparador(info) {
+  const con = conectoresDe(info);
+  const esBarra = con.has('ej') || con.has('pi');
+  const esRueda = info.redonda && info.suelta; // engranajes, poleas, bujes, llantas
+
+  // --- engranajes / poleas / bujes / llantas: la CARA de frente, a diámetro real ---
+  if (esRueda) {
+    const diam = (info.alto || 1) * 3.2; // paran de canto: su alto es el diámetro
+    const svg = svgBase(diam, diam);
+    svgCirculo(svg, diam / 2, diam / 2, diam / 2 - 0.4, 0.6);
+    if (con.has('ac')) svgCruz(svg, diam / 2, diam / 2);
+    else svgCirculo(svg, diam / 2, diam / 2, 2.45, 0.5);
+    return svg;
+  }
+
+  // --- ejes y pines: el largo real (para distinguir eje 3 / 4 / 5 / 6) ---
+  if (esBarra) {
+    const largo = info.w * 8, altoP = 4.8;
+    const svg = svgBase(largo, altoP);
+    svgRect(svg, 0.3, 0.3, largo - 0.6, altoP - 0.6, con.has('ej') ? 0.6 : 2.2);
+    // marcas cada stud para contar el largo
+    for (let c = 1; c < info.w; c++) {
+      const l = document.createElementNS(SVG_NS, 'line');
+      l.setAttribute('x1', c * 8); l.setAttribute('y1', 1);
+      l.setAttribute('x2', c * 8); l.setAttribute('y2', altoP - 1);
+      l.setAttribute('stroke', '#999');
+      l.setAttribute('stroke-width', 0.35);
+      svg.appendChild(l);
+    }
+    return svg;
+  }
+
+  const wmm = info.w * 8, dmm = info.d * 8;
+  const svg = svgBase(wmm, dmm);
+
+  // contorno
+  if (info.redonda && info.w === info.d) {
+    svgCirculo(svg, wmm / 2, dmm / 2, wmm / 2 - 0.4, 0.6);
+  } else {
+    svgRect(svg, 0.3, 0.3, wmm - 0.6, dmm - 0.6);
+  }
+
+  // studs arriba (ladrillos, placas, técnicos...)
   let filasStuds = 0;
   if (info.studs === 'todas') filasStuds = info.d;
   else if (typeof info.studs === 'number') filasStuds = info.studs;
   for (let f = 0; f < filasStuds; f++) {
     for (let c = 0; c < info.w; c++) {
-      const st = document.createElementNS(NS, 'circle');
-      st.setAttribute('cx', c * 8 + 4);
-      st.setAttribute('cy', f * 8 + 4);
-      st.setAttribute('r', 2.4);
-      st.setAttribute('fill', 'none');
-      st.setAttribute('stroke', '#777');
-      st.setAttribute('stroke-width', 0.35);
-      svg.appendChild(st);
+      svgCirculo(svg, c * 8 + 4, f * 8 + 4, 2.4, 0.5);
+    }
+  }
+
+  // vigas y piezas con agujeros de costado (sin studs): sus AGUJEROS al paso real
+  if (!filasStuds && (con.has('ap') || con.has('ac')) && info.d === 1 && info.w >= 2) {
+    for (let c = 0; c < info.w; c++) {
+      svgCirculo(svg, c * 8 + 4, dmm / 2, 2.45, 0.5);
     }
   }
   return svg;
@@ -807,7 +877,7 @@ async function construirFichaPaso(paso, numero, indice) {
       nom.textContent = (info ? info.nombre : g.pieza) + (c ? ' · ' + c.nombre : '');
       item.append(img, cant, nom);
 
-      if (op.comparador && info && !info.suelta) {
+      if (op.comparador && info) {
         const cmp = document.createElement('div');
         cmp.className = 'lego-cmp';
         cmp.appendChild(svgComparador(info));
@@ -847,6 +917,31 @@ async function construirFichaPaso(paso, numero, indice) {
   cap.textContent = infantil ? 'Así tiene que quedar 👀' : 'Así queda el modelo al terminar este paso';
   fig.appendChild(cap);
   cuerpo.appendChild(fig);
+
+  // vistas adicionales: desde atrás y desde arriba, para armar sin dudas
+  if (op.vistas3d) {
+    const extras = document.createElement('div');
+    extras.className = 'lego-armado__extras';
+    const VISTAS = [
+      { dir: [-0.72, 0.62, -0.9], titulo: infantil ? 'Desde atrás 🔄' : 'Visto desde atrás' },
+      { dir: [0.08, 1, 0.14], titulo: infantil ? 'Desde arriba 🚁' : 'Visto desde arriba' },
+    ];
+    for (const v of VISTAS) {
+      const f = document.createElement('figure');
+      f.className = 'lego-armado__extra';
+      const im = document.createElement('img');
+      im.alt = v.titulo;
+      try {
+        const url = await fotoPaso(indice, { ancho: 620, alto: 460, dir: v.dir });
+        if (url) im.src = url;
+      } catch (e) { /* sin motor */ }
+      const c = document.createElement('figcaption');
+      c.textContent = v.titulo;
+      f.append(im, c);
+      extras.appendChild(f);
+    }
+    cuerpo.appendChild(extras);
+  }
   view.appendChild(cuerpo);
 
   if (paso.notas.trim()) {
@@ -1097,6 +1192,7 @@ function sincronizarCampos() {
   document.getElementById('ldBordes').checked = !!state.opciones.bordes;
   document.getElementById('ldSalto').checked = !!state.opciones.salto;
   document.getElementById('ldComparador').checked = !!state.opciones.comparador;
+  document.getElementById('ldVistas3d').checked = !!state.opciones.vistas3d;
   document.getElementById('ldAtenuar').checked = !!state.opciones.atenuar;
   document.getElementById('iaKitNxt').checked = state.opciones.kit === 'nxt';
   document.getElementById('ldKitsNxt').value = state.opciones.kitsNxt || '';
@@ -1151,7 +1247,7 @@ function init() {
   document.getElementById('ldDescripcion').addEventListener('input', e => { state.descripcion = e.target.value; guardarLuego(); });
 
   document.getElementById('ldEstiloDoc').addEventListener('change', e => { state.opciones.estiloDoc = e.target.value; guardarLuego(); });
-  [['ldNumerar', 'numerar'], ['ldBordes', 'bordes'], ['ldSalto', 'salto'], ['ldComparador', 'comparador']].forEach(([id, key]) => {
+  [['ldNumerar', 'numerar'], ['ldBordes', 'bordes'], ['ldSalto', 'salto'], ['ldComparador', 'comparador'], ['ldVistas3d', 'vistas3d']].forEach(([id, key]) => {
     document.getElementById(id).addEventListener('change', e => { state.opciones[key] = e.target.checked; guardarLuego(); });
   });
   document.getElementById('ldAtenuar').addEventListener('change', e => {

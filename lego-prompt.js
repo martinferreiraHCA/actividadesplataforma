@@ -219,6 +219,16 @@ La herramienta POSICIONA piezas pero no las "encastra": está PERMITIDO y es COR
   NO acerques ni alejes los engranajes "a ojo": si la separación no es exacta quedan mordidos o sueltos. Preferí 8, 24 y 40. Lo más prolijo es que cada engranaje del tren esté además montado en su eje con la regla maestra, y los ejes claven en los agujeros de una viga volcada o parada.
   El eje de un engranaje suelto va a lo largo de Z (rotar 90) por su centro: para "engranaje 24 en X Z nivel N" → eje 4 negro en X+1 Z-1.5 nivel N+3.5 rotar 90.
 
+· PUENTE TÉCNICO (calibrado con un modelo real): para levantar ejes en alto, armá torres de ladrillos técnicos y cruzá una VIGA PARADA por delante:
+  - la viga parada con nivel = (nivel del ladrillo técnico de arriba) + 0.75 deja sus agujeros ALINEADOS con los agujeros de los ladrillos;
+  - la viga va delante de los ladrillos (su z = z del ladrillo - 1) y se sujeta con un pin por torre: pin negro en X+0.5 Z-0.5 nivel N+0.7 rotar 90 (X, Z, N = posición y nivel del ladrillo técnico superior);
+  - después los ejes van por los agujeros de la viga (regla de la viga parada) y los engranajes se montan en los ejes con la regla maestra. Elegí agujeros separados 4 studs para engranar 24+40 y 3 studs para 40+8.
+  Ejemplo completo calibrado (torre + puente + eje):
+  tecnico 1x2 gris claro en 10 4 nivel 6
+  viga 11 gris oscuro en 0.5 3 nivel 6.75 parado
+  pin negro en 10.5 3.5 nivel 6.7 rotar 90
+  eje 6 negro en 5.5 -1 nivel 7 rotar 90
+
 · AGUJEROS DE BLOQUES Y LADRILLOS TÉCNICOS (calibrado):
   - "bloque cruz 1x2 en X Z nivel V": el eje por su agujero-cruz va: eje 3 negro en (x libre) Z nivel V+2.875 · y un pin en su agujero-pin: pin negro en X Z+0.6 nivel V+0.2 rotar 270
   - "tecnico 1x2 en X Z nivel V rotar 90" (el ladrillo se rota para que el agujero mire a X): pin negro en (x libre) Z+0.5 nivel V+0.75
