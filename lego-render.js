@@ -235,9 +235,45 @@ async function crearMotor() {
 
     renderer.setSize(ancho, alto, false);
     renderer.render(escena, camara);
-    const url = renderer.domElement.toDataURL('image/png');
+    const url = recortarAlContenido(renderer.domElement);
     escena.remove(contenedor);
     return url;
+  }
+
+  // Recorta el lienzo al contenido real (píxeles no transparentes) con un
+  // pequeño borde: así el modelo llena la imagen y las fichas aprovechan
+  // todo el espacio, sin bandas vacías alrededor.
+  function recortarAlContenido(lienzo, borde = 12) {
+    const w = lienzo.width, h = lienzo.height;
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = h;
+    const ctx = tmp.getContext('2d');
+    ctx.drawImage(lienzo, 0, 0);
+    let datos;
+    try { datos = ctx.getImageData(0, 0, w, h).data; }
+    catch (e) { return lienzo.toDataURL('image/png'); }
+    let minX = w, minY = h, maxX = -1, maxY = -1;
+    for (let y = 0; y < h; y++) {
+      const fila = y * w * 4;
+      for (let x = 0; x < w; x++) {
+        if (datos[fila + x * 4 + 3] > 8) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < 0) return lienzo.toDataURL('image/png'); // lienzo vacío
+    minX = Math.max(0, minX - borde);
+    minY = Math.max(0, minY - borde);
+    maxX = Math.min(w - 1, maxX + borde);
+    maxY = Math.min(h - 1, maxY + borde);
+    const salida = document.createElement('canvas');
+    salida.width = maxX - minX + 1;
+    salida.height = maxY - minY + 1;
+    salida.getContext('2d').drawImage(tmp, minX, minY, salida.width, salida.height, 0, 0, salida.width, salida.height);
+    return salida.toDataURL('image/png');
   }
 
   // Miniatura de una sola pieza en un color (cacheada)

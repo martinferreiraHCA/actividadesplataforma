@@ -330,7 +330,7 @@
     align-items: center;
   }
   .lego-armado__figura { flex: 1 1 60%; min-width: 0; }
-  .lego-armado__figura img { max-height: 105mm; }
+  .lego-armado__figura img { max-height: 110mm; max-width: 100%; width: auto; min-height: 0; }
   .lego-armado__figura figcaption { font-size: 7.5pt; margin-top: 0.5mm; }
   .lego-armado__extras {
     flex: 0 0 34%;
