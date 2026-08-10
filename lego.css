@@ -292,7 +292,57 @@
 }
 
 /* ---------- impresión ---------- */
+/* Objetivo: CADA PASO EN UNA HOJA A4. Se fija el papel, se compactan los
+   bloques flexibles (imágenes y textos) y las vistas extra pasan al costado
+   de la vista principal. El comparador 1:1 NUNCA se reescala. */
+@page { size: A4 portrait; margin: 9mm; }
+
 @media print {
   /* el comparador tiene que salir a tamaño real: nada de reescalar */
   .lego-cmp__svg { width: auto; height: auto; }
+
+  .fichas-impresion .lego-ficha {
+    padding: 3mm 5mm;
+    margin-bottom: 3mm;
+    font-size: 10.5pt;
+  }
+  .lego-ficha .ficha-view__head { margin-bottom: 1.5mm; }
+  .lego-ficha .ficha-view__titulo { font-size: 13pt; }
+  .lego-ficha .ficha-view__consigna { font-size: 10.5pt; margin: 1mm 0 2mm; }
+  .lego-ficha .ficha-view__notas { font-size: 9.5pt; margin-top: 1.5mm; padding-top: 1.5mm; }
+
+  /* panel "buscá estas piezas" compacto */
+  .lego-busca { padding: 2mm 3mm; margin: 1mm 0 2.5mm; }
+  .lego-busca__label { font-size: 8pt; margin-bottom: 1.5mm; }
+  .lego-busca__items { gap: 1.5mm 6mm; align-items: center; }
+  .lego-busca__img { width: 14mm; height: 14mm; }
+  .lego-busca__img--mini { width: 10mm; height: 10mm; }
+  .lego-busca__cant { font-size: 10.5pt; }
+  .lego-busca__nombre { font-size: 7.5pt; max-width: 36mm; }
+  .lego-cmp { margin-top: 1mm; }
+  .lego-cmp__label { font-size: 6pt; }
+  .lego-cmp__nota { font-size: 7pt; margin-top: 1mm; }
+
+  /* armado: vista principal a la izquierda, vistas extra apiladas al costado */
+  .lego-armado {
+    display: flex !important;
+    gap: 3mm;
+    align-items: center;
+  }
+  .lego-armado__figura { flex: 1 1 60%; min-width: 0; }
+  .lego-armado__figura img { max-height: 105mm; }
+  .lego-armado__figura figcaption { font-size: 7.5pt; margin-top: 0.5mm; }
+  .lego-armado__extras {
+    flex: 0 0 34%;
+    flex-direction: column;
+    gap: 2mm;
+    margin-top: 0;
+  }
+  .lego-armado__extra { padding: 1mm; }
+  .lego-armado__extra img { max-height: 46mm; }
+  .lego-armado__extra figcaption { font-size: 6.5pt; }
+
+  /* portada compacta */
+  .lego-portada__img { max-height: 95mm; max-width: 70%; }
+  .lego-portada__inventario { margin-top: 2mm; }
 }

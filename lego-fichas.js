@@ -164,7 +164,7 @@ async function fotoPaso(i, opciones = {}) {
   const piezas = piezasHasta(i);
   if (!piezas.length) return null;
   const atenuarHasta = state.opciones.atenuar ? piezasHasta(i - 1).length : 0;
-  const k = JSON.stringify([piezas, atenuarHasta, opciones.ancho || 0, opciones.dir || 0]);
+  const k = JSON.stringify([piezas, atenuarHasta, opciones.ancho || 0, opciones.dir || 0, opciones.margen || 0]);
   if (cacheFotos.has(k)) return cacheFotos.get(k);
   const m = await motor();
   const url = await m.fotoModelo(piezas, { atenuarHasta, ...opciones });
@@ -877,7 +877,9 @@ async function construirFichaPaso(paso, numero, indice) {
       nom.textContent = (info ? info.nombre : g.pieza) + (c ? ' · ' + c.nombre : '');
       item.append(img, cant, nom);
 
-      if (op.comparador && info) {
+      // la electrónica no lleva comparador: es inconfundible y su huella
+      // impresa ocuparía media hoja (el motor mide 40×112 mm)
+      if (op.comparador && info && info.cat !== 'Electrónica NXT') {
         const cmp = document.createElement('div');
         cmp.className = 'lego-cmp';
         cmp.appendChild(svgComparador(info));
@@ -909,7 +911,7 @@ async function construirFichaPaso(paso, numero, indice) {
   const img = document.createElement('img');
   img.alt = 'Modelo armado hasta el paso ' + numero;
   try {
-    const url = await fotoPaso(indice, { ancho: 1000, alto: 760 });
+    const url = await fotoPaso(indice, { ancho: 1000, alto: 700, margen: 1.06 });
     if (url) img.src = url;
   } catch (e) { /* sin motor */ }
   fig.appendChild(img);
@@ -932,7 +934,7 @@ async function construirFichaPaso(paso, numero, indice) {
       const im = document.createElement('img');
       im.alt = v.titulo;
       try {
-        const url = await fotoPaso(indice, { ancho: 620, alto: 460, dir: v.dir });
+        const url = await fotoPaso(indice, { ancho: 620, alto: 440, dir: v.dir, margen: 1.06 });
         if (url) im.src = url;
       } catch (e) { /* sin motor */ }
       const c = document.createElement('figcaption');
