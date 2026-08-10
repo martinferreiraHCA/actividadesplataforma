@@ -1236,11 +1236,6 @@ function init() {
     if (admin === '0') localStorage.removeItem('gen_lego_admin');
     if (localStorage.getItem('gen_lego_admin') === '1') {
       document.getElementById('linkCalibrador').style.display = '';
-      const nav = document.getElementById('linkCalibradorNav');
-      if (nav) {
-        nav.style.display = '';
-        document.getElementById('navLego').textContent = 'Ensamble con LEGO ▾';
-      }
     }
   } catch (e) { /* sin localStorage: el enlace queda oculto */ }
 
