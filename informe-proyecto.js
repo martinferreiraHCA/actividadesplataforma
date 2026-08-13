@@ -53,7 +53,11 @@ function opciones() {
     interacciones: $('optInteracciones').checked,
     disfraces: $('optDisfraces').checked,
     sonidos: $('optSonidos').checked,
-    salto: $('optSalto').checked
+    salto: $('optSalto').checked,
+    comentar: $('optComentar').checked,
+    equipo: $('optEquipo').value.trim(),
+    grupo: $('optGrupo').value.trim(),
+    consigna: $('optConsigna').value.trim()
   };
 }
 
@@ -85,7 +89,7 @@ function construirInformeSb3(modelo, opt) {
   const portada = el('header', 'inf-portada');
   portada.appendChild(el('span', 'inf-portada__tipo', '🐱 Proyecto Scratch'));
   portada.appendChild(el('h1', 'inf-portada__titulo', modelo.nombre));
-  portada.appendChild(el('p', 'inf-portada__sub', 'Informe generado automáticamente · ' + fechaHoy()));
+  agregarDatosPortada(portada, opt);
   const stats = el('div', 'inf-stats');
   const stat = (n, etiqueta) => {
     const s = el('span', 'inf-stat');
@@ -100,6 +104,7 @@ function construirInformeSb3(modelo, opt) {
   if (opt.sonidos) { stat(st.variables, 'variables'); if (st.listas) stat(st.listas, 'listas'); }
   portada.appendChild(stats);
   doc.appendChild(portada);
+  agregarConsigna(doc, opt);
 
   // ---- interacciones (van temprano: son el "mapa" del proyecto) ----
   if (opt.interacciones) {
@@ -253,15 +258,49 @@ function agregarScripts(sec, t, opt) {
         caja.appendChild(p);
       }
     }
+    if (opt.comentar) {
+      caja.appendChild(cajaComentario('✍️ ¿Qué hace este programa? Explicalo con tus palabras:'));
+    }
     sec.appendChild(caja);
   });
 }
 
 function pie() {
   const f = el('footer', 'inf-pie');
-  f.appendChild(el('span', null, 'Generador de Actividades — Informe de proyecto'));
-  f.appendChild(el('span', null, 'Descripciones generadas automáticamente a partir de los bloques'));
+  f.appendChild(el('span', null, 'Informe de proyecto'));
+  f.appendChild(el('span', null, fechaHoy()));
   return f;
+}
+
+// equipo / grupo / fecha en la portada (solo lo que se haya completado)
+function agregarDatosPortada(portada, opt) {
+  const partes = [];
+  if (opt.equipo) partes.push(opt.equipo);
+  if (opt.grupo) partes.push(opt.grupo);
+  if (partes.length) {
+    portada.appendChild(el('p', 'inf-portada__equipo', partes.join(' · ')));
+  }
+  portada.appendChild(el('p', 'inf-portada__sub', fechaHoy()));
+}
+
+// consigna del docente al principio de la ficha
+function agregarConsigna(doc, opt) {
+  if (!opt.consigna) return;
+  const caja = el('div', 'inf-consigna');
+  const et = el('strong', null, '📌 Consigna');
+  const p = el('p', null, opt.consigna);
+  caja.append(et, p);
+  doc.appendChild(caja);
+}
+
+// renglones en blanco para que el estudiante escriba su comentario
+function cajaComentario(etiqueta) {
+  const caja = el('div', 'inf-comentario');
+  caja.appendChild(el('div', 'inf-comentario__label', etiqueta));
+  const lineas = el('div', 'inf-comentario__lineas');
+  for (let i = 0; i < 3; i++) lineas.appendChild(el('div', 'inf-comentario__linea'));
+  caja.appendChild(lineas);
+  return caja;
 }
 
 // ============================================================
@@ -273,7 +312,10 @@ function construirInformeHex(hex, opt) {
   const portada = el('header', 'inf-portada');
   portada.appendChild(el('span', 'inf-portada__tipo', '🤖 Proyecto micro:bit (MakeCode)'));
   portada.appendChild(el('h1', 'inf-portada__titulo', hex.nombre));
-  portada.appendChild(el('p', 'inf-portada__sub', 'Informe generado automáticamente · ' + fechaHoy() +
+  if (opt.equipo || opt.grupo) {
+    portada.appendChild(el('p', 'inf-portada__equipo', [opt.equipo, opt.grupo].filter(Boolean).join(' · ')));
+  }
+  portada.appendChild(el('p', 'inf-portada__sub', fechaHoy() +
     (hex.editor ? ' · editor: ' + (hex.editor === 'blocksprj' ? 'bloques' : hex.editor === 'tsprj' ? 'JavaScript' : hex.editor === 'pyprj' ? 'Python' : hex.editor) : '')));
   if (hex.extensiones.length) {
     const stats = el('div', 'inf-stats');
@@ -281,6 +323,7 @@ function construirInformeHex(hex, opt) {
     portada.appendChild(stats);
   }
   doc.appendChild(portada);
+  agregarConsigna(doc, opt);
 
   const codigoJs = hex.archivos['main.ts'] || '';
   const codigoPy = hex.archivos['main.py'] || '';
@@ -330,6 +373,9 @@ function construirInformeHex(hex, opt) {
     pre.appendChild(code);
     if (window.hljs) { try { window.hljs.highlightElement(code); } catch (e) { /* sin resaltado */ } }
     sec.appendChild(pre);
+    if (opt.comentar) {
+      sec.appendChild(cajaComentario('✍️ ¿Qué hace este programa? Explicalo con tus palabras:'));
+    }
     doc.appendChild(sec);
   } else {
     doc.appendChild(el('div', 'inf-aviso', 'El .hex trae el proyecto pero no se encontró main.ts ni main.py adentro.'));
@@ -441,8 +487,13 @@ function init() {
     if (f) procesarArchivo(f);
   });
 
-  ['optEstilo', 'optEscala', 'optDescripciones', 'optInteracciones', 'optDisfraces', 'optSonidos', 'optSalto']
+  ['optEstilo', 'optEscala', 'optDescripciones', 'optInteracciones', 'optDisfraces', 'optSonidos', 'optSalto', 'optComentar']
     .forEach(id => $(id).addEventListener('change', regenerar));
+  // los campos de texto regeneran al soltar el foco (y con Enter en los inputs)
+  ['optEquipo', 'optGrupo', 'optConsigna'].forEach(id => {
+    $(id).addEventListener('change', regenerar);
+    $(id).addEventListener('keydown', e => { if (e.key === 'Enter' && id !== 'optConsigna') { e.preventDefault(); regenerar(); } });
+  });
 
   $('btnPDF').addEventListener('click', exportarPDF);
 }

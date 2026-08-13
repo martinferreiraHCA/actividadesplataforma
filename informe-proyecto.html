@@ -102,6 +102,21 @@
 <section class="editor-section" id="seccionOpciones" style="display:none">
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Qué incluir</div>
+    <p class="wiz-explica" style="margin-bottom:1rem">Todo lo de acá es <strong>optativo</strong>: podés ponerle el nombre del equipo o los autores, y escribir una consigna que aparece al principio de la ficha (por ejemplo, cómo presentar el código o qué tienen que comentar los estudiantes).</p>
+    <div class="campo-grid" style="max-width:900px;margin-bottom:1rem">
+      <div class="campo">
+        <label class="campo__etiqueta" for="optEquipo">Equipo / Autores (opcional)</label>
+        <input class="campo__input" type="text" id="optEquipo" placeholder="Ej: Equipo 3 — Juana, Mateo y Sofía">
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="optGrupo">Nivel / Grupo (opcional)</label>
+        <input class="campo__input" type="text" id="optGrupo" placeholder="Ej: 6° año, 1° CB Informática...">
+      </div>
+    </div>
+    <div class="campo" style="max-width:900px;margin-bottom:1.2rem">
+      <label class="campo__etiqueta" for="optConsigna">Consigna / presentación (opcional — aparece al principio de la ficha)</label>
+      <textarea class="campo__textarea" id="optConsigna" rows="3" placeholder="Ej: Este es el código de nuestro juego. Leé cada programa y escribí con tus palabras qué hace y por qué lo armamos así..."></textarea>
+    </div>
     <div class="scratch-opciones">
       <span class="scratch-opciones__label">Bloques:</span>
       <select class="campo__input" id="optEstilo" style="max-width:230px">
@@ -122,6 +137,7 @@
       <label class="scratch-check"><input type="checkbox" id="optDisfraces" checked> Disfraces y fondos</label>
       <label class="scratch-check"><input type="checkbox" id="optSonidos" checked> Sonidos y variables</label>
       <label class="scratch-check"><input type="checkbox" id="optSalto"> Una página por personaje</label>
+      <label class="scratch-check"><input type="checkbox" id="optComentar"> ✍️ Espacio para que los estudiantes comenten cada programa</label>
     </div>
   </div>
 </section>
