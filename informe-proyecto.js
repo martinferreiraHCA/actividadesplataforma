@@ -441,11 +441,8 @@ async function procesarArchivo(archivo) {
   }
 }
 
-// --- PDF (impresión del navegador) ---
-async function exportarPDF() {
-  if (!estado.tipo) return;
-  const nota = $('notaPDF');
-  // micro:bit: esperar la imagen de bloques antes de imprimir
+// micro:bit: esperar la imagen de bloques antes de exportar
+async function esperarBloquesMakeCode(nota) {
   if (estado.tipo === 'hex' && estado.hex && estado.hex.archivos['main.ts']) {
     const ext = estado.hex.extensiones.map(e => e.nombre + '=' + e.repo).join(',');
     const enCache = bloquesMicrobitEnCache(estado.hex.archivos['main.ts'], ext);
@@ -458,12 +455,68 @@ async function exportarPDF() {
       await new Promise(r => setTimeout(r, 150));
     }
   }
+}
+
+// --- PDF por impresión del navegador ---
+async function exportarPDF() {
+  if (!estado.tipo) return;
+  await esperarBloquesMakeCode($('notaPDF'));
   const area = $('areaImpresion');
   area.innerHTML = '';
   const vista = $('vistaInforme').firstElementChild;
   if (!vista) return;
   area.appendChild(vista.cloneNode(true));
   window.print();
+}
+
+// --- PDF directo (descarga sin pasar por la impresión, con html2pdf) ---
+async function descargarPDFDirecto() {
+  if (!estado.tipo || typeof html2pdf === 'undefined') return;
+  const btn = $('btnPDFDirecto');
+  const nota = $('notaPDF');
+  btn.disabled = true;
+  nota.style.display = 'inline';
+  nota.textContent = 'Generando el PDF…';
+  try {
+    await esperarBloquesMakeCode(nota);
+    nota.style.display = 'inline';
+    nota.textContent = 'Generando el PDF…';
+    const vista = $('vistaInforme').firstElementChild;
+    if (!vista) return;
+    // clon fuera de pantalla con ancho fijo de página (así el PDF no depende del zoom)
+    const clon = vista.cloneNode(true);
+    clon.style.maxWidth = 'none';
+    clon.style.width = '760px';
+    clon.style.border = 'none';
+    clon.style.boxShadow = 'none';
+    const envoltura = document.createElement('div');
+    envoltura.style.cssText = 'position:absolute;left:-10000px;top:0;background:#fff';
+    envoltura.appendChild(clon);
+    document.body.appendChild(envoltura);
+    const nombre = (estado.tipo === 'sb3' && estado.modelo ? estado.modelo.nombre
+      : estado.hex ? estado.hex.nombre : 'proyecto');
+    await html2pdf().set({
+      margin: [10, 10, 12, 10],
+      filename: nombre.replace(/[\\/:*?"<>|]+/g, '-') + ' — informe.pdf',
+      image: { type: 'jpeg', quality: 0.95 },
+      // scrollX/scrollY en 0: sin esto, html2canvas corre el lienzo según el
+      // scroll de la página y el PDF sale con una primera página en blanco
+      html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: {
+        mode: ['css'],
+        avoid: ['.inf-programa', '.inf-galeria figure', '.inf-consigna', '.inf-comentario', '.inf-objeto__cab', '.inf-tabla tr', '.inf-stat']
+      }
+    }).from(clon).save();
+    envoltura.remove();
+    nota.textContent = '';
+    nota.style.display = 'none';
+  } catch (e) {
+    console.error(e);
+    nota.textContent = 'No se pudo generar el PDF directo. Probá con «PDF — Imprimir el informe».';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // --- eventos de la página ---
@@ -496,6 +549,7 @@ function init() {
   });
 
   $('btnPDF').addEventListener('click', exportarPDF);
+  $('btnPDFDirecto').addEventListener('click', descargarPDFDirecto);
 }
 
 init();
