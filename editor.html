@@ -20,7 +20,13 @@
     <nav class="header__nav" id="headerNav">
       <a href="index.html">Inicio</a>
       <a href="editor.html?tipo=cuestionario" class="active">Editor</a>
-      <a href="scratch.html">Fichas Scratch · micro:bit</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
       <a href="lego.html">Ensamble con LEGO</a>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
     </nav>
