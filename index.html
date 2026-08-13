@@ -22,7 +22,13 @@
     <nav class="header__nav" id="headerNav">
       <a href="index.html" class="active">Inicio</a>
       <a href="editor.html?tipo=cuestionario">Editor</a>
-      <a href="scratch.html">Fichas Scratch · micro:bit</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
       <a href="lego.html">Ensamble con LEGO</a>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
     </nav>
@@ -172,6 +178,7 @@
         <a href="index.html">Inicio</a>
         <a href="editor.html?tipo=cuestionario">Editor</a>
         <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="informe-proyecto.html">Informe de proyecto</a>
         <a href="lego.html">Ensamble con LEGO</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
@@ -217,6 +224,20 @@
   `;
   grid.appendChild(cardScratch);
   nuevasCards.push(cardScratch);
+  idx++;
+
+  // Ficha especial: informe de proyecto .sb3/.hex (página propia)
+  const cardInforme = document.createElement('a');
+  cardInforme.href = 'informe-proyecto.html';
+  cardInforme.className = 'actividad-card reveal';
+  cardInforme.setAttribute('role', 'listitem');
+  cardInforme.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Informe de proyecto Scratch / micro:bit</h3>
+    <p class="actividad-card__desc">Subí un .sb3 de Scratch o un .hex de MakeCode y obtené un informe imprimible: programas por personaje dibujados como bloques, disfraces, fondos, qué hace cada programa y cómo interactúan los objetos.</p>
+  `;
+  grid.appendChild(cardInforme);
+  nuevasCards.push(cardInforme);
   idx++;
 
   // Ficha especial: guías de ensamble LEGO (página propia)

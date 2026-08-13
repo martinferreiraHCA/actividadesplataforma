@@ -1,0 +1,220 @@
+/* Estilos del Informe de proyecto (.sb3 / .hex) — pantalla e impresión */
+
+/* ---------- zona de subida ---------- */
+.inf-subida {
+  border: 2px dashed var(--borde, rgba(0,0,0,0.3));
+  border-radius: 12px;
+  padding: 2.4rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: var(--surface, transparent);
+}
+.inf-subida:hover, .inf-subida:focus-visible, .inf-subida.inf-subida--sobre {
+  border-color: var(--acento, #d3f36b);
+  background: rgba(211, 243, 107, 0.08);
+}
+.inf-subida__icono { font-size: 2.2rem; margin-bottom: 0.4rem; }
+.inf-subida__texto { margin: 0 0 0.3rem; font-size: 1.05rem; }
+.inf-subida__nota { margin: 0; font-size: 0.85rem; opacity: 0.7; font-family: 'JetBrains Mono', monospace; }
+.inf-estado {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.inf-estado--error { color: #c0392b; }
+
+/* ---------- el documento (vista previa e impresión comparten clases) ---------- */
+.inf-doc {
+  background: #ffffff;
+  color: #111111;
+  max-width: 950px;
+  margin: 0 auto;
+  padding: 2.2rem 2.4rem;
+  border: 1px solid rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.inf-doc a { color: inherit; }
+
+.inf-portada { border-bottom: 3px solid #111; padding-bottom: 1.1rem; margin-bottom: 1.6rem; }
+.inf-portada__tipo {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1.5px solid #111;
+  padding: 0.2em 0.7em;
+  border-radius: 999px;
+  margin-bottom: 0.6rem;
+}
+.inf-portada__titulo { font-size: 1.9rem; font-weight: 700; margin: 0 0 0.2rem; line-height: 1.15; }
+.inf-portada__sub { margin: 0 0 0.9rem; opacity: 0.65; font-size: 0.9rem; }
+.inf-stats { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.inf-stat {
+  border: 1px solid rgba(0,0,0,0.25);
+  border-radius: 8px;
+  padding: 0.35em 0.8em;
+  font-size: 0.82rem;
+  font-family: 'JetBrains Mono', monospace;
+  background: #f7f7f4;
+}
+.inf-stat strong { font-size: 1rem; }
+
+.inf-seccion { margin-bottom: 1.8rem; }
+.inf-seccion__titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-bottom: 2px solid #111;
+  padding-bottom: 0.25rem;
+  margin: 0 0 0.9rem;
+}
+
+/* cabecera de cada personaje */
+.inf-objeto { margin-bottom: 2rem; }
+.inf-objeto__cab {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  border-bottom: 2px solid #111;
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+.inf-objeto__retrato {
+  width: 52px; height: 52px;
+  object-fit: contain;
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 8px;
+  background: #fafafa;
+  padding: 3px;
+}
+.inf-objeto__nombre { font-size: 1.3rem; font-weight: 700; margin: 0; }
+.inf-objeto__datos {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.75;
+  text-align: right;
+}
+
+/* galerías de disfraces / fondos */
+.inf-galeria { display: flex; flex-wrap: wrap; gap: 0.7rem; margin: 0 0 1rem; }
+.inf-galeria figure {
+  margin: 0;
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 0.4rem;
+  text-align: center;
+  background: #fafafa;
+  break-inside: avoid;
+}
+.inf-galeria img { display: block; margin: 0 auto 0.3rem; object-fit: contain; }
+.inf-galeria--fondos img { width: 150px; height: 112px; }
+.inf-galeria--disfraces img { width: 76px; height: 76px; }
+.inf-galeria figcaption { font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; opacity: 0.8; max-width: 150px; overflow-wrap: anywhere; }
+
+.inf-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 1rem; }
+.inf-chip {
+  border: 1px solid rgba(0,0,0,0.3);
+  border-radius: 999px;
+  padding: 0.15em 0.7em;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  background: #f7f7f4;
+}
+.inf-chips__label { font-size: 0.8rem; font-weight: 700; margin-right: 0.2rem; }
+
+/* programas */
+.inf-programa {
+  border: 1.5px solid rgba(0,0,0,0.25);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.9rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.inf-programa__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 0.5rem;
+}
+.inf-programa__bloques { overflow-x: auto; }
+.inf-programa__bloques svg { max-width: 100%; height: auto; }
+.inf-programa__desc {
+  margin: 0.7rem 0 0;
+  padding: 0.55rem 0.8rem;
+  background: #f4f6ef;
+  border-left: 3px solid #7aa11a;
+  font-size: 0.88rem;
+  border-radius: 0 6px 6px 0;
+}
+.inf-programa__desc strong { font-size: 0.8rem; }
+.inf-vacio { opacity: 0.6; font-style: italic; font-size: 0.9rem; }
+
+/* interacciones y variables */
+.inf-lista { margin: 0; padding-left: 1.1rem; }
+.inf-lista li { margin-bottom: 0.45rem; font-size: 0.92rem; }
+.inf-tabla { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.inf-tabla th, .inf-tabla td { border: 1px solid rgba(0,0,0,0.3); padding: 0.35em 0.6em; text-align: left; }
+.inf-tabla th { background: #f0f0ea; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* micro:bit */
+.inf-codigo {
+  background: #f7f7f4;
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.5;
+}
+.inf-bloques-mb img { max-width: 100%; height: auto; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; background: #fff; padding: 0.5rem; }
+
+.inf-aviso {
+  background: #fdf3e0;
+  border: 1px solid #e0b653;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.inf-pie {
+  margin-top: 1.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(0,0,0,0.25);
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.6;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* ---------- impresión ---------- */
+@media print {
+  #areaImpresion .inf-doc {
+    max-width: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    font-size: 13px;
+  }
+  .inf-doc--saltos .inf-objeto { page-break-before: always; break-before: page; }
+  .inf-seccion, .inf-galeria figure { page-break-inside: avoid; }
+  .inf-portada__tipo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .inf-programa__desc, .inf-stat, .inf-chip, .inf-tabla th, .inf-codigo {
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+}
+
+/* temas oscuros: el "papel" del informe sigue blanco a propósito (así se imprime) */

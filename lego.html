@@ -26,7 +26,13 @@
     <nav class="header__nav" id="headerNav">
       <a href="index.html">Inicio</a>
       <a href="editor.html?tipo=cuestionario">Editor</a>
-      <a href="scratch.html">Fichas Scratch · micro:bit</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
       <span class="nav-desplegable">
         <a href="lego.html" class="active" id="navLego">Ensamble con LEGO ▾</a>
         <span class="nav-desplegable__panel">
@@ -419,6 +425,7 @@
         <a href="index.html">Inicio</a>
         <a href="editor.html?tipo=cuestionario">Editor</a>
         <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="informe-proyecto.html">Informe de proyecto</a>
         <a href="lego.html">Ensamble con LEGO</a>
         <a href="#" data-abrir-guia>Guía</a>
         <a href="lego-calibrar.html" id="linkCalibrador" style="display:none" title="Banco de calibración de piezas (herramienta interna del administrador)">🔧 Calibrador</a>
