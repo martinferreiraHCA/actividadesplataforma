@@ -52,7 +52,30 @@
   margin-bottom: 0.6rem;
 }
 .inf-portada__titulo { font-size: 1.9rem; font-weight: 700; margin: 0 0 0.2rem; line-height: 1.15; }
+.inf-portada__equipo { margin: 0 0 0.15rem; font-size: 1.05rem; font-weight: 700; }
 .inf-portada__sub { margin: 0 0 0.9rem; opacity: 0.65; font-size: 0.9rem; }
+
+/* consigna del docente al principio de la ficha */
+.inf-consigna {
+  border: 1.5px solid #111;
+  border-left: 6px solid #111;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1.6rem;
+  background: #fafaf6;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.inf-consigna strong { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+.inf-consigna p { margin: 0; font-size: 0.95rem; white-space: pre-wrap; }
+
+/* espacio para que el estudiante escriba a mano */
+.inf-comentario { margin-top: 0.8rem; break-inside: avoid; page-break-inside: avoid; }
+.inf-comentario__label { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.55rem; }
+.inf-comentario__linea {
+  height: 1.7em;
+  border-bottom: 1.5px solid rgba(0,0,0,0.45);
+}
 .inf-stats { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .inf-stat {
   border: 1px solid rgba(0,0,0,0.25);
@@ -212,9 +235,10 @@
   .inf-doc--saltos .inf-objeto { page-break-before: always; break-before: page; }
   .inf-seccion, .inf-galeria figure { page-break-inside: avoid; }
   .inf-portada__tipo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .inf-programa__desc, .inf-stat, .inf-chip, .inf-tabla th, .inf-codigo {
+  .inf-programa__desc, .inf-stat, .inf-chip, .inf-tabla th, .inf-codigo, .inf-consigna {
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
+  .inf-comentario__linea { border-bottom-color: #000; }
 }
 
 /* temas oscuros: el "papel" del informe sigue blanco a propósito (así se imprime) */
