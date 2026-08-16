@@ -13,7 +13,7 @@ import {
 
 import {
   protocoloVacio, normalizarProtocolo, protocoloATexto, parsearProtocolo,
-  pareceProtocolo, promptProtocolo
+  pareceProtocolo, promptProtocolo, refEscena, REFERENCIA_FORMATO
 } from './protocolos-texto.js';
 
 import { EJEMPLOS } from './protocolos-ejemplos.js';
@@ -243,24 +243,31 @@ function pintarMateriales() {
   cont.appendChild(b);
 }
 
-// ---- instrumentos ----
-function pintarSelectorInstrumentos() {
-  const sel = $('selectorInstrumento');
+// ---- instrumentos y sustancias ----
+// Los dos se editan igual: una lista de dibujos con sus parámetros a la vista.
+// Cambia qué entra en el selector y qué parámetros se muestran.
+const RECIPIENTES = ['frasco', 'vidrio', 'gradilla'];
+
+function pintarSelector(selectorId, ids) {
+  const sel = $(selectorId);
+  if (!sel) return;
   sel.innerHTML = '';
-  catalogoInstrumentos().forEach(def => {
-    const o = el('option', null, def.icono + ' ' + def.nombre);
-    o.value = def.id;
-    sel.appendChild(o);
-  });
+  catalogoInstrumentos()
+    .filter(def => !ids || ids.indexOf(def.id) >= 0)
+    .forEach(def => {
+      const o = el('option', null, def.icono + ' ' + def.nombre);
+      o.value = def.id;
+      sel.appendChild(o);
+    });
 }
 
-function pintarInstrumentos() {
-  const arr = estado.p.instrumentos;
-  const cont = $('listaInstrumentos');
+function pintarListaDeDibujos(op) {
+  const arr = op.arr;
+  const cont = $(op.contenedorId);
+  if (!cont) return;
   cont.innerHTML = '';
-  if (!arr.length) {
-    cont.appendChild(el('p', 'proto-ayuda', 'Todavía no agregaste ninguno. Elegí uno de la lista de arriba y tocá «Agregar».'));
-  }
+  if (!arr.length) cont.appendChild(el('p', 'proto-ayuda', op.vacio));
+
   arr.forEach((it, i) => {
     const def = instrumentoPorId(it.id);
     if (!def) return;
@@ -268,7 +275,8 @@ function pintarInstrumentos() {
 
     const cab = el('div', 'proto-instr__cab');
     cab.appendChild(el('span', 'proto-instr__nombre', def.icono + ' ' + def.nombre));
-    cab.appendChild(botonesFila(arr, i, pintarInstrumentos));
+    cab.appendChild(el('span', 'proto-instr__ref', (op.prefijo || 'i') + (i + 1)));
+    cab.appendChild(botonesFila(arr, i, op.repintar));
     caja.appendChild(cab);
 
     const cuerpo = el('div', 'proto-instr__cuerpo');
@@ -276,33 +284,45 @@ function pintarInstrumentos() {
     mini.appendChild(dibujarInstrumento(it.id, it.params));
     cuerpo.appendChild(mini);
 
+    const ficha = el('p', 'proto-instr__ficha', fichaTecnica(it.id, it.params));
     const campos = el('div', 'proto-instr__campos');
-    // Se editan acá los parámetros que definen la escala; el resto queda como
-    // vino del banco (donde se configura con más detalle).
-    def.params.filter(par => ['min', 'max', 'division', 'numerarCada', 'unidad', 'lectura'].indexOf(par.clave) >= 0)
-      .forEach(par => {
-        const c = el('label', 'proto-campito');
-        c.appendChild(el('span', 'proto-campito__label', par.etiqueta));
-        const inp = el('input', 'campo__input');
+    // Acá se editan los parámetros que más se tocan; el resto se configura
+    // con más detalle en el banco de instrumentos.
+    def.params.filter(par => op.claves.indexOf(par.clave) >= 0).forEach(par => {
+      const c = el('label', 'proto-campito');
+      c.appendChild(el('span', 'proto-campito__label', par.etiqueta));
+      let inp;
+      if (par.tipo === 'opcion') {
+        inp = el('select', 'campo__input');
+        par.opciones.forEach(o => {
+          const op2 = el('option', null, o.t);
+          op2.value = o.v;
+          if (String(o.v) === String(it.params[par.clave])) op2.selected = true;
+          inp.appendChild(op2);
+        });
+      } else {
+        inp = el('input', 'campo__input');
         inp.type = par.tipo === 'numero' ? 'number' : 'text';
         if (par.tipo === 'numero') inp.step = 'any';
         inp.value = it.params[par.clave];
-        inp.addEventListener('input', () => {
-          it.params[par.clave] = par.tipo === 'numero' ? Number(String(inp.value).replace(',', '.')) : inp.value;
-          it.params = normalizarParams(it.id, it.params);
-          mini.innerHTML = '';
-          mini.appendChild(dibujarInstrumento(it.id, it.params));
-          ficha.textContent = fichaTecnica(it.id, it.params);
-          cambio();
-        });
-        c.appendChild(inp);
-        campos.appendChild(c);
-      });
-    campos.appendChild(campoTexto('Para qué se usa', it.nota, 'para medir el volumen por desplazamiento', v => it.nota = v, '1 1 100%'));
+      }
+      const aplicar = () => {
+        it.params[par.clave] = par.tipo === 'numero' ? Number(String(inp.value).replace(',', '.')) : inp.value;
+        it.params = normalizarParams(it.id, it.params);
+        mini.innerHTML = '';
+        mini.appendChild(dibujarInstrumento(it.id, it.params));
+        ficha.textContent = fichaTecnica(it.id, it.params);
+        codigo.textContent = instrumentoATexto(it.id, it.params);
+        cambio();
+      };
+      inp.addEventListener('input', aplicar);
+      inp.addEventListener('change', aplicar);
+      c.appendChild(inp);
+      campos.appendChild(c);
+    });
+    campos.appendChild(campoTexto(op.notaEtiqueta, it.nota, op.notaMarcador, v => it.nota = v, '1 1 100%'));
     cuerpo.appendChild(campos);
     caja.appendChild(cuerpo);
-
-    const ficha = el('p', 'proto-instr__ficha', fichaTecnica(it.id, it.params));
     caja.appendChild(ficha);
 
     const linea = el('div', 'proto-instr__linea');
@@ -320,20 +340,54 @@ function pintarInstrumentos() {
   const pegar = el('div', 'proto-pegar');
   const inp = el('input', 'campo__input');
   inp.type = 'text';
-  inp.placeholder = 'O pegá acá una línea del banco: probeta :: max=250, division=2…';
+  inp.placeholder = op.pegarMarcador;
   const bp = el('button', 'btn btn--ghost', 'Pegar');
   bp.type = 'button';
-  bp.addEventListener('click', () => {
+  const pegarLinea = () => {
     const r = textoAInstrumento(inp.value);
-    if (!r) { toast('No reconocí ese instrumento'); return; }
+    if (!r) { toast('No reconocí esa línea'); return; }
     arr.push({ id: r.id, params: r.params, nota: '' });
     inp.value = '';
-    pintarInstrumentos();
+    op.repintar();
+    pintarProcedimiento();
     cambio();
-  });
+  };
+  bp.addEventListener('click', pegarLinea);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); pegarLinea(); } });
   pegar.appendChild(inp);
   pegar.appendChild(bp);
   cont.appendChild(pegar);
+}
+
+function pintarInstrumentos() {
+  pintarListaDeDibujos({
+    arr: estado.p.instrumentos,
+    contenedorId: 'listaInstrumentos',
+    prefijo: 'i',
+    pegarMarcador: 'O pegá acá una línea del banco: probeta :: max=250, division=2…',
+    vacio: 'Todavía no agregaste ninguno. Elegí uno de la lista de arriba y tocá «Agregar».',
+    claves: ['min', 'max', 'division', 'numerarCada', 'unidad', 'lectura', 'funcion', 'modelo'],
+    notaEtiqueta: 'Para qué se usa',
+    notaMarcador: 'para medir el volumen por desplazamiento',
+    repintar: pintarInstrumentos
+  });
+}
+
+// ---- sustancias ----
+// Se editan igual que los instrumentos, pero en su propia lista: en el
+// protocolo son otra cosa y en el documento van en su propia sección.
+function pintarSustancias() {
+  pintarListaDeDibujos({
+    arr: estado.p.sustancias,
+    contenedorId: 'listaSustancias',
+    prefijo: 's',
+    pegarMarcador: 'O pegá acá una línea: frasco :: nombre=Sulfato de cobre, formula=CuSO4…',
+    vacio: 'Todavía no cargaste ninguna. Elegí un recipiente de la lista de arriba y tocá «Agregar».',
+    claves: ['tipo', 'nombre', 'formula', 'concentracion', 'cantidad', 'estado', 'peligro', 'nivel'],
+    notaEtiqueta: 'Para qué se usa',
+    notaMarcador: 'se agrega gota a gota en el paso 4',
+    repintar: pintarSustancias
+  });
 }
 
 // ---- procedimiento ----
@@ -357,23 +411,40 @@ function pintarProcedimiento() {
     ta.addEventListener('input', () => { s.texto = ta.value; cambio(); });
     caja.appendChild(ta);
 
+    // ---- la escena: qué se ve sobre la mesada en este paso ----
+    const escena = el('div', 'proto-escena');
+    escena.appendChild(el('span', 'proto-campito__label', 'La escena de este paso — marcá lo que se usa y se dibuja al lado'));
+    const opciones = el('div', 'proto-escena__opciones');
+    const marcar = (lista, prefijo) => {
+      estado.p[lista].forEach((it, k) => {
+        const def = instrumentoPorId(it.id);
+        if (!def) return;
+        const ref = prefijo + (k + 1);
+        const lab2 = el('label', 'proto-escena__chip');
+        const chk = el('input');
+        chk.type = 'checkbox';
+        chk.checked = s.escena.indexOf(ref) >= 0;
+        chk.addEventListener('change', () => {
+          const j = s.escena.indexOf(ref);
+          if (chk.checked && j < 0) s.escena.push(ref);
+          if (!chk.checked && j >= 0) s.escena.splice(j, 1);
+          cambio();
+        });
+        lab2.appendChild(chk);
+        const nombre = it.params && it.params.nombre ? it.params.nombre : def.nombre;
+        lab2.appendChild(document.createTextNode(def.icono + ' ' + nombre));
+        opciones.appendChild(lab2);
+      });
+    };
+    marcar('instrumentos', 'i');
+    marcar('sustancias', 's');
+    if (!opciones.childNodes.length) {
+      opciones.appendChild(el('span', 'proto-ayuda', 'Cargá instrumentos o sustancias más arriba y acá vas a poder elegir cuáles entran en este paso.'));
+    }
+    escena.appendChild(opciones);
+    caja.appendChild(escena);
+
     const abajo = el('div', 'proto-paso__abajo');
-    const lab = el('label', 'proto-campito');
-    lab.appendChild(el('span', 'proto-campito__label', 'Instrumento que se usa en este paso'));
-    const sel = el('select', 'campo__input');
-    const nada = el('option', null, '— ninguno —');
-    nada.value = '';
-    sel.appendChild(nada);
-    estado.p.instrumentos.forEach((it, k) => {
-      const def = instrumentoPorId(it.id);
-      const o = el('option', null, def ? def.icono + ' ' + def.nombre : it.id);
-      o.value = String(k);
-      if (String(k) === s.instrumento) o.selected = true;
-      sel.appendChild(o);
-    });
-    sel.addEventListener('change', () => { s.instrumento = sel.value; cambio(); });
-    lab.appendChild(sel);
-    abajo.appendChild(lab);
     abajo.appendChild(campoTexto('Nota al margen (opcional)', s.nota, 'Ojo: no toques el bulbo con los dedos', v => s.nota = v, '1 1 240px'));
     caja.appendChild(abajo);
 
@@ -381,7 +452,7 @@ function pintarProcedimiento() {
   });
   const b = el('button', 'btn btn--ghost proto-agregar', '+ Agregar paso');
   b.type = 'button';
-  b.addEventListener('click', () => { arr.push({ titulo: '', texto: '', instrumento: '', nota: '' }); pintarProcedimiento(); cambio(); });
+  b.addEventListener('click', () => { arr.push({ titulo: '', texto: '', escena: [], nota: '' }); pintarProcedimiento(); cambio(); });
   cont.appendChild(b);
 }
 
@@ -624,6 +695,30 @@ function construirDocumento() {
     }
   }
 
+  // ---- sustancias y reactivos ----
+  if (p.sustancias.length) {
+    const s = seccion(doc, num(), 'Sustancias y reactivos');
+    s.appendChild(el('p', 'pro-parrafo pro-parrafo--nota',
+      'Antes de destapar cualquier frasco, leé su etiqueta y fijate en el pictograma de peligro. Un frasco sin etiqueta no se usa.'));
+    const galeria = el('div', 'pro-instrumentos pro-instrumentos--sustancias');
+    p.sustancias.forEach(it => {
+      const def = instrumentoPorId(it.id);
+      if (!def) return;
+      const fig = el('figure', 'pro-instrumento');
+      const marco = el('div', 'pro-instrumento__dibujo');
+      marco.appendChild(dibujarInstrumento(it.id, it.params));
+      fig.appendChild(marco);
+      const cap = el('figcaption', 'pro-instrumento__pie');
+      cap.appendChild(el('strong', null, it.params.nombre || def.nombre));
+      const datos = [it.params.formula, it.params.concentracion, it.params.cantidad].filter(Boolean).join(' · ');
+      if (datos) cap.appendChild(el('span', 'pro-instrumento__ficha', datos));
+      if (it.nota) cap.appendChild(el('span', 'pro-instrumento__nota', it.nota));
+      fig.appendChild(cap);
+      galeria.appendChild(fig);
+    });
+    s.appendChild(galeria);
+  }
+
   // ---- seguridad ----
   const seguridad = p.seguridad.filter(x => x.trim());
   if (seguridad.length) {
@@ -664,12 +759,18 @@ function construirDocumento() {
       if (x.texto) { const t = el('span'); t.appendChild(conFormulas(x.texto)); cuerpo.appendChild(t); }
       if (x.nota) cuerpo.appendChild(el('span', 'pro-paso-doc__nota', '⚠ ' + x.nota));
       fila.appendChild(cuerpo);
-      const it = p.instrumentos[Number(x.instrumento)];
-      if (x.instrumento !== '' && it) {
-        const mini = el('div', 'pro-paso-doc__instr');
-        const params = Object.assign({}, it.params);
-        if (paraEstudiante && 'mostrarValor' in params) params.mostrarValor = false;
-        mini.appendChild(dibujarInstrumento(it.id, params));
+      // la escena: todo lo que el paso pone sobre la mesada, dibujado al lado
+      const piezas = (x.escena || []).map(ref => {
+        const r = refEscena(ref);
+        return r ? p[r.lista][r.indice] : null;
+      }).filter(Boolean);
+      if (piezas.length) {
+        const mini = el('div', 'pro-paso-doc__escena' + (piezas.length > 1 ? ' pro-paso-doc__escena--varias' : ''));
+        piezas.forEach(it => {
+          const params = Object.assign({}, it.params);
+          if (paraEstudiante && 'mostrarValor' in params) params.mostrarValor = false;
+          mini.appendChild(dibujarInstrumento(it.id, params));
+        });
         fila.appendChild(mini);
       }
       li.appendChild(fila);
@@ -773,6 +874,18 @@ function construirDocumento() {
   else s.appendChild(el('p', 'pro-parrafo pro-parrafo--nota',
     'En la versión del estudiante van acá ' + p.conclusiones.lineas + ' renglones en blanco.'));
 
+  // ---- notas para el docente: sólo en la versión del docente ----
+  const notas = p.notasDocente.filter(x => x.trim());
+  if (notas.length && !paraEstudiante) {
+    const sn = seccion(doc, num(), 'Notas para el docente');
+    const caja = el('div', 'pro-notas');
+    caja.appendChild(el('p', 'pro-notas__aviso', 'Esto no aparece en la hoja del estudiante.'));
+    const ul = el('ul', 'pro-lista');
+    notas.forEach(n => { const li = el('li'); li.appendChild(conFormulas(n)); ul.appendChild(li); });
+    caja.appendChild(ul);
+    sn.appendChild(caja);
+  }
+
   return doc;
 }
 
@@ -829,8 +942,10 @@ function pintarTodo() {
   listaDeTextos('listaObjetivos', p.objetivos, 'Determinar la densidad de tres sólidos irregulares.', '+ Agregar objetivo');
   listaDeTextos('listaSeguridad', p.seguridad, 'Secá enseguida el agua que se derrame en la mesada.', '+ Agregar norma');
   listaDeTextos('listaPreguntas', p.preguntas, '¿Los tres cuerpos tienen la misma densidad?', '+ Agregar pregunta');
+  listaDeTextos('listaNotasDocente', p.notasDocente, 'Preparar la solución el día anterior: tarda en disolverse.', '+ Agregar nota');
   pintarMateriales();
   pintarInstrumentos();
+  pintarSustancias();
   pintarProcedimiento();
   pintarTablas();
   pintarCalculos();
@@ -932,7 +1047,8 @@ function refrescarPrompt() {
 
 function init() {
   pintarPlantillas();
-  pintarSelectorInstrumentos();
+  pintarSelector('selectorInstrumento');
+  pintarSelector('selectorSustancia', RECIPIENTES);
   barraLatex('latexFundamento', $('campoFundamento'));
 
   const guardado = cargarGuardado();
@@ -951,11 +1067,18 @@ function init() {
     cambio();
   });
 
-  // --- instrumentos ---
+  // --- instrumentos y sustancias ---
   $('btnAgregarInstrumento').addEventListener('click', () => {
     const id = $('selectorInstrumento').value;
     estado.p.instrumentos.push({ id, params: paramsPorDefecto(id), nota: '' });
     pintarInstrumentos();
+    pintarProcedimiento();
+    cambio();
+  });
+  $('btnAgregarSustancia').addEventListener('click', () => {
+    const id = $('selectorSustancia').value;
+    estado.p.sustancias.push({ id, params: paramsPorDefecto(id), nota: '' });
+    pintarSustancias();
     pintarProcedimiento();
     cambio();
   });
@@ -1014,7 +1137,18 @@ function init() {
   $('btnVerFormato').addEventListener('click', () => {
     const pre = $('ejemploFormato');
     pre.hidden = !pre.hidden;
-    if (!pre.hidden) pre.textContent = protocoloATexto(parsearProtocolo(EJEMPLOS[0].texto));
+    if (!pre.hidden) pre.textContent = REFERENCIA_FORMATO;
+  });
+  $('btnVerEjemplo').addEventListener('click', () => {
+    const pre = $('ejemploFormato');
+    pre.hidden = false;
+    // el ejemplo se muestra ya pasado por el serializador: es exactamente lo
+    // que la página entiende, sin lugar a dudas
+    pre.textContent = protocoloATexto(parsearProtocolo(EJEMPLOS[0].texto));
+  });
+  $('btnCopiarFormato').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(REFERENCIA_FORMATO); toast('Referencia copiada'); }
+    catch (e) { window.prompt('Copiá la referencia del formato:', REFERENCIA_FORMATO); }
   });
   $('btnCargarTexto').addEventListener('click', () => {
     const txt = $('areaTexto').value;

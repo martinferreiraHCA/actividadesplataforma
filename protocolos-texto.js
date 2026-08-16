@@ -17,14 +17,24 @@ export function protocoloVacio() {
     objetivos: [],
     materiales: [],
     instrumentos: [],
+    sustancias: [],
     seguridad: [],
     montaje: { texto: '', imagen: '' },
     procedimiento: [],
     tablas: [],
     calculos: [],
     preguntas: [],
-    conclusiones: { guia: '', lineas: 8 }
+    conclusiones: { guia: '', lineas: 8 },
+    notasDocente: []
   };
+}
+
+// Las referencias de la escena de un paso: «i2» es el instrumento 2 y «s1» la
+// sustancia 1, contando desde 1 tal como se ven en el editor.
+export function refEscena(txt) {
+  const m = String(txt || '').trim().match(/^([is])\s*(\d+)$/i);
+  if (!m) return null;
+  return { lista: m[1].toLowerCase() === 'i' ? 'instrumentos' : 'sustancias', indice: Number(m[2]) - 1 };
 }
 
 // Completa lo que falte: así un JSON viejo o a medio escribir no rompe nada.
@@ -43,9 +53,19 @@ export function normalizarProtocolo(p) {
   if (Array.isArray(p.instrumentos)) r.instrumentos = p.instrumentos
     .map(i => (i && i.id ? { id: i.id, params: i.params || {}, nota: String(i.nota || '') } : null))
     .filter(Boolean);
+  if (Array.isArray(p.sustancias)) r.sustancias = p.sustancias
+    .map(i => (i && i.id ? { id: i.id, params: i.params || {}, nota: String(i.nota || '') } : null))
+    .filter(Boolean);
+  if (Array.isArray(p.notasDocente)) r.notasDocente = p.notasDocente.map(String);
   if (p.montaje) r.montaje = { texto: String(p.montaje.texto || ''), imagen: String(p.montaje.imagen || '') };
   if (Array.isArray(p.procedimiento)) r.procedimiento = p.procedimiento.map(s => ({
-    titulo: String(s.titulo || ''), texto: String(s.texto || ''), instrumento: String(s.instrumento || ''), nota: String(s.nota || '')
+    titulo: String(s.titulo || ''),
+    texto: String(s.texto || ''),
+    // «instrumento» era un solo índice en la primera versión; ahora la escena
+    // es una lista de referencias, y lo viejo se traduce al abrir.
+    escena: Array.isArray(s.escena) ? s.escena.map(String).filter(x => refEscena(x))
+      : (s.instrumento !== undefined && s.instrumento !== '' ? ['i' + (Number(s.instrumento) + 1)] : []),
+    nota: String(s.nota || '')
   }));
   if (Array.isArray(p.tablas)) r.tablas = p.tablas.map(t => ({
     titulo: String(t.titulo || ''),
@@ -97,6 +117,15 @@ export function protocoloATexto(p) {
     });
   }
 
+  if (p.sustancias.length) {
+    l.push('', '## Sustancias');
+    p.sustancias.forEach(i => {
+      let t = '- ' + instrumentoATexto(i.id, i.params);
+      if (i.nota) t += ' :: ' + i.nota;
+      l.push(t);
+    });
+  }
+
   if (p.seguridad.length) { l.push('', '## Seguridad'); p.seguridad.forEach(s => l.push('- ' + s)); }
 
   if (p.montaje.texto) { l.push('', '## Montaje', p.montaje.texto.trim()); }
@@ -108,6 +137,7 @@ export function protocoloATexto(p) {
       if (s.titulo) partes.push(s.titulo);
       partes.push(s.texto);
       let t = (i + 1) + '. ' + partes.join(' :: ');
+      if (s.escena && s.escena.length) t += ' :: escena: ' + s.escena.join(' ');
       if (s.nota) t += ' :: nota: ' + s.nota;
       l.push(t);
     });
@@ -139,6 +169,11 @@ export function protocoloATexto(p) {
   l.push('', '## Conclusiones', 'líneas: ' + p.conclusiones.lineas);
   if (p.conclusiones.guia) l.push('Guía: ' + p.conclusiones.guia);
 
+  if (p.notasDocente.length) {
+    l.push('', '## Notas para el docente');
+    p.notasDocente.forEach(n => l.push('- ' + n));
+  }
+
   return l.join('\n').trim() + '\n';
 }
 
@@ -153,6 +188,9 @@ const ALIAS = {
   objetivos: 'objetivos', objetivo: 'objetivos',
   materiales: 'materiales', 'materiales e instrumentos': 'materiales', material: 'materiales',
   instrumentos: 'instrumentos', instrumental: 'instrumentos',
+  sustancias: 'sustancias', reactivos: 'sustancias', 'sustancias y reactivos': 'sustancias', frascos: 'sustancias',
+  'notas para el docente': 'notasDocente', 'notas del docente': 'notasDocente', 'para el docente': 'notasDocente',
+  'notas didacticas': 'notasDocente', 'notas': 'notasDocente',
   seguridad: 'seguridad', 'normas de seguridad': 'seguridad', precauciones: 'seguridad',
   montaje: 'montaje', 'montaje experimental': 'montaje', 'dispositivo experimental': 'montaje', esquema: 'montaje',
   procedimiento: 'procedimiento', 'paso a paso': 'procedimiento', desarrollo: 'procedimiento', metodo: 'procedimiento',
@@ -241,6 +279,7 @@ export function parsearProtocolo(texto) {
       case 'objetivos':
       case 'seguridad':
       case 'preguntas':
+      case 'notasDocente':
         if (item) p[seccion].push(item);
         break;
 
@@ -256,7 +295,8 @@ export function parsearProtocolo(texto) {
         break;
       }
 
-      case 'instrumentos': {
+      case 'instrumentos':
+      case 'sustancias': {
         if (!item) break;
         // el último «::» puede ser una nota en castellano, no un parámetro
         const trozos = item.split('::');
@@ -270,20 +310,25 @@ export function parsearProtocolo(texto) {
           crudo = trozos[0];
         }
         const inst = textoAInstrumento(crudo);
-        if (inst) p.instrumentos.push({ id: inst.id, params: inst.params, nota });
+        if (inst) p[seccion].push({ id: inst.id, params: inst.params, nota });
         break;
       }
 
       case 'procedimiento': {
         if (!esItem && !item) break;
         const trozos = item.split('::').map(t => t.trim());
-        let nota = '';
+        let nota = '', escena = [];
         const iNota = trozos.findIndex(t => /^nota\s*:/i.test(t));
         if (iNota >= 0) nota = trozos.splice(iNota, 1)[0].replace(/^nota\s*:\s*/i, '');
+        const iEsc = trozos.findIndex(t => /^escena\s*:/i.test(t));
+        if (iEsc >= 0) {
+          escena = trozos.splice(iEsc, 1)[0].replace(/^escena\s*:\s*/i, '')
+            .split(/[\s,]+/).map(x => x.trim()).filter(x => refEscena(x));
+        }
         let titulo = '', cuerpo = trozos.join(' — ');
         if (trozos.length > 1) { titulo = trozos[0]; cuerpo = trozos.slice(1).join(' — '); }
         if (!cuerpo && !titulo) break;
-        p.procedimiento.push({ titulo, texto: cuerpo, instrumento: '', nota });
+        p.procedimiento.push({ titulo, texto: cuerpo, escena, nota });
         break;
       }
 
@@ -339,6 +384,142 @@ export function pareceProtocolo(texto) {
 }
 
 // ============================================================
+// La referencia del formato, completa
+// ============================================================
+// Es la misma que se muestra en la página, se copia al portapapeles y se
+// puede pegar en una IA. Está escrita para que no quede nada librado a la
+// interpretación: cada sección con su sintaxis exacta y un ejemplo.
+export const REFERENCIA_FORMATO = `FORMATO DE UN PROTOCOLO DE PRÁCTICO
+===================================
+
+REGLAS GENERALES
+  1. Una línea que empieza con «# Clave: valor» es un dato de cabecera.
+  2. Una línea que empieza con «## » abre una sección. El orden no importa.
+  3. Adentro de una sección, cada ítem va en su propia línea y empieza con
+     «- » (o con «1. », «2. »… en el procedimiento).
+  4. El separador entre los campos de un ítem son DOS PUNTOS DOBLES: « :: ».
+  5. Los renglones en blanco separan párrafos. Los acentos y las mayúsculas
+     de los nombres de sección no importan.
+  6. Todo lo que va entre signos de peso se dibuja como fórmula matemática
+     en LaTeX: $d = \\frac{m}{V}$ en el renglón, $$…$$ centrada aparte.
+
+CABECERA
+  # Protocolo: Determinación de la densidad de sólidos irregulares
+  # Asignatura: Física
+  # Nivel: 3° de Ciclo Básico
+  # Duración: 90 minutos
+  # Docente: (opcional)
+  # Grupo: (opcional)
+
+## Fundamento
+  Párrafos de texto corrido. Un renglón en blanco separa un párrafo del otro.
+  Las fórmulas van en LaTeX entre signos de peso.
+
+## Objetivos
+  - Un objetivo por línea, empezando con un verbo en infinitivo.
+
+## Materiales
+  - 1 probeta de 100 mL
+  - 3 cuerpos sólidos irregulares :: aclaración opcional después de « :: »
+  La cantidad se detecta sola si el ítem empieza con un número.
+
+## Instrumentos
+  Un instrumento por línea:   - identificador :: parámetros :: para qué se usa
+  - probeta :: max=100, division=1, unidad=mL, lectura=64 :: mide el volumen
+  Los parámetros van separados por comas, con la forma clave=valor. Los que no
+  pongas quedan en su valor de fábrica. Los booleanos se escriben si/no.
+
+  IDENTIFICADORES DISPONIBLES
+    Longitud y ángulo : regla · calibre · micrometro · transportador
+    Volumen           : probeta · bureta · pipeta · jeringa · vidrio
+    Masa              : balanzaDigital · granataria
+    Temperatura       : termometro · calorimetro
+    Fuerza            : dinamometro · planoInclinado · polea
+    Tiempo            : cronometro
+    Electricidad      : multimetro · aguja · fuente · circuito · microbit
+    Óptica            : bancoOptico
+    Química           : frasco · mechero · soporte · gradilla · filtracion ·
+                        destilacion · agitador · papelPH
+    Sensores          : goDirect · sensorDigital
+
+  PARÁMETROS COMUNES
+    min, max        alcance de la escala
+    division        cuánto vale la rayita más chica
+    numerarCada     cada cuánto se escribe un número
+    unidad          mL, cm, N, °C, g, V…
+    lectura         el valor que muestra el instrumento
+    etiqueta        un rótulo libre para el dibujo
+
+  LA LÍNEA DE MEDICIÓN (no viene puesta, se agrega a propósito)
+    marcarLectura=si        dibuja la línea roja que señala dónde leer
+    marcaEn=30              a qué punto de la escala apunta (si no, a la lectura)
+    marcaTexto=nivel inicial  el rótulo que la acompaña
+    marcaCorrer=-2          ajuste fino, en milímetros de dibujo
+
+  CASOS ESPECIALES
+    multimetro :: funcion=Vcc20, lectura=9.06
+      funcion es la posición de la llave: Vcc200m Vcc2 Vcc20 Vcc200 Vcc600 ·
+      Vca200 Vca600 · Acc200u Acc2m Acc20m Acc200m Acc10 · Aca200m ·
+      ohm200 ohm2k ohm20k ohm200k ohm2M · cont diodo hfe · cap capu frec temp · off
+    circuito :: componente=lampara, conexion=serie, llave=cerrada, valorFuente=6 V
+      componente: lampara resistencia led motor timbre · conexion: no serie paralelo
+    microbit :: pin0=ultrasonido, magnitud=Distancia, unidad=cm, lectura=34
+      pines: ldr ntc pot humedad ultrasonido dht11 sonido llama hall infra boton
+      lluvia led zumbador servo motor rele · interno: acel brujula temp luz micro tacto
+    goDirect :: modelo=pressure, lectura=101.3
+      modelos: force accel temp ph orp motion light pressure co2 o2 cond volt
+      current energy ekg resp hr bp spiro magnetic sound rotary drop colorim do
+      turb charge radiation melt weather
+    bancoOptico :: lente=convergente, focal=10, distanciaObjeto=25
+    planoInclinado :: angulo=25, movil=carrito, fuerzas=si
+    gradilla :: cantidad=4, rotulos=agua, HCl, NaOH, control
+    mechero :: llama=azul, altura=media, zonas=si
+    soporte :: encima=vaso, rejilla=si, mechero=si
+
+## Sustancias
+  Los frascos con lo que se va a usar. Mismo formato que los instrumentos:
+  - frasco :: nombre=Ácido clorhídrico, formula=HCl, concentracion=0,1 mol/L, cantidad=250 mL, peligro=corrosivo :: para la titulación
+  tipo: frasco botella gotero vaso tubo matraz placa vidrioReloj
+  estado: liquido solido granulado vacio
+  peligro: corrosivo inflamable toxico irritante oxidante ambiente salud
+
+## Seguridad
+  - Una precaución concreta por línea.
+
+## Montaje
+  Texto corrido, igual que el fundamento.
+
+## Procedimiento
+  Un paso por línea, numerado:
+  1. Título corto :: Qué hay que hacer :: escena: i1 s2 :: nota: al margen
+  El «escena:» dice qué se dibuja al lado del paso: i1 es el primer
+  instrumento, s2 la segunda sustancia. Se pueden poner varios, con espacios.
+  El «nota:» es opcional y sale en bastardilla debajo del paso.
+
+## Tablas
+  ### Título de la tabla
+  | Ensayo | m (g) ± 0,1 | V (mL) ± 0,5 |
+  filas: 5
+  De cada columna, el nombre; entre paréntesis la unidad y después de ± la
+  incertidumbre. Las tablas salen VACÍAS, con esa cantidad de filas.
+
+## Cálculos
+  - Nombre :: $fórmula$ :: unidad :: cómo se calcula y con qué datos
+
+## Preguntas
+  - Una pregunta de análisis por línea.
+
+## Conclusiones
+  líneas: 8
+  Guía: preguntas orientadoras para que el estudiante redacte.
+
+## Notas para el docente
+  - Sólo salen en la versión del docente, nunca en la del estudiante.
+  - Qué preparar antes, en qué se traban, cómo adaptar si falta material,
+    cuánto tiempo lleva cada tramo, qué mirar al corregir.
+`;
+
+// ============================================================
 // Prompt para pedirle el protocolo a una IA
 // ============================================================
 export function promptProtocolo(o) {
@@ -351,113 +532,36 @@ export function promptProtocolo(o) {
   const preguntas = op.preguntas || 5;
   const enfoque = op.enfoque || '';
 
-  return `Sos docente de ${asignatura} y estás escribiendo el protocolo de una práctica de laboratorio para estudiantes de ${nivel}.
+  return `Sos docente de ${asignatura} y estás escribiendo el protocolo de una práctica de laboratorio para estudiantes de ${nivel} en Uruguay.
 
 TEMA: ${tema}
 DURACIÓN DE LA CLASE: ${duracion}
 ${enfoque ? 'ENFOQUE / CONSIGNA ESPECIAL: ' + enfoque + '\n' : ''}
-Escribí el protocolo COMPLETO respetando exactamente el formato de más abajo. Reglas:
+QUÉ TENÉS QUE ESCRIBIR
+Un protocolo completo, en el formato exacto que se detalla más abajo. Reglas de contenido:
 
-1. Usá materiales baratos y fáciles de conseguir en un liceo (nada de equipamiento de universidad).
-2. El procedimiento tiene que tener ${pasos} pasos numerados, concretos y en imperativo ("Medí…", "Anotá…"), como para que un estudiante los siga solo.
-3. Toda medida tiene que decir con qué instrumento se toma y en qué unidad.
-4. Las tablas de datos van vacías: sólo los encabezados de columna con su unidad y su incertidumbre, y cuántas filas hacen falta.
-5. Las preguntas de análisis (${preguntas}) tienen que obligar a pensar sobre los datos obtenidos, no a repetir teoría.
-6. Escribí en español rioplatense (voseo), claro y directo. No uses negritas ni markdown adentro de los textos.
+ 1. Materiales baratos y conseguibles en un liceo. Nada de equipamiento de universidad.
+ 2. El procedimiento lleva ${pasos} pasos numerados, concretos y en imperativo ("Medí…",
+    "Anotá…"), como para que un estudiante los siga solo.
+ 3. Toda medida dice con qué instrumento se toma y en qué unidad.
+ 4. Las tablas van VACÍAS: sólo los encabezados con su unidad y su incertidumbre.
+ 5. Las ${preguntas} preguntas de análisis obligan a pensar sobre los datos obtenidos,
+    no a repetir teoría.
+ 6. Español rioplatense (voseo), claro y directo. Sin negritas ni markdown adentro
+    de los textos.
+ 7. Ajustá la exigencia al nivel: en 7°, 8° y 9° el foco está en observar, medir y
+    describir; en 1°, 2° y 3° de EMS se suman el tratamiento de la incertidumbre,
+    las gráficas y el modelo matemático.
+ 8. Terminá SIEMPRE con la sección "## Notas para el docente": ahí va lo que hace que
+    la práctica salga bien y que el estudiante no tiene que ver — qué preparar el día
+    anterior, en qué se traban siempre, cómo adaptarla si falta material, cuánto tiempo
+    lleva cada tramo y qué mirar al corregir.
 
-FÓRMULAS EN LaTeX
-Las fórmulas se escriben en LaTeX entre signos de peso y la plataforma las dibuja como
-matemática de verdad. Usalas en el Fundamento, en el Montaje, en las Preguntas y en la
-fórmula de cada cálculo:
-  · $d = \\frac{m}{V}$            → en el medio del renglón
-  · $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$  → centrada, en su propio bloque
-Comandos que conviene usar: \\frac{}{}, \\sqrt{}, ^{}, _{}, \\cdot, \\pm, \\Delta, \\pi, \\rho,
-\\Omega, \\mu, \\lambda, \\theta, \\approx, \\vec{}, \\bar{}, \\times 10^{-3}, \\mathrm{m/s^2}.
-Escribí los decimales con {,}: $9{,}8\\ \\mathrm{m/s^2}$. Como el texto va en castellano,
-poné en LaTeX SÓLO las fórmulas, no las frases enteras.
-
-INSTRUMENTOS
-En la sección "## Instrumentos" usá SOLO estos identificadores, uno por línea:
-regla, calibre, micrometro, probeta, bureta, jeringa, vidrio, termometro, dinamometro,
-balanzaDigital, granataria, cronometro, multimetro, aguja, transportador, sensorDigital,
-microbit, goDirect
-Parámetros habituales: min, max, division, numerarCada, unidad, lectura.
-(La plataforma los dibuja sola, con esa escala y esa lectura.)
-
-Casos especiales:
-  · multimetro → lleva "funcion" con la posición de la llave, que es la función y el rango
-    juntos: Vcc200m, Vcc2, Vcc20, Vcc200, Vcc600, Vca200, Vca600, ohm200, ohm2k, ohm20k,
-    ohm200k, ohm2M, cont, diodo, hfe, cap, capu, frec, temp, Aca200m, Acc200u, Acc2m,
-    Acc20m, Acc200m, Acc10. La unidad y los decimales salen solos de ahí.
-    Ejemplo: multimetro :: funcion=Vcc20, lectura=9.06
-  · microbit → lleva pin0, pin1 y pin2 con lo que se conecta (ldr, ntc, pot, humedad,
-    ultrasonido, dht11, sonido, llama, hall, infra, boton, lluvia, led, zumbador, servo,
-    motor, rele), "interno" para el sensor de a bordo (acel, brujula, temp, luz, micro,
-    tacto) y "magnitud" con lo que se está midiendo.
-    Ejemplo: microbit :: pin0=ultrasonido, magnitud=Distancia, unidad=cm, lectura=34
-  · goDirect → lleva "modelo" con el sensor Vernier Go Direct: force, accel, temp, ph, orp,
-    motion, light, pressure, co2, o2, cond, volt, current, energy, ekg, resp, hr, bp,
-    spiro, magnetic, sound, rotary, drop, colorim, do, turb, charge, radiation, melt,
-    weather. Ejemplo: goDirect :: modelo=pressure, lectura=101.3
-
-LÍNEA DE MEDICIÓN
-Los instrumentos salen SIN la línea roja que señala dónde leer, a propósito: encontrar la
-medida en la escala es parte del trabajo del estudiante. Agregala sólo cuando el dibujo no
-se entienda sin ella, con estos parámetros:
-  · marcarLectura=si   → dibuja la línea
-  · marcaEn=64         → opcional: a qué punto de la escala apunta (si no, apunta a la lectura)
-  · marcaTexto=nivel inicial → opcional: el rótulo que la acompaña
-Ejemplo de una probeta donde hay que señalar el nivel de partida:
-  probeta :: max=100, division=1, unidad=mL, lectura=50, marcarLectura=si, marcaTexto=nivel inicial
-
-FORMATO EXACTO DE LA RESPUESTA (no agregues nada antes ni después):
-
-# Protocolo: [título del práctico]
-# Asignatura: ${asignatura}
-# Nivel: ${nivel}
-# Duración: ${duracion}
-
-## Fundamento
-[Dos o tres párrafos con la teoría mínima necesaria para entender qué se va a hacer y por qué. Las fórmulas, en LaTeX entre signos de peso: la principal en su propio bloque con $$…$$ y las que van en el medio de una frase con $…$.]
-
-## Objetivos
-- [Objetivo general]
-- [Objetivo específico]
-- [Objetivo específico]
-
-## Materiales
-- 1 probeta de 100 mL
-- 3 cuerpos sólidos irregulares :: que entren por la boca de la probeta
-- [seguir la lista]
-
-## Instrumentos
-- probeta :: max=100, division=1, unidad=mL, lectura=64 :: [para qué se usa]
-- balanzaDigital :: max=500, division=0.1, unidad=g, lectura=126.4 :: [para qué se usa]
-
-## Seguridad
-- [Precaución concreta y realista para esta práctica]
-
-## Montaje
-[Cómo se arma el dispositivo sobre la mesada, qué va apoyado dónde y qué hay que verificar antes de empezar.]
-
-## Procedimiento
-1. [Título corto del paso] :: [Qué hay que hacer exactamente]
-2. [Título corto del paso] :: [Qué hay que hacer exactamente]
-[hasta ${pasos}]
-
-## Tablas
-### [Título de la tabla]
-| Ensayo | m (g) ± 0,1 | V (mL) ± 0,5 |
-filas: 5
-
-## Cálculos
-- [Nombre de la magnitud] :: $[fórmula en LaTeX]$ :: [unidad] :: [cómo se calcula y con qué datos de la tabla]
-
-## Preguntas
-- [Pregunta de análisis sobre los datos]
-[hasta ${preguntas}]
-
-## Conclusiones
-líneas: 8
-Guía: [Dos o tres preguntas orientadoras para que el estudiante redacte su conclusión.]`;
+${REFERENCIA_FORMATO}
+AHORA ESCRIBÍ EL PROTOCOLO
+Respondé SÓLO con el protocolo en ese formato, sin texto antes ni después, empezando
+por «# Protocolo:» y terminando por la última nota para el docente. Usá los
+instrumentos y las sustancias que de verdad haga falta para este tema —no los pongas
+de adorno— y acordate de armar la escena de los pasos donde el dibujo ayude a
+entender qué hay sobre la mesada.`;
 }

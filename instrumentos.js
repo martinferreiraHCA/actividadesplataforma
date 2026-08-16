@@ -1781,14 +1781,1348 @@ DEF.goDirect = {
   }
 };
 
+// ---------- Frascos y recipientes con sustancia ----------
+
+// Pictogramas del sistema armonizado (rombo rojo). Se dibujan simplificados
+// pero reconocibles: alcanza para que el estudiante sepa qué tiene enfrente.
+export const PELIGROS = [
+  { id: '', t: '— sin pictograma —' },
+  { id: 'corrosivo', t: 'Corrosivo', simbolo: '🜔' },
+  { id: 'inflamable', t: 'Inflamable', simbolo: '🔥' },
+  { id: 'toxico', t: 'Tóxico (calavera)', simbolo: '☠' },
+  { id: 'irritante', t: 'Irritante / nocivo', simbolo: '!' },
+  { id: 'oxidante', t: 'Comburente', simbolo: 'O' },
+  { id: 'ambiente', t: 'Peligroso para el ambiente', simbolo: '🐟' },
+  { id: 'salud', t: 'Peligro para la salud', simbolo: '☣' }
+];
+
+// El rombo rojo del pictograma, con su dibujo adentro. Los símbolos van
+// dibujados y no como caracteres: así se ven igual en cualquier navegador y
+// no dependen de que la fuente traiga el emoji.
+function rombePeligro(g, cx, cy, lado, id) {
+  if (!id) return;
+  const r = lado / 2;
+  g.appendChild(svgEl('polygon', {
+    points: `${r2(cx)},${r2(cy - r)} ${r2(cx + r)},${r2(cy)} ${r2(cx)},${r2(cy + r)} ${r2(cx - r)},${r2(cy)}`,
+    fill: '#ffffff', stroke: C.rojo, 'stroke-width': lado * 0.1
+  }));
+  const k = lado / 44;                       // todo se dibuja para un rombo de 44 y se escala
+  const s = grupo({ transform: `translate(${r2(cx)} ${r2(cy)}) scale(${r2(k)})` });
+  const N = '#111111';
+  const llama = (x, y, alto) => svgEl('path', {
+    d: `M ${x} ${y} C ${x + alto * 0.42} ${y - alto * 0.42} ${x + alto * 0.2} ${y - alto * 0.72} ${x} ${y - alto}
+        C ${x - alto * 0.1} ${y - alto * 0.6} ${x - alto * 0.45} ${y - alto * 0.5} ${x} ${y} Z`, fill: N
+  });
+
+  if (id === 'inflamable') {
+    s.appendChild(llama(0, 12, 26));
+    s.appendChild(svgEl('rect', { x: -13, y: 12, width: 26, height: 3, fill: N }));
+  } else if (id === 'oxidante') {
+    s.appendChild(svgEl('circle', { cx: 0, cy: 6, r: 9, fill: 'none', stroke: N, 'stroke-width': 3 }));
+    s.appendChild(llama(0, -6, 16));
+  } else if (id === 'toxico') {
+    // calavera con las tibias cruzadas
+    s.appendChild(svgEl('path', { d: 'M -9 -8 A 9 10 0 0 1 9 -8 L 9 1 A 9 8 0 0 1 -9 1 Z', fill: N }));
+    s.appendChild(svgEl('circle', { cx: -3.6, cy: -6, r: 2.4, fill: '#fff' }));
+    s.appendChild(svgEl('circle', { cx: 3.6, cy: -6, r: 2.4, fill: '#fff' }));
+    s.appendChild(svgEl('rect', { x: -1, y: -1, width: 2, height: 3, fill: '#fff' }));
+    [-38, 38].forEach(a => s.appendChild(svgEl('rect', {
+      x: -13, y: 8, width: 26, height: 3.4, fill: N, transform: `rotate(${a} 0 10)`
+    })));
+  } else if (id === 'irritante') {
+    s.appendChild(svgEl('rect', { x: -2.6, y: -13, width: 5.2, height: 17, fill: N }));
+    s.appendChild(svgEl('circle', { cx: 0, cy: 10, r: 3, fill: N }));
+  } else if (id === 'corrosivo') {
+    // dos tubos que vuelcan sobre una superficie que se come
+    [-9, 9].forEach((x, i) => {
+      s.appendChild(svgEl('rect', { x: x - 3, y: -14, width: 6, height: 11, fill: N, transform: `rotate(${i ? 26 : -26} ${x} -8)` }));
+      s.appendChild(svgEl('path', { d: `M ${x} -1 L ${x + 1.6} 5 L ${x - 1.6} 5 Z`, fill: N }));
+    });
+    s.appendChild(svgEl('path', { d: 'M -14 9 L 14 9 L 14 13 L -14 13 Z M -5 9 L 0 4 L 5 9 Z', fill: N, 'fill-rule': 'evenodd' }));
+  } else if (id === 'ambiente') {
+    // un pez y un árbol: el pictograma de peligro para el medio ambiente
+    s.appendChild(svgEl('path', { d: 'M -14 6 C -8 0 0 0 5 6 C 0 12 -8 12 -14 6 Z M 5 6 L 12 1 L 12 11 Z', fill: N }));
+    s.appendChild(svgEl('circle', { cx: -9, cy: 5, r: 1.4, fill: '#fff' }));
+    s.appendChild(svgEl('path', { d: 'M -4 -12 L 2 -12 L 2 -3 L -4 -3 Z M -9 -3 L 7 -3 L -1 -15 Z', fill: N }));
+  } else if (id === 'salud') {
+    s.appendChild(svgEl('path', { d: 'M -10 -13 L 10 -13 L 10 13 L -10 13 Z', fill: 'none', stroke: N, 'stroke-width': 2.4 }));
+    s.appendChild(svgEl('path', { d: 'M 0 -9 L 3 -2 L 10 -2 L 4.5 2.5 L 7 9.5 L 0 5 L -7 9.5 L -4.5 2.5 L -10 -2 L -3 -2 Z', fill: N }));
+  }
+  g.appendChild(s);
+}
+
+DEF.frasco = {
+  nombre: 'Frasco con sustancia',
+  icono: '🧴',
+  categoria: 'Sustancias',
+  magnitud: 'Reactivo',
+  resumen: 'El tarrito de la sustancia, con su etiqueta: nombre, fórmula, concentración, cuánto hay y el pictograma de peligro.',
+  comoSeLee: 'La etiqueta se lee antes de destapar. El pictograma dice cómo hay que manipularla; la concentración, qué tan fuerte está. Un frasco sin etiqueta se descarta: nunca se prueba ni se huele para averiguar qué es.',
+  params: [
+    { clave: 'tipo', etiqueta: 'Tipo de recipiente', tipo: 'opcion', def: 'frasco', opciones: [
+      { v: 'frasco', t: 'Frasco de reactivo' }, { v: 'botella', t: 'Botella' }, { v: 'gotero', t: 'Frasco gotero' },
+      { v: 'vaso', t: 'Vaso de precipitados' }, { v: 'tubo', t: 'Tubo de ensayo' },
+      { v: 'matraz', t: 'Erlenmeyer' }, { v: 'placa', t: 'Cápsula de Petri (desde arriba)' },
+      { v: 'vidrioReloj', t: 'Vidrio de reloj' }
+    ] },
+    { clave: 'nombre', etiqueta: 'Nombre de la sustancia', tipo: 'texto', def: 'Ácido clorhídrico' },
+    { clave: 'formula', etiqueta: 'Fórmula', tipo: 'texto', def: 'HCl', ayuda: 'Los números van como se escriben: H2SO4, CuSO4·5H2O.' },
+    { clave: 'concentracion', etiqueta: 'Concentración o pureza', tipo: 'texto', def: '0,1 mol/L' },
+    { clave: 'cantidad', etiqueta: 'Cuánto hay', tipo: 'texto', def: '250 mL' },
+    { clave: 'estado', etiqueta: 'Estado', tipo: 'opcion', def: 'liquido', opciones: [
+      { v: 'liquido', t: 'Líquido' }, { v: 'solido', t: 'Sólido / polvo' }, { v: 'granulado', t: 'Granulado' }, { v: 'vacio', t: 'Vacío' }
+    ] },
+    P.color('#d8e64a'),
+    { clave: 'nivel', etiqueta: 'Qué tan lleno está (%)', tipo: 'numero', paso: 5, min: 0, max: 100, def: 65 },
+    { clave: 'peligro', etiqueta: 'Pictograma de peligro', tipo: 'opcion', def: 'corrosivo', opciones: PELIGROS.map(x => ({ v: x.id, t: x.t })) },
+    { clave: 'peligro2', etiqueta: 'Segundo pictograma', tipo: 'opcion', def: '', opciones: PELIGROS.map(x => ({ v: x.id, t: x.t })) },
+    { clave: 'mostrarEtiqueta', etiqueta: 'Dibujar la etiqueta', tipo: 'bool', def: true },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 300, alto = 400;
+    const cx = 150;
+    const nivel = acotar(p.nivel, 0, 100) / 100;
+    const lleno = p.estado !== 'vacio' && nivel > 0;
+    const col = p.color || '#d8e64a';
+
+    // Cada recipiente define su contorno y la caja donde entra el contenido.
+    let contorno, caja, yEtiqueta = 210, anchoEtiqueta = 130;
+    const yBase = 330;
+    if (p.tipo === 'frasco' || p.tipo === 'botella') {
+      const w = p.tipo === 'botella' ? 74 : 96;
+      const yHombro = p.tipo === 'botella' ? 150 : 175;
+      contorno = `M ${cx - 22} 92 L ${cx - 22} ${yHombro - 26} Q ${cx - w / 2} ${yHombro} ${cx - w / 2} ${yHombro + 26}
+                  L ${cx - w / 2} ${yBase - 10} Q ${cx - w / 2} ${yBase} ${cx - w / 2 + 12} ${yBase}
+                  L ${cx + w / 2 - 12} ${yBase} Q ${cx + w / 2} ${yBase} ${cx + w / 2} ${yBase - 10}
+                  L ${cx + w / 2} ${yHombro + 26} Q ${cx + w / 2} ${yHombro} ${cx + 22} ${yHombro - 26} L ${cx + 22} 92 Z`;
+      caja = { x: cx - w / 2 + 3, w: w - 6, yTope: yHombro + 20, yFondo: yBase - 4 };
+      // la etiqueta deja ver una franja de contenido a cada lado, como en un
+      // frasco de verdad: si tapara todo no se sabría cuánto queda
+      anchoEtiqueta = w - 36;
+      yEtiqueta = yHombro + 34;
+      // tapa
+      g.appendChild(rect(cx - 30, 68, 60, 30, C.cuerpoOsc, C.trazo, 1.8, { rx: 4 }));
+    } else if (p.tipo === 'gotero') {
+      contorno = `M ${cx - 34} 120 L ${cx - 34} ${yBase - 8} Q ${cx - 34} ${yBase} ${cx - 22} ${yBase}
+                  L ${cx + 22} ${yBase} Q ${cx + 34} ${yBase} ${cx + 34} ${yBase - 8} L ${cx + 34} 120 Z`;
+      caja = { x: cx - 31, w: 62, yTope: 130, yFondo: yBase - 4 };
+      anchoEtiqueta = 54;
+      yEtiqueta = 190;
+      g.appendChild(rect(cx - 18, 74, 36, 48, '#3c4147', C.trazo, 1.6, { rx: 6 }));   // pera
+      g.appendChild(rect(cx - 26, 118, 52, 12, C.cuerpoOsc, C.trazo, 1.4, { rx: 2 }));
+    } else if (p.tipo === 'vaso') {
+      contorno = `M ${cx - 78} 150 L ${cx - 78} ${yBase - 12} Q ${cx - 78} ${yBase} ${cx - 62} ${yBase}
+                  L ${cx + 62} ${yBase} Q ${cx + 78} ${yBase} ${cx + 78} ${yBase - 12} L ${cx + 78} 150`;
+      caja = { x: cx - 75, w: 150, yTope: 160, yFondo: yBase - 4 };
+      yEtiqueta = 232; anchoEtiqueta = 120;
+    } else if (p.tipo === 'tubo') {
+      contorno = `M ${cx - 30} 120 L ${cx - 30} ${yBase - 30} A 30 30 0 0 0 ${cx + 30} ${yBase - 30} L ${cx + 30} 120`;
+      caja = { x: cx - 27, w: 54, yTope: 130, yFondo: yBase - 6 };
+      yEtiqueta = 180; anchoEtiqueta = 50;
+    } else if (p.tipo === 'matraz') {
+      contorno = `M ${cx - 26} 120 L ${cx - 26} 176 L ${cx - 86} ${yBase - 12} Q ${cx - 86} ${yBase} ${cx - 70} ${yBase}
+                  L ${cx + 70} ${yBase} Q ${cx + 86} ${yBase} ${cx + 86} ${yBase - 12} L ${cx + 26} 176 L ${cx + 26} 120`;
+      caja = { x: cx - 83, w: 166, yTope: 250, yFondo: yBase - 4 };
+      yEtiqueta = 268; anchoEtiqueta = 110;
+    } else if (p.tipo === 'placa') {
+      g.appendChild(svgEl('circle', { cx, cy: 236, r: 92, fill: C.vidrio, stroke: C.vidrioBorde, 'stroke-width': 2.4 }));
+      if (lleno) g.appendChild(svgEl('circle', { cx, cy: 236, r: 82, fill: col, 'fill-opacity': 0.55 }));
+      g.appendChild(svgEl('circle', { cx, cy: 236, r: 82, fill: 'none', stroke: C.vidrioBorde, 'stroke-width': 1 }));
+      contorno = null;
+      yEtiqueta = 236; anchoEtiqueta = 120;
+    } else {   // vidrio de reloj
+      g.appendChild(svgEl('path', { d: `M ${cx - 96} 250 Q ${cx} 190 ${cx + 96} 250 Q ${cx} 268 ${cx - 96} 250 Z`, fill: C.vidrio, stroke: C.vidrioBorde, 'stroke-width': 2.2 }));
+      if (lleno) g.appendChild(svgEl('ellipse', { cx, cy: 246, rx: 44 * (0.5 + nivel / 2), ry: 12, fill: col, 'fill-opacity': 0.75 }));
+      contorno = null;
+      yEtiqueta = 300; anchoEtiqueta = 130;
+    }
+
+    if (contorno) {
+      const clipId = 'clipFrasco' + Math.random().toString(36).slice(2, 8);
+      const clip = svgEl('clipPath', { id: clipId });
+      clip.appendChild(svgEl('path', { d: contorno + ' Z' }));
+      g.appendChild(clip);
+      g.appendChild(svgEl('path', { d: contorno + (p.tipo === 'vaso' || p.tipo === 'tubo' || p.tipo === 'matraz' ? '' : ' Z'), fill: C.vidrio, stroke: 'none' }));
+      if (lleno) {
+        const yl = caja.yFondo - nivel * (caja.yFondo - caja.yTope);
+        if (p.estado === 'liquido') {
+          g.appendChild(rect(caja.x - 6, yl, caja.w + 12, caja.yFondo - yl + 8, col, null, 0, { 'fill-opacity': 0.62, 'clip-path': `url(#${clipId})` }));
+        } else {
+          // los sólidos se dibujan como un montoncito granulado
+          g.appendChild(rect(caja.x - 6, yl, caja.w + 12, caja.yFondo - yl + 8, col, null, 0, { 'fill-opacity': 0.85, 'clip-path': `url(#${clipId})` }));
+          for (let i = 0; i < 26; i++) {
+            const gx = caja.x + ((i * 37) % caja.w);
+            const gy = yl + ((i * 53) % Math.max(8, caja.yFondo - yl));
+            g.appendChild(svgEl('circle', { cx: r2(gx), cy: r2(gy), r: p.estado === 'granulado' ? 3.4 : 2, fill: '#00000022', 'clip-path': `url(#${clipId})` }));
+          }
+        }
+      }
+      g.appendChild(svgEl('path', { d: contorno, fill: 'none', stroke: C.vidrioBorde, 'stroke-width': 2.4, 'stroke-linejoin': 'round' }));
+    }
+
+    // ---- la etiqueta ----
+    if (p.mostrarEtiqueta) {
+      const lineas = [];
+      if (p.formula) lineas.push({ t: p.formula, tam: 15, peso: 700, mono: true });
+      if (p.concentracion) lineas.push({ t: p.concentracion, tam: 11, peso: 400, mono: true });
+      if (p.cantidad) lineas.push({ t: p.cantidad, tam: 11, peso: 400, mono: true });
+      const alturaEt = 26 + lineas.length * 17;
+      g.appendChild(rect(cx - anchoEtiqueta / 2, yEtiqueta, anchoEtiqueta, alturaEt, '#fffdf5', C.trazo, 1.4, { rx: 3 }));
+      const nombreCorto = String(p.nombre || '');
+      g.appendChild(texto(cx, yEtiqueta + 13, nombreCorto.length > 20 ? nombreCorto.slice(0, 19) + '…' : nombreCorto,
+        { tam: nombreCorto.length > 14 ? 9 : 10.5, peso: 700, mono: false }));
+      lineas.forEach((l, i) => g.appendChild(texto(cx, yEtiqueta + 30 + i * 17, l.t, { tam: l.tam, peso: l.peso, mono: l.mono })));
+    }
+
+    // ---- pictogramas ----
+    const cuales = [p.peligro, p.peligro2].filter(Boolean);
+    cuales.forEach((id, i) => rombePeligro(g, cx - (cuales.length - 1) * 26 + i * 52, 46, 44, id));
+
+    // el nombre completo, abajo, para que no se pierda si no entra en la etiqueta
+    g.appendChild(texto(cx, alto - 22, p.nombre || '', { tam: 12, peso: 700, mono: false }));
+    rotulo(g, cx, alto - 6, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Mechero Bunsen ----------
+DEF.mechero = {
+  nombre: 'Mechero Bunsen',
+  icono: '🔥',
+  categoria: 'Química',
+  magnitud: 'Fuente de calor',
+  resumen: 'La fuente de calor de la mesada. El collar de aire decide si la llama sale azul (caliente) o amarilla (fría y tiznante).',
+  comoSeLee: 'Se enciende con el collar de aire cerrado —llama amarilla, visible y segura— y recién ahí se abre el aire hasta que la llama se pone azul con el cono interior bien marcado. Esa llama azul es la que calienta: la parte más caliente es la punta del cono interior.',
+  params: [
+    { clave: 'llama', etiqueta: 'Llama', tipo: 'opcion', def: 'azul', opciones: [
+      { v: 'apagado', t: 'Apagado' }, { v: 'amarilla', t: 'Amarilla (aire cerrado)' }, { v: 'azul', t: 'Azul (aire abierto)' }
+    ] },
+    { clave: 'altura', etiqueta: 'Altura de la llama', tipo: 'opcion', def: 'media', opciones: [
+      { v: 'baja', t: 'Baja' }, { v: 'media', t: 'Media' }, { v: 'alta', t: 'Alta' }
+    ] },
+    { clave: 'manguera', etiqueta: 'Dibujar la manguera de gas', tipo: 'bool', def: true },
+    { clave: 'zonas', etiqueta: 'Señalar las zonas de la llama', tipo: 'bool', def: false, ayuda: 'Marca el cono interior y la zona más caliente.' },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 340, alto = 460;
+    const cx = 150, yBase = 400;
+    const alturas = { baja: 70, media: 120, alta: 170 };
+    const h = alturas[p.altura] || 120;
+    const yTubo = 190;
+
+    // base, tubo y collar
+    g.appendChild(svgEl('ellipse', { cx, cy: yBase, rx: 68, ry: 14, fill: C.metalOsc, stroke: C.trazo, 'stroke-width': 1.8 }));
+    g.appendChild(svgEl('path', { d: `M ${cx - 68} ${yBase} L ${cx - 26} ${yBase - 44} L ${cx + 26} ${yBase - 44} L ${cx + 68} ${yBase} Z`, fill: C.metal, stroke: C.trazo, 'stroke-width': 1.8 }));
+    g.appendChild(rect(cx - 17, yTubo, 34, yBase - 44 - yTubo, C.metal, C.trazo, 1.8));
+    g.appendChild(rect(cx - 22, yTubo + 42, 44, 30, C.metalOsc, C.trazo, 1.8, { rx: 3 }));   // collar de aire
+    // ventana del collar: abierta si la llama es azul
+    const abierto = p.llama === 'azul';
+    g.appendChild(rect(cx - 18, yTubo + 48, abierto ? 14 : 4, 18, abierto ? '#1b1b1b' : C.metal, C.trazo, 1.2));
+    g.appendChild(texto(cx + 44, yTubo + 57, abierto ? 'aire abierto' : 'aire cerrado', { tam: 10, ancla: 'start', color: C.suave }));
+
+    if (p.manguera) {
+      g.appendChild(svgEl('path', { d: `M ${cx + 24} ${yBase - 58} C ${cx + 90} ${yBase - 58} ${cx + 110} ${yBase - 10} ${ancho - 10} ${yBase - 6}`, fill: 'none', stroke: '#3c4147', 'stroke-width': 7, 'stroke-linecap': 'round' }));
+      g.appendChild(texto(ancho - 40, yBase - 20, 'gas', { tam: 10, color: C.suave }));
+    }
+
+    // la llama
+    if (p.llama !== 'apagado') {
+      const yPunta = yTubo - h;
+      if (p.llama === 'azul') {
+        g.appendChild(svgEl('path', { d: `M ${cx} ${yPunta} C ${cx + 26} ${yTubo - h * 0.45} ${cx + 20} ${yTubo} ${cx} ${yTubo} C ${cx - 20} ${yTubo} ${cx - 26} ${yTubo - h * 0.45} ${cx} ${yPunta} Z`, fill: '#4a90d9', 'fill-opacity': 0.85 }));
+        g.appendChild(svgEl('path', { d: `M ${cx} ${yTubo - h * 0.52} C ${cx + 13} ${yTubo - h * 0.24} ${cx + 10} ${yTubo} ${cx} ${yTubo} C ${cx - 10} ${yTubo} ${cx - 13} ${yTubo - h * 0.24} ${cx} ${yTubo - h * 0.52} Z`, fill: '#1c5fa8', 'fill-opacity': 0.9 }));
+      } else {
+        g.appendChild(svgEl('path', { d: `M ${cx} ${yPunta} C ${cx + 30} ${yTubo - h * 0.42} ${cx + 22} ${yTubo} ${cx} ${yTubo} C ${cx - 22} ${yTubo} ${cx - 30} ${yTubo - h * 0.42} ${cx} ${yPunta} Z`, fill: '#f0a72a', 'fill-opacity': 0.9 }));
+        g.appendChild(svgEl('path', { d: `M ${cx} ${yTubo - h * 0.6} C ${cx + 14} ${yTubo - h * 0.25} ${cx + 11} ${yTubo} ${cx} ${yTubo} C ${cx - 11} ${yTubo} ${cx - 14} ${yTubo - h * 0.25} ${cx} ${yTubo - h * 0.6} Z`, fill: '#f5d76e', 'fill-opacity': 0.9 }));
+      }
+      if (p.zonas && p.llama === 'azul') {
+        const yCono = yTubo - h * 0.52;
+        g.appendChild(linea(cx + 26, yCono, cx + 96, yCono, C.rojo, 1.2, { 'stroke-dasharray': '4 3' }));
+        g.appendChild(texto(cx + 100, yCono - 6, 'punta del cono:', { tam: 10, ancla: 'start', color: C.rojo }));
+        g.appendChild(texto(cx + 100, yCono + 6, 'lo más caliente', { tam: 10, ancla: 'start', color: C.rojo }));
+        g.appendChild(linea(cx + 20, yTubo - h * 0.2, cx + 96, yTubo - h * 0.2, C.suave, 1.2, { 'stroke-dasharray': '4 3' }));
+        g.appendChild(texto(cx + 100, yTubo - h * 0.2, 'cono interior', { tam: 10, ancla: 'start', color: C.suave }));
+      }
+    }
+    rotulo(g, cx, alto - 10, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Soporte universal armado ----------
+DEF.soporte = {
+  nombre: 'Soporte universal armado',
+  icono: '🧱',
+  categoria: 'Química',
+  magnitud: 'Montaje',
+  resumen: 'La varilla con el aro, la rejilla y lo que se le apoye arriba: el montaje típico para calentar.',
+  comoSeLee: 'Sirve para mostrar el montaje. La rejilla reparte el calor para que el vidrio no reciba la llama directa y se raje, y el aro tiene que quedar a unos 5 cm por encima del mechero.',
+  params: [
+    { clave: 'encima', etiqueta: 'Qué se apoya arriba', tipo: 'opcion', def: 'vaso', opciones: [
+      { v: 'nada', t: 'Nada' }, { v: 'vaso', t: 'Vaso de precipitados' }, { v: 'matraz', t: 'Erlenmeyer' },
+      { v: 'capsula', t: 'Cápsula de evaporación' }, { v: 'balon', t: 'Balón' }
+    ] },
+    { clave: 'rejilla', etiqueta: 'Con rejilla de amianto', tipo: 'bool', def: true },
+    { clave: 'mechero', etiqueta: 'Con mechero encendido debajo', tipo: 'bool', def: true },
+    { clave: 'pinza', etiqueta: 'Con pinza y termómetro', tipo: 'bool', def: false },
+    P.color(), { clave: 'nivel', etiqueta: 'Qué tan lleno está (%)', tipo: 'numero', paso: 5, min: 0, max: 100, def: 55 },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 420, alto = 520;
+    const xVar = 90, yBase = 470;
+    const yAro = 250;
+
+    // base y varilla
+    g.appendChild(rect(40, yBase, 190, 26, C.cuerpoOsc, C.trazo, 2, { rx: 4 }));
+    g.appendChild(rect(xVar - 9, 90, 18, yBase - 90, C.metal, C.trazo, 1.8));
+
+    // aro con rejilla
+    g.appendChild(rect(xVar - 4, yAro - 12, 34, 24, C.metalOsc, C.trazo, 1.6, { rx: 3 }));   // nuez
+    g.appendChild(linea(xVar + 24, yAro, 300, yAro, C.metalOsc, 6, { 'stroke-linecap': 'round' }));
+    g.appendChild(svgEl('ellipse', { cx: 240, cy: yAro, rx: 68, ry: 12, fill: 'none', stroke: C.metalOsc, 'stroke-width': 5 }));
+    if (p.rejilla) {
+      g.appendChild(rect(240 - 62, yAro - 6, 124, 10, '#b9b2a0', C.trazo, 1.4, { rx: 2 }));
+      g.appendChild(rect(240 - 30, yAro - 5, 60, 8, '#8d8577', null, 0));
+    }
+
+    // el recipiente de arriba
+    const yApoyo = yAro - (p.rejilla ? 8 : 4);
+    const nivel = acotar(p.nivel, 0, 100) / 100;
+    const dibujarVaso = (w, h, forma) => {
+      const x0 = 240 - w / 2, y0 = yApoyo - h;
+      let d;
+      if (forma === 'matraz') d = `M ${240 - 20} ${y0} L ${240 - 20} ${y0 + h * 0.28} L ${x0} ${yApoyo} L ${x0 + w} ${yApoyo} L ${240 + 20} ${y0 + h * 0.28} L ${240 + 20} ${y0} `;
+      else if (forma === 'balon') d = `M ${240 - 16} ${y0} L ${240 - 16} ${y0 + 26} C ${240 - 80} ${y0 + 44} ${240 - 80} ${yApoyo} ${240} ${yApoyo} C ${240 + 80} ${yApoyo} ${240 + 80} ${y0 + 44} ${240 + 16} ${y0 + 26} L ${240 + 16} ${y0}`;
+      else if (forma === 'capsula') d = `M ${x0} ${yApoyo - 26} Q ${240} ${yApoyo + 14} ${x0 + w} ${yApoyo - 26}`;
+      else d = `M ${x0} ${y0} L ${x0} ${yApoyo} L ${x0 + w} ${yApoyo} L ${x0 + w} ${y0}`;
+      const clipId = 'clipSop' + Math.random().toString(36).slice(2, 8);
+      const clip = svgEl('clipPath', { id: clipId });
+      clip.appendChild(svgEl('path', { d: d + ' Z' }));
+      g.appendChild(clip);
+      const yl = yApoyo - nivel * h * 0.8;
+      if (nivel > 0) g.appendChild(rect(x0 - 10, yl, w + 20, yApoyo - yl, p.color || C.liquido, null, 0, { 'fill-opacity': 0.55, 'clip-path': `url(#${clipId})` }));
+      g.appendChild(svgEl('path', { d, fill: 'none', stroke: C.vidrioBorde, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
+    };
+    if (p.encima === 'vaso') dibujarVaso(108, 100, 'vaso');
+    else if (p.encima === 'matraz') dibujarVaso(120, 120, 'matraz');
+    else if (p.encima === 'balon') dibujarVaso(120, 120, 'balon');
+    else if (p.encima === 'capsula') dibujarVaso(110, 30, 'capsula');
+
+    // pinza con termómetro
+    if (p.pinza) {
+      g.appendChild(rect(xVar - 4, 150, 30, 20, C.metalOsc, C.trazo, 1.6, { rx: 3 }));
+      g.appendChild(linea(xVar + 22, 160, 214, 160, C.metalOsc, 5, { 'stroke-linecap': 'round' }));
+      g.appendChild(rect(212, 150, 26, 20, C.metalOsc, C.trazo, 1.4, { rx: 3 }));
+      g.appendChild(rect(222, 156, 8, yApoyo - 190, C.vidrio, C.vidrioBorde, 1.4, { rx: 4 }));
+      g.appendChild(rect(223.5, yApoyo - 60, 5, 60, C.rojo, null, 0));
+      g.appendChild(svgEl('circle', { cx: 226, cy: yApoyo - 6, r: 8, fill: C.rojo, stroke: C.vidrioBorde, 'stroke-width': 1.2 }));
+    }
+
+    // mechero debajo
+    if (p.mechero) {
+      const cxm = 240, yBm = yBase;
+      g.appendChild(svgEl('ellipse', { cx: cxm, cy: yBm, rx: 52, ry: 11, fill: C.metalOsc, stroke: C.trazo, 'stroke-width': 1.6 }));
+      g.appendChild(svgEl('path', { d: `M ${cxm - 52} ${yBm} L ${cxm - 20} ${yBm - 34} L ${cxm + 20} ${yBm - 34} L ${cxm + 52} ${yBm} Z`, fill: C.metal, stroke: C.trazo, 'stroke-width': 1.6 }));
+      const yTuboM = yAro + 62;
+      g.appendChild(rect(cxm - 13, yTuboM, 26, (yBm - 34) - yTuboM, C.metal, C.trazo, 1.6));
+      g.appendChild(svgEl('path', { d: `M ${cxm} ${yAro + 14} C ${cxm + 22} ${yTuboM - 26} ${cxm + 16} ${yTuboM} ${cxm} ${yTuboM} C ${cxm - 16} ${yTuboM} ${cxm - 22} ${yTuboM - 26} ${cxm} ${yAro + 14} Z`, fill: '#4a90d9', 'fill-opacity': 0.85 }));
+      g.appendChild(svgEl('path', { d: `M ${cxm} ${yAro + 34} C ${cxm + 11} ${yTuboM - 14} ${cxm + 8} ${yTuboM} ${cxm} ${yTuboM} C ${cxm - 8} ${yTuboM} ${cxm - 11} ${yTuboM - 14} ${cxm} ${yAro + 34} Z`, fill: '#1c5fa8', 'fill-opacity': 0.9 }));
+    }
+    rotulo(g, ancho / 2, alto - 10, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Gradilla con tubos de ensayo ----------
+DEF.gradilla = {
+  nombre: 'Gradilla con tubos de ensayo',
+  icono: '🧫',
+  categoria: 'Química',
+  magnitud: 'Ensayos',
+  resumen: 'La serie de tubos, cada uno con su rótulo y su color: sirve para mostrar los ensayos en paralelo y sus resultados.',
+  comoSeLee: 'Se compara un tubo con otro, y siempre conviene tener uno de control. Los rótulos y los colores se cargan separados por comas, en el mismo orden que los tubos.',
+  params: [
+    { clave: 'cantidad', etiqueta: 'Cuántos tubos', tipo: 'numero', paso: 1, min: 1, max: 8, def: 4 },
+    { clave: 'rotulos', etiqueta: 'Rótulo de cada tubo', tipo: 'texto', def: '1, 2, 3, control', ayuda: 'Separados por comas, en orden. Ej: agua, HCl, NaOH, control' },
+    { clave: 'colores', etiqueta: 'Color de cada tubo', tipo: 'texto', def: '#3aa3d8, #d94f4f, #58b368, #cccccc', ayuda: 'Separados por comas. Aceptan #rrggbb o nombres de color en inglés. Poné «vacio» para dejarlo sin contenido.' },
+    { clave: 'nivel', etiqueta: 'Qué tan llenos están (%)', tipo: 'numero', paso: 5, min: 0, max: 100, def: 55 },
+    { clave: 'burbujas', etiqueta: 'Con burbujas (hay gas)', tipo: 'texto', def: '', ayuda: 'Números de los tubos donde hubo desprendimiento de gas, separados por comas. Ej: 2, 3' },
+    { clave: 'precipitado', etiqueta: 'Con precipitado', tipo: 'texto', def: '', ayuda: 'Números de los tubos donde se formó un sólido. Ej: 3' },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const n = Math.round(acotar(p.cantidad, 1, 8));
+    const rotulos = String(p.rotulos || '').split(',').map(s => s.trim());
+    const colores = String(p.colores || '').split(',').map(s => s.trim());
+    const conGas = String(p.burbujas || '').split(',').map(s => Number(s.trim()));
+    const conSolido = String(p.precipitado || '').split(',').map(s => Number(s.trim()));
+    const nivel = acotar(p.nivel, 0, 100) / 100;
+    const g = grupo();
+    const paso = 92;
+    const ancho = Math.max(320, n * paso + 60), alto = 470;
+    const x0 = (ancho - n * paso) / 2 + paso / 2;
+    const yTubo = 90, yFondo = 350, rTubo = 26;
+    const yPlaca = 250, yBandeja = 372;   // la placa con los agujeros y la bandeja de abajo
+
+    // los parantes van detrás de los tubos
+    g.appendChild(rect(x0 - paso / 2 - 8, yPlaca, 14, yBandeja - yPlaca + 20, '#8f6d3c', C.trazo, 1.6));
+    g.appendChild(rect(x0 + n * paso - paso / 2 - 6, yPlaca, 14, yBandeja - yPlaca + 20, '#8f6d3c', C.trazo, 1.6));
+
+    for (let i = 0; i < n; i++) {
+      const cx = x0 + i * paso;
+      const col = colores[i] && colores[i] !== 'vacio' ? colores[i] : null;
+      const d = `M ${cx - rTubo} ${yTubo} L ${cx - rTubo} ${yFondo - rTubo} A ${rTubo} ${rTubo} 0 0 0 ${cx + rTubo} ${yFondo - rTubo} L ${cx + rTubo} ${yTubo}`;
+      const clipId = 'clipTubo' + i + Math.random().toString(36).slice(2, 6);
+      const clip = svgEl('clipPath', { id: clipId });
+      clip.appendChild(svgEl('path', { d: d + ' Z' }));
+      g.appendChild(clip);
+      g.appendChild(svgEl('path', { d: d + ' Z', fill: C.vidrio, stroke: 'none' }));
+      if (col && nivel > 0) {
+        const yl = yFondo - nivel * (yFondo - yTubo - 20);
+        g.appendChild(rect(cx - rTubo - 4, yl, rTubo * 2 + 8, yFondo - yl, col, null, 0, { 'fill-opacity': 0.7, 'clip-path': `url(#${clipId})` }));
+        if (conSolido.indexOf(i + 1) >= 0) {
+          g.appendChild(svgEl('path', { d: `M ${cx - rTubo + 3} ${yFondo - 22} A ${rTubo} ${rTubo} 0 0 0 ${cx + rTubo - 3} ${yFondo - 22} Z`, fill: '#6b5b4a', 'clip-path': `url(#${clipId})` }));
+        }
+        if (conGas.indexOf(i + 1) >= 0) {
+          for (let b = 0; b < 7; b++) {
+            g.appendChild(svgEl('circle', { cx: r2(cx - 12 + (b * 17) % 24), cy: r2(yl + 14 + (b * 29) % Math.max(20, yFondo - yl - 24)), r: 3.4, fill: '#ffffff', 'fill-opacity': 0.85, 'clip-path': `url(#${clipId})` }));
+          }
+        }
+      }
+      g.appendChild(svgEl('path', { d, fill: 'none', stroke: C.vidrioBorde, 'stroke-width': 2 }));
+      // rótulo pegado en la parte del tubo que queda por encima de la gradilla
+      const rot = rotulos[i] || String(i + 1);
+      g.appendChild(rect(cx - 30, 150, 60, 26, '#fffdf5', C.trazo, 1.2, { rx: 2 }));
+      g.appendChild(texto(cx, 163, rot.length > 8 ? rot.slice(0, 7) + '…' : rot, { tam: rot.length > 5 ? 8.5 : 10.5, peso: 700, mono: false }));
+      g.appendChild(texto(cx, 428, String(i + 1), { tam: 12, peso: 700, color: C.suave }));
+    }
+
+    // la placa y la bandeja se dibujan al final para que tapen los tubos: así
+    // se ve que los tubos están metidos en la gradilla y no delante de ella
+    g.appendChild(rect(x0 - paso / 2 - 8, yPlaca, n * paso + 16, 20, '#b08a52', C.trazo, 1.8, { rx: 3 }));
+    g.appendChild(rect(x0 - paso / 2 - 8, yBandeja, n * paso + 16, 20, '#b08a52', C.trazo, 1.8, { rx: 3 }));
+    rotulo(g, ancho / 2, alto - 10, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Filtración ----------
+DEF.filtracion = {
+  nombre: 'Filtración con embudo',
+  icono: '⏳',
+  categoria: 'Química',
+  magnitud: 'Separación',
+  resumen: 'El embudo con papel de filtro sobre un Erlenmeyer: la separación de un sólido de un líquido.',
+  comoSeLee: 'El papel se dobla en cuatro y se moja para que quede pegado al embudo. Se vuelca por la varilla, sin pasar nunca del borde del papel. Lo que queda arriba es el residuo y lo que pasa es el filtrado.',
+  params: [
+    { clave: 'soporte', etiqueta: 'Sobre soporte con aro', tipo: 'bool', def: true },
+    { clave: 'varilla', etiqueta: 'Con varilla de vidrio', tipo: 'bool', def: true },
+    { clave: 'residuo', etiqueta: 'Con residuo sobre el papel', tipo: 'bool', def: true },
+    P.color(), { clave: 'nivel', etiqueta: 'Filtrado recogido (%)', tipo: 'numero', paso: 5, min: 0, max: 100, def: 35 },
+    { clave: 'rotulos', etiqueta: 'Rotular las partes', tipo: 'bool', def: true },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 420, alto = 500;
+    const cx = 200;
+    const yEmbudo = 120, yPunta = 250, yBocaMatraz = 300, yBase = 450;
+
+    if (p.soporte) {
+      g.appendChild(rect(30, yBase, 130, 22, C.cuerpoOsc, C.trazo, 1.8, { rx: 4 }));
+      g.appendChild(rect(86, 80, 16, yBase - 80, C.metal, C.trazo, 1.6));
+      g.appendChild(rect(96, yEmbudo + 44, 28, 20, C.metalOsc, C.trazo, 1.4, { rx: 3 }));
+      g.appendChild(linea(120, yEmbudo + 54, cx - 46, yEmbudo + 54, C.metalOsc, 5, { 'stroke-linecap': 'round' }));
+      g.appendChild(svgEl('ellipse', { cx, cy: yEmbudo + 54, rx: 52, ry: 10, fill: 'none', stroke: C.metalOsc, 'stroke-width': 4.5 }));
+    }
+
+    // Erlenmeyer que recibe
+    const dMatraz = `M ${cx - 20} ${yBocaMatraz} L ${cx - 20} ${yBocaMatraz + 34} L ${cx - 86} ${yBase - 12} Q ${cx - 86} ${yBase} ${cx - 70} ${yBase} L ${cx + 70} ${yBase} Q ${cx + 86} ${yBase} ${cx + 86} ${yBase - 12} L ${cx + 20} ${yBocaMatraz + 34} L ${cx + 20} ${yBocaMatraz}`;
+    const clipId = 'clipFiltro' + Math.random().toString(36).slice(2, 8);
+    const clip = svgEl('clipPath', { id: clipId });
+    clip.appendChild(svgEl('path', { d: dMatraz + ' Z' }));
+    g.appendChild(clip);
+    const nivel = acotar(p.nivel, 0, 100) / 100;
+    if (nivel > 0) {
+      const yl = yBase - nivel * (yBase - yBocaMatraz - 50);
+      g.appendChild(rect(cx - 90, yl, 180, yBase - yl, p.color || C.liquido, null, 0, { 'fill-opacity': 0.55, 'clip-path': `url(#${clipId})` }));
+    }
+    g.appendChild(svgEl('path', { d: dMatraz, fill: 'none', stroke: C.vidrioBorde, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
+
+    // embudo
+    g.appendChild(svgEl('path', { d: `M ${cx - 66} ${yEmbudo} L ${cx - 7} ${yPunta - 40} L ${cx - 7} ${yPunta} L ${cx + 7} ${yPunta} L ${cx + 7} ${yPunta - 40} L ${cx + 66} ${yEmbudo} Z`, fill: C.vidrio, stroke: C.vidrioBorde, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
+    // papel de filtro
+    g.appendChild(svgEl('path', { d: `M ${cx - 58} ${yEmbudo + 4} L ${cx} ${yPunta - 46} L ${cx + 58} ${yEmbudo + 4} Z`, fill: '#f6f3ea', stroke: '#c9c2ae', 'stroke-width': 1.4 }));
+    g.appendChild(linea(cx, yEmbudo + 4, cx, yPunta - 46, '#c9c2ae', 1));
+    if (p.residuo) {
+      g.appendChild(svgEl('path', { d: `M ${cx - 34} ${yEmbudo + 34} L ${cx} ${yPunta - 52} L ${cx + 34} ${yEmbudo + 34} Z`, fill: '#8d7f6a' }));
+    }
+    // gota que cae
+    g.appendChild(svgEl('ellipse', { cx, cy: yPunta + 18, rx: 4.5, ry: 7, fill: p.color || C.liquido, 'fill-opacity': 0.8 }));
+
+    if (p.varilla) {
+      g.appendChild(linea(cx - 96, yEmbudo - 34, cx - 20, yEmbudo + 20, C.vidrioBorde, 6, { 'stroke-linecap': 'round' }));
+    }
+    if (p.rotulos) {
+      g.appendChild(texto(cx + 78, yEmbudo + 20, 'papel de filtro', { tam: 10, ancla: 'start', color: C.suave }));
+      if (p.residuo) g.appendChild(texto(cx + 78, yEmbudo + 36, 'residuo', { tam: 10, ancla: 'start', color: C.suave }));
+      g.appendChild(texto(cx + 96, yBase - 40, 'filtrado', { tam: 10, ancla: 'start', color: C.suave }));
+    }
+    rotulo(g, cx, alto - 6, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Pipeta con propipeta ----------
+DEF.pipeta = {
+  nombre: 'Pipeta con propipeta',
+  icono: '🧪',
+  categoria: 'Volumen',
+  magnitud: 'Volumen',
+  resumen: 'Pipeta aforada o graduada con su propipeta: el instrumento exacto para trasvasar un volumen.',
+  comoSeLee: 'La aforada entrega un único volumen, el de su línea de aforo, y es la más exacta. La graduada permite volúmenes intermedios pero aprecia menos. Nunca se pipetea con la boca: siempre con propipeta.',
+  params: [
+    { clave: 'tipo', etiqueta: 'Tipo de pipeta', tipo: 'opcion', def: 'aforada', opciones: [
+      { v: 'aforada', t: 'Aforada (un solo volumen)' }, { v: 'graduada', t: 'Graduada (con escala)' }
+    ] },
+    P.max(10, 'Capacidad de la pipeta.'), P.division(0.1), P.numerarCada(1), P.unidad('mL'),
+    P.lectura(10),
+    { clave: 'propipeta', etiqueta: 'Dibujar la propipeta', tipo: 'bool', def: true },
+    P.color(), ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const max = Math.max(0.1, Number(p.max));
+    const lect = acotar(p.lectura, 0, max);
+    const aforada = p.tipo === 'aforada';
+    const g = grupo();
+    const ancho = 260, alto = 600;
+    const cx = 110;
+    const yTop = p.propipeta ? 150 : 60, yPunta = 560;
+    const yBulboA = yTop + 120, yBulboB = yTop + 250;   // el ensanchamiento de la aforada
+    const yEscalaIni = yTop + 40, yEscalaFin = yPunta - 90;
+    const yDe = v => yEscalaFin - (v / max) * (yEscalaFin - yEscalaIni);
+
+    if (p.propipeta) {
+      g.appendChild(svgEl('circle', { cx, cy: 92, r: 52, fill: '#c9d4d9', stroke: C.trazo, 'stroke-width': 2 }));
+      g.appendChild(texto(cx, 92, 'S', { tam: 20, peso: 700, color: C.suave }));
+      g.appendChild(rect(cx - 16, 138, 32, 22, '#c9d4d9', C.trazo, 1.6, { rx: 3 }));
+    }
+
+    // cuerpo de la pipeta
+    if (aforada) {
+      g.appendChild(svgEl('path', {
+        d: `M ${cx - 7} ${yTop} L ${cx - 7} ${yBulboA} C ${cx - 34} ${yBulboA + 20} ${cx - 34} ${yBulboB - 20} ${cx - 7} ${yBulboB}
+            L ${cx - 7} ${yPunta - 40} L ${cx - 2} ${yPunta} L ${cx + 2} ${yPunta} L ${cx + 7} ${yPunta - 40}
+            L ${cx + 7} ${yBulboB} C ${cx + 34} ${yBulboB - 20} ${cx + 34} ${yBulboA + 20} ${cx + 7} ${yBulboA} L ${cx + 7} ${yTop} Z`,
+        fill: C.vidrio, stroke: C.vidrioBorde, 'stroke-width': 2
+      }));
+      // línea de aforo
+      const yA = yTop + 70;
+      g.appendChild(linea(cx - 14, yA, cx + 14, yA, C.trazo, 1.8));
+      g.appendChild(texto(cx + 22, yA, `${fmt(max, decimalesDe(p.division))} ${p.unidad}`, { tam: 12, peso: 700, ancla: 'start' }));
+      g.appendChild(texto(cx + 22, yA + 15, 'aforo', { tam: 9, ancla: 'start', color: C.suave }));
+      // líquido hasta el aforo
+      g.appendChild(svgEl('path', {
+        d: `M ${cx - 6} ${yA} L ${cx - 6} ${yBulboA} C ${cx - 32} ${yBulboA + 20} ${cx - 32} ${yBulboB - 20} ${cx - 6} ${yBulboB}
+            L ${cx - 6} ${yPunta - 42} L ${cx + 6} ${yPunta - 42} L ${cx + 6} ${yBulboB}
+            C ${cx + 32} ${yBulboB - 20} ${cx + 32} ${yBulboA + 20} ${cx + 6} ${yBulboA} L ${cx + 6} ${yA} Z`,
+        fill: p.color || C.liquido, 'fill-opacity': 0.5
+      }));
+    } else {
+      g.appendChild(rect(cx - 11, yTop, 22, yPunta - yTop - 40, C.vidrio, C.vidrioBorde, 2));
+      g.appendChild(svgEl('path', { d: `M ${cx - 11} ${yPunta - 40} L ${cx - 2} ${yPunta} L ${cx + 2} ${yPunta} L ${cx + 11} ${yPunta - 40} Z`, fill: C.vidrio, stroke: C.vidrioBorde, 'stroke-width': 2 }));
+      const yl = yDe(lect);
+      g.appendChild(rect(cx - 9, yl, 18, (yPunta - 42) - yl, p.color || C.liquido, null, 0, { 'fill-opacity': 0.5 }));
+      marcasLineales(0, max, p.division, p.numerarCada).forEach(m => {
+        const y = yDe(m.v);
+        const l = m.tipo === 'mayor' ? 16 : m.tipo === 'media' ? 10 : 6;
+        g.appendChild(linea(cx - 11, y, cx - 11 + l, y, C.trazo, m.tipo === 'mayor' ? 1.3 : 0.8));
+        if (m.tipo === 'mayor') g.appendChild(texto(cx + 18, y, fmt(m.v, decimalesDe(p.numerarCada)), { tam: 10, ancla: 'start' }));
+      });
+      const M = marcaCfg(p, lect);
+      if (M.activa) {
+        const ym = yDe(acotar(M.v, 0, max)) + M.correr;
+        g.appendChild(linea(cx - 46, ym, cx + 14, ym, C.rojo, 1.4, { 'stroke-dasharray': '5 3' }));
+        g.appendChild(flecha(cx - 50, ym, 'der', 9));
+        rotuloMarca(g, cx + 52, ym - 6, M.texto);
+      }
+    }
+    if (p.mostrarValor) carteLectura(g, 6, 8, fmt(aforada ? max : lect, decimalesDe(p.division)) + ' ' + p.unidad);
+    rotulo(g, cx, alto - 10, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Papel indicador de pH ----------
+DEF.papelPH = {
+  nombre: 'Papel indicador de pH',
+  icono: '📏',
+  categoria: 'Química',
+  magnitud: 'Acidez',
+  resumen: 'La tirita mojada al lado de la escala de colores: la medida de pH más rápida y más barata.',
+  comoSeLee: 'Se moja la tirita con una gota de la muestra (no se mete la tirita en el frasco) y a los pocos segundos se compara con la escala de la caja. El papel universal aprecia una unidad de pH; para más precisión hace falta un pHmetro.',
+  params: [
+    { clave: 'lectura', etiqueta: 'pH que muestra', tipo: 'numero', paso: 1, min: 0, max: 14, def: 4 },
+    { clave: 'mostrarEscala', etiqueta: 'Dibujar la escala de colores', tipo: 'bool', def: true },
+    { clave: 'mostrarValor', etiqueta: 'Escribir el número de pH', tipo: 'bool', def: true, ayuda: 'Apagalo para que el estudiante compare colores y lo deduzca.' },
+    { clave: 'muestra', etiqueta: 'Qué se midió', tipo: 'texto', def: 'jugo de limón' },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    // Colores del papel universal: rojo en ácido, verde en neutro, azul-violeta en base.
+    const COLORES = ['#d0342c', '#e0562c', '#ee7d2b', '#f5a623', '#f7cb2f', '#dbe020', '#a8d02a',
+      '#5fbb46', '#3aa76d', '#2e9e9e', '#2a7fbd', '#2f5fb5', '#3f43a8', '#5a2f9c', '#6b2382'];
+    const ph = Math.round(acotar(p.lectura, 0, 14));
+    const g = grupo();
+    const ancho = 560, alto = 300;
+
+    // la tirita
+    g.appendChild(rect(50, 60, 46, 170, '#f4f0e2', C.trazo, 1.6, { rx: 3 }));
+    g.appendChild(rect(50, 60, 46, 78, COLORES[ph], C.trazo, 1.4, { rx: 3 }));
+    g.appendChild(texto(73, 250, 'la tirita', { tam: 11, peso: 700, mono: false }));
+    if (p.muestra) g.appendChild(texto(73, 268, p.muestra, { tam: 10, color: C.suave, mono: false }));
+
+    if (p.mostrarEscala) {
+      const x0 = 150, w = 26;
+      g.appendChild(texto(x0 + 7.5 * w, 46, 'escala de comparación', { tam: 11, peso: 700, mono: false }));
+      for (let i = 0; i <= 14; i++) {
+        const x = x0 + i * w;
+        const activo = i === ph;
+        g.appendChild(rect(x, 60, w - 2, 78, COLORES[i], activo ? C.rojo : C.trazo, activo ? 2.6 : 1, { rx: 2 }));
+        g.appendChild(texto(x + (w - 2) / 2, 152, String(i), { tam: 11, peso: activo ? 700 : 400, color: activo ? C.rojo : C.trazo }));
+      }
+      g.appendChild(linea(x0, 172, x0 + 5 * w, 172, '#d0342c', 3));
+      g.appendChild(texto(x0 + 2.5 * w, 188, 'ácido', { tam: 11, peso: 700, color: '#d0342c', mono: false }));
+      g.appendChild(linea(x0 + 6 * w, 172, x0 + 8 * w, 172, '#3aa76d', 3));
+      g.appendChild(texto(x0 + 7 * w, 188, 'neutro', { tam: 11, peso: 700, color: '#3aa76d', mono: false }));
+      g.appendChild(linea(x0 + 9 * w, 172, x0 + 15 * w, 172, '#3f43a8', 3));
+      g.appendChild(texto(x0 + 12 * w, 188, 'básico', { tam: 11, peso: 700, color: '#3f43a8', mono: false }));
+      if (p.mostrarValor) {
+        const x = x0 + ph * w + (w - 2) / 2;
+        g.appendChild(flecha(x, 214, 'arriba', 10));
+        g.appendChild(texto(x, 234, 'pH = ' + ph, { tam: 13, peso: 700, color: C.rojo }));
+      }
+    } else if (p.mostrarValor) {
+      carteLectura(g, 130, 84, 'pH = ' + ph);
+    }
+    rotulo(g, ancho / 2, alto - 8, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Agitador magnético con calefacción ----------
+DEF.agitador = {
+  nombre: 'Agitador magnético',
+  icono: '🌀',
+  categoria: 'Química',
+  magnitud: 'Agitación y temperatura',
+  resumen: 'La placa que agita con una barrita magnética y, si hace falta, calienta.',
+  comoSeLee: 'La barrita se pone en el vaso antes del líquido y se arranca despacio: si se pone al máximo de golpe, salta y salpica. La temperatura de la placa no es la del líquido: si querés la del líquido, medila con un termómetro adentro.',
+  params: [
+    { clave: 'rpm', etiqueta: 'Velocidad (rpm)', tipo: 'numero', paso: 50, min: 0, max: 1500, def: 400 },
+    { clave: 'calienta', etiqueta: 'Calentando', tipo: 'bool', def: true },
+    { clave: 'temperatura', etiqueta: 'Temperatura de la placa (°C)', tipo: 'numero', paso: 5, min: 0, max: 350, def: 60 },
+    { clave: 'termometro', etiqueta: 'Con termómetro en el vaso', tipo: 'bool', def: true },
+    P.color(), { clave: 'nivel', etiqueta: 'Qué tan lleno está (%)', tipo: 'numero', paso: 5, min: 0, max: 100, def: 60 },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 400, alto = 440;
+    const cx = 190, yPlaca = 300;
+
+    // cuerpo del agitador
+    g.appendChild(rect(50, yPlaca, 300, 96, C.cuerpo, C.trazo, 2.2, { rx: 10 }));
+    g.appendChild(svgEl('circle', { cx, cy: yPlaca + 4, r: 84, fill: p.calienta ? '#e7cfc4' : C.metal, stroke: C.trazo, 'stroke-width': 1.8 }));
+    if (p.calienta) g.appendChild(svgEl('circle', { cx, cy: yPlaca + 4, r: 84, fill: 'none', stroke: C.rojo, 'stroke-width': 2.4, 'stroke-dasharray': '6 5' }));
+    // perillas y pantallitas
+    pantallaLCD(g, 250, yPlaca + 20, 88, 30, String(Math.round(acotar(p.rpm, 0, 1500))), 'rpm', { tamNum: 17 });
+    pantallaLCD(g, 250, yPlaca + 56, 88, 30, p.calienta ? String(Math.round(acotar(p.temperatura, 0, 350))) : '--', '°C', { tamNum: 17 });
+    [{ x: 92, t: 'rpm' }, { x: 156, t: '°C' }].forEach(k => {
+      g.appendChild(svgEl('circle', { cx: k.x, cy: yPlaca + 52, r: 22, fill: C.cuerpoOsc, stroke: C.trazo, 'stroke-width': 1.6 }));
+      g.appendChild(linea(k.x, yPlaca + 52, k.x + 14, yPlaca + 40, '#ffffff', 3, { 'stroke-linecap': 'round' }));
+      g.appendChild(texto(k.x, yPlaca + 84, k.t, { tam: 10, peso: 700 }));
+    });
+
+    // el vaso con el vórtice
+    const yBocaV = 110, yFondoV = yPlaca - 2, w = 130;
+    const nivel = acotar(p.nivel, 0, 100) / 100;
+    const yl = yFondoV - nivel * (yFondoV - yBocaV - 16);
+    g.appendChild(rect(cx - w / 2, yl, w, yFondoV - yl, p.color || C.liquido, null, 0, { 'fill-opacity': 0.5 }));
+    // el vórtice que arma la agitación
+    if (Number(p.rpm) > 0) {
+      const hondo = Math.min(46, 8 + Number(p.rpm) / 26);
+      g.appendChild(svgEl('path', { d: `M ${cx - w / 2 + 3} ${r2(yl)} Q ${cx} ${r2(yl + hondo)} ${cx + w / 2 - 3} ${r2(yl)} L ${cx + w / 2 - 3} ${r2(yl + 4)} Q ${cx} ${r2(yl + hondo + 4)} ${cx - w / 2 + 3} ${r2(yl + 4)} Z`, fill: '#ffffff', 'fill-opacity': 0.85 }));
+    }
+    g.appendChild(svgEl('path', { d: `M ${cx - w / 2} ${yBocaV} L ${cx - w / 2} ${yFondoV} L ${cx + w / 2} ${yFondoV} L ${cx + w / 2} ${yBocaV}`, fill: 'none', stroke: C.vidrioBorde, 'stroke-width': 2.4 }));
+    // la barrita magnética girando
+    g.appendChild(svgEl('ellipse', { cx, cy: yFondoV - 10, rx: 30, ry: 8, fill: '#ffffff', stroke: C.trazo, 'stroke-width': 1.4 }));
+    if (Number(p.rpm) > 0) {
+      g.appendChild(svgEl('path', { d: `M ${cx - 44} ${yFondoV - 22} A 44 14 0 0 1 ${cx + 44} ${yFondoV - 22}`, fill: 'none', stroke: C.suave, 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }));
+      g.appendChild(flecha(cx + 44, yFondoV - 20, 'abajo', 7, C.suave));
+    }
+
+    if (p.termometro) {
+      g.appendChild(rect(cx + 34, 70, 10, yFondoV - 100, C.vidrio, C.vidrioBorde, 1.4, { rx: 5 }));
+      g.appendChild(rect(cx + 36, yFondoV - 120, 6, 88, C.rojo, null, 0));
+      g.appendChild(svgEl('circle', { cx: cx + 39, cy: yFondoV - 28, r: 9, fill: C.rojo, stroke: C.vidrioBorde, 'stroke-width': 1.2 }));
+    }
+    rotulo(g, ancho / 2, alto - 8, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Equipo de destilación simple ----------
+DEF.destilacion = {
+  nombre: 'Destilación simple',
+  icono: '⚗️',
+  categoria: 'Química',
+  magnitud: 'Separación',
+  resumen: 'Balón, termómetro, refrigerante y colector: la separación de líquidos por su punto de ebullición.',
+  comoSeLee: 'El bulbo del termómetro va a la altura de la salida lateral, no metido en el líquido: lo que interesa es la temperatura del vapor que sale. El agua del refrigerante entra por abajo y sale por arriba, para que el tubo quede siempre lleno.',
+  params: [
+    { clave: 'temperatura', etiqueta: 'Temperatura del vapor (°C)', tipo: 'numero', paso: 1, min: 0, max: 200, def: 78 },
+    { clave: 'sustancia', etiqueta: 'Qué se destila', tipo: 'texto', def: 'alcohol y agua' },
+    P.color('#c9d8e8'),
+    { clave: 'recogido', etiqueta: 'Destilado recogido (%)', tipo: 'numero', paso: 5, min: 0, max: 100, def: 25 },
+    { clave: 'rotulos', etiqueta: 'Rotular las partes', tipo: 'bool', def: true },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 720, alto = 480;
+    const yMesa = 430;
+
+    // ---- balón sobre la placa ----
+    const cxB = 150, cyB = 300;
+    g.appendChild(rect(cxB - 90, yMesa - 40, 180, 40, C.cuerpo, C.trazo, 2, { rx: 8 }));
+    g.appendChild(svgEl('circle', { cx: cxB, cy: yMesa - 44, r: 62, fill: '#e7cfc4', stroke: C.trazo, 'stroke-width': 1.4 }));
+    g.appendChild(svgEl('circle', { cx: cxB, cy: cyB, r: 62, fill: C.vidrio, stroke: C.vidrioBorde, 'stroke-width': 2.2 }));
+    const nivelB = 0.55;
+    g.appendChild(svgEl('path', { d: `M ${cxB - 60} ${cyB + 12} A 62 62 0 0 0 ${cxB + 60} ${cyB + 12} Z`, fill: p.color || '#c9d8e8', 'fill-opacity': 0.6 }));
+    // burbujas de ebullición
+    [0, 1, 2, 3].forEach(i => g.appendChild(svgEl('circle', { cx: cxB - 26 + i * 17, cy: cyB + 30 - (i % 2) * 12, r: 4, fill: '#ffffff', 'fill-opacity': 0.8 })));
+    g.appendChild(rect(cxB - 20, cyB - 118, 40, 62, C.vidrio, C.vidrioBorde, 2.2));      // cuello
+
+    // ---- cabeza con termómetro ----
+    const yCabeza = cyB - 118;
+    g.appendChild(rect(cxB - 26, yCabeza - 30, 52, 34, C.vidrio, C.vidrioBorde, 2.2, { rx: 4 }));
+    g.appendChild(rect(cxB - 7, 58, 14, yCabeza - 60, C.vidrio, C.vidrioBorde, 1.6, { rx: 7 }));
+    const t = acotar(p.temperatura, 0, 200);
+    g.appendChild(rect(cxB - 4.5, yCabeza - 24 - (t / 200) * 100, 9, (t / 200) * 100 + 24, C.rojo, null, 0));
+    g.appendChild(svgEl('circle', { cx: cxB, cy: yCabeza - 14, r: 9, fill: C.rojo, stroke: C.vidrioBorde, 'stroke-width': 1.2 }));
+    carteLectura(g, cxB + 22, 62, fmt(t, 0) + ' °C');
+
+    // ---- refrigerante inclinado ----
+    const x1 = cxB + 26, y1 = yCabeza - 16, x2 = 500, y2 = 250;
+    const dx = x2 - x1, dy = y2 - y1;
+    const largo = Math.sqrt(dx * dx + dy * dy);
+    const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+    const tuboG = grupo({ transform: `translate(${r2(x1)} ${r2(y1)}) rotate(${r2(ang)})` });
+    tuboG.appendChild(rect(0, -26, largo, 52, C.vidrio, C.vidrioBorde, 2.2, { rx: 6 }));
+    tuboG.appendChild(rect(0, -9, largo, 18, '#ffffff', C.vidrioBorde, 1.4));
+    // camisa de agua
+    tuboG.appendChild(rect(largo * 0.12, -34, 16, 16, C.vidrio, C.vidrioBorde, 1.8));
+    tuboG.appendChild(rect(largo * 0.78, 18, 16, 16, C.vidrio, C.vidrioBorde, 1.8));
+    for (let i = 1; i < 7; i++) tuboG.appendChild(linea(largo * i / 7, -26, largo * i / 7, -10, '#8fb8cf', 1.2));
+    g.appendChild(tuboG);
+    if (p.rotulos) {
+      g.appendChild(texto(x1 + dx * 0.16, y1 + dy * 0.16 - 48, 'sale el agua', { tam: 10, color: '#2a7fbd' }));
+      g.appendChild(texto(x2 - 60, y2 + 56, 'entra el agua', { tam: 10, color: '#2a7fbd' }));
+      g.appendChild(texto((x1 + x2) / 2, (y1 + y2) / 2 - 44, 'refrigerante', { tam: 11, peso: 700, mono: false }));
+    }
+
+    // ---- colector ----
+    const cxC = 590, yBocaC = 300;
+    g.appendChild(svgEl('path', { d: `M ${x2} ${y2 + 10} L ${cxC - 8} ${yBocaC - 20} L ${cxC + 8} ${yBocaC - 20} L ${x2 + 14} ${y2 + 26} Z`, fill: C.vidrio, stroke: C.vidrioBorde, 'stroke-width': 2 }));
+    const dC = `M ${cxC - 20} ${yBocaC} L ${cxC - 20} ${yBocaC + 30} L ${cxC - 76} ${yMesa - 12} Q ${cxC - 76} ${yMesa} ${cxC - 62} ${yMesa} L ${cxC + 62} ${yMesa} Q ${cxC + 76} ${yMesa} ${cxC + 76} ${yMesa - 12} L ${cxC + 20} ${yBocaC + 30} L ${cxC + 20} ${yBocaC}`;
+    const clipId = 'clipDest' + Math.random().toString(36).slice(2, 8);
+    const clip = svgEl('clipPath', { id: clipId });
+    clip.appendChild(svgEl('path', { d: dC + ' Z' }));
+    g.appendChild(clip);
+    const nivelC = acotar(p.recogido, 0, 100) / 100;
+    if (nivelC > 0) {
+      const yl = yMesa - nivelC * (yMesa - yBocaC - 40);
+      g.appendChild(rect(cxC - 80, yl, 160, yMesa - yl, C.liquido, null, 0, { 'fill-opacity': 0.5, 'clip-path': `url(#${clipId})` }));
+    }
+    g.appendChild(svgEl('path', { d: dC, fill: 'none', stroke: C.vidrioBorde, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
+    if (p.rotulos) {
+      g.appendChild(texto(cxC, yMesa + 22, 'destilado', { tam: 11, peso: 700, mono: false }));
+      g.appendChild(texto(cxB, yMesa + 22, p.sustancia || '', { tam: 11, mono: false, color: C.suave }));
+    }
+    rotulo(g, ancho / 2, alto - 6, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Fuente de tensión regulable ----------
+DEF.fuente = {
+  nombre: 'Fuente de tensión regulable',
+  icono: '🔋',
+  categoria: 'Electricidad',
+  magnitud: 'Tensión y corriente',
+  resumen: 'La fuente de laboratorio con sus dos pantallas: la tensión que entrega y la corriente que está pasando.',
+  comoSeLee: 'Se arranca siempre en cero y se sube de a poco. El limitador de corriente se pone antes de conectar: si el circuito pide más, la fuente baja sola la tensión y se enciende el aviso CC, que es la señal de que algo está consumiendo de más.',
+  params: [
+    { clave: 'tension', etiqueta: 'Tensión que entrega (V)', tipo: 'numero', paso: 0.1, min: 0, max: 60, def: 6 },
+    { clave: 'corriente', etiqueta: 'Corriente que pasa (A)', tipo: 'numero', paso: 0.01, min: 0, max: 10, def: 0.35 },
+    { clave: 'limitando', etiqueta: 'Está limitando la corriente (CC)', tipo: 'bool', def: false },
+    { clave: 'encendida', etiqueta: 'Encendida', tipo: 'bool', def: true },
+    { clave: 'cables', etiqueta: 'Dibujar los cables', tipo: 'bool', def: true },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 460, alto = 360;
+    g.appendChild(rect(30, 30, 400, 250, C.cuerpo, C.trazo, 2.4, { rx: 12 }));
+    pantallaLCD(g, 52, 54, 168, 74, p.encendida ? fmt(p.tension, 2) : '', 'V', { tamNum: 34, arriba: 'TENSIÓN' });
+    pantallaLCD(g, 240, 54, 168, 74, p.encendida ? fmt(p.corriente, 2) : '', 'A', { tamNum: 34, arriba: 'CORRIENTE' });
+    // avisos de modo
+    [{ x: 60, t: 'CV', on: p.encendida && !p.limitando }, { x: 118, t: 'CC', on: p.encendida && p.limitando }].forEach(a => {
+      g.appendChild(svgEl('circle', { cx: a.x, cy: 152, r: 7, fill: a.on ? (a.t === 'CC' ? C.rojo : '#4caf50') : C.tenue, stroke: C.trazo, 'stroke-width': 1 }));
+      g.appendChild(texto(a.x + 20, 152, a.t, { tam: 11, peso: 700 }));
+    });
+    // perillas de ajuste grueso y fino
+    [{ x: 250, t: 'V' }, { x: 350, t: 'A' }].forEach(k => {
+      g.appendChild(svgEl('circle', { cx: k.x, cy: 190, r: 34, fill: C.cuerpoOsc, stroke: C.trazo, 'stroke-width': 1.8 }));
+      g.appendChild(linea(k.x, 190, k.x + 22, 172, '#ffffff', 4, { 'stroke-linecap': 'round' }));
+      g.appendChild(texto(k.x, 238, 'ajuste ' + k.t, { tam: 10, peso: 700 }));
+    });
+    g.appendChild(rect(52, 176, 60, 30, C.metal, C.trazo, 1.6, { rx: 4 }));
+    g.appendChild(texto(82, 191, p.encendida ? 'ON' : 'OFF', { tam: 11, peso: 700 }));
+    // bornes
+    const bornes = [{ x: 130, t: '+', c: C.rojo }, { x: 190, t: '−', c: '#222' }];
+    bornes.forEach(b => {
+      g.appendChild(svgEl('circle', { cx: b.x, cy: 252, r: 15, fill: C.metal, stroke: b.c, 'stroke-width': 3.4 }));
+      g.appendChild(texto(b.x, 252, b.t, { tam: 15, peso: 700, color: b.c }));
+    });
+    if (p.cables) {
+      g.appendChild(svgEl('path', { d: `M 130 267 C 130 320 90 320 40 340`, fill: 'none', stroke: C.rojo, 'stroke-width': 4.5 }));
+      g.appendChild(svgEl('path', { d: `M 190 267 C 190 320 240 320 300 340`, fill: 'none', stroke: '#222', 'stroke-width': 4.5 }));
+    }
+    rotulo(g, 230, 344, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Circuito eléctrico ----------
+DEF.circuito = {
+  nombre: 'Circuito eléctrico',
+  icono: '💡',
+  categoria: 'Electricidad',
+  magnitud: 'Esquema',
+  resumen: 'El esquema del circuito con sus símbolos normalizados: fuente, llave, componente y los instrumentos donde van.',
+  comoSeLee: 'El amperímetro va SIEMPRE en serie, intercalado en el camino de la corriente; el voltímetro va SIEMPRE en paralelo, tocando los dos extremos del componente. Cambiarlos de lugar es el error más caro del laboratorio.',
+  params: [
+    { clave: 'fuente', etiqueta: 'Fuente', tipo: 'opcion', def: 'pila', opciones: [
+      { v: 'pila', t: 'Pila' }, { v: 'bateria', t: 'Batería (varias pilas)' }, { v: 'fuente', t: 'Fuente regulable' }
+    ] },
+    { clave: 'componente', etiqueta: 'Componente principal', tipo: 'opcion', def: 'lampara', opciones: [
+      { v: 'lampara', t: 'Lámpara' }, { v: 'resistencia', t: 'Resistencia' }, { v: 'led', t: 'LED con resistencia' },
+      { v: 'motor', t: 'Motor' }, { v: 'timbre', t: 'Timbre' }
+    ] },
+    { clave: 'conexion', etiqueta: 'Con un segundo componente', tipo: 'opcion', def: 'no', opciones: [
+      { v: 'no', t: 'No, uno solo' }, { v: 'serie', t: 'Otro igual en serie' }, { v: 'paralelo', t: 'Otro igual en paralelo' }
+    ] },
+    { clave: 'llave', etiqueta: 'Llave', tipo: 'opcion', def: 'cerrada', opciones: [
+      { v: 'cerrada', t: 'Cerrada (pasa corriente)' }, { v: 'abierta', t: 'Abierta' }, { v: 'sin', t: 'Sin llave' }
+    ] },
+    { clave: 'amperimetro', etiqueta: 'Con amperímetro (en serie)', tipo: 'bool', def: true },
+    { clave: 'voltimetro', etiqueta: 'Con voltímetro (en paralelo)', tipo: 'bool', def: true },
+    // Un campo por valor: si fueran todos en una línea separada por comas, un
+    // «0,35 A» se partiría al medio.
+    { clave: 'valorFuente', etiqueta: 'Valor de la fuente', tipo: 'texto', def: '6 V' },
+    { clave: 'valorCorriente', etiqueta: 'Valor del amperímetro', tipo: 'texto', def: '0,35 A' },
+    { clave: 'valorComponente', etiqueta: 'Valor del componente', tipo: 'texto', def: '17 Ω' },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 720, alto = 420;
+    const xI = 80, xD = 500, yA = 110, yB = 330;    // el rectángulo del circuito
+    const vFuente = String(p.valorFuente || '');
+    const vCorriente = String(p.valorCorriente || '');
+    const vComponente = String(p.valorComponente || '');
+    const cable = (x1, y1, x2, y2) => g.appendChild(linea(x1, y1, x2, y2, C.trazo, 2.4));
+
+    // ---- la fuente, sobre el lado izquierdo ----
+    const yF = (yA + yB) / 2;
+    const pila = (y, alto2) => {
+      g.appendChild(linea(xI - 16, y, xI + 16, y, C.trazo, 3));                    // placa larga (+)
+      g.appendChild(linea(xI - 8, y + alto2, xI + 8, y + alto2, C.trazo, 6));      // placa corta (−)
+    };
+    if (p.fuente === 'fuente') {
+      g.appendChild(rect(xI - 34, yF - 34, 68, 68, C.cuerpo, C.trazo, 2.4, { rx: 6 }));
+      g.appendChild(texto(xI, yF - 8, 'FUENTE', { tam: 9, peso: 700 }));
+      g.appendChild(texto(xI, yF + 10, vFuente, { tam: 12, peso: 700 }));
+      cable(xI, yA, xI, yF - 34);
+      cable(xI, yF + 34, xI, yB);
+    } else {
+      const n = p.fuente === 'bateria' ? 3 : 1;
+      const alto2 = 14, sep = 26;
+      const yIni = yF - (n * sep) / 2;
+      for (let i = 0; i < n; i++) pila(yIni + i * sep, alto2);
+      cable(xI, yA, xI, yIni);
+      cable(xI, yIni + (n - 1) * sep + alto2, xI, yB);
+      g.appendChild(texto(xI - 30, yF, vFuente, { tam: 12, peso: 700, ancla: 'end' }));
+    }
+
+    // ---- lado de arriba: llave y amperímetro ----
+    let x = xI;
+    const xLlave = 190;
+    cable(x, yA, xLlave - 24, yA);
+    if (p.llave !== 'sin') {
+      g.appendChild(svgEl('circle', { cx: xLlave - 24, cy: yA, r: 4, fill: C.trazo }));
+      g.appendChild(svgEl('circle', { cx: xLlave + 24, cy: yA, r: 4, fill: C.trazo }));
+      const abierta = p.llave === 'abierta';
+      g.appendChild(linea(xLlave - 24, yA, xLlave + (abierta ? 14 : 24), yA + (abierta ? -26 : 0), C.trazo, 2.8, { 'stroke-linecap': 'round' }));
+      g.appendChild(texto(xLlave, yA + 24, abierta ? 'llave abierta' : 'llave cerrada', { tam: 10, color: C.suave }));
+    } else {
+      cable(xLlave - 24, yA, xLlave + 24, yA);
+    }
+    x = xLlave + 24;
+    if (p.amperimetro) {
+      const xAm = 340;
+      cable(x, yA, xAm - 26, yA);
+      g.appendChild(svgEl('circle', { cx: xAm, cy: yA, r: 26, fill: '#ffffff', stroke: C.trazo, 'stroke-width': 2.4 }));
+      g.appendChild(texto(xAm, yA, 'A', { tam: 20, peso: 700, mono: false }));
+      g.appendChild(texto(xAm, yA - 42, vCorriente, { tam: 12, peso: 700 }));
+      g.appendChild(texto(xAm, yA + 44, 'en serie', { tam: 10, color: C.suave }));
+      x = xAm + 26;
+    }
+    cable(x, yA, xD, yA);
+
+    // ---- lado derecho: el componente ----
+    const dibujarComponente = (cxc, cyc, tipo) => {
+      if (tipo === 'lampara') {
+        g.appendChild(svgEl('circle', { cx: cxc, cy: cyc, r: 24, fill: '#fff8d6', stroke: C.trazo, 'stroke-width': 2.4 }));
+        g.appendChild(linea(cxc - 17, cyc - 17, cxc + 17, cyc + 17, C.trazo, 2));
+        g.appendChild(linea(cxc + 17, cyc - 17, cxc - 17, cyc + 17, C.trazo, 2));
+      } else if (tipo === 'resistencia') {
+        g.appendChild(rect(cxc - 26, cyc - 14, 52, 28, '#ffffff', C.trazo, 2.4, { rx: 2 }));
+      } else if (tipo === 'led') {
+        g.appendChild(rect(cxc - 46, cyc - 12, 34, 24, '#ffffff', C.trazo, 2.2, { rx: 2 }));
+        g.appendChild(svgEl('polygon', { points: `${cxc + 4},${cyc - 16} ${cxc + 4},${cyc + 16} ${cxc + 26},${cyc}`, fill: '#ffffff', stroke: C.trazo, 'stroke-width': 2.2 }));
+        g.appendChild(linea(cxc + 26, cyc - 16, cxc + 26, cyc + 16, C.trazo, 2.8));
+        g.appendChild(linea(cxc + 14, cyc - 22, cxc + 26, cyc - 34, C.trazo, 1.8));
+        g.appendChild(linea(cxc + 24, cyc - 20, cxc + 36, cyc - 32, C.trazo, 1.8));
+      } else if (tipo === 'motor') {
+        g.appendChild(svgEl('circle', { cx: cxc, cy: cyc, r: 24, fill: '#ffffff', stroke: C.trazo, 'stroke-width': 2.4 }));
+        g.appendChild(texto(cxc, cyc, 'M', { tam: 20, peso: 700, mono: false }));
+      } else {
+        g.appendChild(svgEl('path', { d: `M ${cxc - 22} ${cyc + 14} L ${cxc - 22} ${cyc - 6} A 22 22 0 0 1 ${cxc + 22} ${cyc - 6} L ${cxc + 22} ${cyc + 14} Z`, fill: '#ffffff', stroke: C.trazo, 'stroke-width': 2.4 }));
+      }
+    };
+
+    const yC = (yA + yB) / 2;
+    if (p.conexion === 'paralelo') {
+      const xRama = xD + 0;
+      cable(xD, yA, xRama, yA);
+      [yC - 46, yC + 46].forEach(yy => {
+        cable(xRama, yy, xRama - 60, yy);
+        dibujarComponente(xRama - 90, yy, p.componente);
+        cable(xRama - 120, yy, xRama - 180, yy);
+      });
+      cable(xRama, yA, xRama, yC + 46);
+      cable(xRama - 180, yC - 46, xRama - 180, yC + 46);
+      cable(xRama - 180, yC, xD - 180, yB);
+      cable(xD - 180, yB, xI, yB);
+      g.appendChild(texto(xRama - 90, yC, 'en paralelo', { tam: 10, color: C.suave }));
+    } else if (p.conexion === 'serie') {
+      cable(xD, yA, xD, yC - 60);
+      dibujarComponente(xD, yC - 30, p.componente);
+      cable(xD, yC - 6, xD, yC + 6);
+      dibujarComponente(xD, yC + 36, p.componente);
+      cable(xD, yC + 60, xD, yB);
+      cable(xD, yB, xI, yB);
+      g.appendChild(texto(xD - 60, yC, 'en serie', { tam: 10, color: C.suave, ancla: 'end' }));
+    } else {
+      cable(xD, yA, xD, yC - 26);
+      dibujarComponente(xD, yC, p.componente);
+      cable(xD, yC + 26, xD, yB);
+      cable(xD, yB, xI, yB);
+      g.appendChild(texto(xD - 46, yC, vComponente, { tam: 12, peso: 700, ancla: 'end' }));
+    }
+
+    // ---- voltímetro: en paralelo, afuera del lazo, para que la conexión se
+    // lea de un vistazo y no cruce el resto del circuito ----
+    if (p.voltimetro) {
+      const xV = xD + 150, yV = yC;
+      const yArriba = yC - 46, yAbajo = yC + 46;
+      g.appendChild(svgEl('circle', { cx: r2(xD), cy: r2(yArriba), r: 4, fill: C.trazo }));
+      g.appendChild(svgEl('circle', { cx: r2(xD), cy: r2(yAbajo), r: 4, fill: C.trazo }));
+      g.appendChild(svgEl('path', { d: `M ${xD} ${r2(yArriba)} L ${xV} ${r2(yArriba)} L ${xV} ${r2(yV - 26)}`, fill: 'none', stroke: C.trazo, 'stroke-width': 2.4 }));
+      g.appendChild(svgEl('path', { d: `M ${xD} ${r2(yAbajo)} L ${xV} ${r2(yAbajo)} L ${xV} ${r2(yV + 26)}`, fill: 'none', stroke: C.trazo, 'stroke-width': 2.4 }));
+      g.appendChild(svgEl('circle', { cx: xV, cy: r2(yV), r: 26, fill: '#ffffff', stroke: C.trazo, 'stroke-width': 2.4 }));
+      g.appendChild(texto(xV, yV, 'V', { tam: 20, peso: 700, mono: false }));
+      g.appendChild(texto(xV, yV + 62, 'en paralelo', { tam: 10, color: C.suave }));
+      g.appendChild(texto(xV + 38, yV - 2, vFuente, { tam: 12, peso: 700, ancla: 'start' }));
+    }
+    rotulo(g, ancho / 2, alto - 8, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Plano inclinado ----------
+DEF.planoInclinado = {
+  nombre: 'Plano inclinado',
+  icono: '📐',
+  categoria: 'Fuerza',
+  magnitud: 'Fuerza y movimiento',
+  resumen: 'La rampa con el carrito, el ángulo y —si se piden— las fuerzas descompuestas.',
+  comoSeLee: 'El ángulo se mide entre la rampa y la horizontal. El peso siempre apunta hacia abajo; lo que cambia con el ángulo es cuánto de ese peso empuja al carrito rampa abajo y cuánto lo aprieta contra la superficie.',
+  params: [
+    { clave: 'angulo', etiqueta: 'Ángulo de la rampa (°)', tipo: 'numero', paso: 1, min: 5, max: 60, def: 25 },
+    { clave: 'movil', etiqueta: 'Qué se desliza', tipo: 'opcion', def: 'carrito', opciones: [
+      { v: 'carrito', t: 'Carrito con ruedas' }, { v: 'bloque', t: 'Bloque (con rozamiento)' }, { v: 'esfera', t: 'Esfera que rueda' }
+    ] },
+    { clave: 'fuerzas', etiqueta: 'Dibujar las fuerzas', tipo: 'bool', def: true },
+    { clave: 'medidas', etiqueta: 'Marcar altura y largo', tipo: 'bool', def: true },
+    { clave: 'altura', etiqueta: 'Altura (texto)', tipo: 'texto', def: 'h = 25 cm' },
+    { clave: 'largo', etiqueta: 'Largo de la rampa (texto)', tipo: 'texto', def: 'L = 60 cm' },
+    { clave: 'posicion', etiqueta: 'Dónde está el móvil (%)', tipo: 'numero', paso: 5, min: 5, max: 95, def: 60 },
+    { clave: 'dinamometro', etiqueta: 'Con dinamómetro tirando', tipo: 'bool', def: false },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const ang = acotar(p.angulo, 5, 60);
+    const rad = ang * Math.PI / 180;
+    const g = grupo();
+    const ancho = 640, alto = 420;
+    const xA = 70, yBase = 340;                 // vértice del ángulo
+    const largo = 440;
+    const xB = xA + largo * Math.cos(rad), yB = yBase - largo * Math.sin(rad);
+
+    // mesa y rampa
+    g.appendChild(rect(30, yBase, 580, 16, C.cuerpoOsc, C.trazo, 1.6, { rx: 3 }));
+    g.appendChild(svgEl('path', { d: `M ${r2(xA)} ${yBase} L ${r2(xB)} ${r2(yB)} L ${r2(xB)} ${yBase} Z`, fill: '#e6e0d2', stroke: C.trazo, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
+
+    // arco del ángulo
+    const R = 62;
+    g.appendChild(svgEl('path', { d: `M ${xA + R} ${yBase} A ${R} ${R} 0 0 0 ${r2(xA + R * Math.cos(rad))} ${r2(yBase - R * Math.sin(rad))}`, fill: 'none', stroke: C.rojo, 'stroke-width': 1.6 }));
+    g.appendChild(texto(xA + R + 26, yBase - 16, ang + '°', { tam: 14, peso: 700, color: C.rojo }));
+
+    // el móvil, apoyado sobre la rampa
+    const f = acotar(p.posicion, 5, 95) / 100;
+    const cxm = xA + largo * f * Math.cos(rad), cym = yBase - largo * f * Math.sin(rad);
+    const gm = grupo({ transform: `translate(${r2(cxm)} ${r2(cym)}) rotate(${r2(-ang)})` });
+    if (p.movil === 'esfera') {
+      gm.appendChild(svgEl('circle', { cx: 0, cy: -20, r: 20, fill: C.metalOsc, stroke: C.trazo, 'stroke-width': 1.8 }));
+    } else {
+      gm.appendChild(rect(-30, -34, 60, 30, p.movil === 'carrito' ? '#c0562b' : C.metalOsc, C.trazo, 1.8, { rx: 3 }));
+      if (p.movil === 'carrito') {
+        gm.appendChild(svgEl('circle', { cx: -16, cy: -2, r: 8, fill: '#2b2b2b' }));
+        gm.appendChild(svgEl('circle', { cx: 16, cy: -2, r: 8, fill: '#2b2b2b' }));
+      }
+    }
+    g.appendChild(gm);
+
+    // fuerzas
+    if (p.fuerzas) {
+      const cy0 = cym - 20 * Math.cos(rad), cx0 = cxm + 20 * Math.sin(rad);
+      const vector = (dx, dy, color, rot) => {
+        const x2 = cx0 + dx, y2 = cy0 + dy;
+        g.appendChild(linea(cx0, cy0, x2, y2, color, 2.6));
+        const a = Math.atan2(dy, dx) * 180 / Math.PI;
+        g.appendChild(svgEl('polygon', { points: '0,0 -11,-5 -11,5', fill: color, transform: `translate(${r2(x2)} ${r2(y2)}) rotate(${r2(a)})` }));
+        g.appendChild(texto(x2 + (dx > 0 ? 16 : dx < 0 ? -16 : 0), y2 + (dy > 0 ? 14 : -12), rot, { tam: 12, peso: 700, color }));
+      };
+      vector(0, 78, '#7a3fbf', 'P');                                                    // peso
+      vector(-58 * Math.sin(rad), -58 * Math.cos(rad), '#2a7fbd', 'N');                  // normal
+      vector(58 * Math.cos(rad), 58 * Math.sin(rad), C.rojo, 'Px');                      // componente sobre la rampa
+    }
+    if (p.dinamometro) {
+      const dx = -70 * Math.cos(rad), dy = 70 * Math.sin(rad);
+      g.appendChild(linea(cxm, cym - 20, cxm + dx, cym + dy - 20, C.trazo, 2.4));
+      g.appendChild(rect(cxm + dx - 46, cym + dy - 32, 46, 24, C.vidrio, C.trazo, 1.6, { rx: 3 }));
+      g.appendChild(texto(cxm + dx - 23, cym + dy - 20, 'N', { tam: 11, peso: 700 }));
+    }
+
+    if (p.medidas) {
+      g.appendChild(linea(xB + 22, yB, xB + 22, yBase, C.suave, 1.4, { 'stroke-dasharray': '5 4' }));
+      g.appendChild(flecha(xB + 22, yB, 'arriba', 8, C.suave));
+      g.appendChild(flecha(xB + 22, yBase, 'abajo', 8, C.suave));
+      g.appendChild(texto(xB + 30, (yB + yBase) / 2, p.altura || '', { tam: 12, ancla: 'start', peso: 700, color: C.suave }));
+      const mx = (xA + xB) / 2, my = (yBase + yB) / 2;
+      g.appendChild(texto(mx - 30 * Math.sin(rad), my - 30 * Math.cos(rad) - 6, p.largo || '', { tam: 12, peso: 700, color: C.suave, transform: `rotate(${r2(-ang)} ${r2(mx)} ${r2(my)})` }));
+    }
+    rotulo(g, ancho / 2, alto - 8, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Sistema de poleas ----------
+DEF.polea = {
+  nombre: 'Sistema de poleas',
+  icono: '⚙️',
+  categoria: 'Fuerza',
+  magnitud: 'Fuerza',
+  resumen: 'Poleas fijas y móviles con sus pesos: la máquina simple para hablar de ventaja mecánica.',
+  comoSeLee: 'La polea fija sólo cambia la dirección de la fuerza: hay que hacer la misma que el peso. Cada polea móvil reparte el peso entre dos tramos de cuerda, así que la fuerza baja a la mitad… pero hay que tirar el doble de cuerda.',
+  params: [
+    { clave: 'tipo', etiqueta: 'Montaje', tipo: 'opcion', def: 'fija', opciones: [
+      { v: 'fija', t: 'Una polea fija' }, { v: 'movil', t: 'Una polea móvil' }, { v: 'combinada', t: 'Fija + móvil' }
+    ] },
+    { clave: 'peso', etiqueta: 'Peso colgado (texto)', tipo: 'texto', def: '10 N' },
+    { clave: 'fuerza', etiqueta: 'Fuerza aplicada (texto)', tipo: 'texto', def: '10 N' },
+    { clave: 'dinamometro', etiqueta: 'Con dinamómetro', tipo: 'bool', def: true },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 460, alto = 480;
+    const yTecho = 50;
+    g.appendChild(rect(40, yTecho - 16, 380, 16, C.cuerpoOsc, C.trazo, 1.8));
+    for (let x = 50; x < 420; x += 22) g.appendChild(linea(x, yTecho, x - 10, yTecho + 12, C.suave, 1.4));
+
+    const poleaEn = (cx, cy, r) => {
+      g.appendChild(svgEl('circle', { cx, cy, r, fill: C.metal, stroke: C.trazo, 'stroke-width': 2.4 }));
+      g.appendChild(svgEl('circle', { cx, cy, r: r * 0.22, fill: C.cuerpoOsc }));
+    };
+    const pesa = (cx, cy, txt) => {
+      g.appendChild(svgEl('path', { d: `M ${cx - 26} ${cy} L ${cx + 26} ${cy} L ${cx + 32} ${cy + 54} L ${cx - 32} ${cy + 54} Z`, fill: C.metalOsc, stroke: C.trazo, 'stroke-width': 1.8 }));
+      g.appendChild(texto(cx, cy + 28, txt, { tam: 13, peso: 700, color: '#ffffff' }));
+    };
+    const dinamo = (cx, cy) => {
+      if (!p.dinamometro) return;
+      g.appendChild(rect(cx - 20, cy, 40, 74, C.vidrio, C.trazo, 1.8, { rx: 5 }));
+      for (let i = 1; i < 5; i++) g.appendChild(linea(cx - 20, cy + i * 14, cx - 8, cy + i * 14, C.trazo, 1));
+      g.appendChild(rect(cx - 18, cy + 40, 36, 7, C.rojo, null, 0));
+      g.appendChild(texto(cx, cy + 88, p.fuerza || '', { tam: 12, peso: 700, color: C.rojo }));
+    };
+
+    if (p.tipo === 'fija') {
+      const cx = 220, cy = 120, r = 44;
+      g.appendChild(linea(cx, yTecho, cx, cy - r, C.trazo, 3));
+      poleaEn(cx, cy, r);
+      g.appendChild(linea(cx - r, cy, cx - r, 300, C.trazo, 2.4));
+      g.appendChild(linea(cx + r, cy, cx + r, 300, C.trazo, 2.4));
+      pesa(cx - r, 300, p.peso || '');
+      dinamo(cx + r, 300);
+      g.appendChild(texto(cx, cy + r + 22, 'la fuerza es igual al peso', { tam: 11, color: C.suave, mono: false }));
+    } else if (p.tipo === 'movil') {
+      const cx = 220, cy = 250, r = 44;
+      g.appendChild(linea(cx - r, yTecho, cx - r, cy, C.trazo, 2.4));
+      poleaEn(cx, cy, r);
+      g.appendChild(linea(cx + r, cy, cx + r, 110, C.trazo, 2.4));
+      pesa(cx, cy + r, p.peso || '');
+      dinamo(cx + r, 110);
+      g.appendChild(texto(cx + 110, cy, 'la fuerza es la mitad', { tam: 11, color: C.suave, ancla: 'start', mono: false }));
+      g.appendChild(texto(cx + 110, cy + 16, 'del peso', { tam: 11, color: C.suave, ancla: 'start', mono: false }));
+    } else {
+      const cxF = 300, cyF = 120, cxM = 170, cyM = 260, r = 40;
+      g.appendChild(linea(cxF, yTecho, cxF, cyF - r, C.trazo, 3));
+      poleaEn(cxF, cyF, r);
+      poleaEn(cxM, cyM, r);
+      g.appendChild(linea(cxM - r, yTecho, cxM - r, cyM, C.trazo, 2.4));
+      g.appendChild(linea(cxM + r, cyM, cxF - r, cyF, C.trazo, 2.4));
+      g.appendChild(linea(cxF + r, cyF, cxF + r, 300, C.trazo, 2.4));
+      pesa(cxM, cyM + r, p.peso || '');
+      dinamo(cxF + r, 300);
+      g.appendChild(texto(ancho / 2, 430, 'la polea móvil reparte el peso entre dos tramos de cuerda', { tam: 11, color: C.suave, mono: false }));
+    }
+    rotulo(g, ancho / 2, alto - 8, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Banco óptico ----------
+DEF.bancoOptico = {
+  nombre: 'Banco óptico con lente',
+  icono: '🔎',
+  categoria: 'Óptica',
+  magnitud: 'Distancias e imagen',
+  resumen: 'Objeto, lente y pantalla sobre el riel, con los rayos trazados y la imagen donde corresponde.',
+  comoSeLee: 'La imagen se busca corriendo la pantalla hasta que se ve nítida. La relación entre las distancias es 1/f = 1/do + 1/di: si el objeto está a más del doble de la focal, la imagen sale más chica e invertida.',
+  params: [
+    { clave: 'lente', etiqueta: 'Tipo de lente', tipo: 'opcion', def: 'convergente', opciones: [
+      { v: 'convergente', t: 'Convergente (biconvexa)' }, { v: 'divergente', t: 'Divergente (bicóncava)' }
+    ] },
+    { clave: 'focal', etiqueta: 'Distancia focal (cm)', tipo: 'numero', paso: 1, min: 2, max: 40, def: 10 },
+    { clave: 'distanciaObjeto', etiqueta: 'Distancia objeto-lente (cm)', tipo: 'numero', paso: 1, min: 2, max: 80, def: 25 },
+    { clave: 'alturaObjeto', etiqueta: 'Altura del objeto (cm)', tipo: 'numero', paso: 0.5, min: 0.5, max: 12, def: 4 },
+    { clave: 'rayos', etiqueta: 'Trazar los rayos', tipo: 'bool', def: true },
+    { clave: 'pantalla', etiqueta: 'Dibujar la pantalla en la imagen', tipo: 'bool', def: true },
+    { clave: 'datos', etiqueta: 'Escribir las distancias', tipo: 'bool', def: true },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const conv = p.lente !== 'divergente';
+    const f = (conv ? 1 : -1) * Math.abs(Number(p.focal) || 10);
+    const dObj = Math.abs(Number(p.distanciaObjeto) || 25);
+    const hObj = Math.abs(Number(p.alturaObjeto) || 4);
+    // Ecuación de las lentes delgadas. Si el objeto está justo en el foco no
+    // hay imagen: se corre un pelín para no dividir entre cero.
+    const den = (dObj - f) === 0 ? 1e-6 : (dObj - f);
+    const dImg = (dObj * f) / den;
+    const aumento = -dImg / dObj;
+    const hImg = hObj * aumento;
+
+    const g = grupo();
+    const ancho = 760, alto = 440;
+    const cxL = 380, eje = 240;
+    // escala de dibujo: que entre todo lo que haya que mostrar
+    const alcance = Math.max(dObj, Math.abs(dImg), Math.abs(f) * 2) * 1.15;
+    const px = Math.min(9, (ancho / 2 - 60) / alcance);
+    const pxV = Math.min(14, 120 / Math.max(hObj, Math.abs(hImg)));
+    const X = d => cxL + d * px;
+    const Y = h => eje - h * pxV;
+
+    // riel y eje óptico
+    g.appendChild(rect(30, eje + 110, ancho - 60, 20, C.cuerpoOsc, C.trazo, 1.6, { rx: 3 }));
+    for (let x = 50; x < ancho - 50; x += 40) g.appendChild(linea(x, eje + 110, x, eje + 104, C.suave, 1));
+    g.appendChild(linea(40, eje, ancho - 40, eje, C.suave, 1.2, { 'stroke-dasharray': '6 5' }));
+
+    // la lente
+    const hL = 100;
+    if (conv) {
+      g.appendChild(svgEl('path', { d: `M ${cxL} ${eje - hL} C ${cxL + 26} ${eje - hL * 0.4} ${cxL + 26} ${eje + hL * 0.4} ${cxL} ${eje + hL} C ${cxL - 26} ${eje + hL * 0.4} ${cxL - 26} ${eje - hL * 0.4} ${cxL} ${eje - hL} Z`, fill: 'rgba(58,163,216,0.28)', stroke: C.vidrioBorde, 'stroke-width': 2.2 }));
+    } else {
+      g.appendChild(svgEl('path', { d: `M ${cxL - 20} ${eje - hL} L ${cxL + 20} ${eje - hL} C ${cxL - 4} ${eje - hL * 0.4} ${cxL - 4} ${eje + hL * 0.4} ${cxL + 20} ${eje + hL} L ${cxL - 20} ${eje + hL} C ${cxL + 4} ${eje + hL * 0.4} ${cxL + 4} ${eje - hL * 0.4} ${cxL - 20} ${eje - hL} Z`, fill: 'rgba(58,163,216,0.28)', stroke: C.vidrioBorde, 'stroke-width': 2.2 }));
+    }
+    g.appendChild(rect(cxL - 14, eje + hL, 28, 110 - hL, C.metalOsc, C.trazo, 1.4));
+
+    // focos
+    [-1, 1].forEach(s => {
+      const x = X(s * Math.abs(f));
+      g.appendChild(svgEl('circle', { cx: r2(x), cy: eje, r: 4, fill: C.trazo }));
+      g.appendChild(texto(x, eje + 18, s > 0 ? "F'" : 'F', { tam: 11, peso: 700 }));
+    });
+
+    // el objeto (una flecha) a la izquierda
+    const xO = X(-dObj);
+    g.appendChild(linea(xO, eje, xO, Y(hObj), '#c0562b', 3));
+    g.appendChild(flecha(xO, Y(hObj), 'arriba', 10, '#c0562b'));
+    g.appendChild(rect(xO - 14, eje + hL, 28, 110 - hL, C.metalOsc, C.trazo, 1.4));
+    g.appendChild(texto(xO, Y(hObj) - 16, 'objeto', { tam: 11, peso: 700, color: '#c0562b' }));
+
+    // la imagen
+    const xI = X(dImg);
+    const dentro = Math.abs(xI - cxL) < ancho / 2 - 50;
+    if (dentro) {
+      const col = dImg > 0 ? '#7a3fbf' : '#9a7fbf';
+      g.appendChild(linea(xI, eje, xI, Y(hImg), col, 3, dImg > 0 ? null : { 'stroke-dasharray': '6 4' }));
+      g.appendChild(flecha(xI, Y(hImg), hImg > 0 ? 'arriba' : 'abajo', 10, col));
+      g.appendChild(texto(xI - 10, Y(hImg) + (hImg > 0 ? -16 : 16), dImg > 0 ? 'imagen real' : 'imagen virtual', { tam: 11, peso: 700, color: col, ancla: 'end' }));
+      if (p.pantalla && dImg > 0) {
+        g.appendChild(rect(xI + 12, eje - 110, 12, 220, '#f2efe4', C.trazo, 1.6, { rx: 2 }));
+        g.appendChild(rect(xI + 12, eje + hL, 28, 110 - hL, C.metalOsc, C.trazo, 1.4));
+      }
+    }
+
+    // rayos principales: el paralelo al eje y el que pasa por el centro
+    if (p.rayos) {
+      const rayo = (d, color, guion) => g.appendChild(svgEl('path', { d, fill: 'none', stroke: color, 'stroke-width': 1.8, 'stroke-dasharray': guion || null }));
+      const yTopObj = Y(hObj);
+      rayo(`M ${r2(xO)} ${r2(yTopObj)} L ${cxL} ${r2(yTopObj)}`, '#e08a2b');
+      if (conv) {
+        rayo(`M ${cxL} ${r2(yTopObj)} L ${r2(dentro ? xI : ancho - 50)} ${r2(dentro ? Y(hImg) : eje + (eje - yTopObj) * 1.4)}`, '#e08a2b');
+      } else {
+        rayo(`M ${cxL} ${r2(yTopObj)} L ${ancho - 50} ${r2(yTopObj + (eje - yTopObj) * -0.6)}`, '#e08a2b');
+        rayo(`M ${cxL} ${r2(yTopObj)} L ${r2(X(f))} ${r2(eje)}`, '#e08a2b', '5 4');
+      }
+      rayo(`M ${r2(xO)} ${r2(yTopObj)} L ${r2(dentro ? xI : ancho - 50)} ${r2(dentro ? Y(hImg) : eje + (eje - yTopObj))}`, '#2a9d8f');
+    }
+
+    if (p.datos) {
+      const caja = [];
+      caja.push('f = ' + fmt(Math.abs(f), 0) + ' cm');
+      caja.push('do = ' + fmt(dObj, 0) + ' cm');
+      caja.push('di = ' + fmt(dImg, 1) + ' cm');
+      caja.push('aumento = ' + fmt(aumento, 2));
+      g.appendChild(rect(40, 24, 200, 20 + caja.length * 18, '#fbfbf8', C.tenue, 1.4, { rx: 6 }));
+      caja.forEach((t, i) => g.appendChild(texto(52, 44 + i * 18, t, { tam: 12, ancla: 'start' })));
+    }
+    rotulo(g, ancho / 2, alto - 6, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Calorímetro ----------
+DEF.calorimetro = {
+  nombre: 'Calorímetro',
+  icono: '🥤',
+  categoria: 'Temperatura',
+  magnitud: 'Temperatura',
+  resumen: 'El vaso aislado con su tapa, el termómetro y el agitador: donde se hacen los balances de energía.',
+  comoSeLee: 'Se tapa enseguida después de mezclar y se agita suave hasta que la temperatura deje de subir: ésa es la de equilibrio. Ningún calorímetro aísla del todo, así que siempre se pierde algo de calor y la temperatura final queda un poco por debajo de la calculada.',
+  params: [
+    { clave: 'temperatura', etiqueta: 'Temperatura que marca (°C)', tipo: 'numero', paso: 0.5, min: -10, max: 110, def: 38 },
+    { clave: 'agitador', etiqueta: 'Con agitador', tipo: 'bool', def: true },
+    { clave: 'doblePared', etiqueta: 'Doble vaso (mejor aislado)', tipo: 'bool', def: true },
+    P.color(), { clave: 'nivel', etiqueta: 'Qué tan lleno está (%)', tipo: 'numero', paso: 5, min: 0, max: 100, def: 60 },
+    { clave: 'rotulos', etiqueta: 'Rotular las partes', tipo: 'bool', def: true },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const ancho = 420, alto = 460;
+    const cx = 190, yTapa = 110, yFondo = 400;
+    const w = 150;
+
+    // vaso exterior y, si corresponde, el interior
+    g.appendChild(svgEl('path', { d: `M ${cx - w / 2 - 14} ${yTapa} L ${cx - w / 2 - 6} ${yFondo} L ${cx + w / 2 + 6} ${yFondo} L ${cx + w / 2 + 14} ${yTapa}`, fill: '#f3f1ea', stroke: C.trazo, 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
+    if (p.doblePared) {
+      g.appendChild(svgEl('path', { d: `M ${cx - w / 2} ${yTapa + 12} L ${cx - w / 2 + 6} ${yFondo - 14} L ${cx + w / 2 - 6} ${yFondo - 14} L ${cx + w / 2} ${yTapa + 12}`, fill: '#faf9f4', stroke: C.trazo, 'stroke-width': 1.8, 'stroke-linejoin': 'round' }));
+    }
+    // el líquido
+    const nivel = acotar(p.nivel, 0, 100) / 100;
+    const yInt = yTapa + (p.doblePared ? 16 : 6), yFin = yFondo - (p.doblePared ? 18 : 6);
+    const yl = yFin - nivel * (yFin - yInt);
+    if (nivel > 0) g.appendChild(svgEl('path', { d: `M ${cx - w / 2 + 4} ${r2(yl)} L ${cx - w / 2 + 8} ${yFin} L ${cx + w / 2 - 8} ${yFin} L ${cx + w / 2 - 4} ${r2(yl)} Z`, fill: p.color || C.liquido, 'fill-opacity': 0.5 }));
+
+    // tapa
+    g.appendChild(rect(cx - w / 2 - 24, yTapa - 20, w + 48, 24, '#e9e5d8', C.trazo, 2, { rx: 4 }));
+    // termómetro pasando por la tapa
+    g.appendChild(rect(cx - 6, 30, 12, yFin - 60, C.vidrio, C.vidrioBorde, 1.6, { rx: 6 }));
+    const t = acotar(p.temperatura, -10, 110);
+    const hCol = ((t + 10) / 120) * (yFin - 110);
+    g.appendChild(rect(cx - 3, yFin - 40 - hCol, 6, hCol + 30, C.rojo, null, 0));
+    g.appendChild(svgEl('circle', { cx, cy: yFin - 14, r: 10, fill: C.rojo, stroke: C.vidrioBorde, 'stroke-width': 1.2 }));
+    carteLectura(g, cx + 26, 34, fmt(t, 1) + ' °C');
+
+    if (p.agitador) {
+      g.appendChild(linea(cx - 52, 46, cx - 52, yFin - 40, C.metalOsc, 3.4));
+      g.appendChild(svgEl('ellipse', { cx: cx - 52, cy: yFin - 36, rx: 24, ry: 7, fill: 'none', stroke: C.metalOsc, 'stroke-width': 3 }));
+      g.appendChild(svgEl('circle', { cx: cx - 52, cy: 40, r: 9, fill: C.metalOsc, stroke: C.trazo, 'stroke-width': 1.2 }));
+    }
+    if (p.rotulos) {
+      g.appendChild(texto(cx + w / 2 + 26, yTapa + 40, 'vaso aislado', { tam: 10, ancla: 'start', color: C.suave }));
+      if (p.doblePared) g.appendChild(texto(cx + w / 2 + 26, yTapa + 56, '(doble pared)', { tam: 10, ancla: 'start', color: C.suave }));
+      if (p.agitador) g.appendChild(texto(cx - 122, 60, 'agitador', { tam: 10, ancla: 'end', color: C.suave }));
+    }
+    rotulo(g, cx, alto - 8, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
 // ============================================================
 // API pública
 // ============================================================
 
 // Orden en el que aparecen en el banco.
-const ORDEN = ['regla', 'calibre', 'micrometro', 'probeta', 'bureta', 'jeringa', 'vidrio',
-  'termometro', 'dinamometro', 'balanzaDigital', 'granataria', 'cronometro',
-  'multimetro', 'aguja', 'transportador', 'sensorDigital', 'microbit', 'goDirect'];
+const ORDEN = [
+  // longitud y ángulo
+  'regla', 'calibre', 'micrometro', 'transportador',
+  // volumen
+  'probeta', 'bureta', 'pipeta', 'jeringa', 'vidrio',
+  // masa, temperatura, fuerza y tiempo
+  'balanzaDigital', 'granataria', 'termometro', 'dinamometro', 'cronometro',
+  // electricidad y electrónica
+  'multimetro', 'aguja', 'fuente', 'circuito', 'microbit',
+  // mesada de física
+  'planoInclinado', 'polea', 'bancoOptico', 'calorimetro',
+  // mesada de química
+  'frasco', 'mechero', 'soporte', 'gradilla', 'filtracion', 'destilacion', 'agitador', 'papelPH',
+  // sensores
+  'goDirect', 'sensorDigital'
+];
 
 ORDEN.forEach(id => { if (DEF[id]) DEF[id].id = id; });
 
@@ -1981,7 +3315,16 @@ export function textoAInstrumento(linea) {
   if (!DEF[id]) return null;
   const params = paramsPorDefecto(id);
   if (corte[1]) {
-    corte.slice(1).join('::').split(',').forEach(par => {
+    // Los parámetros se separan con comas, pero un valor puede traer comas
+    // adentro («0,1 mol/L», «agua, HCl, control»). Por eso el trozo que no
+    // tiene «=» no abre un parámetro nuevo: se pega al valor anterior.
+    const trozos = corte.slice(1).join('::').split(',');
+    const pares = [];
+    trozos.forEach(t => {
+      if (t.indexOf('=') >= 0 || !pares.length) pares.push(t);
+      else pares[pares.length - 1] += ',' + t;
+    });
+    pares.forEach(par => {
       const i = par.indexOf('=');
       if (i < 0) return;
       const clave = par.slice(0, i).trim();
