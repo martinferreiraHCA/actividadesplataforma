@@ -74,3 +74,66 @@
   box-shadow: none;
   margin: 0;
 }
+
+/* ---------- guía de armado ---------- */
+.guia-final { text-align: center; margin-bottom: 1.4rem; break-inside: avoid; page-break-inside: avoid; }
+.guia-final img {
+  max-width: 420px;
+  width: 100%;
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 10px;
+}
+.guia-final__cap { margin: 0.4rem 0 0; font-size: 0.85rem; opacity: 0.75; }
+
+.guia-paso {
+  border: 1.5px solid rgba(0,0,0,0.25);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.guia-paso__cab { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.7rem; }
+.guia-paso__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1.5px solid #111;
+  border-radius: 999px;
+  padding: 0.15em 0.7em;
+}
+.guia-paso__color {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.35);
+  flex: none;
+}
+.guia-paso__hoja { opacity: 0.65; font-size: 0.85rem; }
+.guia-paso__cuerpo { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.guia-paso__foto {
+  width: 250px;
+  max-width: 100%;
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 8px;
+  flex: none;
+}
+.guia-paso__lado { flex: 1; min-width: 240px; }
+.guia-paso__pieza {
+  max-width: 300px;
+  max-height: 190px;
+  display: block;
+  border: 1px dashed rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 4px;
+  margin-bottom: 0.6rem;
+  background: #fff;
+}
+.guia-paso__texto { margin: 0; padding-left: 1.1rem; }
+.guia-paso__texto li { margin-bottom: 0.35rem; font-size: 0.9rem; }
+
+@media print {
+  #areaImpresion .guia-doc { max-width: none; border: none; box-shadow: none; padding: 0; font-size: 13px; }
+  .guia-paso, .guia-final { page-break-inside: avoid; }
+  .guia-paso__color { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

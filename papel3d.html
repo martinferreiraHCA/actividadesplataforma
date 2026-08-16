@@ -130,7 +130,10 @@
         <option value="10">10 mm</option>
       </select>
       <label class="scratch-check"><input type="checkbox" id="optNumerar" checked> Numerar las uniones</label>
+      <span class="scratch-opciones__label">Cantidad de piezas:</span>
+      <input class="campo__input" type="number" id="optPiezas" min="2" max="60" placeholder="Auto" style="max-width:100px">
     </div>
+    <p class="ia-catalogo__ayuda" style="margin-top:0.5rem">«Cantidad de piezas»: dejalo vacío para que salgan las menos posibles. Si ponés un número, el patrón se corta en más piezas chicas — más fáciles de doblar y de repartir entre varios estudiantes (el número final puede variar un poco).</p>
   </div>
 </section>
 
@@ -166,6 +169,21 @@
     </div>
 
     <div id="hojasPatron"></div>
+  </div>
+</section>
+
+
+<!-- ====== GUÍA DE ARMADO ====== -->
+<section class="editor-section" id="seccionGuia" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 4 — Guía de armado para repartir</div>
+    <p class="wiz-explica" style="margin-bottom:1rem">Una guía <strong>paso a paso</strong> para darles a los estudiantes junto con las hojas del patrón: en cada paso se ve <strong>qué pieza toca</strong>, cómo va quedando el modelo en 3D y con qué números se pega a lo ya armado.</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
+      <button class="btn btn--primary" id="btnGuiaImprimir">PDF — Imprimir la guía</button>
+      <button class="btn btn--primary" id="btnGuiaPDF">⬇ Descargar la guía en PDF</button>
+      <span class="inf-estado" id="notaGuia" style="display:none"></span>
+    </div>
+    <div id="guiaArmado"></div>
   </div>
 </section>
 

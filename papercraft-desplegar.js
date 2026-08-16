@@ -161,6 +161,12 @@ export function desplegarModelo(triangulos, opciones) {
   const maxAncho = op.anchoUtilMm - 2 * margenPieza;
   const maxAlto = op.altoUtilMm - 2 * margenPieza;
 
+  // "quiero ~N piezas": se limita cuántas caras puede juntar cada pieza,
+  // así salen piezas más chicas y el armado es más fácil de repartir
+  const maxCarasPorPieza = op.piezasObjetivo > 0
+    ? Math.max(1, Math.ceil(caras.length / op.piezasObjetivo))
+    : Infinity;
+
   // El despliegue se corre con dos criterios para elegir la próxima cara
   // (menor crecimiento de la caja, o menor ángulo de pliegue) y se queda con
   // el que produce menos piezas: ninguna heurística gana siempre.
@@ -217,6 +223,7 @@ export function desplegarModelo(triangulos, opciones) {
     };
 
     while (cola.length) {
+      if (pieza.caras.size >= maxCarasPorPieza) break; // pieza llena: la próxima empieza aparte
       // candidatos vigentes, ordenados por crecimiento de la caja y ángulo
       const evaluados = [];
       for (const v of cola) {
@@ -296,9 +303,10 @@ export function desplegarModelo(triangulos, opciones) {
         if (info && colocadaEn[info.vecino] !== -1) {
           // esta arista se pega con su gemela en otra pieza (o en esta):
           if (!numeroDeArista.has(k)) {
-            numeroDeArista.set(k, { n: siguienteNumero++, conPestana: pieza.id });
+            numeroDeArista.set(k, { n: siguienteNumero++, conPestana: pieza.id, piezas: [] });
           }
           const reg = numeroDeArista.get(k);
+          reg.piezas.push(pieza.id);
           const mx = (P[0] + Q[0]) / 2, my = (P[1] + Q[1]) / 2;
           // normal exterior 2D (opuesta al tercer vértice)
           const otro = tri2d[(lado + 2) % 3];
@@ -334,6 +342,29 @@ export function desplegarModelo(triangulos, opciones) {
     return { id: pieza.id, nCaras: pieza.caras.size, montanas, valles, cortes, pestanas, etiquetas };
   });
 
+  // lista de uniones (nº → qué piezas se pegan) y, por pieza, sus uniones
+  const uniones = [];
+  numeroDeArista.forEach(reg => {
+    const ps = Array.from(new Set(reg.piezas)).sort((a, b) => a - b);
+    uniones.push({ n: reg.n, piezas: ps });
+  });
+  uniones.sort((a, b) => a.n - b.n);
+  piezasSalida.forEach(p => {
+    p.uniones = uniones
+      .filter(u => u.piezas.includes(p.id))
+      .map(u => ({ n: u.n, otra: u.piezas.length === 1 ? p.id : u.piezas.find(x => x !== p.id) }));
+  });
+
+  // triángulos 3D (en mm) con la pieza a la que fue a parar cada cara:
+  // la vista 3D los usa para pintar el modelo por pieza y armar la guía
+  const tri3d = [];
+  piezas.forEach(pieza => {
+    pieza.caras.forEach((_, f) => {
+      const c = caras[f];
+      tri3d.push({ v: [verts[c[0]], verts[c[1]], verts[c[2]]], pieza: pieza.id });
+    });
+  });
+
   // ---------- acomodo en páginas ----------
   const paginas = acomodarEnPaginas(piezasSalida, op, margenPieza);
 
@@ -346,7 +377,7 @@ export function desplegarModelo(triangulos, opciones) {
   if (piezasSalida.length > 40) {
     avisos.push(`El patrón quedó en ${piezasSalida.length} piezas: para un armado más simple, probá con un modelo menos detallado o más grande.`);
   }
-  return { piezas: piezasSalida, paginas, avisos: Array.from(new Set(avisos)), stats };
+  return { piezas: piezasSalida, paginas, uniones, tri3d, avisos: Array.from(new Set(avisos)), stats };
 }
 
 // bbox de una pieza con todo incluido
@@ -404,6 +435,7 @@ function acomodarEnPaginas(piezas, op, sep) {
     if (x + w > op.anchoUtilMm - sep + EPS && x > sep) { x = sep; y += altoFila + sep; altoFila = 0; }
     if (y + h > op.altoUtilMm - sep + EPS && pag.piezas.length) { nueva(); }
     trasladarPieza(it.p, x - it.bb.minX, y - it.bb.minY);
+    it.p.hoja = paginas.length; // 1-based: en qué hoja quedó la pieza
     pag.piezas.push(it.p);
     x += w + sep;
     if (h > altoFila) altoFila = h;
