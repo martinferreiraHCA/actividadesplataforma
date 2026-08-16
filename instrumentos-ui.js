@@ -271,10 +271,10 @@ function generarEjercicios() {
     for (let i = 0; i < repetir; i++) {
       const params = paramsPorDefecto(id);
       params.lectura = lecturaAlAzar(id, params);
+      // En los ejercicios no se regala la respuesta: ni el número ni la línea
+      // de medición (que de fábrica ya viene apagada).
       params.mostrarValor = false;
-      // En los ejercicios no se regala la respuesta: se saca la marca roja
-      // salvo en los que sin ella no se entiende dónde hay que mirar.
-      if ('marcarLectura' in params && ['calibre', 'micrometro'].indexOf(id) < 0) params.marcarLectura = false;
+      if ('marcarLectura' in params) params.marcarLectura = false;
       items.push({ id, params: normalizarParams(id, params) });
     }
   });

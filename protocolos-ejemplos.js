@@ -18,7 +18,11 @@ export const EJEMPLOS = [
 # Duración: 90 minutos
 
 ## Fundamento
-La densidad es una propiedad característica de cada material: relaciona cuánta masa hay en cada unidad de volumen. Se calcula como el cociente entre la masa del cuerpo y el volumen que ocupa, d = m / V. Dos cuerpos del mismo material tienen la misma densidad aunque uno sea mucho más grande que el otro, y por eso la densidad sirve para identificar de qué está hecho algo.
+La densidad es una propiedad característica de cada material: relaciona cuánta masa hay en cada unidad de volumen. Se calcula como el cociente entre la masa del cuerpo y el volumen que ocupa:
+
+$$d = \\frac{m}{V}$$
+
+Dos cuerpos del mismo material tienen la misma densidad aunque uno sea mucho más grande que el otro, y por eso la densidad sirve para identificar de qué está hecho algo.
 
 Medir la masa es directo: se apoya el cuerpo en la balanza. El volumen es el problema cuando el cuerpo tiene una forma irregular y no hay fórmula geométrica que valga. Ahí se usa el método del desplazamiento, atribuido a Arquímedes: un cuerpo sumergido desaloja un volumen de agua exactamente igual al suyo. Si la probeta tenía V1 de agua y al sumergir el cuerpo el nivel sube hasta V2, el volumen del cuerpo es la diferencia V2 − V1.
 
@@ -66,9 +70,9 @@ Sobre la mesada, de izquierda a derecha: la balanza (nivelada y encendida en cer
 filas: 3
 
 ## Cálculos
-- Volumen del cuerpo :: V = V2 − V1 :: mL :: Restá los dos volúmenes leídos en la probeta. Al restar dos medidas, las incertidumbres se suman: ± 1 mL.
-- Densidad :: d = m / V :: g/mL :: Dividí la masa entre el volumen que acabás de calcular. Redondeá el resultado a dos cifras decimales.
-- Densidad en unidades del SI :: d = (m/V) × 1000 :: kg/m³ :: Multiplicá el resultado anterior por 1000 para expresarlo como pide el Sistema Internacional.
+- Volumen del cuerpo :: $V = V_2 - V_1$ :: mL :: Restá los dos volúmenes leídos en la probeta. Al restar dos medidas, las incertidumbres se suman: ± 1 mL.
+- Densidad :: $d = \\dfrac{m}{V}$ :: g/mL :: Dividí la masa entre el volumen que acabás de calcular. Redondeá el resultado a dos cifras decimales.
+- Densidad en unidades del SI :: $d_{SI} = \\dfrac{m}{V} \\times 1000$ :: kg/m³ :: Multiplicá el resultado anterior por 1000 para expresarlo como pide el Sistema Internacional.
 
 ## Preguntas
 - ¿Los tres cuerpos tienen la misma densidad? Si dos dieron parecido, ¿podés afirmar que son del mismo material?
@@ -94,7 +98,11 @@ Guía: Escribí qué densidad obtuviste para cada cuerpo y con qué material lo 
 # Duración: 90 minutos
 
 ## Fundamento
-Cuando se le aplica una fuerza a un resorte, éste se estira. Robert Hooke descubrió en 1660 que, mientras no se pase del límite elástico, el alargamiento es directamente proporcional a la fuerza aplicada: F = k · Δx, donde Δx es lo que se estiró el resorte respecto de su longitud natural y k es la constante elástica, propia de cada resorte.
+Cuando se le aplica una fuerza a un resorte, éste se estira. Robert Hooke descubrió en 1660 que, mientras no se pase del límite elástico, el alargamiento es directamente proporcional a la fuerza aplicada:
+
+$$F = k \\cdot \\Delta x$$
+
+donde $\\Delta x$ es lo que se estiró el resorte respecto de su longitud natural y k es la constante elástica, propia de cada resorte.
 
 La constante k se mide en newton sobre metro (N/m) e indica qué tan duro es el resorte: cuanto mayor es k, más fuerza hay que hacer para estirarlo lo mismo. Si se grafica F en función de Δx se obtiene una recta que pasa por el origen, y la pendiente de esa recta es justamente k.
 
@@ -140,9 +148,9 @@ Fijá la varilla al soporte universal y colgá el resorte de la nuez, bien verti
 filas: 7
 
 ## Cálculos
-- Peso colgado :: F = m · g :: N :: Pasá la masa a kilogramos y multiplicá por 9,8 m/s².
-- Alargamiento :: Δx = x − x0 :: cm :: Restá a cada posición la posición inicial del resorte con el portapesas vacío.
-- Constante elástica :: k = ΔF / Δ(Δx) :: N/m :: Es la pendiente de la recta: tomá dos puntos sobre la recta trazada y dividí la diferencia de fuerzas entre la diferencia de alargamientos, en metros.
+- Peso colgado :: $F = m \\cdot g$ :: N :: Pasá la masa a kilogramos y multiplicá por 9,8 m/s².
+- Alargamiento :: $\\Delta x = x - x_0$ :: cm :: Restá a cada posición la posición inicial del resorte con el portapesas vacío.
+- Constante elástica :: $k = \\dfrac{\\Delta F}{\\Delta(\\Delta x)}$ :: N/m :: Es la pendiente de la recta: tomá dos puntos sobre la recta trazada y dividí la diferencia de fuerzas entre la diferencia de alargamientos, en metros.
 
 ## Preguntas
 - ¿Los puntos de tu gráfica quedaron alineados? ¿Alguno se escapa claramente de la recta? ¿Por qué puede haber pasado?
@@ -168,7 +176,7 @@ Guía: Informá el valor de k que obtuviste con su unidad. ¿Se cumplió la ley 
 # Duración: 90 minutos
 
 ## Fundamento
-En muchos conductores, la corriente que circula es directamente proporcional a la diferencia de potencial aplicada entre sus extremos. Esa relación, descubierta por Georg Ohm, se escribe V = R · I, donde R es la resistencia eléctrica del conductor y se mide en ohm (Ω).
+En muchos conductores, la corriente que circula es directamente proporcional a la diferencia de potencial aplicada entre sus extremos. Esa relación, descubierta por Georg Ohm, se escribe $V = R \\cdot I$, donde $R$ es la resistencia eléctrica del conductor y se mide en ohm (Ω).
 
 Un conductor que cumple esta proporcionalidad se llama óhmico, y su gráfica V-I es una recta que pasa por el origen cuya pendiente es la resistencia. No todos los componentes son óhmicos: la resistencia de una lamparita de filamento aumenta bastante al calentarse, así que su gráfica se curva.
 
@@ -189,7 +197,7 @@ Para medir hay que conectar los instrumentos de manera distinta según qué mida
 - 1 hoja de papel milimetrado
 
 ## Instrumentos
-- multimetro :: funcion=Vcc, rango=20 V, lectura=6.24, unidad=V, decimales=2 :: como voltímetro, en paralelo con el resistor
+- multimetro :: funcion=Vcc20, lectura=6.24 :: como voltímetro, en paralelo con el resistor
 - aguja :: simbolo=A, min=0, max=0.5, division=0.01, numerarCada=0.1, unidad=A, lectura=0.06 :: como amperímetro, en serie con el circuito
 
 ## Seguridad
@@ -220,9 +228,9 @@ filas: 6
 filas: 6
 
 ## Cálculos
-- Resistencia punto a punto :: R = V / I :: Ω :: Calculá el cociente en cada fila de la tabla. En un elemento óhmico tiene que dar siempre parecido.
-- Resistencia de la gráfica :: R = ΔV / ΔI :: Ω :: Es la pendiente de la recta ajustada a los puntos del resistor.
-- Potencia disipada :: P = V · I :: W :: Calculala para el punto de mayor tensión y compará con lo que aguanta el resistor.
+- Resistencia punto a punto :: $R = \\dfrac{V}{I}$ :: Ω :: Calculá el cociente en cada fila de la tabla. En un elemento óhmico tiene que dar siempre parecido.
+- Resistencia de la gráfica :: $R = \\dfrac{\\Delta V}{\\Delta I}$ :: Ω :: Es la pendiente de la recta ajustada a los puntos del resistor.
+- Potencia disipada :: $P = V \\cdot I$ :: W :: Calculala para el punto de mayor tensión y compará con lo que aguanta el resistor.
 
 ## Preguntas
 - ¿El cociente V/I se mantuvo constante en el resistor? ¿Y en la lamparita? ¿Qué te dice eso sobre cada elemento?
@@ -250,7 +258,11 @@ Guía: Informá el valor de la resistencia con su incertidumbre. ¿Se verificó 
 ## Fundamento
 Cuando se ponen en contacto dos cuerpos a distinta temperatura, la energía pasa del más caliente al más frío hasta que los dos llegan a la misma temperatura: el equilibrio térmico. Si el sistema está bien aislado, toda la energía que pierde uno la gana el otro, y se cumple que el calor cedido es igual al calor absorbido.
 
-La cantidad de calor que intercambia un cuerpo al cambiar de temperatura es Q = m · c · ΔT, donde m es la masa, ΔT la variación de temperatura y c el calor específico, que dice cuánta energía hace falta para subir un grado a un kilogramo de esa sustancia. El agua tiene un calor específico muy alto (4180 J/kg·°C), y por eso tarda tanto en calentarse y en enfriarse.
+La cantidad de calor que intercambia un cuerpo al cambiar de temperatura es
+
+$$Q = m \\cdot c \\cdot \\Delta T$$
+
+donde $m$ es la masa, $\\Delta T$ la variación de temperatura y c el calor específico, que dice cuánta energía hace falta para subir un grado a un kilogramo de esa sustancia. El agua tiene un calor específico muy alto (4180 J/kg·°C), y por eso tarda tanto en calentarse y en enfriarse.
 
 En la práctica ningún recipiente aísla perfectamente: parte del calor se va al aire y otra parte la absorbe el propio recipiente. Por eso la temperatura de equilibrio que se mide siempre queda un poco por debajo de la que predice el cálculo, y comparar las dos permite estimar cuánto perdió el sistema.
 
@@ -296,10 +308,10 @@ Armá el calorímetro metiendo un vaso de telgopor dentro del otro y haciendo un
 filas: 2
 
 ## Cálculos
-- Calor absorbido por el agua fría :: Q1 = m1 · c · (Te − T1) :: J :: Usá c = 4180 J/kg·°C y pasá las masas a kilogramos.
-- Calor cedido por el agua caliente :: Q2 = m2 · c · (T2 − Te) :: J :: Tiene que dar parecido a Q1, con signo contrario.
-- Temperatura de equilibrio teórica :: Te = (m1·T1 + m2·T2) / (m1 + m2) :: °C :: Vale porque las dos porciones son de agua y comparten el calor específico.
-- Pérdida de energía :: Q2 − Q1 :: J :: Es la energía que se fue al aire y al propio calorímetro.
+- Calor absorbido por el agua fría :: $Q_1 = m_1 \\cdot c \\cdot (T_e - T_1)$ :: J :: Usá c = 4180 J/kg·°C y pasá las masas a kilogramos.
+- Calor cedido por el agua caliente :: $Q_2 = m_2 \\cdot c \\cdot (T_2 - T_e)$ :: J :: Tiene que dar parecido a Q1, con signo contrario.
+- Temperatura de equilibrio teórica :: $T_e = \\dfrac{m_1 T_1 + m_2 T_2}{m_1 + m_2}$ :: °C :: Vale porque las dos porciones son de agua y comparten el calor específico.
+- Pérdida de energía :: $Q_2 - Q_1$ :: J :: Es la energía que se fue al aire y al propio calorímetro.
 
 ## Preguntas
 - ¿Qué tan cerca estuvo la temperatura de equilibrio medida de la calculada? ¿Quedó por encima o por debajo? ¿Por qué?
@@ -327,7 +339,11 @@ Guía: ¿Se cumplió el balance de energía dentro de la incertidumbre de tus me
 ## Fundamento
 Un péndulo simple es una masa colgada de un hilo inextensible que oscila por efecto de la gravedad. El período T es el tiempo que tarda en dar una oscilación completa: ir y volver al mismo punto moviéndose en el mismo sentido.
 
-La intuición dice que el período debería depender de la masa que cuelga, del largo del hilo y de cuánto se lo separa de la vertical. Galileo mostró que, para amplitudes chicas, sólo importa el largo: T = 2π · √(L/g). Ni la masa ni la amplitud cambian el período mientras el ángulo no pase de unos 15°.
+La intuición dice que el período debería depender de la masa que cuelga, del largo del hilo y de cuánto se lo separa de la vertical. Galileo mostró que, para amplitudes chicas, sólo importa el largo:
+
+$$T = 2\\pi\\sqrt{\\frac{L}{g}}$$
+
+Ni la masa ni la amplitud cambian el período mientras el ángulo no pase de unos 15°.
 
 Para poner esto a prueba hay que variar una sola cosa por vez y dejar las demás fijas: es lo que se llama controlar las variables. Además, como el error humano al apretar el cronómetro es de unas dos décimas de segundo, conviene cronometrar 10 oscilaciones seguidas y dividir entre 10: así el error se reparte y el período sale mucho más preciso.
 
@@ -379,9 +395,9 @@ filas: 3
 filas: 4
 
 ## Cálculos
-- Período :: T = t / 10 :: s :: Dividí entre 10 el tiempo de las diez oscilaciones. El error también se divide entre 10.
-- Cuadrado del período :: T² :: s² :: Se calcula para poder linealizar la relación con la longitud.
-- Gravedad :: g = 4π² / pendiente :: m/s² :: La gráfica T² en función de L (en metros) da una recta de pendiente 4π²/g. Despejá g y compará con 9,8 m/s².
+- Período :: $T = \\dfrac{t}{10}$ :: s :: Dividí entre 10 el tiempo de las diez oscilaciones. El error también se divide entre 10.
+- Cuadrado del período :: $T^{2}$ :: s² :: Se calcula para poder linealizar la relación con la longitud.
+- Gravedad :: $g = \\dfrac{4\\pi^{2}}{\\text{pendiente}}$ :: m/s² :: La gráfica T² en función de L (en metros) da una recta de pendiente 4π²/g. Despejá g y compará con 9,8 m/s².
 
 ## Preguntas
 - ¿Cuál de las tres variables cambió el período? ¿Cuáles no lo cambiaron?
@@ -411,7 +427,7 @@ Una titulación o valoración permite averiguar la concentración desconocida de
 
 Ese momento se llama punto de equivalencia, y se detecta con un indicador: una sustancia que cambia de color según el pH. La fenolftaleína es incolora en medio ácido y rosada en medio básico, así que la primera gota que deja el líquido rosado —y el color persiste al agitar— marca el final de la titulación.
 
-Del volumen gastado se despeja la concentración con la relación Ca · Va = Cb · Vb, válida cuando el ácido y la base son monopróticos. La bureta es el instrumento clave: aprecia 0,1 mL y se lee al revés que una probeta, porque su cero está arriba y el número que marca el menisco es el volumen ya descargado.
+Del volumen gastado se despeja la concentración con la relación $C_a \\cdot V_a = C_b \\cdot V_b$, válida cuando el ácido y la base son monopróticos. La bureta es el instrumento clave: aprecia 0,1 mL y se lee al revés que una probeta, porque su cero está arriba y el número que marca el menisco es el volumen ya descargado.
 
 ## Objetivos
 - Determinar la concentración de una solución de ácido clorhídrico por titulación.
@@ -458,10 +474,10 @@ Sujetá la bureta al soporte con la pinza, bien vertical, con la llave a la altu
 filas: 3
 
 ## Cálculos
-- Volumen gastado :: Vb = V final − V inicial :: mL :: Restá las dos lecturas de la bureta en cada titulación.
+- Volumen gastado :: $V_b = V_{final} - V_{inicial}$ :: mL :: Restá las dos lecturas de la bureta en cada titulación.
 - Volumen promedio :: Vb promedio :: mL :: Promediá las tres corridas. Descartá la primera si fue la de tanteo.
-- Concentración del ácido :: Ca = (Cb · Vb) / Va :: mol/L :: Con Cb = 0,100 mol/L y Va = 10,0 mL. Vale porque HCl y NaOH son monopróticos.
-- Masa de HCl por litro :: m = Ca · 36,5 :: g/L :: Multiplicá la concentración molar por la masa molar del HCl.
+- Concentración del ácido :: $C_a = \\dfrac{C_b \\cdot V_b}{V_a}$ :: mol/L :: Con Cb = 0,100 mol/L y Va = 10,0 mL. Vale porque HCl y NaOH son monopróticos.
+- Masa de HCl por litro :: $m = C_a \\cdot 36{,}5$ :: g/L :: Multiplicá la concentración molar por la masa molar del HCl.
 
 ## Preguntas
 - ¿Cuánto difirieron entre sí tus tres volúmenes gastados? ¿Qué te dice eso sobre la reproducibilidad de la técnica?

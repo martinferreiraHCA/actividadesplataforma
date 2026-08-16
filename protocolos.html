@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="scratch.css">
 <link rel="stylesheet" href="informe-proyecto.css">
 <link rel="stylesheet" href="instrumentos.css">
+<link rel="stylesheet" href="katex.min.css">
 <link rel="stylesheet" href="protocolos.css">
 </head>
 <body>
@@ -219,8 +220,13 @@
         <details class="proto-bloque" open>
           <summary class="proto-bloque__cab"><span class="proto-bloque__num">02</span> Fundamento teórico</summary>
           <div class="proto-bloque__cuerpo">
-            <p class="proto-ayuda">La teoría mínima para entender qué se va a hacer y por qué. Separá los párrafos con un renglón en blanco.</p>
-            <textarea class="campo__textarea campo__textarea--grande" id="campoFundamento" rows="9" placeholder="La densidad es una propiedad característica de cada material…"></textarea>
+            <p class="proto-ayuda">
+              La teoría mínima para entender qué se va a hacer y por qué. Separá los párrafos con un renglón en blanco.
+              Para las <strong>fórmulas</strong> escribilas en LaTeX entre signos de peso: <code>$d = \frac{m}{V}$</code> queda
+              en el medio del renglón y <code>$$…$$</code> queda centrada en su propio bloque.
+            </p>
+            <textarea class="campo__textarea campo__textarea--grande" id="campoFundamento" rows="9" placeholder="La densidad es una propiedad característica de cada material…&#10;&#10;Se calcula como $d = \frac{m}{V}$, donde…"></textarea>
+            <div id="latexFundamento"></div>
           </div>
         </details>
 
@@ -266,7 +272,7 @@
         <details class="proto-bloque">
           <summary class="proto-bloque__cab"><span class="proto-bloque__num">07</span> Montaje experimental</summary>
           <div class="proto-bloque__cuerpo">
-            <p class="proto-ayuda">Cómo se arma el dispositivo sobre la mesada y qué hay que verificar antes de empezar. Podés sumar una foto o un esquema.</p>
+            <p class="proto-ayuda">Cómo se arma el dispositivo sobre la mesada y qué hay que verificar antes de empezar. Podés sumar una foto o un esquema, y también fórmulas en LaTeX entre signos de peso.</p>
             <textarea class="campo__textarea" id="campoMontaje" rows="5" placeholder="Sobre la mesada, de izquierda a derecha…"></textarea>
             <div class="instr-acciones">
               <button class="btn btn--ghost" id="btnImagenMontaje">🖼️ Sumar imagen del montaje</button>
@@ -295,7 +301,7 @@
         <details class="proto-bloque">
           <summary class="proto-bloque__cab"><span class="proto-bloque__num">10</span> Cálculos</summary>
           <div class="proto-bloque__cuerpo">
-            <p class="proto-ayuda">Qué hay que calcular con los datos de las tablas, con qué fórmula y en qué unidad.</p>
+            <p class="proto-ayuda">Qué hay que calcular con los datos de las tablas, con qué fórmula y en qué unidad. La fórmula acepta LaTeX: escribila entre signos de peso y se dibuja como matemática de verdad.</p>
             <div id="listaCalculos"></div>
           </div>
         </details>
@@ -391,6 +397,7 @@
 <script src="guia.js"></script>
 <script src="templatemo-axis-script.js"></script>
 <script src="html2pdf.bundle.min.js"></script>
+<script src="katex.min.js"></script>
 <script type="module" src="protocolos.js"></script>
 
 </body>
