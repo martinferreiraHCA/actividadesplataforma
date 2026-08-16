@@ -365,11 +365,50 @@ Escribí el protocolo COMPLETO respetando exactamente el formato de más abajo. 
 5. Las preguntas de análisis (${preguntas}) tienen que obligar a pensar sobre los datos obtenidos, no a repetir teoría.
 6. Escribí en español rioplatense (voseo), claro y directo. No uses negritas ni markdown adentro de los textos.
 
-En la sección "## Instrumentos" usá SOLO estos identificadores, uno por línea, con sus parámetros:
+FÓRMULAS EN LaTeX
+Las fórmulas se escriben en LaTeX entre signos de peso y la plataforma las dibuja como
+matemática de verdad. Usalas en el Fundamento, en el Montaje, en las Preguntas y en la
+fórmula de cada cálculo:
+  · $d = \\frac{m}{V}$            → en el medio del renglón
+  · $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$  → centrada, en su propio bloque
+Comandos que conviene usar: \\frac{}{}, \\sqrt{}, ^{}, _{}, \\cdot, \\pm, \\Delta, \\pi, \\rho,
+\\Omega, \\mu, \\lambda, \\theta, \\approx, \\vec{}, \\bar{}, \\times 10^{-3}, \\mathrm{m/s^2}.
+Escribí los decimales con {,}: $9{,}8\\ \\mathrm{m/s^2}$. Como el texto va en castellano,
+poné en LaTeX SÓLO las fórmulas, no las frases enteras.
+
+INSTRUMENTOS
+En la sección "## Instrumentos" usá SOLO estos identificadores, uno por línea:
 regla, calibre, micrometro, probeta, bureta, jeringa, vidrio, termometro, dinamometro,
-balanzaDigital, granataria, cronometro, multimetro, aguja, transportador, sensorDigital
+balanzaDigital, granataria, cronometro, multimetro, aguja, transportador, sensorDigital,
+microbit, goDirect
 Parámetros habituales: min, max, division, numerarCada, unidad, lectura.
 (La plataforma los dibuja sola, con esa escala y esa lectura.)
+
+Casos especiales:
+  · multimetro → lleva "funcion" con la posición de la llave, que es la función y el rango
+    juntos: Vcc200m, Vcc2, Vcc20, Vcc200, Vcc600, Vca200, Vca600, ohm200, ohm2k, ohm20k,
+    ohm200k, ohm2M, cont, diodo, hfe, cap, capu, frec, temp, Aca200m, Acc200u, Acc2m,
+    Acc20m, Acc200m, Acc10. La unidad y los decimales salen solos de ahí.
+    Ejemplo: multimetro :: funcion=Vcc20, lectura=9.06
+  · microbit → lleva pin0, pin1 y pin2 con lo que se conecta (ldr, ntc, pot, humedad,
+    ultrasonido, dht11, sonido, llama, hall, infra, boton, lluvia, led, zumbador, servo,
+    motor, rele), "interno" para el sensor de a bordo (acel, brujula, temp, luz, micro,
+    tacto) y "magnitud" con lo que se está midiendo.
+    Ejemplo: microbit :: pin0=ultrasonido, magnitud=Distancia, unidad=cm, lectura=34
+  · goDirect → lleva "modelo" con el sensor Vernier Go Direct: force, accel, temp, ph, orp,
+    motion, light, pressure, co2, o2, cond, volt, current, energy, ekg, resp, hr, bp,
+    spiro, magnetic, sound, rotary, drop, colorim, do, turb, charge, radiation, melt,
+    weather. Ejemplo: goDirect :: modelo=pressure, lectura=101.3
+
+LÍNEA DE MEDICIÓN
+Los instrumentos salen SIN la línea roja que señala dónde leer, a propósito: encontrar la
+medida en la escala es parte del trabajo del estudiante. Agregala sólo cuando el dibujo no
+se entienda sin ella, con estos parámetros:
+  · marcarLectura=si   → dibuja la línea
+  · marcaEn=64         → opcional: a qué punto de la escala apunta (si no, apunta a la lectura)
+  · marcaTexto=nivel inicial → opcional: el rótulo que la acompaña
+Ejemplo de una probeta donde hay que señalar el nivel de partida:
+  probeta :: max=100, division=1, unidad=mL, lectura=50, marcarLectura=si, marcaTexto=nivel inicial
 
 FORMATO EXACTO DE LA RESPUESTA (no agregues nada antes ni después):
 
@@ -379,7 +418,7 @@ FORMATO EXACTO DE LA RESPUESTA (no agregues nada antes ni después):
 # Duración: ${duracion}
 
 ## Fundamento
-[Dos o tres párrafos con la teoría mínima necesaria para entender qué se va a hacer y por qué. Incluí las fórmulas en texto plano.]
+[Dos o tres párrafos con la teoría mínima necesaria para entender qué se va a hacer y por qué. Las fórmulas, en LaTeX entre signos de peso: la principal en su propio bloque con $$…$$ y las que van en el medio de una frase con $…$.]
 
 ## Objetivos
 - [Objetivo general]
@@ -412,7 +451,7 @@ FORMATO EXACTO DE LA RESPUESTA (no agregues nada antes ni después):
 filas: 5
 
 ## Cálculos
-- [Nombre de la magnitud] :: [fórmula] :: [unidad] :: [cómo se calcula y con qué datos de la tabla]
+- [Nombre de la magnitud] :: $[fórmula en LaTeX]$ :: [unidad] :: [cómo se calcula y con qué datos de la tabla]
 
 ## Preguntas
 - [Pregunta de análisis sobre los datos]

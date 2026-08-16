@@ -139,7 +139,14 @@ const P = {
   unidad: (def) => ({ clave: 'unidad', etiqueta: 'Unidad', tipo: 'texto', def, ayuda: 'Se muestra junto a la escala y en la lectura.' }),
   lectura: (def) => ({ clave: 'lectura', etiqueta: 'Lectura que muestra', tipo: 'numero', paso: 'any', def, ayuda: 'El valor que marca el instrumento en el dibujo.' }),
   mostrarValor: (def) => ({ clave: 'mostrarValor', etiqueta: 'Escribir la lectura en números', tipo: 'bool', def: def !== false, ayuda: 'Apagalo para que los estudiantes tengan que leer la escala.' }),
-  marcarLectura: (def) => ({ clave: 'marcarLectura', etiqueta: 'Señalar la lectura', tipo: 'bool', def: def !== false, ayuda: 'Dibuja la flecha o línea roja que apunta al valor medido.' }),
+  // La línea de medición NO viene puesta: el instrumento sale limpio y la
+  // agrega quien arma la ficha, apuntando adonde quiera.
+  marca: () => ([
+    { clave: 'marcarLectura', etiqueta: 'Agregar la línea de medición', tipo: 'bool', def: false, ayuda: 'La línea roja que señala dónde hay que leer. Sin ella el instrumento sale limpio, que es lo que conviene para que el estudiante lea la escala solo.' },
+    { clave: 'marcaEn', etiqueta: 'Dónde apunta la línea', tipo: 'texto', def: '', ayuda: 'Dejalo vacío y apunta a la lectura del instrumento. Poné un número y apunta a ese punto de la escala, aunque el instrumento marque otra cosa.' },
+    { clave: 'marcaTexto', etiqueta: 'Rótulo de la línea', tipo: 'texto', def: '', ayuda: 'Texto corto al lado de la línea: «nivel inicial», «acá se lee», «V₁»…' },
+    { clave: 'marcaCorrer', etiqueta: 'Correr la línea (ajuste fino)', tipo: 'numero', paso: 1, def: 0, ayuda: 'Milímetros de dibujo para calzarla exacta. Positivo la baja o la corre a la derecha; negativo, al revés.' }
+  ]),
   etiqueta: (def) => ({ clave: 'etiqueta', etiqueta: 'Rótulo del instrumento', tipo: 'texto', def: def || '', ayuda: 'Texto libre: modelo, número de equipo, "Instrumento A"…' }),
   color: (def) => ({ clave: 'color', etiqueta: 'Color del líquido', tipo: 'color', def: def || C.liquido }),
   escala: () => ({ clave: 'escala', etiqueta: 'Tamaño del dibujo', tipo: 'opcion', def: 1, ayuda: 'Sólo cambia el tamaño en la hoja, no lo que mide.', opciones: [
@@ -157,6 +164,38 @@ function carteLectura(g, x, y, textoLect, ancho) {
   g.appendChild(rect(x, y, w, 26, '#fff', C.rojo, 1.6, { rx: 6 }));
   g.appendChild(texto(x + w / 2, y + 13, textoLect, { tam: 13, peso: 700, color: C.rojo }));
   return w;
+}
+
+// Configuración de la línea de medición, ya resuelta:
+//   activa  → si hay que dibujarla
+//   v       → a qué valor de la escala apunta (por defecto, la lectura)
+//   texto   → el rótulo que la acompaña
+//   correr  → el ajuste fino, en unidades del dibujo
+function marcaCfg(p, lectura) {
+  const crudo = String(p.marcaEn == null ? '' : p.marcaEn).trim().replace(',', '.');
+  const propio = crudo !== '' && isFinite(Number(crudo));
+  return {
+    activa: !!p.marcarLectura,
+    v: propio ? Number(crudo) : Number(lectura),
+    texto: String(p.marcaTexto || '').trim(),
+    correr: Number(p.marcaCorrer) || 0
+  };
+}
+
+// El rótulo de la línea de medición, en rojo y en dos renglones si es largo.
+function rotuloMarca(g, x, y, txt, ancla) {
+  if (!txt) return;
+  const palabras = txt.split(/\s+/);
+  const renglones = [];
+  let actual = '';
+  palabras.forEach(w => {
+    if ((actual + ' ' + w).trim().length > 14 && actual) { renglones.push(actual); actual = w; }
+    else actual = (actual + ' ' + w).trim();
+  });
+  if (actual) renglones.push(actual);
+  renglones.slice(0, 2).forEach((r, i) => {
+    g.appendChild(texto(x, y + i * 12, r, { tam: 10, color: C.rojo, ancla: ancla || 'start' }));
+  });
 }
 
 // Rótulo libre del instrumento.
@@ -207,7 +246,7 @@ DEF.regla = {
     P.lectura(12.7),
     { clave: 'mostrarObjeto', etiqueta: 'Dibujar el objeto medido', tipo: 'bool', def: true },
     { clave: 'desde', etiqueta: 'El objeto empieza en', tipo: 'numero', paso: 'any', def: 0, ayuda: 'Poné un valor distinto de cero para practicar restas de posiciones.' },
-    P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const min = Number(p.min), max = Number(p.max);
@@ -261,15 +300,18 @@ DEF.regla = {
       else g.appendChild(rect(Math.min(a, b), y0 - 40, Math.abs(b - a), 34, 'rgba(58,163,216,0.30)', C.liquido, 1.6, { rx: 4 }));
     }
 
-    // señal de la lectura
-    if (p.marcarLectura) {
-      const q = pos(lect);
+    // la línea de medición, si la pidieron
+    const M = marcaCfg(p, lect);
+    if (M.activa) {
+      const q = pos(acotar(M.v, min, max)) + M.correr;
       if (vertical) {
         g.appendChild(linea(x0 - 62, q, x0 + cuerpo, q, C.rojo, 1.5, { 'stroke-dasharray': '5 3' }));
         g.appendChild(flecha(x0 + cuerpo + 4, q, 'der', 9));
+        rotuloMarca(g, x0 + cuerpo + 16, q - 6, M.texto);
       } else {
         g.appendChild(linea(q, y0 - 46, q, y0 + cuerpo, C.rojo, 1.5, { 'stroke-dasharray': '5 3' }));
         g.appendChild(flecha(q, y0 - 50, 'abajo', 9));
+        rotuloMarca(g, q + 8, y0 - 60, M.texto);
       }
     }
 
@@ -298,7 +340,7 @@ DEF.calibre = {
     ] },
     P.lectura(23.4),
     { clave: 'mostrarObjeto', etiqueta: 'Dibujar la pieza medida', tipo: 'bool', def: true },
-    P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const n = Math.round(Number(p.nonio)) || 10;
@@ -330,9 +372,13 @@ DEF.calibre = {
     g.appendChild(rect(xc - 8, yr - 8, 74, altoRegla + 34, 'rgba(154,163,171,0.30)', C.trazo, 1.6, { rx: 3 }));
     g.appendChild(mordaza(xc, 1));
     if (p.mostrarObjeto) g.appendChild(rect(xr, yr - 52, lect * px, 40, 'rgba(58,163,216,0.28)', C.liquido, 1.6, { rx: 3 }));
-    if (p.marcarLectura) {
-      g.appendChild(linea(xc, yr - 66, xc, yr + altoRegla + 28, C.rojo, 1.3, { 'stroke-dasharray': '5 3' }));
-      g.appendChild(texto(xc + 30, yr + altoRegla + 40, 'cero del nonio', { tam: 10, color: C.rojo }));
+    // En el calibre la línea de medición señala dónde hay que mirar: el cero
+    // del nonio y la rayita que coincide. No se despega de la lectura, porque
+    // la coincidencia es un hecho de la escala, no una marca libre.
+    const M = marcaCfg(p, lect);
+    if (M.activa) {
+      g.appendChild(linea(xc + M.correr, yr - 66, xc + M.correr, yr + altoRegla + 28, C.rojo, 1.3, { 'stroke-dasharray': '5 3' }));
+      g.appendChild(texto(xc + M.correr + 30, yr + altoRegla + 40, M.texto || 'cero del nonio', { tam: 10, color: C.rojo }));
     }
 
     // ---------- abajo: la lupa sobre el nonio ----------
@@ -366,12 +412,12 @@ DEF.calibre = {
     g.appendChild(rect(zx(lect) - 12, yEje, (n - 1) * pxZ + 34, 56, 'rgba(154,163,171,0.35)', C.trazo, 1.4, { rx: 3 }));
     for (let i = 0; i <= n; i++) {
       const x = zx(lect) + i * pasoN;
-      const marcada = i === coincid && p.marcarLectura;
+      const marcada = i === coincid && M.activa;
       g.appendChild(linea(x, yEje, x, yEje + (i % cadaNum === 0 ? 30 : 22), marcada ? C.rojo : C.trazo, marcada ? 2.4 : 1));
       if (i % cadaNum === 0) g.appendChild(texto(x, yEje + 42, String(i), { tam: 11, peso: marcada ? 700 : 400, color: marcada ? C.rojo : C.trazo }));
     }
     // la rayita que coincide, señalada de punta a punta
-    if (p.marcarLectura) {
+    if (M.activa) {
       const xco = zx(lect) + coincid * pasoN;
       g.appendChild(linea(xco, yEje - 30, xco, yEje + 34, C.rojo, 1.2, { 'stroke-dasharray': '4 3' }));
       g.appendChild(texto(xco, yEje + 60, 'la que coincide', { tam: 10, color: C.rojo }));
@@ -402,7 +448,7 @@ DEF.micrometro = {
     P.max(25, 'Alcance del micrómetro, en mm (25, 50, 75…).'),
     { clave: 'divisionesTambor', etiqueta: 'Divisiones del tambor', tipo: 'opcion', def: 50, opciones: [{ v: 50, t: '50 (0,01 mm)' }, { v: 100, t: '100 (0,005 mm)' }] },
     P.lectura(7.32),
-    P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const divT = Number(p.divisionesTambor) || 50;
@@ -411,6 +457,7 @@ DEF.micrometro = {
     const max = acotar(p.max, 5, 300);
     const lect = acotar(Math.round(p.lectura / apr) * apr, 0, max);
     const tope = Math.min(max, 25);                       // mm que muestra el cilindro
+    const M = marcaCfg(p, lect);
     const g = grupo();
     const px = 16;                                        // px por mm sobre el cilindro
     const xc = 250, yc = 150;                             // arranque del cilindro fijo
@@ -454,12 +501,12 @@ DEF.micrometro = {
       const y = yLinea + d * pasoT;
       if (y < yc + 12 || y > yc + 112) continue;
       const enLinea = d === 0;
-      const color = enLinea && p.marcarLectura ? C.rojo : '#ffffff';
+      const color = enLinea && M.activa ? C.rojo : '#ffffff';
       g.appendChild(linea(xt + 8, y, xt + (val % 5 === 0 ? 46 : 30), y, color, enLinea ? 2.4 : 1.2));
       if (val % 5 === 0) g.appendChild(texto(xt + 66, y, String(val), { tam: 12, peso: enLinea ? 700 : 400, color }));
     }
     // la línea de referencia sigue sobre el tambor: ahí se lee la centésima
-    g.appendChild(linea(xt, yLinea, xt + anchoT, yLinea, p.marcarLectura ? C.rojo : '#ffffff', 1.6));
+    g.appendChild(linea(xt, yLinea, xt + anchoT, yLinea, M.activa ? C.rojo : '#ffffff', 1.6));
     g.appendChild(rect(xt + anchoT, yc + 22, 46, 74, C.metal, C.trazo, 1.6, { rx: 10 }));   // trinquete
     g.appendChild(texto(xt + anchoT + 23, yc + 132, 'trinquete', { tam: 10, color: C.suave, mono: false }));
 
@@ -487,7 +534,7 @@ DEF.probeta = {
     P.min(0), P.max(100), P.division(1), P.numerarCada(10), P.unidad('mL'),
     P.lectura(64),
     { clave: 'mostrarMenisco', etiqueta: 'Dibujar el menisco', tipo: 'bool', def: true },
-    P.color(), P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    P.color(), ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const min = Number(p.min), max = Number(p.max);
@@ -533,11 +580,12 @@ DEF.probeta = {
     });
     g.appendChild(texto(xDer - 8, yTop + 22, p.unidad, { tam: 13, peso: 700, ancla: 'end' }));
 
-    if (p.marcarLectura) {
-      g.appendChild(linea(xIzq - 46, yl, xDer + 26, yl, C.rojo, 1.5, { 'stroke-dasharray': '5 3' }));
-      g.appendChild(flecha(xDer + 30, yl, 'izq', 9));
-      g.appendChild(texto(xDer + 36, yl - 15, 'línea de', { tam: 10, ancla: 'start', color: C.rojo }));
-      g.appendChild(texto(xDer + 36, yl - 3, 'lectura', { tam: 10, ancla: 'start', color: C.rojo }));
+    const M = marcaCfg(p, lect);
+    if (M.activa) {
+      const ym = yDe(acotar(M.v, min, max)) + M.correr;
+      g.appendChild(linea(xIzq - 46, ym, xDer + 26, ym, C.rojo, 1.5, { 'stroke-dasharray': '5 3' }));
+      g.appendChild(flecha(xDer + 30, ym, 'izq', 9));
+      rotuloMarca(g, xDer + 46, ym - 6, M.texto || 'línea de lectura');
     }
     if (p.mostrarValor) carteLectura(g, 10, 8, fmt(lect, decimalesDe(p.division)) + ' ' + p.unidad);
     rotulo(g, cx, alto - 8, p.etiqueta);
@@ -556,7 +604,7 @@ DEF.bureta = {
   params: [
     P.min(0), P.max(50), P.division(0.1), P.numerarCada(5), P.unidad('mL'),
     P.lectura(18.7),
-    P.color('#c94f7c'), P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    P.color('#c94f7c'), ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const min = Number(p.min), max = Number(p.max);
@@ -591,9 +639,12 @@ DEF.bureta = {
     });
     g.appendChild(texto(cx, yTop - 32, p.unidad, { tam: 12, peso: 700 }));
 
-    if (p.marcarLectura) {
-      g.appendChild(linea(xIzq - 34, yl, xDer + 6, yl, C.rojo, 1.4, { 'stroke-dasharray': '5 3' }));
-      g.appendChild(flecha(xIzq - 38, yl, 'der', 9));
+    const M = marcaCfg(p, lect);
+    if (M.activa) {
+      const ym = yDe(acotar(M.v, min, max)) + M.correr;
+      g.appendChild(linea(xIzq - 34, ym, xDer + 6, ym, C.rojo, 1.4, { 'stroke-dasharray': '5 3' }));
+      g.appendChild(flecha(xIzq - 38, ym, 'der', 9));
+      rotuloMarca(g, xDer + 40, ym - 6, M.texto);
     }
     if (p.mostrarValor) carteLectura(g, 6, 6, fmt(lect, decimalesDe(p.division)) + ' ' + p.unidad);
     rotulo(g, cx, alto - 8, p.etiqueta);
@@ -612,7 +663,7 @@ DEF.jeringa = {
   params: [
     P.min(0), P.max(20), P.division(1), P.numerarCada(5), P.unidad('mL'),
     P.lectura(12),
-    P.color(), P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    P.color(), ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const min = Number(p.min), max = Number(p.max);
@@ -645,9 +696,12 @@ DEF.jeringa = {
     });
     g.appendChild(texto(x0 + 6, yc + 30, p.unidad, { tam: 12, peso: 700, ancla: 'start' }));
 
-    if (p.marcarLectura) {
-      g.appendChild(linea(xl, yT - 30, xl, yT + altoTubo + 10, C.rojo, 1.5, { 'stroke-dasharray': '5 3' }));
-      g.appendChild(flecha(xl, yT + altoTubo + 14, 'arriba', 9));
+    const M = marcaCfg(p, lect);
+    if (M.activa) {
+      const xm = xDe(acotar(M.v, min, max)) + M.correr;
+      g.appendChild(linea(xm, yT - 30, xm, yT + altoTubo + 10, C.rojo, 1.5, { 'stroke-dasharray': '5 3' }));
+      g.appendChild(flecha(xm, yT + altoTubo + 14, 'arriba', 9));
+      rotuloMarca(g, xm + 8, yT - 42, M.texto);
     }
     if (p.mostrarValor) carteLectura(g, 8, 8, fmt(lect, decimalesDe(p.division)) + ' ' + p.unidad);
     rotulo(g, ancho - 8, alto - 12, p.etiqueta, 'end');
@@ -742,7 +796,7 @@ DEF.termometro = {
   params: [
     P.min(-10), P.max(110), P.division(1), P.numerarCada(10), P.unidad('°C'),
     P.lectura(37.5),
-    P.color('#c0392b'), P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    P.color('#c0392b'), ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const min = Number(p.min), max = Number(p.max);
@@ -777,9 +831,12 @@ DEF.termometro = {
     });
     g.appendChild(texto(cx, yTop - 18, p.unidad, { tam: 13, peso: 700 }));
 
-    if (p.marcarLectura) {
-      g.appendChild(linea(cx - 56, yl, cx + 90, yl, C.rojo, 1.4, { 'stroke-dasharray': '5 3' }));
-      g.appendChild(flecha(cx - 60, yl, 'der', 9));
+    const M = marcaCfg(p, lect);
+    if (M.activa) {
+      const ym = yDe(acotar(M.v, min, max)) + M.correr;
+      g.appendChild(linea(cx - 56, ym, cx + 90, ym, C.rojo, 1.4, { 'stroke-dasharray': '5 3' }));
+      g.appendChild(flecha(cx - 60, ym, 'der', 9));
+      rotuloMarca(g, cx + 96, ym - 6, M.texto);
     }
     if (p.mostrarValor) carteLectura(g, 4, 4, fmt(lect, decimalesDe(p.division)) + ' ' + p.unidad);
     rotulo(g, cx + 20, alto - 8, p.etiqueta);
@@ -800,7 +857,7 @@ DEF.dinamometro = {
     P.lectura(4.6),
     { clave: 'mostrarResorte', etiqueta: 'Mostrar el resorte por dentro', tipo: 'bool', def: true },
     { clave: 'mostrarMasa', etiqueta: 'Colgar una pesa', tipo: 'bool', def: true },
-    P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const min = Number(p.min), max = Number(p.max);
@@ -811,6 +868,7 @@ DEF.dinamometro = {
     const cx = 130, anchoTubo = 88;
     const yTop = 96, yFin = 440;
     const yDe = v => yTop + 16 + ((v - min) / rango) * (yFin - yTop - 32);
+    const M = marcaCfg(p, lect);
 
     // argolla y gancho superior
     g.appendChild(svgEl('circle', { cx, cy: 34, r: 18, fill: 'none', stroke: C.trazo, 'stroke-width': 4 }));
@@ -844,7 +902,7 @@ DEF.dinamometro = {
     g.appendChild(texto(cx, yTop + 14, p.unidad, { tam: 13, peso: 700 }));
 
     // índice y vástago inferior
-    g.appendChild(rect(cx - anchoTubo / 2 + 3, yIndice - 5, anchoTubo - 6, 10, p.marcarLectura ? C.rojo : C.metalOsc, C.trazo, 1.2, { rx: 2 }));
+    g.appendChild(rect(cx - anchoTubo / 2 + 3, yIndice - 5, anchoTubo - 6, 10, M.activa ? C.rojo : C.metalOsc, C.trazo, 1.2, { rx: 2 }));
     g.appendChild(linea(cx, yIndice, cx, yFin + 60, C.trazo, 4));
     g.appendChild(svgEl('path', { d: `M ${cx} ${yFin + 60} q -16 8 -16 22 q 0 16 16 16 q 12 0 14 -10`, fill: 'none', stroke: C.trazo, 'stroke-width': 4 }));
 
@@ -852,7 +910,14 @@ DEF.dinamometro = {
       g.appendChild(rect(cx - 34, yFin + 104, 68, 54, C.metalOsc, C.trazo, 1.8, { rx: 5 }));
       g.appendChild(texto(cx, yFin + 131, 'pesa', { tam: 11, peso: 700, color: '#fff', mono: false }));
     }
-    if (p.marcarLectura) g.appendChild(flecha(cx + anchoTubo / 2 + 6, yIndice, 'izq', 9));
+    if (M.activa) {
+      const ym = yDe(acotar(M.v, min, max)) + M.correr;
+      g.appendChild(flecha(cx + anchoTubo / 2 + 6, ym, 'izq', 9));
+      if (M.texto) {
+        g.appendChild(linea(cx - anchoTubo / 2 - 30, ym, cx + anchoTubo / 2 + 4, ym, C.rojo, 1.3, { 'stroke-dasharray': '5 3' }));
+        rotuloMarca(g, cx + anchoTubo / 2 + 18, ym - 6, M.texto);
+      }
+    }
     if (p.mostrarValor) carteLectura(g, 4, 4, fmt(lect, decimalesDe(p.division)) + ' ' + p.unidad);
     rotulo(g, cx, alto - 6, p.etiqueta);
     return { g, ancho, alto };
@@ -913,7 +978,7 @@ DEF.granataria = {
     P.lectura(347.2),
     P.division(0.1),
     P.unidad('g'),
-    P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const div = Number(p.division) || 0.1;
@@ -924,6 +989,7 @@ DEF.granataria = {
     const resto1 = total - b1;
     const b2 = Math.min(100, Math.floor(resto1 / 10) * 10);
     const b3 = Math.max(0, Math.min(10, resto1 - b2));
+    const M = marcaCfg(p, total);
     const g = grupo();
     const ancho = 760, alto = 360;
     const xIni = 250, xFin = 620;
@@ -959,7 +1025,7 @@ DEF.granataria = {
       const xp = xDe(b.valor);
       g.appendChild(svgEl('path', {
         d: `M ${r2(xp - 13)} ${b.y - 16} L ${r2(xp + 13)} ${b.y - 16} L ${r2(xp + 9)} ${b.y + 14} L ${r2(xp - 9)} ${b.y + 14} Z`,
-        fill: p.marcarLectura ? C.rojo : C.cuerpoOsc, stroke: C.trazo, 'stroke-width': 1.4
+        fill: M.activa ? C.rojo : C.cuerpoOsc, stroke: C.trazo, 'stroke-width': 1.4
       }));
       g.appendChild(texto(xFin + 34, b.y, b.etiqueta, { tam: 10, peso: 700, ancla: 'start' }));
     });
@@ -1027,70 +1093,159 @@ DEF.cronometro = {
 };
 
 // ---------- Multímetro digital ----------
+// Las posiciones de la llave selectora, en el orden en que aparecen en el
+// aparato. Cada una define qué mide, en qué unidad, con cuántos dígitos y por
+// qué borne tiene que entrar la punta roja: es la información que hace falta
+// para que el dibujo muestre el instrumento realmente configurado.
+export const FUNCIONES_MULTIMETRO = [
+  { id: 'off', t: 'Apagado (OFF)', rotulo: 'OFF', grupo: '', unidad: '', dec: 0, borne: 'VmA' },
+
+  { id: 'Vcc200m', t: 'Tensión continua · 200 mV', rotulo: '200m', grupo: 'V⎓', unidad: 'mV', dec: 1, modo: 'DC', borne: 'VmA' },
+  { id: 'Vcc2', t: 'Tensión continua · 2 V', rotulo: '2', grupo: 'V⎓', unidad: 'V', dec: 3, modo: 'DC', borne: 'VmA' },
+  { id: 'Vcc20', t: 'Tensión continua · 20 V', rotulo: '20', grupo: 'V⎓', unidad: 'V', dec: 2, modo: 'DC', borne: 'VmA' },
+  { id: 'Vcc200', t: 'Tensión continua · 200 V', rotulo: '200', grupo: 'V⎓', unidad: 'V', dec: 1, modo: 'DC', borne: 'VmA' },
+  { id: 'Vcc600', t: 'Tensión continua · 600 V', rotulo: '600', grupo: 'V⎓', unidad: 'V', dec: 0, modo: 'DC', borne: 'VmA' },
+
+  { id: 'Vca200', t: 'Tensión alterna · 200 V', rotulo: '200', grupo: 'V∼', unidad: 'V', dec: 1, modo: 'AC', borne: 'VmA' },
+  { id: 'Vca600', t: 'Tensión alterna · 600 V', rotulo: '600', grupo: 'V∼', unidad: 'V', dec: 0, modo: 'AC', borne: 'VmA' },
+
+  { id: 'ohm200', t: 'Resistencia · 200 Ω', rotulo: '200', grupo: 'Ω', unidad: 'Ω', dec: 1, borne: 'VmA' },
+  { id: 'ohm2k', t: 'Resistencia · 2 kΩ', rotulo: '2k', grupo: 'Ω', unidad: 'kΩ', dec: 3, borne: 'VmA' },
+  { id: 'ohm20k', t: 'Resistencia · 20 kΩ', rotulo: '20k', grupo: 'Ω', unidad: 'kΩ', dec: 2, borne: 'VmA' },
+  { id: 'ohm200k', t: 'Resistencia · 200 kΩ', rotulo: '200k', grupo: 'Ω', unidad: 'kΩ', dec: 1, borne: 'VmA' },
+  { id: 'ohm2M', t: 'Resistencia · 2 MΩ', rotulo: '2M', grupo: 'Ω', unidad: 'MΩ', dec: 3, borne: 'VmA' },
+
+  { id: 'cont', t: 'Continuidad (pitido)', rotulo: '•)))', grupo: 'prueba', unidad: 'Ω', dec: 1, borne: 'VmA' },
+  { id: 'diodo', t: 'Prueba de diodo', rotulo: '▶⊦', grupo: 'prueba', unidad: 'V', dec: 3, borne: 'VmA' },
+  { id: 'hfe', t: 'Ganancia de transistor (hFE)', rotulo: 'hFE', grupo: 'prueba', unidad: '', dec: 0, borne: 'VmA' },
+
+  { id: 'cap', t: 'Capacidad · nF', rotulo: 'nF', grupo: 'C · f · °', unidad: 'nF', dec: 1, borne: 'VmA' },
+  { id: 'capu', t: 'Capacidad · µF', rotulo: 'µF', grupo: 'C · f · °', unidad: 'µF', dec: 2, borne: 'VmA' },
+  { id: 'frec', t: 'Frecuencia', rotulo: 'Hz', grupo: 'C · f · °', unidad: 'Hz', dec: 1, borne: 'VmA' },
+  { id: 'temp', t: 'Temperatura (termopar)', rotulo: '°C', grupo: 'C · f · °', unidad: '°C', dec: 0, borne: 'VmA' },
+
+  { id: 'Aca200m', t: 'Corriente alterna · 200 mA', rotulo: '200m', grupo: 'A∼', unidad: 'mA', dec: 1, modo: 'AC', borne: 'VmA' },
+  { id: 'Acc200u', t: 'Corriente continua · 200 µA', rotulo: '200µ', grupo: 'A⎓', unidad: 'µA', dec: 1, modo: 'DC', borne: 'VmA' },
+  { id: 'Acc2m', t: 'Corriente continua · 2 mA', rotulo: '2m', grupo: 'A⎓', unidad: 'mA', dec: 3, modo: 'DC', borne: 'VmA' },
+  { id: 'Acc20m', t: 'Corriente continua · 20 mA', rotulo: '20m', grupo: 'A⎓', unidad: 'mA', dec: 2, modo: 'DC', borne: 'VmA' },
+  { id: 'Acc200m', t: 'Corriente continua · 200 mA', rotulo: '200m', grupo: 'A⎓', unidad: 'mA', dec: 1, modo: 'DC', borne: 'VmA' },
+  { id: 'Acc10', t: 'Corriente continua · 10 A', rotulo: '10A', grupo: 'A⎓', unidad: 'A', dec: 2, modo: 'DC', borne: '10A' }
+];
+
+// Nombres cortos de la versión anterior, para que un protocolo ya guardado
+// siga abriendo en la posición que le corresponde.
+const ALIAS_MULTIMETRO = {
+  Vcc: 'Vcc20', Vca: 'Vca200', Acc: 'Acc10', mA: 'Acc200m', ohm: 'ohm2k', cap: 'cap'
+};
+
+export function funcionMultimetro(id) {
+  for (let i = 0; i < FUNCIONES_MULTIMETRO.length; i++) {
+    if (FUNCIONES_MULTIMETRO[i].id === id) return FUNCIONES_MULTIMETRO[i];
+  }
+  return FUNCIONES_MULTIMETRO[3];   // 20 V continua, el que más se usa en clase
+}
+
 DEF.multimetro = {
   rangoAzar: [0, 12],
   nombre: 'Multímetro digital',
   icono: '🔌',
   categoria: 'Electricidad',
-  magnitud: 'Tensión, corriente, resistencia',
-  resumen: 'Mide tensión, corriente y resistencia según dónde se ponga la llave selectora.',
-  comoSeLee: 'Primero se elige la función y un rango mayor al esperado, y se bajan los rango hasta que la pantalla dé más cifras. Para medir corriente el multímetro va en serie; para tensión, en paralelo.',
+  magnitud: 'Tensión, corriente, resistencia y más',
+  resumen: 'La llave selectora decide qué mide y en qué rango: tensión y corriente continua o alterna, resistencia, continuidad, diodo, capacidad, frecuencia, hFE y temperatura.',
+  comoSeLee: 'Primero se elige la función y un rango mayor al valor esperado, y se va bajando de rango hasta que la pantalla dé la mayor cantidad de cifras sin marcar sobrerango (un 1 solo a la izquierda). Para medir corriente el multímetro va en serie y la punta roja cambia de borne; para tensión y resistencia va en paralelo.',
   params: [
-    { clave: 'funcion', etiqueta: 'Función seleccionada', tipo: 'opcion', def: 'Vcc', opciones: [
-      { v: 'Vcc', t: 'Tensión continua (V⎓)' }, { v: 'Vca', t: 'Tensión alterna (V∼)' },
-      { v: 'Acc', t: 'Corriente continua (A⎓)' }, { v: 'mA', t: 'Corriente en mA' },
-      { v: 'ohm', t: 'Resistencia (Ω)' }, { v: 'cont', t: 'Continuidad' }
-    ] },
-    { clave: 'rango', etiqueta: 'Rango elegido', tipo: 'texto', def: '20 V', ayuda: 'Se escribe tal cual arriba de la pantalla: 200 mV, 20 V, 2 kΩ…' },
+    { clave: 'funcion', etiqueta: 'Posición de la llave', tipo: 'opcion', def: 'Vcc20',
+      ayuda: 'Es la función y el rango juntos, igual que en el aparato. La pantalla toma de acá la unidad y la cantidad de decimales.',
+      alias: ALIAS_MULTIMETRO,
+      opciones: FUNCIONES_MULTIMETRO.map(f => ({ v: f.id, t: (f.grupo ? f.grupo + ' — ' : '') + f.t })) },
     P.lectura(9.06),
-    P.unidad('V'),
-    { clave: 'decimales', etiqueta: 'Decimales de la pantalla', tipo: 'opcion', def: 2, opciones: [{ v: 0, t: '0' }, { v: 1, t: '1' }, { v: 2, t: '2' }, { v: 3, t: '3' }] },
-    { clave: 'puntas', etiqueta: 'Dibujar las puntas de prueba', tipo: 'bool', def: true },
+    { clave: 'unidad', etiqueta: 'Unidad (vacío = la del rango)', tipo: 'texto', def: '', ayuda: 'Normalmente dejalo vacío: la toma de la posición de la llave.' },
+    { clave: 'decimales', etiqueta: 'Decimales', tipo: 'opcion', def: -1, ayuda: '«Automático» usa los que corresponden al rango elegido.', opciones: [
+      { v: -1, t: 'Automático (según el rango)' }, { v: 0, t: '0' }, { v: 1, t: '1' }, { v: 2, t: '2' }, { v: 3, t: '3' }
+    ] },
+    { clave: 'sobrerango', etiqueta: 'Mostrar sobrerango (fuera de escala)', tipo: 'bool', def: false, ayuda: 'La pantalla muestra sólo un 1 a la izquierda: hay que subir de rango.' },
+    { clave: 'hold', etiqueta: 'Aviso de HOLD (valor congelado)', tipo: 'bool', def: false },
+    { clave: 'puntas', etiqueta: 'Dibujar las puntas de prueba', tipo: 'bool', def: true, ayuda: 'La punta roja se dibuja en el borne que corresponde a la función elegida.' },
     P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
-    const dec = Number(p.decimales);
+    const f = funcionMultimetro(p.funcion);
+    const dec = Number(p.decimales) >= 0 ? Number(p.decimales) : f.dec;
+    const unidad = String(p.unidad || '').trim() || f.unidad;
+    const apagado = f.id === 'off';
     const g = grupo();
-    const ancho = 420, alto = 620;
+    const ancho = 460, alto = 660;
 
-    g.appendChild(rect(40, 30, 340, 540, C.cuerpo, C.trazo, 2.4, { rx: 22 }));
-    g.appendChild(rect(52, 42, 316, 516, 'none', C.tenue, 1, { rx: 16 }));
-    pantallaLCD(g, 78, 70, 264, 96, fmt(p.lectura, dec), p.unidad, { tamNum: 46, arriba: p.rango });
+    g.appendChild(rect(40, 30, 380, 580, C.cuerpo, C.trazo, 2.4, { rx: 24 }));
+    g.appendChild(rect(52, 42, 356, 556, 'none', C.tenue, 1, { rx: 18 }));
 
-    // llave selectora
-    const cx = 210, cy = 330, R = 108;
-    g.appendChild(svgEl('circle', { cx, cy, r: R, fill: 'none', stroke: C.tenue, 'stroke-width': 1.4 }));
-    g.appendChild(svgEl('circle', { cx, cy, r: 52, fill: C.cuerpoOsc, stroke: C.trazo, 'stroke-width': 2 }));
-    const posiciones = [
-      { id: 'off', t: 'OFF', a: 180 }, { id: 'Vcc', t: 'V⎓', a: 225 }, { id: 'Vca', t: 'V∼', a: 270 },
-      { id: 'ohm', t: 'Ω', a: 315 }, { id: 'cont', t: '•)))', a: 0 }, { id: 'mA', t: 'mA', a: 45 },
-      { id: 'Acc', t: 'A⎓', a: 90 }, { id: 'cap', t: 'nF', a: 135 }
-    ];
+    // pantalla: lo que muestra depende de la posición de la llave
+    let valor = '';
+    if (apagado) valor = '';
+    else if (p.sobrerango) valor = '1';
+    else if (f.id === 'cont') valor = fmt(p.lectura, dec) + '  •)))';
+    else valor = fmt(p.lectura, dec);
+    const arriba = [f.grupo && f.grupo !== 'prueba' ? f.grupo + ' ' + f.rotulo : f.t, f.modo || '', p.hold ? 'HOLD' : '']
+      .filter(Boolean).join('   ');
+    pantallaLCD(g, 78, 72, 304, 100, valor, apagado ? '' : unidad, { tamNum: 46, arriba: apagado ? '' : arriba });
+
+    // ---- llave selectora ----
+    const cx = 230, cy = 372, R = 118;
+    g.appendChild(svgEl('circle', { cx, cy, r: R + 34, fill: 'none', stroke: C.tenue, 'stroke-width': 1 }));
+    g.appendChild(svgEl('circle', { cx, cy, r: 54, fill: C.cuerpoOsc, stroke: C.trazo, 'stroke-width': 2 }));
+    const n = FUNCIONES_MULTIMETRO.length;
+    const paso = 360 / n;
     const rad = a => (a - 90) * Math.PI / 180;
-    posiciones.forEach(pos => {
-      const x = cx + Math.cos(rad(pos.a)) * (R - 22), y = cy + Math.sin(rad(pos.a)) * (R - 22);
-      const activa = pos.id === p.funcion;
-      g.appendChild(svgEl('circle', { cx: r2(x), cy: r2(y), r: 4, fill: activa ? C.rojo : C.trazo }));
-      const xt = cx + Math.cos(rad(pos.a)) * (R + 4), yt = cy + Math.sin(rad(pos.a)) * (R + 4);
-      g.appendChild(texto(xt, yt, pos.t, { tam: 12, peso: activa ? 700 : 400, color: activa ? C.rojo : C.trazo }));
+    const punto = (a, r) => ({ x: cx + Math.cos(rad(a)) * r, y: cy + Math.sin(rad(a)) * r });
+
+    // el rótulo del grupo (V⎓, Ω, A⎓…) se pone en el medio de sus posiciones
+    const gruposVistos = {};
+    FUNCIONES_MULTIMETRO.forEach((fn, i) => {
+      if (!fn.grupo) return;
+      (gruposVistos[fn.grupo] = gruposVistos[fn.grupo] || []).push(i);
+    });
+    Object.keys(gruposVistos).forEach(nombre => {
+      const idx = gruposVistos[nombre];
+      const a = (idx[0] + idx[idx.length - 1]) / 2 * paso;
+      const q = punto(a, R + 22);
+      const activo = f.grupo === nombre;
+      g.appendChild(texto(q.x, q.y, nombre, { tam: 14, peso: 700, color: activo ? C.rojo : C.trazo, mono: false }));
+    });
+
+    FUNCIONES_MULTIMETRO.forEach((fn, i) => {
+      const a = i * paso;
+      const activa = fn.id === f.id;
+      const marca = punto(a, R - 26);
+      g.appendChild(svgEl('circle', { cx: r2(marca.x), cy: r2(marca.y), r: activa ? 4.5 : 3, fill: activa ? C.rojo : C.trazo }));
+      const rot = punto(a, R - 6);
+      g.appendChild(texto(rot.x, rot.y, fn.rotulo, { tam: fn.rotulo.length > 3 ? 8 : 9.5, peso: activa ? 700 : 400, color: activa ? C.rojo : C.trazo }));
       if (activa) {
-        g.appendChild(linea(cx, cy, cx + Math.cos(rad(pos.a)) * 50, cy + Math.sin(rad(pos.a)) * 50, C.rojo, 6, { 'stroke-linecap': 'round' }));
+        const p1 = punto(a, 52);
+        g.appendChild(linea(cx, cy, p1.x, p1.y, C.rojo, 7, { 'stroke-linecap': 'round' }));
       }
     });
-    g.appendChild(svgEl('circle', { cx, cy, r: 9, fill: C.metal, stroke: C.trazo, 'stroke-width': 1.4 }));
+    g.appendChild(svgEl('circle', { cx, cy, r: 10, fill: C.metal, stroke: C.trazo, 'stroke-width': 1.4 }));
 
-    // bornes
-    const bornes = [{ x: 110, t: 'COM', c: '#222' }, { x: 210, t: 'VΩmA', c: C.rojo }, { x: 310, t: '10A', c: '#c98b2b' }];
+    // ---- bornes ----
+    const yB = 546;
+    const bornes = [
+      { id: 'COM', x: 120, t: 'COM', c: '#222' },
+      { id: 'VmA', x: 230, t: 'VΩmA', c: C.rojo },
+      { id: '10A', x: 340, t: '10A', c: '#c98b2b' }
+    ];
     bornes.forEach(b => {
-      g.appendChild(svgEl('circle', { cx: b.x, cy: 492, r: 17, fill: C.metal, stroke: b.c, 'stroke-width': 3 }));
-      g.appendChild(svgEl('circle', { cx: b.x, cy: 492, r: 6, fill: C.cuerpoOsc }));
-      g.appendChild(texto(b.x, 524, b.t, { tam: 10, peso: 700 }));
+      const usado = !apagado && (b.id === 'COM' || b.id === f.borne);
+      g.appendChild(svgEl('circle', { cx: b.x, cy: yB, r: 17, fill: C.metal, stroke: b.c, 'stroke-width': usado ? 4 : 2.4 }));
+      g.appendChild(svgEl('circle', { cx: b.x, cy: yB, r: 6, fill: C.cuerpoOsc }));
+      g.appendChild(texto(b.x, yB + 32, b.t, { tam: 10, peso: usado ? 700 : 400 }));
     });
     if (p.puntas) {
-      g.appendChild(svgEl('path', { d: 'M 110 509 C 80 570 40 570 22 600', fill: 'none', stroke: '#222', 'stroke-width': 4 }));
-      g.appendChild(svgEl('path', { d: 'M 210 509 C 250 570 340 570 396 600', fill: 'none', stroke: C.rojo, 'stroke-width': 4 }));
+      // la punta roja sale del borne que pide la función elegida
+      const xRojo = f.borne === '10A' ? 340 : 230;
+      g.appendChild(svgEl('path', { d: `M 120 ${yB + 17} C 90 ${alto - 50} 46 ${alto - 40} 26 ${alto - 8}`, fill: 'none', stroke: '#222', 'stroke-width': 4 }));
+      g.appendChild(svgEl('path', { d: `M ${xRojo} ${yB + 17} C ${xRojo + 40} ${alto - 50} ${ancho - 84} ${alto - 40} ${ancho - 26} ${alto - 8}`, fill: 'none', stroke: C.rojo, 'stroke-width': 4 }));
     }
-    rotulo(g, 210, 552, p.etiqueta);
+    rotulo(g, 230, 606, p.etiqueta);
     return { g, ancho, alto };
   }
 };
@@ -1110,7 +1265,7 @@ DEF.aguja = {
     P.lectura(9.4),
     { clave: 'espejo', etiqueta: 'Escala con espejo antiparalaje', tipo: 'bool', def: true },
     { clave: 'cero', etiqueta: 'Cero en el centro', tipo: 'bool', def: false, ayuda: 'Para galvanómetros que miden en los dos sentidos.' },
-    P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const redondo = p.forma === 'redondo';
@@ -1127,6 +1282,7 @@ DEF.aguja = {
 
     const ang = v => (-apertura / 2 + ((v - min) / rango) * apertura) * Math.PI / 180;
     const pt = (v, r) => ({ x: cx + Math.sin(ang(v)) * r, y: cy - Math.cos(ang(v)) * r });
+    const M = marcaCfg(p, lect);
 
     // caja
     if (redondo) {
@@ -1169,7 +1325,7 @@ DEF.aguja = {
 
     const punta = pt(lect, R - 6);
     const cola = pt(lect, -12);
-    g.appendChild(linea(cola.x, cola.y, punta.x, punta.y, p.marcarLectura ? C.rojo : C.trazo, 2.6, { 'stroke-linecap': 'round' }));
+    g.appendChild(linea(cola.x, cola.y, punta.x, punta.y, M.activa ? C.rojo : C.trazo, 2.6, { 'stroke-linecap': 'round' }));
     g.appendChild(svgEl('circle', { cx, cy, r: 12, fill: C.cuerpoOsc, stroke: C.trazo, 'stroke-width': 1.6 }));
 
     if (!redondo) {
@@ -1199,7 +1355,7 @@ DEF.transportador = {
     P.lectura(52),
     { clave: 'dobleEscala', etiqueta: 'Doble numeración (0→180 y 180→0)', tipo: 'bool', def: true },
     { clave: 'brazo', etiqueta: 'Dibujar el brazo del ángulo', tipo: 'bool', def: true },
-    P.marcarLectura(true), P.mostrarValor(true), P.etiqueta(''), P.escala()
+    ...P.marca(), P.mostrarValor(true), P.etiqueta(''), P.escala()
   ],
   dibujar(p) {
     const max = acotar(p.max, 10, 360);
@@ -1211,6 +1367,7 @@ DEF.transportador = {
     const cx = ancho / 2, cy = completo ? alto / 2 : R + 40;
     const rad = a => Math.PI * (180 - a) / 180;
     const pt = (a, r) => ({ x: cx + Math.cos(rad(a)) * r, y: cy - Math.sin(rad(a)) * r });
+    const M = marcaCfg(p, lect);
 
     // cuerpo translúcido
     if (completo) {
@@ -1239,7 +1396,7 @@ DEF.transportador = {
       // y el móvil marca la lectura: el ángulo que se ve es el que dice el cartel.
       const b = pt(lect, R - 6);
       g.appendChild(linea(cx, cy, cx - R + 6, cy, C.trazo, 3));
-      g.appendChild(linea(cx, cy, b.x, b.y, p.marcarLectura ? C.rojo : C.trazo, 3));
+      g.appendChild(linea(cx, cy, b.x, b.y, M.activa ? C.rojo : C.trazo, 3));
       const a1 = pt(0, 56), a2 = pt(lect, 56);
       g.appendChild(svgEl('path', { d: `M ${r2(a1.x)} ${r2(a1.y)} A 56 56 0 ${lect > 180 ? 1 : 0} 1 ${r2(a2.x)} ${r2(a2.y)}`, fill: 'none', stroke: C.rojo, 'stroke-width': 1.4, 'stroke-dasharray': '4 3' }));
     }
@@ -1287,6 +1444,343 @@ DEF.sensorDigital = {
   }
 };
 
+// ---------- micro:bit con sensores conectados ----------
+
+// Lo que se puede colgar de los pines de cocodrilo. Cada entrada dice si
+// entrega una medida (sensor) o si recibe una orden (actuador), porque eso
+// cambia lo que el estudiante tiene que anotar.
+export const CONEXIONES_MICROBIT = [
+  { id: '', t: '— sin conectar —' },
+  { id: 'ldr', t: 'LDR (fotorresistencia)', clase: 'sensor', magnitud: 'Luz', unidad: '' },
+  { id: 'ntc', t: 'Termistor NTC', clase: 'sensor', magnitud: 'Temperatura', unidad: '°C' },
+  { id: 'pot', t: 'Potenciómetro', clase: 'sensor', magnitud: 'Posición', unidad: '' },
+  { id: 'humedad', t: 'Sensor de humedad de suelo', clase: 'sensor', magnitud: 'Humedad', unidad: '' },
+  { id: 'ultrasonido', t: 'Ultrasonido HC-SR04', clase: 'sensor', magnitud: 'Distancia', unidad: 'cm' },
+  { id: 'dht11', t: 'DHT11 (temperatura y humedad)', clase: 'sensor', magnitud: 'Temperatura', unidad: '°C' },
+  { id: 'sonido', t: 'Micrófono / sensor de sonido', clase: 'sensor', magnitud: 'Sonido', unidad: '' },
+  { id: 'llama', t: 'Sensor de llama', clase: 'sensor', magnitud: 'Llama', unidad: '' },
+  { id: 'hall', t: 'Sensor Hall (campo magnético)', clase: 'sensor', magnitud: 'Campo', unidad: '' },
+  { id: 'infra', t: 'Sensor infrarrojo de obstáculo', clase: 'sensor', magnitud: 'Obstáculo', unidad: '' },
+  { id: 'boton', t: 'Pulsador externo', clase: 'sensor', magnitud: 'Estado', unidad: '' },
+  { id: 'lluvia', t: 'Sensor de lluvia', clase: 'sensor', magnitud: 'Agua', unidad: '' },
+  { id: 'led', t: 'LED', clase: 'actuador' },
+  { id: 'zumbador', t: 'Zumbador (buzzer)', clase: 'actuador' },
+  { id: 'servo', t: 'Servomotor', clase: 'actuador' },
+  { id: 'motor', t: 'Motor con driver', clase: 'actuador' },
+  { id: 'rele', t: 'Relé', clase: 'actuador' }
+];
+
+export const SENSORES_INTERNOS_MICROBIT = [
+  { id: '', t: '— ninguno —', unidad: '' },
+  { id: 'acel', t: 'Acelerómetro', magnitud: 'Aceleración', unidad: 'mg' },
+  { id: 'brujula', t: 'Brújula (magnetómetro)', magnitud: 'Rumbo', unidad: '°' },
+  { id: 'temp', t: 'Temperatura del chip', magnitud: 'Temperatura', unidad: '°C' },
+  { id: 'luz', t: 'Nivel de luz (matriz de LED)', magnitud: 'Luz', unidad: '' },
+  { id: 'micro', t: 'Micrófono (v2)', magnitud: 'Sonido', unidad: 'dB' },
+  { id: 'tacto', t: 'Logo táctil (v2)', magnitud: 'Contacto', unidad: '' }
+];
+
+function conexionMicrobit(id) {
+  for (let i = 0; i < CONEXIONES_MICROBIT.length; i++) if (CONEXIONES_MICROBIT[i].id === id) return CONEXIONES_MICROBIT[i];
+  return CONEXIONES_MICROBIT[0];
+}
+
+// Dibujos de la matriz de 5×5, como cadenas de 25 unos y ceros.
+const MATRICES = {
+  vacia: '0000000000000000000000000',
+  corazon: '0101011111111110111000100',
+  si: '0000000001000101010000000',
+  no: '1000101010001000101010001',
+  flecha: '0010001110101010010000100',
+  cuadro: '1111110001100011000111111',
+  numero: null      // se arma con el dígito de la lectura
+};
+
+// Dígitos de 3×5 para poder escribir un número en la matriz.
+const DIGITOS_MATRIZ = {
+  0: '111101101101111', 1: '010110010010111', 2: '111001111100111', 3: '111001111001111',
+  4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001001001001',
+  8: '111101111101111', 9: '111101111001111'
+};
+
+DEF.microbit = {
+  rangoAzar: [0, 100],
+  nombre: 'micro:bit con sensores',
+  icono: '🔬',
+  categoria: 'Electrónica',
+  magnitud: 'Configurable',
+  resumen: 'La placa micro:bit con lo que se le conecta a los pines 0, 1 y 2, y el valor que muestra.',
+  comoSeLee: 'La placa no tiene escala: el valor sale de lo que programaste. Conviene anotar siempre qué sensor está en qué pin y qué unidad devuelve, porque muchos sensores entregan un número sin unidad (0 a 1023) que hay que calibrar contra un instrumento de verdad antes de usarlo como medida.',
+  params: [
+    { clave: 'pin0', etiqueta: 'Conectado al pin 0', tipo: 'opcion', def: 'ldr', opciones: CONEXIONES_MICROBIT.map(c => ({ v: c.id, t: c.t })) },
+    { clave: 'pin1', etiqueta: 'Conectado al pin 1', tipo: 'opcion', def: '', opciones: CONEXIONES_MICROBIT.map(c => ({ v: c.id, t: c.t })) },
+    { clave: 'pin2', etiqueta: 'Conectado al pin 2', tipo: 'opcion', def: '', opciones: CONEXIONES_MICROBIT.map(c => ({ v: c.id, t: c.t })) },
+    { clave: 'interno', etiqueta: 'Sensor interno que se usa', tipo: 'opcion', def: '', opciones: SENSORES_INTERNOS_MICROBIT.map(s => ({ v: s.id, t: s.t })) },
+    { clave: 'matriz', etiqueta: 'Qué muestra la matriz de LED', tipo: 'opcion', def: 'numero', opciones: [
+      { v: 'numero', t: 'El número de la lectura' }, { v: 'corazon', t: 'Corazón' }, { v: 'si', t: 'Tilde (correcto)' },
+      { v: 'no', t: 'Cruz (incorrecto)' }, { v: 'flecha', t: 'Flecha' }, { v: 'cuadro', t: 'Cuadro' }, { v: 'vacia', t: 'Apagada' }
+    ] },
+    { clave: 'magnitud', etiqueta: 'Qué se está midiendo', tipo: 'texto', def: 'Luz', ayuda: 'Aparece debajo del valor: Luz, Distancia, Temperatura…' },
+    P.lectura(742),
+    P.unidad(''),
+    { clave: 'decimales', etiqueta: 'Decimales', tipo: 'opcion', def: 0, opciones: [{ v: 0, t: '0' }, { v: 1, t: '1' }, { v: 2, t: '2' }, { v: 3, t: '3' }] },
+    { clave: 'mostrarCables', etiqueta: 'Dibujar los cables y los sensores', tipo: 'bool', def: true },
+    { clave: 'alimentacion', etiqueta: 'Alimentación', tipo: 'opcion', def: 'pilas', opciones: [
+      { v: 'pilas', t: 'Porta-pilas' }, { v: 'usb', t: 'Cable USB' }, { v: 'nada', t: 'Sin dibujar' }
+    ] },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const g = grupo();
+    const conectados = ['pin0', 'pin1', 'pin2']
+      .map((k, i) => ({ pin: i, c: conexionMicrobit(p[k]) }))
+      .filter(x => x.c.id);
+    const conCables = p.mostrarCables && conectados.length;
+    const ancho = 760, alto = conCables ? 560 : 430;
+
+    // ---- la placa ----
+    const px = 60, py = 60, pw = 400, ph = 250;
+    g.appendChild(svgEl('path', {
+      // contorno con las "orejas" del conector de borde abajo
+      d: `M ${px + 16} ${py} L ${px + pw - 16} ${py} Q ${px + pw} ${py} ${px + pw} ${py + 16}
+          L ${px + pw} ${py + ph - 40} L ${px + pw - 40} ${py + ph} L ${px + 40} ${py + ph}
+          L ${px} ${py + ph - 40} L ${px} ${py + 16} Q ${px} ${py} ${px + 16} ${py} Z`,
+      fill: '#1c8f6b', stroke: C.trazo, 'stroke-width': 2, 'stroke-linejoin': 'round'
+    }));
+
+    // matriz de 5×5
+    let patron = MATRICES[p.matriz] || MATRICES.vacia;
+    if (p.matriz === 'numero') {
+      // La micro:bit hace desfilar el número dígito por dígito: el dibujo
+      // congela el primero, que es el que se ve al empezar.
+      const d = String(Math.abs(Math.round(Number(p.lectura))))[0] || '0';
+      const dig = DIGITOS_MATRIZ[d] || DIGITOS_MATRIZ[0];
+      let fila = '';
+      for (let f = 0; f < 5; f++) fila += '0' + dig.slice(f * 3, f * 3 + 3) + '0';
+      patron = fila;
+    }
+    const mx = px + 128, my = py + 42, paso = 30;
+    for (let f = 0; f < 5; f++) {
+      for (let c = 0; c < 5; c++) {
+        const on = patron[f * 5 + c] === '1';
+        g.appendChild(rect(mx + c * paso, my + f * paso, 13, 20,
+          on ? '#ff2d2d' : '#5c2020', on ? '#ff8a8a' : null, on ? 1 : 0, { rx: 2 }));
+      }
+    }
+
+    // botones A y B
+    [{ x: px + 34, t: 'A' }, { x: px + pw - 66, t: 'B' }].forEach(b => {
+      g.appendChild(rect(b.x, py + 92, 32, 32, '#2b2b2b', C.trazo, 1.6, { rx: 4 }));
+      g.appendChild(svgEl('circle', { cx: b.x + 16, cy: py + 108, r: 9, fill: '#e8e8e8' }));
+      g.appendChild(texto(b.x + 16, py + 140, b.t, { tam: 13, peso: 700, color: '#ffffff' }));
+    });
+    // logo táctil y reset
+    g.appendChild(svgEl('circle', { cx: px + pw / 2 - 16, cy: py + 20, r: 7, fill: '#c8c8c8' }));
+    g.appendChild(svgEl('circle', { cx: px + pw / 2 + 16, cy: py + 20, r: 7, fill: '#c8c8c8' }));
+    g.appendChild(texto(px + 16, py + ph - 78, 'micro:bit', { tam: 12, peso: 700, color: '#ffffff', ancla: 'start', mono: false }));
+
+    // conector de borde: los pines grandes son los de cocodrilo
+    const pines = [
+      { t: '0', x: px + 46 }, { t: '1', x: px + 128 }, { t: '2', x: px + 210 },
+      { t: '3V', x: px + 292 }, { t: 'GND', x: px + 352 }
+    ];
+    pines.forEach(pin => {
+      g.appendChild(rect(pin.x - 20, py + ph - 34, 40, 34, '#d4af37', null, 0));
+      g.appendChild(texto(pin.x, py + ph - 46, pin.t, { tam: 12, peso: 700, color: '#ffffff' }));
+    });
+
+    // alimentación
+    if (p.alimentacion === 'pilas') {
+      g.appendChild(rect(px + pw + 20, py + 150, 96, 54, C.cuerpoOsc, C.trazo, 1.6, { rx: 6 }));
+      g.appendChild(texto(px + pw + 68, py + 177, '2×AAA', { tam: 11, peso: 700, color: '#fff' }));
+      g.appendChild(svgEl('path', { d: `M ${px + pw} ${py + 168} C ${px + pw + 8} ${py + 168} ${px + pw + 12} ${py + 172} ${px + pw + 20} ${py + 172}`, fill: 'none', stroke: '#222', 'stroke-width': 3 }));
+    } else if (p.alimentacion === 'usb') {
+      g.appendChild(rect(px + pw / 2 - 22, py - 18, 44, 20, C.metal, C.trazo, 1.6, { rx: 3 }));
+      g.appendChild(linea(px + pw / 2, py - 18, px + pw / 2, 12, '#222', 4));
+    }
+
+    // ---- pantalla con el valor ----
+    const interno = SENSORES_INTERNOS_MICROBIT.filter(s => s.id === p.interno)[0];
+    const unidad = String(p.unidad || '').trim() || (interno && interno.unidad) || '';
+    pantallaLCD(g, px + pw + 20, py + 6, 240, 96, fmt(p.lectura, Number(p.decimales)), unidad,
+      { tamNum: 42, arriba: p.magnitud || (interno ? interno.magnitud : '') });
+    if (interno && interno.id) {
+      g.appendChild(texto(px + pw + 140, py + 118, 'sensor interno: ' + interno.t, { tam: 10, color: C.suave }));
+    }
+
+    // ---- cables a los sensores ----
+    if (conCables) {
+      const yFila = 400;
+      const anchoCaja = 210;
+      conectados.forEach((x, i) => {
+        const pin = pines[x.pin];
+        const cx0 = 70 + i * (anchoCaja + 30);
+        const esSensor = x.c.clase === 'sensor';
+        const col = esSensor ? C.liquido : '#c98b2b';
+        g.appendChild(svgEl('path', {
+          d: `M ${pin.x} ${py + ph} C ${pin.x} ${py + ph + 60} ${cx0 + anchoCaja / 2} ${yFila - 70} ${cx0 + anchoCaja / 2} ${yFila}`,
+          fill: 'none', stroke: col, 'stroke-width': 3.5
+        }));
+        g.appendChild(rect(cx0, yFila, anchoCaja, 78, '#ffffff', col, 2, { rx: 8 }));
+        g.appendChild(texto(cx0 + anchoCaja / 2, yFila + 22, 'pin ' + x.pin, { tam: 11, peso: 700, color: col }));
+        const palabras = x.c.t.split(/\s+/);
+        let r1 = '', r2t = '';
+        palabras.forEach(w => { if ((r1 + ' ' + w).trim().length <= 22) r1 = (r1 + ' ' + w).trim(); else r2t = (r2t + ' ' + w).trim(); });
+        g.appendChild(texto(cx0 + anchoCaja / 2, yFila + 44, r1, { tam: 11, mono: false }));
+        if (r2t) g.appendChild(texto(cx0 + anchoCaja / 2, yFila + 60, r2t, { tam: 11, mono: false }));
+        g.appendChild(texto(cx0 + anchoCaja / 2, yFila + (r2t ? 72 : 62), esSensor ? 'entrada' : 'salida', { tam: 9, color: C.suave }));
+      });
+      // el negativo siempre va a GND: es el error más común al cablear
+      g.appendChild(svgEl('path', {
+        d: `M ${pines[4].x} ${py + ph} C ${pines[4].x + 60} ${py + ph + 70} ${ancho - 60} ${yFila - 40} ${ancho - 60} ${yFila + 30}`,
+        fill: 'none', stroke: '#222', 'stroke-width': 3, 'stroke-dasharray': '6 4'
+      }));
+      g.appendChild(rect(ancho - 96, yFila + 30, 72, 40, '#ffffff', '#222', 1.6, { rx: 6 }));
+      g.appendChild(texto(ancho - 60, yFila + 46, 'GND', { tam: 11, peso: 700 }));
+      g.appendChild(texto(ancho - 60, yFila + 60, 'común', { tam: 9, color: C.suave }));
+    }
+
+    rotulo(g, 260, alto - 10, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
+// ---------- Sensores Vernier Go Direct ----------
+
+// Catálogo de sensores de la línea Go Direct de Vernier, con la magnitud que
+// mide cada uno, su unidad habitual y el rango que da el fabricante. Los
+// nombres van en inglés porque así figuran en el equipo y en el software.
+export const SENSORES_GO_DIRECT = [
+  { id: 'force', t: 'Go Direct Force and Acceleration', magnitud: 'Fuerza', unidad: 'N', rango: '±50 N', dec: 2, lectura: 4.85 },
+  { id: 'accel', t: 'Go Direct Acceleration', magnitud: 'Aceleración', unidad: 'm/s²', rango: '±157 m/s²', dec: 2, lectura: 9.81 },
+  { id: 'temp', t: 'Go Direct Temperature', magnitud: 'Temperatura', unidad: '°C', rango: '−40 a 125 °C', dec: 1, lectura: 24.6 },
+  { id: 'ph', t: 'Go Direct pH', magnitud: 'pH', unidad: '', rango: '0 a 14', dec: 2, lectura: 7.02 },
+  { id: 'orp', t: 'Go Direct ORP', magnitud: 'Potencial redox', unidad: 'mV', rango: '±1000 mV', dec: 0, lectura: 218 },
+  { id: 'motion', t: 'Go Direct Motion Detector', magnitud: 'Posición', unidad: 'm', rango: '0,15 a 6 m', dec: 3, lectura: 1.245 },
+  { id: 'light', t: 'Go Direct Light and Color', magnitud: 'Iluminancia', unidad: 'lx', rango: '0 a 150 000 lx', dec: 0, lectura: 412 },
+  { id: 'pressure', t: 'Go Direct Gas Pressure', magnitud: 'Presión', unidad: 'kPa', rango: '0 a 400 kPa', dec: 1, lectura: 101.3 },
+  { id: 'co2', t: 'Go Direct CO₂ Gas', magnitud: 'Dióxido de carbono', unidad: 'ppm', rango: '0 a 100 000 ppm', dec: 0, lectura: 640 },
+  { id: 'o2', t: 'Go Direct O₂ Gas', magnitud: 'Oxígeno', unidad: '%', rango: '0 a 27 %', dec: 1, lectura: 20.9 },
+  { id: 'cond', t: 'Go Direct Conductivity', magnitud: 'Conductividad', unidad: 'µS/cm', rango: '0 a 20 000 µS/cm', dec: 0, lectura: 1450 },
+  { id: 'volt', t: 'Go Direct Voltage', magnitud: 'Tensión', unidad: 'V', rango: '±30 V', dec: 3, lectura: 4.512 },
+  { id: 'current', t: 'Go Direct Current', magnitud: 'Corriente', unidad: 'A', rango: '±1 A', dec: 3, lectura: 0.126 },
+  { id: 'energy', t: 'Go Direct Energy', magnitud: 'Tensión, corriente y potencia', unidad: 'W', rango: '±15 V · ±1 A', dec: 3, lectura: 0.568 },
+  { id: 'ekg', t: 'Go Direct EKG', magnitud: 'Actividad eléctrica', unidad: 'mV', rango: '±3 mV', dec: 2, lectura: 0.85 },
+  { id: 'resp', t: 'Go Direct Respiration Belt', magnitud: 'Fuerza de respiración', unidad: 'N', rango: '0 a 50 N', dec: 1, lectura: 12.4 },
+  { id: 'hr', t: 'Go Direct Hand-Grip Heart Rate', magnitud: 'Frecuencia cardíaca', unidad: 'lpm', rango: '0 a 200 lpm', dec: 0, lectura: 78 },
+  { id: 'bp', t: 'Go Direct Blood Pressure', magnitud: 'Presión arterial', unidad: 'mmHg', rango: '0 a 250 mmHg', dec: 0, lectura: 118 },
+  { id: 'spiro', t: 'Go Direct Spirometer', magnitud: 'Caudal de aire', unidad: 'L/s', rango: '±10 L/s', dec: 2, lectura: 1.35 },
+  { id: 'magnetic', t: 'Go Direct Magnetic Field', magnitud: 'Campo magnético', unidad: 'mT', rango: '±130 mT', dec: 2, lectura: 3.42 },
+  { id: 'sound', t: 'Go Direct Sound', magnitud: 'Nivel sonoro', unidad: 'dB', rango: '35 a 110 dB', dec: 1, lectura: 62.4 },
+  { id: 'rotary', t: 'Go Direct Rotary Motion', magnitud: 'Ángulo girado', unidad: '°', rango: '0,25° de resolución', dec: 1, lectura: 145.5 },
+  { id: 'drop', t: 'Go Direct Drop Counter', magnitud: 'Volumen agregado', unidad: 'mL', rango: 'gota a gota', dec: 2, lectura: 12.35 },
+  { id: 'colorim', t: 'Go Direct Colorimeter', magnitud: 'Absorbancia', unidad: '', rango: '0 a 3 abs', dec: 3, lectura: 0.482 },
+  { id: 'do', t: 'Go Direct Optical Dissolved Oxygen', magnitud: 'Oxígeno disuelto', unidad: 'mg/L', rango: '0 a 20 mg/L', dec: 2, lectura: 8.15 },
+  { id: 'turb', t: 'Go Direct Turbidity', magnitud: 'Turbidez', unidad: 'NTU', rango: '0 a 200 NTU', dec: 1, lectura: 14.5 },
+  { id: 'charge', t: 'Go Direct Charge', magnitud: 'Carga eléctrica', unidad: 'nC', rango: '±100 nC', dec: 1, lectura: 23.4 },
+  { id: 'radiation', t: 'Go Direct Radiation Monitor', magnitud: 'Radiación', unidad: 'cpm', rango: 'cuentas por minuto', dec: 0, lectura: 34 },
+  { id: 'melt', t: 'Go Direct Melt Station', magnitud: 'Punto de fusión', unidad: '°C', rango: 'ambiente a 260 °C', dec: 1, lectura: 132.5 },
+  { id: 'weather', t: 'Go Direct Weather', magnitud: 'Estación meteorológica', unidad: '°C', rango: 'temperatura, humedad, viento', dec: 1, lectura: 18.7 }
+];
+
+export function sensorGoDirect(id) {
+  for (let i = 0; i < SENSORES_GO_DIRECT.length; i++) if (SENSORES_GO_DIRECT[i].id === id) return SENSORES_GO_DIRECT[i];
+  return SENSORES_GO_DIRECT[0];
+}
+
+DEF.goDirect = {
+  nombre: 'Sensor Vernier Go Direct',
+  icono: '📡',
+  categoria: 'Sensores',
+  magnitud: 'Configurable',
+  resumen: 'Los sensores inalámbricos de la línea Go Direct, con su magnitud, su unidad y su rango.',
+  comoSeLee: 'El sensor manda el dato al celular o a la computadora por Bluetooth (o por USB si está enchufado), y el programa lo grafica en vivo. Antes de medir en serio conviene calibrarlo y fijar la frecuencia de muestreo: no es lo mismo una muestra por segundo que cien.',
+  params: [
+    { clave: 'modelo', etiqueta: 'Modelo del sensor', tipo: 'opcion', def: 'force',
+      opciones: SENSORES_GO_DIRECT.map(s => ({ v: s.id, t: s.t })) },
+    { clave: 'lectura', etiqueta: 'Lectura que muestra', tipo: 'numero', paso: 'any', def: 4.85, ayuda: 'Al cambiar de modelo conviene ajustarlo al rango de ese sensor.' },
+    { clave: 'unidad', etiqueta: 'Unidad (vacío = la del modelo)', tipo: 'texto', def: '' },
+    { clave: 'decimales', etiqueta: 'Decimales', tipo: 'opcion', def: 2, opciones: [{ v: 0, t: '0' }, { v: 1, t: '1' }, { v: 2, t: '2' }, { v: 3, t: '3' }] },
+    { clave: 'conexion', etiqueta: 'Cómo está conectado', tipo: 'opcion', def: 'bluetooth', opciones: [
+      { v: 'bluetooth', t: 'Bluetooth (inalámbrico)' }, { v: 'usb', t: 'Cable USB' }
+    ] },
+    { clave: 'frecuencia', etiqueta: 'Frecuencia de muestreo', tipo: 'texto', def: '10 muestras/s', ayuda: 'Se anota en el protocolo porque cambia lo que se puede ver del fenómeno.' },
+    { clave: 'grafica', etiqueta: 'Mostrar la gráfica en vivo', tipo: 'bool', def: true },
+    { clave: 'bateria', etiqueta: 'Batería', tipo: 'opcion', def: 'llena', opciones: [
+      { v: 'llena', t: 'Cargada' }, { v: 'media', t: 'Por la mitad' }, { v: 'baja', t: 'Baja' }
+    ] },
+    P.etiqueta(''), P.escala()
+  ],
+  dibujar(p) {
+    const s = sensorGoDirect(p.modelo);
+    const unidad = String(p.unidad || '').trim() || s.unidad;
+    const dec = Number(p.decimales);
+    const g = grupo();
+    const ancho = 560, alto = 440;
+
+    // ---- el sensor ----
+    const sx = 40, sy = 60, sw = 200, sh = 250;
+    g.appendChild(rect(sx, sy, sw, sh, '#2f5f8f', C.trazo, 2.4, { rx: 18 }));
+    g.appendChild(rect(sx + 12, sy + 12, sw - 24, 64, '#e9eef3', C.trazo, 1.4, { rx: 8 }));
+    g.appendChild(texto(sx + sw / 2, sy + 34, 'Go Direct', { tam: 15, peso: 700, mono: false }));
+    g.appendChild(texto(sx + sw / 2, sy + 56, s.magnitud, { tam: 11, color: C.suave, mono: false }));
+
+    // LED de estado y botón
+    const colorLed = p.conexion === 'bluetooth' ? '#3aa3d8' : '#4caf50';
+    g.appendChild(svgEl('circle', { cx: sx + 34, cy: sy + 110, r: 9, fill: colorLed, stroke: C.trazo, 'stroke-width': 1.2 }));
+    g.appendChild(texto(sx + 34, sy + 132, p.conexion === 'bluetooth' ? 'BT' : 'USB', { tam: 9, color: '#ffffff' }));
+    g.appendChild(svgEl('circle', { cx: sx + sw - 34, cy: sy + 110, r: 13, fill: '#1d3f61', stroke: '#ffffff', 'stroke-width': 1.6 }));
+    g.appendChild(texto(sx + sw - 34, sy + 132, 'ON', { tam: 9, color: '#ffffff' }));
+
+    // batería
+    const niveles = { llena: 3, media: 2, baja: 1 };
+    const barras = niveles[p.bateria] || 3;
+    g.appendChild(rect(sx + sw / 2 - 26, sy + 100, 52, 22, 'none', '#ffffff', 1.6, { rx: 3 }));
+    g.appendChild(rect(sx + sw / 2 + 26, sy + 107, 4, 8, '#ffffff', null, 0));
+    for (let i = 0; i < barras; i++) {
+      g.appendChild(rect(sx + sw / 2 - 23 + i * 16, sy + 103, 13, 16, barras === 1 ? C.rojo : '#ffffff', null, 0));
+    }
+
+    // sonda / conector según el modelo
+    g.appendChild(rect(sx + sw / 2 - 16, sy + sh, 32, 26, C.metal, C.trazo, 1.6, { rx: 4 }));
+    g.appendChild(svgEl('path', {
+      d: `M ${sx + sw / 2} ${sy + sh + 26} C ${sx + sw / 2} ${alto - 60} ${sx + 20} ${alto - 50} ${sx + 6} ${alto - 20}`,
+      fill: 'none', stroke: '#222', 'stroke-width': 4
+    }));
+    g.appendChild(rect(sx - 12, alto - 22, 36, 18, C.metalOsc, C.trazo, 1.4, { rx: 4 }));
+    g.appendChild(texto(sx + sw / 2 + 40, alto - 30, 'sonda / accesorio', { tam: 10, color: C.suave, mono: false }));
+
+    // ---- panel de lectura (como se ve en la app) ----
+    const bx = sx + sw + 40, bw = ancho - bx - 30;
+    g.appendChild(rect(bx, sy, bw, 250, '#ffffff', C.trazo, 1.8, { rx: 10 }));
+    g.appendChild(rect(bx, sy, bw, 30, '#eef2f5', C.trazo, 1.2, { rx: 10 }));
+    g.appendChild(texto(bx + bw / 2, sy + 15, 'Lectura en vivo', { tam: 11, peso: 700, mono: false }));
+    g.appendChild(texto(bx + bw - 14, sy + 62, fmt(p.lectura, dec), { tam: 40, peso: 700, ancla: 'end' }));
+    if (unidad) g.appendChild(texto(bx + bw - 14, sy + 88, unidad, { tam: 14, ancla: 'end', color: C.suave }));
+    g.appendChild(texto(bx + 12, sy + 110, s.magnitud, { tam: 11, ancla: 'start', color: C.suave, mono: false }));
+    g.appendChild(texto(bx + 12, sy + 126, 'rango: ' + s.rango, { tam: 10, ancla: 'start', color: C.suave }));
+    g.appendChild(texto(bx + 12, sy + 142, p.frecuencia || '', { tam: 10, ancla: 'start', color: C.suave }));
+
+    if (p.grafica) {
+      // una curva de ejemplo, sólo para que se entienda que el dato se registra
+      const gx = bx + 12, gy = sy + 156, gw = bw - 24, gh = 68;
+      g.appendChild(rect(gx, gy, gw, gh, '#fbfcfd', C.tenue, 1, { rx: 4 }));
+      let d = '';
+      for (let i = 0; i <= 24; i++) {
+        const t = i / 24;
+        const y = gy + gh * (0.72 - 0.45 * Math.sin(t * Math.PI * 1.6) * Math.exp(-t * 0.7));
+        d += (i ? ' L ' : 'M ') + r2(gx + t * gw) + ' ' + r2(y);
+      }
+      g.appendChild(svgEl('path', { d, fill: 'none', stroke: C.liquido, 'stroke-width': 2 }));
+      g.appendChild(linea(gx, gy + gh, gx + gw, gy + gh, C.tenue, 1));
+      g.appendChild(texto(gx + gw / 2, gy + gh + 12, 'tiempo', { tam: 9, color: C.suave }));
+    }
+
+    rotulo(g, ancho / 2, alto - 6, p.etiqueta);
+    return { g, ancho, alto };
+  }
+};
+
 // ============================================================
 // API pública
 // ============================================================
@@ -1294,7 +1788,7 @@ DEF.sensorDigital = {
 // Orden en el que aparecen en el banco.
 const ORDEN = ['regla', 'calibre', 'micrometro', 'probeta', 'bureta', 'jeringa', 'vidrio',
   'termometro', 'dinamometro', 'balanzaDigital', 'granataria', 'cronometro',
-  'multimetro', 'aguja', 'transportador', 'sensorDigital'];
+  'multimetro', 'aguja', 'transportador', 'sensorDigital', 'microbit', 'goDirect'];
 
 ORDEN.forEach(id => { if (DEF[id]) DEF[id].id = id; });
 
@@ -1333,6 +1827,9 @@ export function normalizarParams(id, params) {
     if (par.tipo === 'opcion') {
       const numerica = par.opciones.every(o => typeof o.v === 'number');
       if (numerica) v = Number(v);
+      // los nombres viejos de una opción se traducen al actual, así un
+      // protocolo guardado hace meses sigue abriendo donde corresponde
+      if (par.alias && par.alias[v] !== undefined) v = par.alias[v];
       if (!par.opciones.some(o => String(o.v) === String(v))) v = par.def;
     }
     p[par.clave] = v;
@@ -1346,7 +1843,11 @@ export function apreciacionDe(id, params) {
   if (id === 'calibre') return 1 / (Number(p.nonio) || 10);
   if (id === 'micrometro') return 0.5 / (Number(p.divisionesTambor) || 50);
   if (id === 'cronometro') return Number(p.resolucion) || 0.01;
-  if (id === 'multimetro' || id === 'sensorDigital') return Math.pow(10, -Number(p.decimales || 0));
+  if (id === 'multimetro') {
+    const f = funcionMultimetro(p.funcion);
+    return Math.pow(10, -(Number(p.decimales) >= 0 ? Number(p.decimales) : f.dec));
+  }
+  if (id === 'sensorDigital' || id === 'microbit' || id === 'goDirect') return Math.pow(10, -Number(p.decimales || 0));
   if (p.division != null) return Math.abs(Number(p.division)) || 0;
   return 0;
 }
@@ -1357,6 +1858,8 @@ export function unidadDe(id, params) {
   if (id === 'calibre' || id === 'micrometro') return 'mm';
   if (id === 'cronometro') return 's';
   if (id === 'transportador') return '°';
+  if (id === 'multimetro') return String(p.unidad || '').trim() || funcionMultimetro(p.funcion).unidad;
+  if (id === 'goDirect') return String(p.unidad || '').trim() || sensorGoDirect(p.modelo).unidad;
   return p.unidad != null ? String(p.unidad) : '';
 }
 
@@ -1369,7 +1872,17 @@ export function fichaTecnica(id, params) {
   const apr = apreciacionDe(id, params);
   const dec = decimalesDe(apr || 1);
   const partes = [];
-  if (id === 'calibre' || id === 'micrometro') partes.push(`alcance ${fmt(p.max, 0)} mm`);
+  if (id === 'multimetro') {
+    const f = funcionMultimetro(p.funcion);
+    if (f.id === 'off') return 'apagado';
+    partes.push(f.t.toLowerCase());
+  } else if (id === 'goDirect') {
+    const s = sensorGoDirect(p.modelo);
+    partes.push(s.magnitud.toLowerCase());
+    if (s.rango) partes.push('rango ' + s.rango);
+  } else if (id === 'microbit') {
+    partes.push('placa programable con sensores');
+  } else if (id === 'calibre' || id === 'micrometro') partes.push(`alcance ${fmt(p.max, 0)} mm`);
   else if (p.max != null && p.min != null) partes.push(`alcance ${fmt(p.min, decimalesDe(p.division || 1))} a ${fmt(p.max, decimalesDe(p.division || 1))} ${u}`.trim());
   else if (p.max != null) partes.push(`alcance ${fmt(p.max, 0)} ${u}`.trim());
   if (apr) partes.push(`apreciación ${fmt(apr, dec)} ${u}`.trim());

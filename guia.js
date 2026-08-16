@@ -385,24 +385,57 @@ notas: Las placas son las piezas finitas.</pre>
           <li><strong>.json guardado</strong> — para retomar el protocolo del año pasado.</li>
         </ul>
 
-        <h4 class="guia-h">4 · El banco de instrumentos</h4>
-        <p class="guia-p">Son 16 instrumentos dibujados en vectores: regla, calibre con nonio, micrómetro, probeta,
+        <h4 class="guia-h">4 · Las fórmulas</h4>
+        <p class="guia-p">En el <strong>fundamento</strong>, el <strong>montaje</strong>, las <strong>preguntas</strong>
+        y la <strong>fórmula de cada cálculo</strong> podés escribir matemática de verdad, en LaTeX. Lo que ponés entre
+        signos de peso se dibuja como fórmula; el resto queda como texto normal:</p>
+        <pre class="guia-pre">Se calcula como $d = \\frac{m}{V}$, donde…      ← en el medio del renglón
+
+$$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio bloque</pre>
+        <p class="guia-p">Abajo del fundamento hay una <strong>barra de símbolos</strong>: fracciones, raíces, Δ, π, ρ,
+        Ω, vectores, notación científica y demás, dibujados como se van a ver. Hacés clic y se insertan donde está el
+        cursor. El botón <strong>«Fórmulas de ejemplo»</strong> trae ocho armadas (densidad, período del péndulo, ley de
+        Ohm, calor, energía cinética…) para insertar de una. Si te equivocás escribiendo el LaTeX, la fórmula aparece en
+        rojo con el código a la vista, así ves dónde está el error en vez de encontrarte con un hueco.</p>
+
+        <h4 class="guia-h">5 · El banco de instrumentos</h4>
+        <p class="guia-p">Son 18 instrumentos dibujados en vectores: regla, calibre con nonio, micrómetro, probeta,
         bureta, jeringa, material de vidrio, termómetro, dinamómetro, balanza digital, balanza de tres brazos,
-        cronómetro, multímetro, instrumento de aguja, transportador y sensor digital. De cada uno configurás
-        <strong>hasta cuánto mide</strong>, <strong>cuánto vale la rayita más chica</strong>, <strong>cada cuánto se
-        numera</strong>, <strong>la unidad</strong> y <strong>qué lectura muestra</strong>. La misma probeta te sirve
-        para una de 10 mL con divisiones de 0,2 mL y para una de 1 L con divisiones de 20 mL.</p>
+        cronómetro, multímetro, instrumento de aguja, transportador, sensor digital, <strong>micro:bit</strong> y los
+        <strong>sensores Vernier Go Direct</strong>. De cada uno configurás <strong>hasta cuánto mide</strong>,
+        <strong>cuánto vale la rayita más chica</strong>, <strong>cada cuánto se numera</strong>, <strong>la
+        unidad</strong> y <strong>qué lectura muestra</strong>. La misma probeta te sirve para una de 10 mL con
+        divisiones de 0,2 mL y para una de 1 L con divisiones de 20 mL.</p>
+        <ul class="guia-lista">
+          <li><strong>Multímetro</strong> — la llave selectora tiene las 26 posiciones reales: tensión y corriente
+          continua y alterna con todos sus rangos, resistencia, continuidad, diodo, hFE, capacidad, frecuencia y
+          temperatura. Eligiendo la posición ya salen solas la unidad, los decimales y el borne por el que va la
+          punta roja.</li>
+          <li><strong>micro:bit</strong> — la placa con lo que le colgás de los pines 0, 1 y 2 (LDR, termistor,
+          ultrasonido, DHT11, servo, zumbador, relé y más), el sensor interno que estés usando y lo que muestra la
+          matriz de LED. Los cables y los sensores se dibujan.</li>
+          <li><strong>Vernier Go Direct</strong> — 30 modelos de la línea, cada uno con su magnitud, su unidad y su
+          rango: fuerza y aceleración, temperatura, pH, movimiento, presión de gas, CO₂, O₂, conductividad, tensión,
+          corriente, campo magnético, sonido, EKG y demás.</li>
+        </ul>
         <div class="guia-aviso">Cada instrumento se resume en una línea de texto como
         <code>probeta :: max=250, division=2, unidad=mL, lectura=150</code>. El botón "Copiar para el protocolo" te la
         da lista para pegar en el generador — y es el mismo formato que le podés pedir a una IA.</div>
 
-        <h4 class="guia-h">5 · Ejercicios de lectura de escalas</h4>
+        <h4 class="guia-h">6 · La línea de medición</h4>
+        <p class="guia-p">Los instrumentos salen <strong>sin</strong> la línea roja que señala dónde hay que leer, a
+        propósito: encontrar la medida en la escala es parte del trabajo. Cuando te sirve, la agregás vos y la
+        <strong>calibrás como quieras</strong>: podés hacerla apuntar a un punto distinto del que marca el instrumento
+        (por ejemplo, al nivel inicial de la probeta y no al final), ponerle su propio rótulo y correrla unos
+        milímetros para que calce exacta. Está en los parámetros de cada instrumento, abajo de todo.</p>
+
+        <h4 class="guia-h">7 · Ejercicios de lectura de escalas</h4>
         <p class="guia-p">Abajo del banco hay un generador de <strong>hojas de ejercicios</strong>: marcás los
         instrumentos, y sale una hoja con cada uno dibujado en una lectura <strong>al azar y sin el número</strong>,
         con el renglón para que el estudiante escriba cuánto mide y con qué incertidumbre. Se puede regenerar todas
         las veces que quieras —sale distinta cada vez— y viene con la clave de corrección para recortar.</p>
 
-        <h4 class="guia-h">6 · Descargas</h4>
+        <h4 class="guia-h">8 · Descargas</h4>
         <ul class="guia-lista">
           <li><strong>PDF</strong> — imprimiendo desde el navegador o con "Descargar PDF directo".</li>
           <li><strong>.json</strong> — para reeditar el protocolo cuando quieras.</li>

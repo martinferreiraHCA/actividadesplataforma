@@ -258,6 +258,89 @@
 .proto-revision__nota { display: block; font-size: 0.8rem; opacity: 0.7; margin-top: 0.3rem; }
 
 /* ====================================================
+   FÓRMULAS (LaTeX con KaTeX)
+   ==================================================== */
+.mate { font-size: 1.02em; }
+.mate--bloque {
+  display: block;
+  text-align: center;
+  margin: 0.9rem 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+/* Si el LaTeX está mal escrito se ve el código, no un hueco. */
+.mate--error, .mate--crudo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+  color: #c0392b;
+  border-bottom: 1.5px dotted #c0392b;
+  cursor: help;
+}
+/* Una fórmula larga scrollea sola en vez de romper la caja. */
+.mate--bloque .katex-display { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+
+/* --- la barra de ayuda del editor --- */
+.latex-barra { margin-top: 0.6rem; }
+.latex-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.latex-chip {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  background: var(--base, #fff);
+  color: inherit;
+  border-radius: 6px;
+  padding: 0.25em 0.55em;
+  min-width: 34px;
+  min-height: 30px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.latex-chip:hover { border-color: var(--safety, #FF3E00); background: rgba(255,62,0,0.08); }
+.latex-chip--accion {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.latex-pie { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.latex-pie__nota { font-size: 0.75rem; opacity: 0.7; flex: 1 1 240px; line-height: 1.35; }
+.latex-ejemplos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+.latex-ejemplo {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.22));
+  background: var(--base, #fff);
+  color: inherit;
+  border-radius: 6px;
+  padding: 0.45em 0.6em;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.latex-ejemplo:hover { border-color: var(--safety, #FF3E00); }
+.latex-ejemplo__que { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.65; }
+.latex-vista__fila { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.latex-vista {
+  flex: 1 1 200px;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0.2em 0.5em;
+  border-left: 3px solid var(--borde, rgba(0,0,0,0.2));
+}
+.latex-vista__nota { font-size: 0.75rem; opacity: 0.6; }
+
+/* En los temas oscuros las fórmulas del editor siguen sobre fondo claro */
+body.tema-nocturno .latex-chip,
+body.tema-nocturno .latex-ejemplo { background: #ffffff; color: #111111; }
+
+/* ====================================================
    EL DOCUMENTO (pantalla e impresión comparten clases)
    ==================================================== */
 .pro-doc {
@@ -433,6 +516,7 @@
   padding: 0.15em 0.55em;
   border-radius: 4px;
 }
+.pro-calculo__formula--mate { font-family: inherit; font-size: 1.05rem; }
 .pro-calculo__unidad { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; opacity: 0.7; }
 .pro-calculo__desc { margin: 0 0 0.4rem; font-size: 0.9rem; }
 .pro-calculo__label { display: block; font-size: 0.76rem; opacity: 0.7; margin-bottom: 0.5rem; }

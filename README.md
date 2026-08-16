@@ -101,10 +101,28 @@ procedimiento paso a paso, tablas de datos en blanco, cálculos, preguntas de an
 - **Dos versiones** del mismo protocolo: la del **estudiante** (espacios en blanco, cabezal para el
   equipo y los instrumentos sin el número de la lectura) y la del **docente** (todo a la vista, más
   cómo se lee cada instrumento).
+- **Fórmulas en LaTeX** en el fundamento, el montaje, las preguntas y los cálculos: lo que va entre
+  signos de peso se dibuja como matemática de verdad.
 - **Seis prácticos de ejemplo** completos: densidad de sólidos, ley de Hooke, ley de Ohm, calor
   específico, péndulo simple y titulación ácido-base.
 - Se puede arrancar de una plantilla, del **prompt para IA** que arma la página, de **texto plano** o
   de un **.json** guardado. Salidas: PDF, JSON y texto.
+
+### Fórmulas
+
+Se escriben en LaTeX y las dibuja [KaTeX](https://katex.org) (MIT), vendorizado con sus fuentes
+embebidas en base64 dentro de `katex.min.css`: la página no descarga nada y las fórmulas salen
+igual en pantalla, al imprimir y en el PDF.
+
+```markdown
+Se calcula como $d = \frac{m}{V}$, donde…      ← en el medio del renglón
+
+$$T = 2\pi\sqrt{\frac{L}{g}}$$                 ← centrada, en su propio bloque
+```
+
+El editor trae una barra con los símbolos que más se usan (fracción, raíz, Δ, π, ρ, Ω, vectores,
+notación científica…) y ocho fórmulas de ejemplo listas para insertar. Si el LaTeX está mal escrito
+se ve el código en rojo, no un hueco en blanco.
 
 ### Formato de texto de un protocolo
 
@@ -158,7 +176,7 @@ habituales, con o sin tildes).
 
 ## Diseño → Banco de instrumentos
 
-`instrumentos.html` dibuja **16 instrumentos científicos en SVG**, parametrizables en alcance,
+`instrumentos.html` dibuja **18 instrumentos científicos en SVG**, parametrizables en alcance,
 menor división, numeración, unidad, lectura y tamaño:
 
 | Magnitud | Instrumentos |
@@ -171,7 +189,8 @@ menor división, numeración, unidad, lectura y tamaño:
 | Tiempo | cronómetro |
 | Electricidad | multímetro digital, instrumento de aguja (voltímetro, amperímetro, manómetro) |
 | Ángulo | transportador |
-| Otros | sensor digital genérico (pH, lux, dB…) |
+| Electrónica | micro:bit con sensores conectables a los pines |
+| Sensores | Vernier Go Direct (30 modelos), sensor digital genérico (pH, lux, dB…) |
 
 Cada instrumento se resume en una línea de texto que entiende el generador de protocolos:
 
@@ -179,7 +198,36 @@ Cada instrumento se resume en una línea de texto que entiende el generador de p
 probeta :: max=250, division=2, numerarCada=50, unidad=mL, lectura=150
 calibre :: nonio=50, lectura=23.42
 aguja :: simbolo=A, max=0.5, division=0.01, unidad=A, lectura=0.06
+multimetro :: funcion=Vcc20, lectura=9.06
+microbit :: pin0=ultrasonido, magnitud=Distancia, unidad=cm, lectura=34
+goDirect :: modelo=pressure, lectura=101.3
 ```
+
+### La línea de medición
+
+Los instrumentos salen **sin** la línea roja que señala dónde leer: encontrar la medida en la
+escala es parte del trabajo del estudiante. Se agrega cuando hace falta y se calibra a gusto —
+puede apuntar a un punto distinto del que marca el instrumento, llevar su propio rótulo y correrse
+unos milímetros para calzar exacta:
+
+```
+probeta :: max=100, division=1, unidad=mL, lectura=64, marcarLectura=si, marcaEn=30, marcaTexto=nivel inicial
+```
+
+### El multímetro
+
+La llave selectora tiene las **26 posiciones** de un multímetro de laboratorio, y de ahí salen
+solas la unidad, los decimales y el borne por el que entra la punta roja:
+
+| Grupo | Posiciones |
+|-------|------------|
+| V⎓ | `Vcc200m` `Vcc2` `Vcc20` `Vcc200` `Vcc600` |
+| V∼ | `Vca200` `Vca600` |
+| A⎓ | `Acc200u` `Acc2m` `Acc20m` `Acc200m` `Acc10` |
+| A∼ | `Aca200m` |
+| Ω | `ohm200` `ohm2k` `ohm20k` `ohm200k` `ohm2M` |
+| Pruebas | `cont` (continuidad) `diodo` `hfe` |
+| Otras | `cap` `capu` `frec` `temp` — y `off` |
 
 La página también genera **hojas de ejercicios de lectura de escalas**: cada instrumento sale con
 una lectura al azar y sin el número, con renglones para la medida y su incertidumbre, y con la clave
@@ -189,7 +237,7 @@ de corrección aparte.
 
 - HTML + CSS + Vanilla JS (ES modules)
 - Sin backend, sin build step
-- JSZip vendorizado localmente
+- JSZip y KaTeX vendorizados localmente (KaTeX, con sus fuentes en base64)
 - Los instrumentos son SVG generado a mano: sin librerías de dibujo
 - Hosteable en GitHub Pages
 
@@ -209,8 +257,10 @@ Sección Diseño:
 /protocolos.js            ← Editor, documento imprimible y exportaciones
 /protocolos-texto.js      ← Formato de texto (parser + serializador) y prompt para IA
 /protocolos-ejemplos.js   ← Seis prácticos completos de muestra
+/mate.js                  ← Fórmulas en LaTeX dentro de los textos
+/katex.min.js /.css       ← KaTeX vendorizado, con las fuentes embebidas
 /instrumentos.html        ← Banco de instrumentos
-/instrumentos.js          ← Motor de dibujo SVG de los 16 instrumentos
+/instrumentos.js          ← Motor de dibujo SVG de los 18 instrumentos
 /instrumentos-ui.js       ← Catálogo, configurador y hojas de ejercicios
 /papel3d.html             ← Diseño 3D con papel (papercraft)
 ```

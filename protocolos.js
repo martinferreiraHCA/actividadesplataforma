@@ -18,6 +18,8 @@ import {
 
 import { EJEMPLOS } from './protocolos-ejemplos.js';
 
+import { conFormulas, parrafosConFormulas, formula, tieneFormulas, ATAJOS_LATEX, EJEMPLOS_LATEX } from './mate.js';
+
 const $ = id => document.getElementById(id);
 const CLAVE_GUARDADO = 'protocolo-practico-borrador';
 
@@ -140,6 +142,86 @@ function campoTexto(etiqueta, valor, marcador, alCambiar, ancho) {
   i.addEventListener('input', () => { alCambiar(i.value); cambio(); });
   c.appendChild(i);
   return c;
+}
+
+// ============================================================
+// Ayuda para escribir fórmulas
+// ============================================================
+
+// Mete texto donde está el cursor y deja el foco listo para seguir escribiendo.
+function insertarEnCampo(campo, texto, envolver) {
+  const ini = campo.selectionStart == null ? campo.value.length : campo.selectionStart;
+  const fin = campo.selectionEnd == null ? ini : campo.selectionEnd;
+  const seleccion = campo.value.slice(ini, fin);
+  const trozo = envolver ? '$' + (seleccion || texto) + '$' : texto;
+  campo.value = campo.value.slice(0, ini) + trozo + campo.value.slice(fin);
+  const cursor = ini + trozo.length;
+  campo.focus();
+  campo.setSelectionRange(cursor, cursor);
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+// Barra de atajos: los símbolos que más se usan en un práctico, dibujados como
+// se van a ver, más un vistazo de cómo va quedando la fórmula.
+function barraLatex(contenedorId, campo) {
+  const cont = $(contenedorId);
+  if (!cont) return;
+  cont.innerHTML = '';
+  cont.className = 'latex-barra';
+
+  const fila = el('div', 'latex-chips');
+  const boton = (txt, titulo, accion, clase) => {
+    const b = el('button', 'latex-chip' + (clase ? ' ' + clase : ''));
+    b.type = 'button';
+    b.title = titulo;
+    b.addEventListener('click', accion);
+    if (typeof txt === 'string') b.textContent = txt;
+    else b.appendChild(txt);
+    return b;
+  };
+
+  fila.appendChild(boton('$…$', 'Envolver la selección como fórmula en el renglón',
+    () => insertarEnCampo(campo, 'x', true), 'latex-chip--accion'));
+  fila.appendChild(boton('$$…$$', 'Fórmula centrada en su propio bloque',
+    () => insertarEnCampo(campo, '\n\n$$\n\n$$\n\n'), 'latex-chip--accion'));
+
+  ATAJOS_LATEX.forEach(a => {
+    const vista = formula(a.muestra, false);
+    fila.appendChild(boton(vista, a.etiqueta + '   →   ' + a.latex, () => insertarEnCampo(campo, a.latex)));
+  });
+  cont.appendChild(fila);
+
+  const pie = el('div', 'latex-pie');
+  const bEjemplos = el('button', 'proto-mini proto-mini--ancho', 'Fórmulas de ejemplo');
+  bEjemplos.type = 'button';
+  const caja = el('div', 'latex-ejemplos');
+  caja.hidden = true;
+  EJEMPLOS_LATEX.forEach(ej => {
+    const f = el('button', 'latex-ejemplo');
+    f.type = 'button';
+    f.title = 'Insertar: $' + ej.latex + '$';
+    f.appendChild(el('span', 'latex-ejemplo__que', ej.que));
+    f.appendChild(formula(ej.latex, false));
+    f.addEventListener('click', () => insertarEnCampo(campo, '$' + ej.latex + '$'));
+    caja.appendChild(f);
+  });
+  bEjemplos.addEventListener('click', () => { caja.hidden = !caja.hidden; });
+  pie.appendChild(bEjemplos);
+  pie.appendChild(el('span', 'latex-pie__nota', 'Se escriben en LaTeX. Lo que ponés entre $ se dibuja como matemática; el resto queda como texto normal.'));
+  cont.appendChild(pie);
+  cont.appendChild(caja);
+}
+
+// Vista previa chiquita al lado de un campo de fórmula.
+function vistaFormula(caja, valor) {
+  caja.innerHTML = '';
+  const v = String(valor || '').trim();
+  if (!v) return;
+  if (!tieneFormulas(v)) {
+    caja.appendChild(el('span', 'latex-vista__nota', 'Sin fórmula: se muestra tal cual. Poné $ … $ para dibujarla como matemática.'));
+    return;
+  }
+  caja.appendChild(conFormulas(v));
 }
 
 // ---- materiales ----
@@ -371,9 +453,39 @@ function pintarCalculos() {
     caja.appendChild(cab);
     const fila = el('div', 'proto-fila proto-fila--campos');
     fila.appendChild(campoTexto('Qué se calcula', c.nombre, 'Densidad', v => c.nombre = v, '2 1 160px'));
-    fila.appendChild(campoTexto('Fórmula', c.formula, 'd = m / V', v => c.formula = v, '2 1 160px'));
+
+    // la fórmula acepta LaTeX y se previsualiza abajo mientras se escribe
+    const cf = el('label', 'proto-campito');
+    cf.style.flex = '2 1 200px';
+    cf.appendChild(el('span', 'proto-campito__label', 'Fórmula (acepta LaTeX)'));
+    const inpF = el('input', 'campo__input');
+    inpF.type = 'text';
+    inpF.value = c.formula || '';
+    inpF.placeholder = '$d = \\frac{m}{V}$';
+    cf.appendChild(inpF);
+    fila.appendChild(cf);
+
     fila.appendChild(campoTexto('Unidad', c.unidad, 'g/mL', v => c.unidad = v, '1 1 90px'));
     caja.appendChild(fila);
+
+    const previa = el('div', 'latex-vista');
+    const bFx = el('button', 'proto-mini proto-mini--ancho', 'ƒx envolver en $ $');
+    bFx.type = 'button';
+    bFx.title = 'Convierte lo que escribiste en una fórmula matemática';
+    bFx.addEventListener('click', () => {
+      if (!tieneFormulas(inpF.value) && inpF.value.trim()) {
+        inpF.value = '$' + inpF.value.trim() + '$';
+        c.formula = inpF.value;
+        vistaFormula(previa, c.formula);
+        cambio();
+      }
+    });
+    inpF.addEventListener('input', () => { c.formula = inpF.value; vistaFormula(previa, c.formula); cambio(); });
+    const filaFx = el('div', 'latex-vista__fila');
+    filaFx.appendChild(bFx);
+    filaFx.appendChild(previa);
+    caja.appendChild(filaFx);
+    vistaFormula(previa, c.formula);
     const ta = el('textarea', 'campo__textarea');
     ta.rows = 2;
     ta.value = c.descripcion;
@@ -401,11 +513,9 @@ function seccion(doc, numero, titulo) {
   return s;
 }
 
+// Los textos largos pueden traer fórmulas en LaTeX entre signos de peso.
 function parrafos(cont, texto) {
-  String(texto).split(/\n{2,}/).forEach(p => {
-    const t = p.trim();
-    if (t) cont.appendChild(el('p', 'pro-parrafo', t));
-  });
+  parrafosConFormulas(cont, texto, 'pro-parrafo');
 }
 
 function renglones(cont, cuantos) {
@@ -466,7 +576,7 @@ function construirDocumento() {
   if (objetivos.length) {
     const s = seccion(doc, num(), 'Objetivos');
     const ul = el('ul', 'pro-lista');
-    objetivos.forEach(o => ul.appendChild(el('li', null, o)));
+    objetivos.forEach(o => { const li = el('li'); li.appendChild(conFormulas(o)); ul.appendChild(li); });
     s.appendChild(ul);
   }
 
@@ -520,7 +630,7 @@ function construirDocumento() {
     const s = seccion(doc, num(), 'Normas de seguridad');
     const caja = el('div', 'pro-seguridad');
     const ul = el('ul', 'pro-lista');
-    seguridad.forEach(x => ul.appendChild(el('li', null, x)));
+    seguridad.forEach(x => { const li = el('li'); li.appendChild(conFormulas(x)); ul.appendChild(li); });
     caja.appendChild(ul);
     s.appendChild(caja);
   }
@@ -551,7 +661,7 @@ function construirDocumento() {
       const fila = el('div', 'pro-paso-doc__fila');
       const cuerpo = el('div', 'pro-paso-doc__texto');
       if (x.titulo) cuerpo.appendChild(el('strong', 'pro-paso-doc__titulo', x.titulo));
-      if (x.texto) cuerpo.appendChild(el('span', null, x.texto));
+      if (x.texto) { const t = el('span'); t.appendChild(conFormulas(x.texto)); cuerpo.appendChild(t); }
       if (x.nota) cuerpo.appendChild(el('span', 'pro-paso-doc__nota', '⚠ ' + x.nota));
       fila.appendChild(cuerpo);
       const it = p.instrumentos[Number(x.instrumento)];
@@ -611,10 +721,24 @@ function construirDocumento() {
       const caja = el('div', 'pro-calculo');
       const cab = el('div', 'pro-calculo__cab');
       cab.appendChild(el('strong', null, c.nombre || 'Cálculo'));
-      if (c.formula) cab.appendChild(el('code', 'pro-calculo__formula', c.formula));
+      if (c.formula) {
+        // Si la fórmula viene con signos de peso, se dibuja como matemática;
+        // si no, se muestra tal cual, en monoespaciada.
+        if (tieneFormulas(c.formula)) {
+          const caj = el('span', 'pro-calculo__formula pro-calculo__formula--mate');
+          caj.appendChild(conFormulas(c.formula));
+          cab.appendChild(caj);
+        } else {
+          cab.appendChild(el('code', 'pro-calculo__formula', c.formula));
+        }
+      }
       if (c.unidad) cab.appendChild(el('span', 'pro-calculo__unidad', '[' + c.unidad + ']'));
       caja.appendChild(cab);
-      if (c.descripcion) caja.appendChild(el('p', 'pro-calculo__desc', c.descripcion));
+      if (c.descripcion) {
+        const d = el('p', 'pro-calculo__desc');
+        d.appendChild(conFormulas(c.descripcion));
+        caja.appendChild(d);
+      }
       if (paraEstudiante) {
         caja.appendChild(el('span', 'pro-calculo__label', 'Desarrollo:'));
         renglones(caja, 3);
@@ -630,7 +754,7 @@ function construirDocumento() {
     const ol = el('ol', 'pro-preguntas');
     preguntas.forEach(q => {
       const li = el('li', 'pro-pregunta');
-      li.appendChild(el('span', 'pro-pregunta__texto', q));
+      const preg = el('span', 'pro-pregunta__texto'); preg.appendChild(conFormulas(q)); li.appendChild(preg);
       if (paraEstudiante) renglones(li, 3);
       ol.appendChild(li);
     });
@@ -642,7 +766,7 @@ function construirDocumento() {
   if (p.conclusiones.guia) {
     const guia = el('div', 'pro-guia');
     guia.appendChild(el('strong', null, 'Para orientarte: '));
-    guia.appendChild(document.createTextNode(p.conclusiones.guia));
+    guia.appendChild(conFormulas(p.conclusiones.guia));
     s.appendChild(guia);
   }
   if (paraEstudiante) renglones(s, p.conclusiones.lineas);
@@ -809,6 +933,7 @@ function refrescarPrompt() {
 function init() {
   pintarPlantillas();
   pintarSelectorInstrumentos();
+  barraLatex('latexFundamento', $('campoFundamento'));
 
   const guardado = cargarGuardado();
   estado.p = guardado || parsearProtocolo(EJEMPLOS[0].texto);
