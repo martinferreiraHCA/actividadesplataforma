@@ -1,0 +1,480 @@
+/* Generador de protocolos — editor, documento y estilos de impresión */
+
+/* ====================================================
+   PLANTILLAS
+   ==================================================== */
+.proto-plantillas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.9rem;
+}
+.proto-plantilla {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  background: var(--surface, #fff);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: inherit;
+  font: inherit;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+.proto-plantilla:hover, .proto-plantilla:focus-visible {
+  transform: translate(-3px, -3px);
+  box-shadow: 6px 6px 0 var(--ink, #111);
+  border-color: var(--ink, #111);
+}
+.proto-plantilla__area {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.65;
+}
+.proto-plantilla__nombre { font-weight: 700; font-size: 1.02rem; line-height: 1.2; }
+.proto-plantilla__resumen { font-size: 0.84rem; opacity: 0.8; line-height: 1.4; }
+
+.proto-panel {
+  margin-top: 1.4rem;
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  border-radius: 10px;
+  padding: 1.2rem;
+  background: var(--surface, transparent);
+}
+.proto-panel__titulo { margin: 0 0 0.4rem; font-size: 1.05rem; }
+.proto-formato {
+  margin-top: 1rem;
+  background: #1d1f22;
+  color: #e8e8e4;
+  padding: 1rem;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+/* ====================================================
+   EDITOR
+   ==================================================== */
+.proto-layout {
+  display: grid;
+  grid-template-columns: minmax(380px, 1fr) minmax(400px, 1fr);
+  gap: 1.6rem;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .proto-layout { grid-template-columns: 1fr; }
+}
+
+.proto-bloque {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  border-radius: 10px;
+  margin-bottom: 0.8rem;
+  background: var(--surface, transparent);
+  overflow: hidden;
+}
+.proto-bloque__cab {
+  cursor: pointer;
+  padding: 0.8rem 1rem;
+  font-weight: 700;
+  font-size: 0.98rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  list-style: none;
+}
+.proto-bloque__cab::-webkit-details-marker { display: none; }
+.proto-bloque__cab::after {
+  content: '▾';
+  margin-left: auto;
+  opacity: 0.5;
+  font-size: 0.8rem;
+}
+.proto-bloque[open] > .proto-bloque__cab::after { content: '▴'; }
+.proto-bloque__cab:hover { background: rgba(0,0,0,0.04); }
+.proto-bloque__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  padding: 0.15em 0.55em;
+  opacity: 0.7;
+}
+.proto-bloque__cuerpo { padding: 0 1rem 1rem; }
+.proto-ayuda { font-size: 0.82rem; opacity: 0.7; line-height: 1.4; margin: 0 0 0.7rem; }
+.proto-ayuda a { color: inherit; }
+
+.proto-fila {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+.proto-fila--campos { flex-wrap: wrap; align-items: flex-end; }
+.proto-fila__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  opacity: 0.6;
+  padding-top: 0.6rem;
+  min-width: 2.2em;
+}
+.proto-fila__texto { flex: 1; min-width: 0; }
+.proto-fila__acciones { display: flex; gap: 0.2rem; padding-top: 0.3rem; }
+.proto-mini {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.3));
+  background: var(--base, #fff);
+  color: inherit;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0;
+}
+.proto-mini--ancho { width: auto; padding: 0 0.7em; font-size: 0.72rem; }
+.proto-mini:hover:not(:disabled) { background: var(--ink, #111); color: var(--base, #fff); }
+.proto-mini:disabled { opacity: 0.3; cursor: default; }
+.proto-agregar { margin-top: 0.4rem; padding: 0.55em 1.1em; font-size: 0.72rem; }
+
+.proto-campito { display: flex; flex-direction: column; gap: 0.2rem; flex: 1 1 160px; min-width: 0; }
+.proto-campito__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* --- instrumentos dentro del editor --- */
+.proto-agregar-instr { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+.proto-agregar-instr select { flex: 1 1 220px; }
+.proto-instr {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+.proto-instr__cab { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+.proto-instr__nombre { font-weight: 700; font-size: 0.92rem; flex: 1; }
+.proto-instr__cuerpo { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+.proto-instr__mini {
+  flex: 0 0 150px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 170px;
+  overflow: hidden;
+}
+.proto-instr__mini svg { max-width: 100%; max-height: 156px; height: auto; }
+.proto-instr__campos { flex: 1 1 260px; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.proto-instr__ficha {
+  font-size: 0.78rem;
+  opacity: 0.75;
+  margin: 0.6rem 0 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+.proto-instr__linea {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.proto-instr__linea code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  background: rgba(0,0,0,0.07);
+  padding: 0.25em 0.5em;
+  border-radius: 4px;
+  flex: 1;
+  word-break: break-all;
+}
+.proto-pegar { display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap; }
+.proto-pegar input { flex: 1 1 240px; }
+.proto-pegar .btn { padding: 0.55em 1.1em; font-size: 0.72rem; }
+
+.proto-paso, .proto-tabla-ed {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.22));
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin-bottom: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.proto-paso__cab { display: flex; align-items: center; gap: 0.6rem; }
+.proto-paso__cab .proto-fila__num { padding-top: 0; flex: 1; }
+.proto-paso__abajo { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: flex-end; }
+.proto-cols { display: flex; flex-direction: column; gap: 0.3rem; }
+
+/* --- vista previa --- */
+.proto-vista { position: sticky; top: 90px; }
+.proto-vista__barra {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+.proto-vista__titulo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+.proto-versiones { display: flex; gap: 0.4rem; margin-left: auto; }
+.proto-vista__marco {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  border-radius: 10px;
+  background: #7a7a75;
+  padding: 1rem;
+  max-height: 78vh;
+  overflow: auto;
+}
+
+/* --- revisión --- */
+.proto-revision__caja {
+  border-left: 5px solid var(--safety, #FF3E00);
+  background: var(--surface, rgba(0,0,0,0.03));
+  padding: 0.8rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  border-radius: 0 8px 8px 0;
+}
+.proto-revision__caja--ok { border-left-color: #2e7d32; }
+.proto-revision__nota { display: block; font-size: 0.8rem; opacity: 0.7; margin-top: 0.3rem; }
+
+/* ====================================================
+   EL DOCUMENTO (pantalla e impresión comparten clases)
+   ==================================================== */
+.pro-doc {
+  background: #ffffff;
+  color: #111111;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2.2rem 2.4rem;
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+.pro-portada { border-bottom: 3px solid #111; padding-bottom: 1.1rem; margin-bottom: 1.8rem; }
+.pro-portada__tira { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+.pro-portada__tipo {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  border: 1.5px solid #111;
+  padding: 0.22em 0.75em;
+  border-radius: 999px;
+}
+.pro-portada__sello {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  background: #111;
+  color: #fff;
+  padding: 0.24em 0.75em;
+  border-radius: 999px;
+}
+.pro-portada__titulo { font-size: 1.85rem; font-weight: 700; margin: 0 0 0.6rem; line-height: 1.15; }
+.pro-portada__datos { display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; font-size: 0.88rem; }
+.pro-dato { opacity: 0.85; }
+
+.pro-equipo { display: flex; gap: 1.2rem; margin-top: 1.1rem; flex-wrap: wrap; }
+.pro-equipo__campo { flex: 1 1 100px; min-width: 0; }
+.pro-equipo__campo--ancho { flex: 2 1 190px; }
+.pro-equipo__label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  margin-bottom: 1.4rem;
+}
+.pro-equipo__linea { border-bottom: 1.5px solid #111; }
+
+.pro-seccion { margin-bottom: 1.9rem; }
+.pro-seccion__titulo {
+  font-size: 1.18rem;
+  font-weight: 700;
+  border-bottom: 2px solid #111;
+  padding-bottom: 0.3rem;
+  margin: 0 0 0.9rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+.pro-seccion__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  opacity: 0.5;
+}
+.pro-parrafo { margin: 0 0 0.7rem; text-align: justify; }
+.pro-parrafo--nota { font-size: 0.86rem; opacity: 0.72; font-style: italic; text-align: left; }
+
+/* El sitio resetea «ul { list-style: none }»: acá las viñetas sí hacen falta. */
+.pro-lista { margin: 0 0 0.6rem; padding-left: 1.3rem; list-style: disc; }
+.pro-lista li { margin-bottom: 0.35rem; }
+/* En dos columnas la viñeta se sale de la caja, así que va por dentro. */
+.pro-lista--materiales {
+  columns: 2;
+  column-gap: 2rem;
+  padding-left: 0;
+  list-style-position: inside;
+}
+.pro-lista--materiales li { break-inside: avoid; padding-left: 1.1em; text-indent: -1.1em; }
+.pro-cant { font-family: 'JetBrains Mono', monospace; }
+.pro-detalle { opacity: 0.7; font-size: 0.9em; }
+
+/* instrumentos dibujados dentro del protocolo */
+.pro-instrumentos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.pro-instrumento {
+  margin: 0;
+  border: 1.5px solid #111;
+  border-radius: 8px;
+  padding: 0.7rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.pro-instrumento__dibujo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  margin-bottom: 0.5rem;
+}
+.pro-instrumento__dibujo svg { max-width: 100%; max-height: 230px; height: auto; }
+.pro-instrumento__pie { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.82rem; }
+.pro-instrumento__ficha { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; opacity: 0.75; }
+.pro-instrumento__nota { font-size: 0.8rem; }
+.pro-instrumento__inc { font-size: 0.76rem; opacity: 0.8; border-top: 1px dashed rgba(0,0,0,0.3); padding-top: 0.25rem; margin-top: 0.15rem; }
+.pro-instrumento__comolee { font-size: 0.76rem; opacity: 0.8; font-style: italic; }
+
+.pro-seguridad {
+  border: 2px solid #111;
+  border-left-width: 7px;
+  border-radius: 0 8px 8px 0;
+  padding: 0.8rem 1rem 0.6rem;
+  background: #fdf6e8;
+  break-inside: avoid;
+}
+.pro-seguridad .pro-lista { margin-bottom: 0; }
+
+.pro-montaje { margin: 0.8rem 0 0; text-align: center; break-inside: avoid; }
+.pro-montaje img { max-width: 100%; max-height: 420px; border: 1px solid rgba(0,0,0,0.25); border-radius: 6px; }
+
+.pro-pasos { margin: 0; padding-left: 1.6rem; }
+.pro-paso-doc {
+  margin-bottom: 0.9rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.pro-paso-doc__fila { display: flex; gap: 1rem; align-items: flex-start; }
+.pro-paso-doc__texto { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
+.pro-paso-doc__titulo { display: block; }
+.pro-paso-doc__nota { font-size: 0.82rem; opacity: 0.85; font-style: italic; }
+.pro-paso-doc__instr {
+  flex: 0 0 155px;
+  display: flex;
+  justify-content: center;
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 4px;
+}
+.pro-paso-doc__instr svg { max-width: 100%; max-height: 165px; height: auto; }
+
+.pro-tabla-caja { margin-bottom: 1.2rem; break-inside: avoid; page-break-inside: avoid; }
+.pro-tabla__titulo { font-size: 0.95rem; margin: 0 0 0.4rem; }
+.pro-tabla { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.pro-tabla th, .pro-tabla td { border: 1.2px solid #111; padding: 0.4rem 0.5rem; }
+.pro-tabla th { background: #f0efe9; text-align: left; vertical-align: bottom; }
+.pro-th__nombre { display: block; font-weight: 700; }
+.pro-th__unidad { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 400; opacity: 0.8; }
+.pro-tabla td { height: 1.85em; }
+
+.pro-calculo {
+  border: 1.5px solid #111;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.8rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.pro-calculo__cab { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
+.pro-calculo__formula {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.92rem;
+  background: #f0efe9;
+  padding: 0.15em 0.55em;
+  border-radius: 4px;
+}
+.pro-calculo__unidad { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; opacity: 0.7; }
+.pro-calculo__desc { margin: 0 0 0.4rem; font-size: 0.9rem; }
+.pro-calculo__label { display: block; font-size: 0.76rem; opacity: 0.7; margin-bottom: 0.5rem; }
+
+.pro-preguntas { margin: 0; padding-left: 1.5rem; }
+.pro-pregunta { margin-bottom: 0.9rem; break-inside: avoid; page-break-inside: avoid; }
+.pro-pregunta__texto { display: block; margin-bottom: 0.5rem; }
+
+.pro-renglon { border-bottom: 1.2px solid rgba(0,0,0,0.5); height: 1.85em; }
+.pro-guia {
+  border-left: 4px solid #111;
+  padding: 0.5rem 0.9rem;
+  background: #f7f7f2;
+  font-size: 0.9rem;
+  margin-bottom: 0.9rem;
+  break-inside: avoid;
+}
+
+/* ====================================================
+   IMPRESIÓN
+   ==================================================== */
+@media print {
+  #areaImpresion .pro-doc {
+    max-width: none;
+    box-shadow: none;
+    padding: 0;
+    font-size: 12.5px;
+  }
+  .pro-portada__tipo, .pro-portada__sello, .pro-tabla th, .pro-seguridad,
+  .pro-calculo__formula, .pro-guia {
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .pro-renglon, .pro-equipo__linea { border-bottom-color: #000; }
+  .pro-seccion { break-inside: auto; }
+}
+
+/* ====================================================
+   TEMAS OSCUROS: el «papel» del protocolo sigue blanco
+   ==================================================== */
+body.tema-nocturno .proto-plantilla,
+body.tema-nocturno .proto-bloque,
+body.tema-nocturno .proto-panel { background: rgba(255,255,255,0.04); }
+body.tema-nocturno .proto-instr__mini { background: #ffffff; }
+body.tema-nocturno .proto-bloque__cab:hover { background: rgba(255,255,255,0.06); }
+body.tema-nocturno .pro-doc { color: #111111; }

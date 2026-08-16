@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banco de instrumentos — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Instrumentos científicos dibujados a medida: probeta, dinamómetro, regla, termómetro, calibre, multímetro y más, con alcance, divisiones, unidades y lectura configurables. Se descargan en SVG o PNG y sirven para armar fichas de lectura de escalas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css">
+<link rel="stylesheet" href="instrumentos.css">
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Instrumentos a medida</div>
+      <h2 class="section__title">Banco de<br>Instrumentos<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Elegí un instrumento y decidile <strong>hasta cuánto mide</strong>, <strong>cuánto vale la rayita más chica</strong>,
+      <strong>cada cuánto se numera</strong>, <strong>en qué unidad</strong> y <strong>qué lectura muestra</strong>.
+      Se dibuja al instante, en vectores: se descarga en <strong>SVG</strong> (para editarlo o imprimirlo a cualquier tamaño
+      sin que pixele) o en <strong>PNG</strong> (para pegarlo en un documento). La misma probeta te sirve para una de
+      10 mL con divisiones de 0,2 mL y para una de 1 L con divisiones de 20 mL — es el mismo dibujo con otros números.
+      Todo se genera en tu navegador con herramientas libres: no hace falta instalar nada ni tener licencia de nada.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Elegí el instrumento</span>
+        <span class="paso-rapido__texto">16 instrumentos de laboratorio: longitud, volumen, masa, temperatura, fuerza, tiempo, electricidad y ángulos.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Configurá la escala</span>
+        <span class="paso-rapido__texto">Alcance, menor división, numeración, unidad y la lectura que querés que muestre. Se redibuja mientras escribís.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Usalo donde quieras</span>
+        <span class="paso-rapido__texto">Descargalo en SVG o PNG, mandalo al generador de protocolos o armá una ficha de ejercicios de lectura.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== CATÁLOGO ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — El catálogo</div>
+    <div class="instr-filtros" id="filtros">
+      <input class="campo__input instr-buscador" type="search" id="buscador" placeholder="Buscar instrumento…" aria-label="Buscar instrumento">
+    </div>
+    <div class="instr-grid" id="gridInstrumentos"></div>
+  </div>
+</section>
+
+
+<!-- ====== CONFIGURADOR ====== -->
+<section class="editor-section" id="seccionTaller">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 2 — El configurador</div>
+    <h3 class="seccion__subtitulo" id="tallerNombre">Regla graduada</h3>
+    <p class="wiz-explica" id="tallerResumen" style="margin-bottom:1.2rem"></p>
+    <div class="instr-taller">
+      <div class="instr-panel">
+        <p class="instr-panel__titulo">Parámetros</p>
+        <div id="formParams"></div>
+        <div class="instr-acciones">
+          <button class="btn btn--ghost" id="btnAzar">🎲 Lectura al azar</button>
+          <button class="btn btn--ghost" id="btnReset">↺ Valores de fábrica</button>
+        </div>
+      </div>
+      <div>
+        <div class="instr-vista" id="vistaInstrumento"></div>
+        <div class="instr-acciones">
+          <button class="btn btn--primary" id="btnSVG">⬇ Descargar SVG</button>
+          <button class="btn btn--primary" id="btnPNG">⬇ Descargar PNG</button>
+          <button class="btn btn--ghost" id="btnCopiarCodigo">📋 Copiar para el protocolo</button>
+        </div>
+        <div class="instr-ficha-tecnica" id="fichaTecnica"></div>
+        <p class="instr-comolee" id="comoSeLee"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== FICHA DE EJERCICIOS ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Extra — Ejercicios de lectura de escalas</div>
+    <p class="wiz-explica" style="margin-bottom:1rem">
+      Marcá los instrumentos que quieras y la plataforma arma una <strong>hoja de ejercicios</strong>: cada instrumento
+      aparece dibujado con una lectura distinta <strong>al azar y sin el número</strong>, y al lado el renglón para que
+      el estudiante escriba cuánto mide y con qué incertidumbre. Se puede volver a generar todas las veces que quieras
+      —sale una hoja diferente cada vez— y viene con la <strong>clave de corrección</strong> aparte.
+    </p>
+    <div class="instr-selector" id="selectorEjercicios"></div>
+    <div class="scratch-opciones" style="margin-bottom:1.2rem">
+      <span class="scratch-opciones__label">Ejercicios por instrumento:</span>
+      <input class="campo__input" type="number" id="ejerRepetir" min="1" max="4" value="1" style="max-width:90px">
+      <label class="scratch-check"><input type="checkbox" id="ejerIncertidumbre" checked> Pedir también la incertidumbre</label>
+      <label class="scratch-check"><input type="checkbox" id="ejerClave" checked> Incluir la clave de corrección</label>
+      <label class="scratch-check"><input type="checkbox" id="ejerPista"> Mostrar la apreciación como pista</label>
+    </div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
+      <button class="btn btn--primary" id="btnGenerarEjercicios">Generar la hoja</button>
+      <button class="btn btn--ghost" id="btnImprimirEjercicios">PDF — Imprimir la hoja</button>
+      <span class="inf-estado" id="notaEjercicios" style="display:none"></span>
+    </div>
+    <div id="vistaEjercicios"></div>
+  </div>
+</section>
+
+
+<!-- ====== ÁREA DE IMPRESIÓN ====== -->
+<div id="areaImpresion" class="fichas-impresion" aria-hidden="true"></div>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Los instrumentos se dibujan en SVG con código propio: sin librerías, sin servidores y con licencia libre.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script type="module" src="instrumentos-ui.js"></script>
+
+</body>
+</html>
