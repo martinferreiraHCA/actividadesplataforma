@@ -349,8 +349,9 @@ notas: Las placas son las piezas finitas.</pre>
       titulo: "Protocolos de práctico",
       html: `
         <p class="guia-p">La sección <strong>Diseño → Protocolos de práctico</strong> arma el documento completo de una
-        práctica de laboratorio y lo deja listo para repartir. Trae dos herramientas que se usan juntas: el
-        <strong>generador de protocolos</strong> y el <strong>banco de instrumentos</strong>.</p>
+        práctica de laboratorio y lo deja listo para repartir. Sirve para <strong>física y química, de 7° a 3° de
+        EMS</strong>, y trae dos herramientas que se usan juntas: el <strong>generador de protocolos</strong> y el
+        <strong>banco de instrumentos</strong>.</p>
 
         <h4 class="guia-h">1 · Las secciones del protocolo</h4>
         <p class="guia-p">El protocolo se arma por bloques, y cada uno se edita por separado mientras la vista previa
@@ -360,28 +361,41 @@ notas: Las placas son las piezas finitas.</pre>
           <li><strong>Objetivos</strong>, <strong>materiales</strong> y <strong>normas de seguridad</strong>.</li>
           <li><strong>Instrumentos</strong> — se dibujan dentro del protocolo con su alcance, su apreciación y la
           incertidumbre con la que hay que anotar cada medida.</li>
+          <li><strong>Sustancias y reactivos</strong> — los tarritos con su etiqueta (nombre, fórmula, concentración,
+          cuánto hay) y el pictograma de peligro.</li>
           <li><strong>Montaje experimental</strong> — cómo se arma el dispositivo, con foto o esquema si querés.</li>
-          <li><strong>Procedimiento paso a paso</strong> — cada paso puede llevar al lado el instrumento que se usa.</li>
+          <li><strong>Procedimiento paso a paso</strong> — y la <strong>escena</strong> de cada paso: marcás qué
+          instrumentos y qué frascos entran en juego y se dibujan al lado, así se ve cómo queda la mesada en ese
+          momento.</li>
           <li><strong>Toma y registro de datos</strong> — tablas <em>en blanco</em>: vos definís las columnas con su
           unidad y su incertidumbre, y cuántas filas van.</li>
           <li><strong>Cálculos</strong>, <strong>preguntas de análisis</strong> y <strong>conclusiones</strong> con
           renglones para escribir a mano.</li>
+          <li><strong>Notas para el docente</strong> — lo que hace que la práctica salga bien y que el estudiante no
+          tiene que ver: qué preparar el día anterior, en qué se traban siempre, cómo adaptarla si falta material,
+          cuánto tiempo lleva cada tramo y qué mirar al corregir.</li>
         </ul>
 
         <h4 class="guia-h">2 · Dos versiones del mismo protocolo</h4>
         <p class="guia-p">Arriba de la vista previa elegís la versión: la del <strong>estudiante</strong> trae los
         espacios en blanco, el cabezal para los nombres del equipo y los instrumentos <em>sin</em> el número de la
-        lectura —leer la escala es parte del trabajo—; la del <strong>docente</strong> muestra todo y suma, en cada
-        instrumento, cómo se lee. El PDF sale de la versión que tengas elegida.</p>
+        lectura —leer la escala es parte del trabajo—; la del <strong>docente</strong> muestra todo, suma en cada
+        instrumento cómo se lee y agrega al final las notas para el docente. El PDF sale de la versión que tengas
+        elegida, así que imprimí la del estudiante para repartir y la del docente para vos.</p>
 
         <h4 class="guia-h">3 · De dónde arrancar</h4>
         <ul class="guia-lista">
-          <li><strong>Un práctico de ejemplo</strong> — hay seis completos (densidad, ley de Hooke, ley de Ohm, calor
-          específico, péndulo simple y titulación ácido-base). Abrilos y cambiales lo que haga falta.</li>
-          <li><strong>Asistente IA</strong> — la página arma el prompt con el tema, el nivel y la cantidad de pasos;
-          lo pegás en ChatGPT, Claude o Gemini y traés la respuesta de vuelta al recuadro de texto.</li>
+          <li><strong>Un práctico de ejemplo</strong> — hay nueve completos, de 7° a 3° de EMS: separación de mezclas,
+          densidad de sólidos, evidencias de reacción química, ley de Hooke, calor específico, péndulo simple, ley de
+          Ohm, velocidad de reacción y titulación ácido-base. Abrilos y cambiales lo que haga falta.</li>
+          <li><strong>Asistente IA</strong> — la página arma el prompt con el tema, el nivel y la cantidad de pasos, y
+          le mete adentro la referencia completa del formato, todos los instrumentos disponibles y la consigna de que
+          termine con las notas para el docente. Lo pegás en ChatGPT, Claude o Gemini y traés la respuesta de vuelta
+          al recuadro de texto.</li>
           <li><strong>Texto plano</strong> — el mismo formato con <code>##</code> por sección se puede escribir a mano
-          y pegar. El botón "Ver el formato" muestra un ejemplo entero.</li>
+          y pegar. El botón <strong>«Referencia del formato»</strong> muestra la especificación entera —cada sección
+          con su sintaxis exacta, todos los identificadores y todos los parámetros— y se copia con un clic;
+          <strong>«Ver un protocolo entero»</strong> muestra un ejemplo real ya escrito en ese formato.</li>
           <li><strong>.json guardado</strong> — para retomar el protocolo del año pasado.</li>
         </ul>
 
@@ -399,9 +413,12 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
         rojo con el código a la vista, así ves dónde está el error en vez de encontrarte con un hueco.</p>
 
         <h4 class="guia-h">5 · El banco de instrumentos</h4>
-        <p class="guia-p">Son 18 instrumentos dibujados en vectores: regla, calibre con nonio, micrómetro, probeta,
-        bureta, jeringa, material de vidrio, termómetro, dinamómetro, balanza digital, balanza de tres brazos,
-        cronómetro, multímetro, instrumento de aguja, transportador, sensor digital, <strong>micro:bit</strong> y los
+        <p class="guia-p">Son 33 instrumentos dibujados en vectores. Para <strong>medir</strong>: regla, calibre con
+        nonio, micrómetro, transportador, probeta, bureta, pipeta con propipeta, jeringa, material de vidrio,
+        termómetro, dinamómetro, balanza digital, balanza de tres brazos y cronómetro. Para <strong>física</strong>:
+        multímetro, instrumento de aguja, fuente regulable, circuito eléctrico, plano inclinado, poleas, banco óptico,
+        calorímetro y micro:bit. Para <strong>química</strong>: frascos con sustancia, mechero Bunsen, soporte
+        universal armado, gradilla con tubos, filtración, destilación, agitador magnético y papel de pH. Y los
         <strong>sensores Vernier Go Direct</strong>. De cada uno configurás <strong>hasta cuánto mide</strong>,
         <strong>cuánto vale la rayita más chica</strong>, <strong>cada cuánto se numera</strong>, <strong>la
         unidad</strong> y <strong>qué lectura muestra</strong>. La misma probeta te sirve para una de 10 mL con
@@ -417,6 +434,13 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           <li><strong>Vernier Go Direct</strong> — 30 modelos de la línea, cada uno con su magnitud, su unidad y su
           rango: fuerza y aceleración, temperatura, pH, movimiento, presión de gas, CO₂, O₂, conductividad, tensión,
           corriente, campo magnético, sonido, EKG y demás.</li>
+          <li><strong>Frascos con sustancia</strong> — el tarrito con su etiqueta (nombre, fórmula, concentración,
+          cuánto hay), lo lleno que está y el <strong>pictograma de peligro</strong>. Hay frasco, botella, gotero,
+          vaso, tubo, Erlenmeyer, cápsula de Petri y vidrio de reloj.</li>
+          <li><strong>Circuito eléctrico</strong> — el esquema con los símbolos normalizados, con el amperímetro
+          siempre en serie y el voltímetro siempre en paralelo, para que se vea de un vistazo dónde va cada uno.</li>
+          <li><strong>Banco óptico</strong> — le ponés la focal y la distancia del objeto y calcula solo dónde cae la
+          imagen, con qué tamaño y de qué lado, y traza los rayos.</li>
         </ul>
         <div class="guia-aviso">Cada instrumento se resume en una línea de texto como
         <code>probeta :: max=250, division=2, unidad=mL, lectura=150</code>. El botón "Copiar para el protocolo" te la

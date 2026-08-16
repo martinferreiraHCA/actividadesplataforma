@@ -66,13 +66,16 @@
     </div>
     <p class="scratch-intro">
       Armá el protocolo <strong>completo</strong> de una práctica de laboratorio y descargalo listo para repartir:
-      <strong>fundamento teórico, objetivos, materiales, normas de seguridad, montaje experimental,
+      <strong>fundamento teórico, objetivos, materiales, sustancias, normas de seguridad, montaje experimental,
       procedimiento paso a paso, tablas de datos en blanco, cálculos, preguntas de análisis y conclusiones</strong>.
-      Los <strong>instrumentos van dibujados</strong> —probeta, dinamómetro, calibre, termómetro, multímetro— con el
-      alcance, las divisiones, la unidad y la lectura que vos elijas, así los estudiantes ven exactamente con qué van
-      a medir. Salen dos versiones del mismo protocolo: la del <strong>estudiante</strong>, con los espacios en blanco
-      para completar, y la del <strong>docente</strong>, con todo a la vista. Todo pasa en tu navegador, con
-      herramientas libres y sin subir nada a ningún servidor.
+      Sirve para <strong>física y química, de 7° a 3° de EMS</strong>.
+      Los <strong>instrumentos van dibujados</strong> —probeta, dinamómetro, calibre, multímetro, mechero, gradilla,
+      circuitos, micro:bit— con el alcance, las divisiones, la unidad y la lectura que vos elijas, y cada paso puede
+      mostrar <strong>su propia escena</strong>: qué hay sobre la mesada en ese momento, con los frascos de las
+      sustancias y su pictograma de peligro. Las fórmulas se escriben en <strong>LaTeX</strong>. Salen dos versiones del
+      mismo protocolo: la del <strong>estudiante</strong>, con los espacios en blanco para completar, y la del
+      <strong>docente</strong>, con todo a la vista más las notas que no van en la hoja del estudiante.
+      Todo pasa en tu navegador, con herramientas libres y sin subir nada a ningún servidor.
     </p>
     <div class="primeros-pasos">
       <div class="paso-rapido">
@@ -164,7 +167,9 @@
       <textarea class="campo__textarea" id="areaTexto" rows="12" placeholder="# Protocolo: ...&#10;&#10;## Fundamento&#10;..."></textarea>
       <div class="instr-acciones">
         <button class="btn btn--primary" id="btnCargarTexto">Cargar en el editor</button>
-        <button class="btn btn--ghost" id="btnVerFormato">Ver el formato</button>
+        <button class="btn btn--ghost" id="btnVerFormato">📖 Referencia del formato</button>
+        <button class="btn btn--ghost" id="btnVerEjemplo">👀 Ver un protocolo entero</button>
+        <button class="btn btn--ghost" id="btnCopiarFormato">📋 Copiar la referencia</button>
       </div>
       <pre class="proto-formato" id="ejemploFormato" hidden></pre>
     </div>
@@ -262,7 +267,23 @@
         </details>
 
         <details class="proto-bloque">
-          <summary class="proto-bloque__cab"><span class="proto-bloque__num">06</span> Normas de seguridad</summary>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">06</span> Sustancias y reactivos</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">
+              Los tarritos con lo que se va a usar: nombre, fórmula, concentración, cuánto hay y el
+              <strong>pictograma de peligro</strong>. Se dibujan en su propia sección del protocolo y se pueden
+              poner en la escena de cada paso.
+            </p>
+            <div class="proto-agregar-instr">
+              <select class="campo__input" id="selectorSustancia"></select>
+              <button class="btn btn--ghost" id="btnAgregarSustancia">+ Agregar</button>
+            </div>
+            <div id="listaSustancias"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque">
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">07</span> Normas de seguridad</summary>
           <div class="proto-bloque__cuerpo">
             <p class="proto-ayuda">Precauciones concretas de <em>esta</em> práctica, no consejos generales.</p>
             <div id="listaSeguridad"></div>
@@ -270,7 +291,7 @@
         </details>
 
         <details class="proto-bloque">
-          <summary class="proto-bloque__cab"><span class="proto-bloque__num">07</span> Montaje experimental</summary>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">08</span> Montaje experimental</summary>
           <div class="proto-bloque__cuerpo">
             <p class="proto-ayuda">Cómo se arma el dispositivo sobre la mesada y qué hay que verificar antes de empezar. Podés sumar una foto o un esquema, y también fórmulas en LaTeX entre signos de peso.</p>
             <textarea class="campo__textarea" id="campoMontaje" rows="5" placeholder="Sobre la mesada, de izquierda a derecha…"></textarea>
@@ -283,7 +304,7 @@
         </details>
 
         <details class="proto-bloque" open>
-          <summary class="proto-bloque__cab"><span class="proto-bloque__num">08</span> Procedimiento paso a paso</summary>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">09</span> Procedimiento paso a paso</summary>
           <div class="proto-bloque__cuerpo">
             <p class="proto-ayuda">Un paso por bloque, en imperativo y bien concreto. Podés asociarle un instrumento: se dibuja al lado del paso.</p>
             <div id="listaProcedimiento"></div>
@@ -291,7 +312,7 @@
         </details>
 
         <details class="proto-bloque" open>
-          <summary class="proto-bloque__cab"><span class="proto-bloque__num">09</span> Toma y registro de datos</summary>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">10</span> Toma y registro de datos</summary>
           <div class="proto-bloque__cuerpo">
             <p class="proto-ayuda">Las tablas salen <strong>en blanco</strong> para que las completen a mano. De cada columna definí el nombre, la unidad y la incertidumbre.</p>
             <div id="listaTablas"></div>
@@ -299,7 +320,7 @@
         </details>
 
         <details class="proto-bloque">
-          <summary class="proto-bloque__cab"><span class="proto-bloque__num">10</span> Cálculos</summary>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">11</span> Cálculos</summary>
           <div class="proto-bloque__cuerpo">
             <p class="proto-ayuda">Qué hay que calcular con los datos de las tablas, con qué fórmula y en qué unidad. La fórmula acepta LaTeX: escribila entre signos de peso y se dibuja como matemática de verdad.</p>
             <div id="listaCalculos"></div>
@@ -307,7 +328,7 @@
         </details>
 
         <details class="proto-bloque">
-          <summary class="proto-bloque__cab"><span class="proto-bloque__num">11</span> Preguntas de análisis</summary>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">12</span> Preguntas de análisis</summary>
           <div class="proto-bloque__cuerpo">
             <p class="proto-ayuda">Que obliguen a pensar sobre los datos obtenidos, no a repetir la teoría.</p>
             <div id="listaPreguntas"></div>
@@ -315,7 +336,7 @@
         </details>
 
         <details class="proto-bloque">
-          <summary class="proto-bloque__cab"><span class="proto-bloque__num">12</span> Conclusiones</summary>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">13</span> Conclusiones</summary>
           <div class="proto-bloque__cuerpo">
             <div class="campo">
               <label class="campo__etiqueta" for="campoGuia">Guía para redactar la conclusión</label>
@@ -325,6 +346,18 @@
               <label class="campo__etiqueta" for="campoLineas">Renglones en blanco para escribir</label>
               <input class="campo__input" type="number" id="campoLineas" min="0" max="30" value="8" style="max-width:120px">
             </div>
+          </div>
+        </details>
+
+        <details class="proto-bloque">
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">14</span> Notas para el docente</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">
+              Lo que ayuda a que la práctica salga mejor y que <strong>no aparece en la hoja del estudiante</strong>:
+              qué preparar antes, en qué se traban siempre, cómo adaptarla si falta material, cuánto tiempo lleva cada
+              tramo y qué mirar al corregir.
+            </p>
+            <div id="listaNotasDocente"></div>
           </div>
         </details>
 

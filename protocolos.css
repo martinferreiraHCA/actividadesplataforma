@@ -214,6 +214,37 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+/* la escena de cada paso */
+.proto-escena {
+  border-top: 1px dashed var(--borde, rgba(0,0,0,0.22));
+  padding-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.proto-escena__opciones { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.proto-escena__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.22));
+  border-radius: 999px;
+  padding: 0.3em 0.75em;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.proto-escena__chip:hover { border-color: var(--safety, #FF3E00); }
+.proto-escena__chip input { width: 15px; height: 15px; }
+.proto-instr__ref {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.3));
+  border-radius: 4px;
+  padding: 0.1em 0.45em;
+  opacity: 0.75;
+}
+
 .proto-paso__cab { display: flex; align-items: center; gap: 0.6rem; }
 .proto-paso__cab .proto-fila__num { padding-top: 0; flex: 1; }
 .proto-paso__abajo { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: flex-end; }
@@ -481,15 +512,43 @@ body.tema-nocturno .latex-ejemplo { background: #ffffff; color: #111111; }
 .pro-paso-doc__texto { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
 .pro-paso-doc__titulo { display: block; }
 .pro-paso-doc__nota { font-size: 0.82rem; opacity: 0.85; font-style: italic; }
-.pro-paso-doc__instr {
-  flex: 0 0 155px;
+/* la escena del paso: lo que se ve sobre la mesada en ese momento */
+.pro-paso-doc__escena {
+  flex: 0 0 165px;
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-end;
   justify-content: center;
   border: 1px solid rgba(0,0,0,0.2);
   border-radius: 6px;
-  padding: 4px;
+  padding: 5px;
+  background: #fcfcfa;
 }
-.pro-paso-doc__instr svg { max-width: 100%; max-height: 165px; height: auto; }
+.pro-paso-doc__escena--varias { flex-basis: 250px; }
+.pro-paso-doc__escena svg { max-width: 100%; max-height: 165px; height: auto; }
+.pro-paso-doc__escena--varias svg { max-width: 47%; max-height: 130px; }
+
+.pro-instrumentos--sustancias { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.pro-instrumentos--sustancias .pro-instrumento__dibujo { min-height: 130px; }
+.pro-instrumentos--sustancias .pro-instrumento__dibujo svg { max-height: 200px; }
+
+/* notas del docente: se ven distintas para que no se confundan con el protocolo */
+.pro-notas {
+  border: 2px dashed #111;
+  border-radius: 8px;
+  padding: 0.8rem 1rem 0.6rem;
+  background: #f4f6f2;
+  break-inside: avoid;
+}
+.pro-notas__aviso {
+  margin: 0 0 0.5rem;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.65;
+}
+.pro-notas .pro-lista { margin-bottom: 0; }
 
 .pro-tabla-caja { margin-bottom: 1.2rem; break-inside: avoid; page-break-inside: avoid; }
 .pro-tabla__titulo { font-size: 0.95rem; margin: 0 0 0.4rem; }

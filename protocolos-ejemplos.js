@@ -491,6 +491,283 @@ líneas: 8
 Guía: Informá la concentración del ácido con su incertidumbre y con las cifras significativas que corresponden. ¿Qué paso del procedimiento aporta más error? ¿Qué harías distinto para mejorar la exactitud?`
 }
 
+,
+
+{
+  id: 'mezclas',
+  nombre: 'Separación de mezclas',
+  area: 'Química',
+  nivel: '7° año',
+  resumen: 'Filtración y evaporación para separar arena, sal y agua. El primer práctico de laboratorio: se entra a la mesada y se usa el mechero.',
+  texto: `# Protocolo: Separación de los componentes de una mezcla
+# Asignatura: Ciencias Físicas
+# Nivel: 7° año
+# Duración: 90 minutos
+
+## Fundamento
+Una mezcla es la unión de dos o más sustancias que no reaccionan entre sí: cada una conserva sus propiedades y por eso se pueden volver a separar. En una mezcla heterogénea se distinguen los componentes a simple vista, como la arena en el agua. En una homogénea no, como la sal disuelta en agua: por más que se mire de cerca, se ve un solo líquido transparente.
+
+Para separar hay que aprovechar alguna propiedad en la que los componentes se diferencien. La arena no se disuelve y queda como partículas sólidas, así que se puede retener con un papel de filtro que deja pasar el agua pero no los granos. La sal sí se disuelve, así que atraviesa el filtro junto con el agua; para recuperarla hay que evaporar el agua, aprovechando que hierve mucho antes de que la sal se funda.
+
+Ninguna separación es perfecta: siempre queda algo de agua mojando la arena y algo de sal pegada al vidrio. Por eso, si se pesa cada componente al final, la suma da un poco menos que lo que se puso al principio.
+
+## Objetivos
+- Separar los tres componentes de una mezcla de arena, sal y agua.
+- Elegir el método de separación según la propiedad que diferencia a cada componente.
+- Usar correctamente el mechero, el embudo y el papel de filtro.
+
+## Materiales
+- 1 cucharada de sal fina
+- 1 cucharada de arena limpia
+- 2 vasos de precipitados de 250 mL
+- 1 embudo de vidrio o de plástico
+- papel de filtro :: sirve un filtro de café
+- 1 varilla de vidrio para revolver
+- 1 cápsula de evaporación :: o una tapa de metal
+- agua :: unos 150 mL
+
+## Instrumentos
+- probeta :: max=250, division=5, numerarCada=50, unidad=mL, lectura=150 :: para medir el agua
+- balanzaDigital :: max=500, division=0.1, unidad=g, lectura=12.4 :: para pesar la sal y la arena
+- filtracion :: rotulos=si :: el montaje del paso 4
+- soporte :: encima=capsula, rejilla=si, mechero=si, nivel=25 :: el montaje del paso 6
+
+## Sustancias
+- frasco :: tipo=frasco, nombre=Sal de mesa, formula=NaCl, concentracion=, cantidad=1 cucharada, estado=solido, color=#f2f2f2, peligro= :: se disuelve en el agua
+- frasco :: tipo=vaso, nombre=Arena, formula=, concentracion=, cantidad=1 cucharada, estado=granulado, color=#c8a97a, peligro= :: no se disuelve: queda en el filtro
+
+## Seguridad
+- El mechero se enciende recién cuando el docente lo dice, y con el pelo atado y las mangas arremangadas.
+- La cápsula caliente no se toca con la mano: se espera o se usa una pinza.
+- No dejes la cápsula al fuego cuando ya casi no queda agua: salta la sal y puede quemarte.
+
+## Montaje
+Sobre la mesada, de izquierda a derecha: los dos vasos, el soporte con el aro y el embudo, y al final el soporte con la rejilla y el mechero. El embudo va apoyado en el aro con la punta tocando la pared del vaso de abajo, para que el agua se escurra por el vidrio y no salpique. La cápsula se apoya sobre la rejilla, nunca directamente sobre la llama.
+
+## Procedimiento
+1. Pesar los sólidos :: Pesá una cucharada de sal y una de arena por separado y anotá las dos masas. :: escena: s1 s2
+2. Preparar la mezcla :: Poné la sal y la arena en un vaso, agregá 150 mL de agua medidos con la probeta y revolvé un minuto con la varilla. :: escena: i1
+3. Observar :: Mirá el vaso y escribí qué ves: qué componente desapareció y cuál sigue estando a la vista.
+4. Armar el filtro :: Doblá el papel en cuatro, abrilo en cono, ponelo en el embudo y mojalo con un poco de agua para que quede pegado. :: escena: i3
+5. Filtrar :: Volcá la mezcla despacio por la varilla, sin pasar del borde del papel. Esperá a que termine de gotear. :: escena: i3 :: nota: si el papel se rompe, hay que empezar de nuevo con un filtro nuevo.
+6. Evaporar :: Pasá un poco del líquido filtrado a la cápsula, ponela sobre la rejilla y calentá con llama suave hasta que quede seca. :: escena: i4
+7. Recuperar la arena :: Dejá secar el papel de filtro con la arena y pesala cuando esté seca.
+8. Pesar lo recuperado :: Pesá la sal que quedó en la cápsula y anotá las dos masas recuperadas. :: escena: i2
+
+## Tablas
+### Masas antes y después de separar
+| Componente | Masa inicial (g) ± 0,1 | Masa recuperada (g) ± 0,1 | Diferencia (g) |
+filas: 2
+
+### Qué observamos en cada paso
+| Paso | Qué se ve | Qué componente se separó |
+filas: 4
+
+## Cálculos
+- Diferencia de masa :: $\\Delta m = m_{inicial} - m_{recuperada}$ :: g :: Restá para cada componente y fijate cuál se perdió más.
+- Porcentaje recuperado :: $\\% = \\dfrac{m_{recuperada}}{m_{inicial}} \\times 100$ :: % :: Cuánto pudiste recuperar de lo que pusiste.
+
+## Preguntas
+- ¿Por qué la arena queda en el papel de filtro y la sal no?
+- ¿Qué habría pasado si en vez de filtrar hubieras evaporado toda la mezcla de una?
+- ¿Recuperaste exactamente la misma masa que pusiste? Si no, ¿a dónde se fue lo que falta?
+- La mezcla de arena y agua, ¿es homogénea o heterogénea? ¿Y la de sal y agua? Justificá con lo que viste.
+- Si tuvieras que separar agua y alcohol, ¿te serviría el filtro? ¿Qué método usarías?
+
+## Conclusiones
+líneas: 8
+Guía: Escribí qué método usaste para separar cada componente y en qué propiedad te apoyaste. ¿Cuál fue el paso más difícil? ¿Qué cambiarías para perder menos material?
+
+## Notas para el docente
+- Tamizá y lavá la arena el día anterior: si trae polvo, el filtrado tarda muchísimo y no llegan a terminar en la clase.
+- El error clásico es volcar la mezcla de golpe: se desborda el papel y la arena pasa al filtrado. Mostrá vos el primer volcado, apoyando la varilla.
+- Si no hay cápsula de evaporación, sirve la tapa de una lata. Si no hay mechero, se puede dejar el líquido en un plato al sol de una clase a la otra.
+- Tiempos: 15 min de armado y pesadas, 20 min de mezcla y observación, 25 min de filtrado, 20 min de evaporación, 10 min de cierre.
+- Al corregir, mirá sobre todo la respuesta a «¿a dónde se fue lo que falta?»: es la primera vez que se enfrentan a que una medida no cierra exacta.`
+},
+
+{
+  id: 'reacciones',
+  nombre: 'Evidencias de reacción química',
+  area: 'Química',
+  nivel: '9° año',
+  resumen: 'Cuatro tubos de ensayo, cuatro señales distintas de que hubo reacción. Con gradilla, frascos rotulados y papel de pH.',
+  texto: `# Protocolo: Cómo darse cuenta de que hubo una reacción química
+# Asignatura: Química
+# Nivel: 9° año
+# Duración: 90 minutos
+
+## Fundamento
+En un cambio físico la sustancia sigue siendo la misma aunque cambie de forma o de estado: el agua que se congela sigue siendo agua. En un cambio químico, en cambio, los átomos se reordenan y aparecen sustancias nuevas, con propiedades distintas de las que había antes.
+
+Como los átomos no se ven, hay que apoyarse en señales indirectas. Las cuatro más claras son el desprendimiento de un gas (aparecen burbujas sin que estemos calentando), la formación de un precipitado (aparece un sólido donde antes había dos líquidos transparentes), el cambio de color que no se explica por mezclar dos colores, y el cambio de temperatura sin fuente de calor: si el tubo se calienta solo, la reacción es exotérmica; si se enfría, endotérmica.
+
+Ninguna señal sola alcanza como prueba: mezclar dos líquidos de distinto color da un color nuevo sin que haya reacción. Por eso siempre se compara contra un tubo de control, que tiene todo menos el reactivo que sospechamos que produce el cambio.
+
+## Objetivos
+- Reconocer las cuatro evidencias experimentales de que ocurrió una reacción química.
+- Distinguir un cambio químico de uno físico a partir de lo observado.
+- Justificar por qué hace falta un tubo de control.
+
+## Materiales
+- 4 tubos de ensayo
+- 1 gradilla
+- 1 gotero por reactivo
+- 1 espátula chica
+- bicarbonato de sodio :: media cucharadita
+- vinagre :: 20 mL
+- sulfato de cobre en solución :: 10 mL
+- hidróxido de sodio en solución :: 10 mL
+- agua destilada :: 20 mL
+
+## Instrumentos
+- gradilla :: cantidad=4, rotulos=1 gas, 2 precip., 3 color, 4 control, colores=#e8e8e8, #7ba7d4, #3f7fbf, #dff0f7, nivel=45, burbujas=1, precipitado=2 :: los cuatro ensayos al terminar
+- termometro :: min=0, max=50, division=1, numerarCada=10, unidad=°C, lectura=27 :: para el cambio de temperatura
+- papelPH :: lectura=3, muestra=el tubo 1 después de reaccionar :: control de acidez
+
+## Sustancias
+- frasco :: tipo=frasco, nombre=Vinagre, formula=CH3COOH, concentracion=5 %, cantidad=20 mL, estado=liquido, color=#e8dfa8, peligro=irritante :: reacciona con el bicarbonato
+- frasco :: tipo=frasco, nombre=Bicarbonato de sodio, formula=NaHCO3, concentracion=, cantidad=1 frasco, estado=solido, color=#f4f4f4, peligro= :: media cucharadita por tubo
+- frasco :: tipo=gotero, nombre=Sulfato de cobre, formula=CuSO4, concentracion=0,1 mol/L, cantidad=50 mL, estado=liquido, color=#3f7fbf, peligro=ambiente :: da el precipitado celeste
+- frasco :: tipo=gotero, nombre=Hidróxido de sodio, formula=NaOH, concentracion=0,1 mol/L, cantidad=50 mL, estado=liquido, color=#e8f0f4, peligro=corrosivo :: CUIDADO: es corrosivo
+
+## Seguridad
+- El hidróxido de sodio es corrosivo: guantes y anteojos puestos desde el principio, y si te salpica, lavá con agua abundante y avisá.
+- Los tubos se apoyan siempre en la gradilla, nunca acostados en la mesada.
+- No acerques la boca del tubo a la cara para oler: si hace falta, se abanica el aire hacia la nariz con la mano.
+- Los residuos van al recipiente que indique el docente, no a la pileta.
+
+## Montaje
+La gradilla con los cuatro tubos rotulados del 1 al 4, adelante. A la izquierda, los frascos de los reactivos con sus goteros, cada uno con su etiqueta a la vista. El termómetro y el papel de pH, a mano. Cada tubo se carga con 5 mL de agua destilada antes de empezar, salvo el que indique el procedimiento.
+
+## Procedimiento
+1. Rotular los tubos :: Numerá los cuatro tubos del 1 al 4 y ponelos en la gradilla. El 4 va a ser el control. :: escena: i1
+2. Tubo 1, buscando gas :: Poné media cucharadita de bicarbonato y agregá 2 mL de vinagre. Observá 30 segundos y anotá. :: escena: s1 s2
+3. Tubo 2, buscando precipitado :: Poné 2 mL de solución de sulfato de cobre y agregá gota a gota la de hidróxido de sodio. :: escena: s3 s4 :: nota: agregá de a una gota y mirá contra un fondo blanco.
+4. Tubo 3, buscando cambio de color :: Poné 2 mL de sulfato de cobre y agregá 2 mL de agua destilada. Compará el color con el del tubo 2.
+5. Tubo 4, el control :: Poné 2 mL de agua destilada y 2 mL más de agua. Este tubo no tiene que cambiar en nada. :: escena: i1
+6. Medir la temperatura :: Metí el termómetro en el tubo 1 apenas termina de burbujear y anotá. Compará con la temperatura del tubo 4. :: escena: i2
+7. Medir el pH :: Con una gota de cada tubo, mojá una tirita de papel indicador y compará con la escala. :: escena: i3
+8. Ordenar lo observado :: Completá la tabla con lo que viste en cada tubo y decidí en cuáles hubo reacción química.
+
+## Tablas
+### Lo que se observó en cada tubo
+| Tubo | Qué se mezcló | Qué se observó | Temperatura (°C) ± 1 | pH | ¿Hubo reacción? |
+filas: 4
+
+## Cálculos
+- Variación de temperatura :: $\\Delta T = T_{tubo} - T_{control}$ :: °C :: Restá la temperatura del tubo de control a la de cada tubo. Si da positivo, la reacción liberó energía.
+
+## Preguntas
+- ¿En cuáles de los cuatro tubos hubo reacción química? ¿En qué evidencia te apoyás en cada caso?
+- El tubo 3 cambió de color y sin embargo no hubo reacción. ¿Por qué? ¿Qué pasó ahí?
+- ¿Para qué sirvió el tubo 4? ¿Qué habrías concluido de más sin él?
+- El tubo 1, ¿se calentó o se enfrió? ¿Qué nombre recibe una reacción así?
+- Nombrá un cambio físico y uno químico que pasen en tu casa todos los días, y justificá cada uno.
+
+## Conclusiones
+líneas: 8
+Guía: Escribí cuáles son las evidencias de que ocurrió una reacción química, según lo que viste en esta práctica. ¿Alguna evidencia sola te alcanza para estar seguro? ¿Por qué?
+
+## Notas para el docente
+- Prepará las soluciones el día anterior: el sulfato de cobre tarda en disolverse y conviene filtrarlo.
+- Usá NaOH 0,1 mol/L, no más concentrado: alcanza para el precipitado y es mucho menos riesgoso con este nivel.
+- El tubo 3 es el más importante de la discusión: cambia de color sin reacción y es el que rompe la idea de «color nuevo = reacción». No lo saltees por tiempo.
+- Si no hay papel de pH, se puede reemplazar con repollo colorado hervido: el jugo vira de rojo a verde.
+- Tiempos: 10 min de rotulado y consignas, 35 min de los cuatro tubos, 15 min de temperatura y pH, 20 min de tabla y discusión, 10 min de cierre.
+- Al corregir, lo que interesa es la justificación, no la lista de evidencias de memoria.`
+},
+
+{
+  id: 'velocidad',
+  nombre: 'Velocidad de reacción y temperatura',
+  area: 'Química',
+  nivel: '2° EMS',
+  resumen: 'Se cronometra la misma reacción a tres temperaturas y se grafica. Cinética con cronómetro, termómetro y baño de agua.',
+  texto: `# Protocolo: De qué depende la velocidad de una reacción
+# Asignatura: Química
+# Nivel: 2° de EMS
+# Duración: 90 minutos
+
+## Fundamento
+No todas las reacciones ocurren a la misma velocidad: el hierro tarda meses en oxidarse y una explosión termina en milésimas de segundo. La velocidad de reacción mide cuánta sustancia se transforma por unidad de tiempo, y depende de la concentración de los reactivos, de la superficie de contacto, de la temperatura y de la presencia de catalizadores.
+
+La teoría de las colisiones explica por qué. Para que dos partículas reaccionen tienen que chocar, y no de cualquier manera: tienen que hacerlo con la orientación correcta y con energía suficiente para romper los enlaces que tenían. Esa energía mínima es la energía de activación. Al subir la temperatura, las partículas se mueven más rápido, chocan más seguido y —sobre todo— una fracción mucho mayor de esos choques supera la energía de activación.
+
+Para medir la velocidad hace falta una señal que marque el final: en esta práctica, el momento en que la mezcla se pone opaca y tapa una cruz dibujada debajo del vaso. Como el criterio es el mismo en todas las corridas, los tiempos se pueden comparar entre sí aunque cada uno mire con su propio ojo.
+
+## Objetivos
+- Determinar cómo cambia la velocidad de una reacción al variar la temperatura.
+- Aplicar la teoría de las colisiones para explicar lo observado.
+- Construir e interpretar una gráfica de velocidad en función de la temperatura.
+
+## Materiales
+- tiosulfato de sodio en solución :: 0,1 mol/L, 150 mL
+- ácido clorhídrico en solución :: 1 mol/L, 50 mL
+- 6 vasos de precipitados de 100 mL
+- 1 vaso grande o palangana :: para el baño de agua
+- 1 hoja con una cruz negra dibujada
+- agua caliente y hielo
+- 1 varilla de vidrio
+
+## Instrumentos
+- cronometro :: lectura=42.6, resolucion=0.01 :: mide desde que se mezcla hasta que se tapa la cruz
+- termometro :: min=0, max=100, division=1, numerarCada=10, unidad=°C, lectura=40 :: la temperatura de cada corrida
+- probeta :: max=100, division=1, numerarCada=10, unidad=mL, lectura=50 :: para medir los volúmenes
+- agitador :: rpm=0, calienta=si, temperatura=40, termometro=si, nivel=55 :: el baño de agua templada
+
+## Sustancias
+- frasco :: tipo=frasco, nombre=Tiosulfato de sodio, formula=Na2S2O3, concentracion=0,1 mol/L, cantidad=250 mL, estado=liquido, color=#eef3f6, peligro=irritante :: 50 mL por corrida
+- frasco :: tipo=frasco, nombre=Ácido clorhídrico, formula=HCl, concentracion=1 mol/L, cantidad=100 mL, estado=liquido, color=#f0f4e8, peligro=corrosivo :: 5 mL por corrida
+
+## Seguridad
+- El ácido clorhídrico es corrosivo: guantes y anteojos, y se agrega el ácido sobre el agua, nunca al revés.
+- La reacción desprende dióxido de azufre, que irrita las vías respiratorias: trabajá cerca de una ventana abierta o bajo campana, y no te inclines sobre el vaso.
+- Descartá las mezclas en el recipiente rotulado, no en la pileta.
+- El agua del baño no tiene que pasar de 60 °C.
+
+## Montaje
+La hoja con la cruz, apoyada en la mesada. Encima, el vaso donde va a ocurrir la reacción, de modo que la cruz se vea desde arriba a través del líquido. Al costado, el baño de agua con el termómetro adentro para poner los vasos a temperatura antes de mezclar, y el cronómetro a mano. Antes de cada corrida hay que verificar que el vaso esté limpio y seco: un resto de la corrida anterior arranca la reacción antes de tiempo.
+
+## Procedimiento
+1. Preparar la referencia :: Dibujá una cruz negra bien marcada en la hoja y apoyá el vaso encima. Mirá desde arriba: la cruz se tiene que ver nítida. :: escena: i4
+2. Medir los reactivos :: Con la probeta, poné 50 mL de tiosulfato en el vaso. En otro vaso, 5 mL de ácido clorhídrico. :: escena: i3 s1 s2
+3. Corrida a temperatura ambiente :: Medí la temperatura del tiosulfato y anotala. :: escena: i2
+4. Mezclar y cronometrar :: Volcá el ácido de golpe, arrancá el cronómetro en ese mismo instante y revolvé una vez. :: escena: i1 :: nota: el cronómetro arranca cuando el líquido toca el líquido, no cuando terminás de volcar.
+5. Marcar el final :: Mirá la cruz desde arriba y frená el cronómetro exactamente cuando deje de verse. Anotá el tiempo. :: escena: i1
+6. Repetir en frío :: Enfriá el tiosulfato en el baño con hielo hasta unos 10 °C y repetí los pasos 3 a 5.
+7. Repetir en caliente :: Templá el tiosulfato en el baño hasta unos 40 °C y después hasta unos 50 °C, repitiendo cada vez. :: escena: i4
+8. Graficar :: Calculá 1/t para cada corrida y graficá 1/t en función de la temperatura.
+
+## Tablas
+### Tiempo de reacción a distintas temperaturas
+| Corrida | T (°C) ± 1 | t (s) ± 0,5 | 1/t (1/s) |
+filas: 4
+
+## Cálculos
+- Velocidad relativa :: $v \\propto \\dfrac{1}{t}$ :: 1/s :: Como la cantidad de azufre que tapa la cruz es siempre la misma, 1/t sirve para comparar velocidades entre corridas.
+- Cuántas veces más rápido :: $\\dfrac{v_2}{v_1} = \\dfrac{t_1}{t_2}$ :: — :: Compará la corrida más caliente con la más fría.
+
+## Preguntas
+- ¿Qué le pasó al tiempo de reacción al subir la temperatura? ¿Y a la velocidad?
+- Con tus datos, ¿cuántas veces más rápida fue la reacción a 50 °C que a 10 °C?
+- Explicá con la teoría de las colisiones por qué la temperatura cambia tanto la velocidad.
+- ¿Por qué se usa 1/t como medida de la velocidad y no directamente t?
+- La gráfica de 1/t contra T, ¿te dio una recta? ¿Qué significaría que no lo sea?
+- Si en vez de calentar hubieras duplicado la concentración de tiosulfato, ¿qué esperarías que pasara? ¿Por qué?
+
+## Conclusiones
+líneas: 8
+Guía: Informá cómo depende la velocidad de esta reacción de la temperatura, con tus números. ¿Qué fuente de error te parece la más importante: el criterio para decidir cuándo se tapa la cruz, la temperatura o el cronometrado? ¿Cómo la reducirías?
+
+## Notas para el docente
+- Preparen las soluciones el día anterior y guardá el tiosulfato tapado: se oxida con el aire y las corridas dejan de ser comparables.
+- El punto flojo de esta práctica es el criterio de «cruz tapada»: hacé que sea SIEMPRE la misma persona del equipo la que mira, y que lo diga en voz alta antes de empezar.
+- Si tenés poca ventilación, bajá a 25 mL de tiosulfato y 3 mL de ácido: la reacción sigue viéndose bien y desprende menos SO2.
+- Con grupos grandes conviene repartir las temperaturas entre los equipos y poner todos los datos en una tabla común en el pizarrón: sale una gráfica mucho mejor y se discute la dispersión entre equipos.
+- Tiempos: 15 min de preparación, 45 min de las cuatro corridas, 20 min de gráfica y análisis, 10 min de cierre.
+- Al corregir, el foco está en la explicación con teoría de colisiones, no en el valor numérico.`
+}
 ];
 
 export function ejemploPorId(id) {

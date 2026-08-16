@@ -95,16 +95,24 @@ Pregunta abierta.
 ## Diseño → Protocolos de práctico
 
 `protocolos.html` arma el documento completo de una práctica de laboratorio y lo deja listo para
-imprimir: **fundamento teórico, objetivos, materiales, normas de seguridad, montaje experimental,
-procedimiento paso a paso, tablas de datos en blanco, cálculos, preguntas de análisis y conclusiones**.
+imprimir: **fundamento teórico, objetivos, materiales, sustancias y reactivos, normas de seguridad,
+montaje experimental, procedimiento paso a paso, tablas de datos en blanco, cálculos, preguntas de
+análisis, conclusiones y notas para el docente**. Cubre física y química de **7° a 3° de EMS**.
 
 - **Dos versiones** del mismo protocolo: la del **estudiante** (espacios en blanco, cabezal para el
   equipo y los instrumentos sin el número de la lectura) y la del **docente** (todo a la vista, más
   cómo se lee cada instrumento).
 - **Fórmulas en LaTeX** en el fundamento, el montaje, las preguntas y los cálculos: lo que va entre
   signos de peso se dibuja como matemática de verdad.
-- **Seis prácticos de ejemplo** completos: densidad de sólidos, ley de Hooke, ley de Ohm, calor
-  específico, péndulo simple y titulación ácido-base.
+- **La escena de cada paso**: se marca qué instrumentos y qué frascos entran en juego y se dibujan
+  al lado del paso, para que se vea cómo queda la mesada en ese momento.
+- **Sustancias y reactivos** con su etiqueta —nombre, fórmula, concentración, cantidad— y el
+  pictograma de peligro.
+- **Notas para el docente** que salen sólo en su versión: qué preparar antes, en qué se traban los
+  estudiantes, cómo adaptar la práctica si falta material, tiempos y qué mirar al corregir.
+- **Nueve prácticos de ejemplo** completos: separación de mezclas (7°), evidencias de reacción
+  química (9°), densidad de sólidos, ley de Hooke, ley de Ohm, calor específico, péndulo simple,
+  velocidad de reacción (2° EMS) y titulación ácido-base.
 - Se puede arrancar de una plantilla, del **prompt para IA** que arma la página, de **texto plano** o
   de un **.json** guardado. Salidas: PDF, JSON y texto.
 
@@ -144,6 +152,10 @@ La densidad es una propiedad característica de cada material…
 
 ## Instrumentos
 - probeta :: max=100, division=1, unidad=mL, lectura=64 :: para medir el volumen
+- balanzaDigital :: max=500, division=0.1, unidad=g, lectura=126.4 :: para la masa
+
+## Sustancias
+- frasco :: nombre=Agua destilada, formula=H2O, cantidad=500 mL, color=#cfe6f5
 
 ## Seguridad
 - Secá enseguida el agua que se derrame en la mesada.
@@ -152,7 +164,8 @@ La densidad es una propiedad característica de cada material…
 Sobre la mesada, de izquierda a derecha: la balanza, la probeta y el vaso con agua…
 
 ## Procedimiento
-1. Medir la masa :: Apoyá el cuerpo en el plato y esperá a que el número se estabilice.
+1. Medir la masa :: Apoyá el cuerpo en el plato y esperá a que se estabilice. :: escena: i2
+2. Cargar la probeta :: Llenala hasta 50 mL. :: escena: i1 s1 :: nota: apoyada, nunca en la mano.
 
 ## Tablas
 ### Masa y volumen de cada cuerpo
@@ -160,7 +173,7 @@ Sobre la mesada, de izquierda a derecha: la balanza, la probeta y el vaso con ag
 filas: 3
 
 ## Cálculos
-- Densidad :: d = m / V :: g/mL :: Dividí la masa entre el volumen.
+- Densidad :: $d = \dfrac{m}{V}$ :: g/mL :: Dividí la masa entre el volumen.
 
 ## Preguntas
 - ¿Los tres cuerpos tienen la misma densidad?
@@ -168,28 +181,47 @@ filas: 3
 ## Conclusiones
 líneas: 8
 Guía: ¿Qué medida aportó más incertidumbre al resultado?
+
+## Notas para el docente
+- Sólo salen en la versión del docente, nunca en la hoja del estudiante.
+- Tiempos, qué preparar antes, en qué se traban y qué mirar al corregir.
 ```
 
-Secciones reconocidas: `Fundamento`, `Objetivos`, `Materiales`, `Instrumentos`, `Seguridad`,
-`Montaje`, `Procedimiento`, `Tablas`, `Cálculos`, `Preguntas`, `Conclusiones` (con sus sinónimos
-habituales, con o sin tildes).
+Secciones reconocidas: `Fundamento`, `Objetivos`, `Materiales`, `Instrumentos`, `Sustancias`,
+`Seguridad`, `Montaje`, `Procedimiento`, `Tablas`, `Cálculos`, `Preguntas`, `Conclusiones` y
+`Notas para el docente` (con sus sinónimos habituales, con o sin tildes).
+
+La **referencia completa del formato** —cada sección con su sintaxis exacta, todos los
+identificadores de instrumento y todos sus parámetros— está dentro de la propia página: botón
+«📖 Referencia del formato», que además se copia al portapapeles para pegarla en una IA. En el
+código vive en `REFERENCIA_FORMATO`, dentro de `protocolos-texto.js`, y es la misma que se
+incrusta en el prompt.
+
+Dos detalles del formato que conviene tener presentes:
+
+- Los parámetros de un instrumento se separan con comas, pero **un valor puede tener comas
+  adentro**: el trozo que no trae `=` se pega al valor anterior. Por eso
+  `concentracion=0,1 mol/L` y `rotulos=agua, HCl, control` funcionan.
+- En el procedimiento, `escena: i1 s2` dice qué se dibuja al lado del paso: `i1` es el primer
+  instrumento de la lista y `s2` la segunda sustancia.
 
 ## Diseño → Banco de instrumentos
 
-`instrumentos.html` dibuja **18 instrumentos científicos en SVG**, parametrizables en alcance,
+`instrumentos.html` dibuja **33 instrumentos científicos en SVG**, parametrizables en alcance,
 menor división, numeración, unidad, lectura y tamaño:
 
 | Magnitud | Instrumentos |
 |----------|--------------|
-| Longitud | regla, calibre con nonio (0,1 · 0,05 · 0,02 mm), micrómetro |
-| Volumen | probeta, bureta, jeringa, vaso / Erlenmeyer / matraz aforado |
+| Longitud y ángulo | regla, calibre con nonio (0,1 · 0,05 · 0,02 mm), micrómetro, transportador |
+| Volumen | probeta, bureta, pipeta con propipeta, jeringa, vaso / Erlenmeyer / matraz aforado |
 | Masa | balanza digital, balanza de tres brazos |
-| Temperatura | termómetro |
-| Fuerza | dinamómetro |
+| Temperatura | termómetro, calorímetro |
+| Fuerza | dinamómetro, plano inclinado, sistema de poleas |
 | Tiempo | cronómetro |
-| Electricidad | multímetro digital, instrumento de aguja (voltímetro, amperímetro, manómetro) |
-| Ángulo | transportador |
+| Electricidad | multímetro digital, instrumento de aguja, fuente regulable, circuito esquemático |
+| Óptica | banco óptico con trazado de rayos |
 | Electrónica | micro:bit con sensores conectables a los pines |
+| Química | frasco con sustancia, mechero Bunsen, soporte universal armado, gradilla con tubos, filtración, destilación, agitador magnético, papel de pH |
 | Sensores | Vernier Go Direct (30 modelos), sensor digital genérico (pH, lux, dB…) |
 
 Cada instrumento se resume en una línea de texto que entiende el generador de protocolos:
@@ -201,6 +233,10 @@ aguja :: simbolo=A, max=0.5, division=0.01, unidad=A, lectura=0.06
 multimetro :: funcion=Vcc20, lectura=9.06
 microbit :: pin0=ultrasonido, magnitud=Distancia, unidad=cm, lectura=34
 goDirect :: modelo=pressure, lectura=101.3
+frasco :: nombre=Ácido clorhídrico, formula=HCl, concentracion=0,1 mol/L, peligro=corrosivo
+gradilla :: cantidad=4, rotulos=agua, HCl, NaOH, control, burbujas=2
+circuito :: componente=lampara, conexion=serie, llave=cerrada, valorFuente=6 V
+bancoOptico :: lente=convergente, focal=10, distanciaObjeto=25
 ```
 
 ### La línea de medición
@@ -260,7 +296,7 @@ Sección Diseño:
 /mate.js                  ← Fórmulas en LaTeX dentro de los textos
 /katex.min.js /.css       ← KaTeX vendorizado, con las fuentes embebidas
 /instrumentos.html        ← Banco de instrumentos
-/instrumentos.js          ← Motor de dibujo SVG de los 18 instrumentos
+/instrumentos.js          ← Motor de dibujo SVG de los 33 instrumentos
 /instrumentos-ui.js       ← Catálogo, configurador y hojas de ejercicios
 /papel3d.html             ← Diseño 3D con papel (papercraft)
 ```
