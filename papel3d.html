@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diseño 3D con papel — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Subí un modelo 3D (.stl de Tinkercad, .obj o .dxf), elegí el tamaño en centímetros y obtené el patrón de papel listo para imprimir, recortar, doblar y pegar. Todo en el navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css"><!-- zona de subida y chips compartidas -->
+<link rel="stylesheet" href="papel3d.css">
+<script type="importmap">
+{ "imports": { "three": "./lego/vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="papel3d.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Del modelo 3D a la hoja de papel</div>
+      <h2 class="section__title">Diseño 3D<br>con Papel<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Subí un <strong>modelo 3D</strong> (el <code>.stl</code> que exporta <strong>Tinkercad</strong>, un
+      <code>.obj</code> o un <code>.dxf</code> con caras), poné las <strong>dimensiones en centímetros</strong>
+      y la plataforma lo <strong>despliega en un patrón de papel</strong>: las caras del modelo quedan planas
+      sobre la hoja, con <strong>líneas de corte y de doblez</strong> (montaña y valle) y
+      <strong>pestañas de pegado numeradas</strong> — cada número aparece en los dos bordes que van juntos.
+      Se imprime a <strong>tamaño real</strong>, se recorta, se dobla y se pega: el modelo 3D vuelve a existir,
+      pero en papel. Todo pasa en tu navegador, sin instalar nada ni subir el modelo a ningún servidor.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Subí el modelo</span>
+        <span class="paso-rapido__texto">Un .stl (Tinkercad: Exportar → .STL), .obj o .dxf con caras 3D. Mejor si es simple: menos caras, más fácil de armar.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Elegí el tamaño</span>
+        <span class="paso-rapido__texto">Poné cuántos centímetros querés que mida el modelo armado. Las tres medidas van juntas, en proporción.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Imprimí y armá</span>
+        <span class="paso-rapido__texto">Descargá el patrón en PDF a escala real: recortar por las líneas llenas, doblar por las punteadas y pegar número con número.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== SUBIDA ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — El modelo</div>
+    <div class="inf-subida" id="zonaSubida" tabindex="0" role="button" aria-label="Subir un modelo 3D (.stl, .obj o .dxf)">
+      <div class="inf-subida__icono">🗿</div>
+      <p class="inf-subida__texto"><strong>Arrastrá acá tu modelo 3D</strong> o hacé clic para elegirlo</p>
+      <p class="inf-subida__nota">Acepta <code>.stl</code> (Tinkercad), <code>.obj</code> y <code>.dxf</code> con caras 3D</p>
+      <input type="file" id="inputArchivo" accept=".stl,.obj,.dxf" style="display:none">
+    </div>
+    <div id="estadoSubida" class="inf-estado" style="display:none"></div>
+  </div>
+</section>
+
+
+<!-- ====== DIMENSIONES Y OPCIONES ====== -->
+<section class="editor-section" id="seccionOpciones" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Tamaño y opciones</div>
+    <p class="wiz-explica" style="margin-bottom:1rem">¿De qué tamaño querés el modelo <strong>ya armado</strong>? Las tres medidas están enganchadas: cambiás una y las otras se acomodan para no deformar el modelo. <span id="dimOriginal"></span></p>
+    <div class="scratch-opciones">
+      <span class="scratch-opciones__label">Ancho:</span>
+      <input class="campo__input papel-dim" type="number" id="dimX" min="1" max="200" step="0.5" style="max-width:100px"> <span class="scratch-opciones__label">cm</span>
+      <span class="scratch-opciones__label">Alto:</span>
+      <input class="campo__input papel-dim" type="number" id="dimY" min="1" max="200" step="0.5" style="max-width:100px"> <span class="scratch-opciones__label">cm</span>
+      <span class="scratch-opciones__label">Profundidad:</span>
+      <input class="campo__input papel-dim" type="number" id="dimZ" min="1" max="200" step="0.5" style="max-width:100px"> <span class="scratch-opciones__label">cm</span>
+    </div>
+    <div class="scratch-opciones" style="margin-top:1rem">
+      <label class="scratch-check"><input type="checkbox" id="optPestanas" checked> Pestañas de pegado</label>
+      <span class="scratch-opciones__label">Alto de pestaña:</span>
+      <select class="campo__input" id="optAltoPestana" style="max-width:110px">
+        <option value="6">6 mm</option>
+        <option value="8" selected>8 mm</option>
+        <option value="10">10 mm</option>
+      </select>
+      <label class="scratch-check"><input type="checkbox" id="optNumerar" checked> Numerar las uniones</label>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== RESULTADO ====== -->
+<section class="editor-section editor-section--surface" id="seccionResultado" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 3 — El patrón</div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
+      <button class="btn btn--primary" id="btnImprimir">PDF — Imprimir el patrón</button>
+      <button class="btn btn--primary" id="btnPDFDirecto">⬇ Descargar PDF directo</button>
+      <span class="inf-estado" id="notaPDF" style="display:none"></span>
+    </div>
+    <div id="statsPatron" class="inf-stats" style="margin-bottom:1rem"></div>
+    <div id="avisosPatron"></div>
+
+    <div class="papel-panel">
+      <div class="papel-panel__vista3d">
+        <h3 class="papel-panel__titulo">El modelo (girálo con el mouse)</h3>
+        <canvas id="lienzo3d"></canvas>
+      </div>
+      <div class="papel-panel__leyenda">
+        <h3 class="papel-panel__titulo">Cómo se arma</h3>
+        <ul class="papel-leyenda">
+          <li><svg width="46" height="8" aria-hidden="true"><line x1="1" y1="4" x2="45" y2="4" stroke="#111" stroke-width="1.6"/></svg> Línea llena: <strong>cortar</strong></li>
+          <li><svg width="46" height="8" aria-hidden="true"><line x1="1" y1="4" x2="45" y2="4" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="7 3 1.5 3"/></svg> Raya-punto: doblar en <strong>montaña</strong> (el doblez sobresale)</li>
+          <li><svg width="46" height="8" aria-hidden="true"><line x1="1" y1="4" x2="45" y2="4" stroke="#2471a3" stroke-width="1.4" stroke-dasharray="4 3"/></svg> Rayitas: doblar en <strong>valle</strong> (el doblez se hunde)</li>
+          <li><svg width="46" height="12" aria-hidden="true"><polygon points="2,11 10,2 36,2 44,11" fill="#eee" stroke="#111" stroke-width="1"/></svg> Zona gris: <strong>pestaña</strong> — va con pegamento, se esconde adentro</li>
+          <li><strong>Números iguales se pegan entre sí</strong>: el borde «3» va pegado sobre la pestaña «3».</li>
+        </ul>
+        <p class="papel-leyenda__nota">Al imprimir, elegí <strong>tamaño real / 100%</strong> (sin «ajustar a la página») para que las medidas queden exactas.</p>
+      </div>
+    </div>
+
+    <div id="hojasPatron"></div>
+  </div>
+</section>
+
+
+<!-- ====== ÁREA DE IMPRESIÓN ====== -->
+<div id="areaImpresion" class="fichas-impresion" aria-hidden="true"></div>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. El despliegue en papel está inspirado en <a href="https://dxf2papercraft.sourceforge.net/" target="_blank" rel="noopener">dxf2papercraft</a> de Thomas Haenselmann. Vista 3D con <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT).</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script src="html2pdf.bundle.min.js"></script>
+<script type="module" src="papel3d.js"></script>
+
+</body>
+</html>

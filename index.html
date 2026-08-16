@@ -30,6 +30,12 @@
         </span>
       </span>
       <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="papel3d.html">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+        </span>
+      </span>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
     </nav>
     <div class="tema-switcher" id="temaSwitcher">
@@ -180,6 +186,7 @@
         <a href="scratch.html">Fichas Scratch · micro:bit</a>
         <a href="informe-proyecto.html">Informe de proyecto</a>
         <a href="lego.html">Ensamble con LEGO</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
@@ -252,6 +259,20 @@
   `;
   grid.appendChild(cardLego);
   nuevasCards.push(cardLego);
+  idx++;
+
+  // Ficha especial: diseño 3D con papel (página propia)
+  const cardPapel = document.createElement('a');
+  cardPapel.href = 'papel3d.html';
+  cardPapel.className = 'actividad-card reveal';
+  cardPapel.setAttribute('role', 'listitem');
+  cardPapel.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Diseño 3D con papel</h3>
+    <p class="actividad-card__desc">Subí un modelo 3D (.stl de Tinkercad, .obj o .dxf), elegí el tamaño en centímetros y descargá el patrón de papel con líneas de corte, dobleces y pestañas numeradas, listo para imprimir, recortar y pegar.</p>
+  `;
+  grid.appendChild(cardPapel);
+  nuevasCards.push(cardPapel);
 
   // Las tarjetas se crean por JS DESPUÉS de que el observer del template ya
   // capturó su lista estática de .reveal, así que las animamos nosotros mismos.
