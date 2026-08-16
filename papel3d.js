@@ -344,6 +344,12 @@ function regenerar() {
   if (!estado.triangulos) return;
   const escala = escalaActual();
   if (!escala) return;
+  // si nada cambió (ej: el "change" al salir del campo tras ya regenerar por
+  // "input"), no rehacemos el patrón ni la guía: evita trabajo y saltos de página
+  const clave = JSON.stringify([escala, $('optPestanas').checked, $('optAltoPestana').value,
+    $('optNumerar').checked, $('optPiezas').value]);
+  if (clave === estado.ultimaClave) return;
+  estado.ultimaClave = clave;
   const cont = $('hojasPatron');
   const stats = $('statsPatron');
   const avisos = $('avisosPatron');
@@ -373,6 +379,19 @@ function regenerar() {
   chip(stats, res.stats.piezas, res.stats.piezas === 1 ? 'pieza' : 'piezas');
   chip(stats, res.stats.uniones, 'uniones para pegar');
   chip(stats, res.paginas.length, res.paginas.length === 1 ? 'hoja A4' : 'hojas A4');
+
+  // si el docente pidió una cantidad de piezas, contarle qué pasó con el pedido
+  const pedido = parseInt($('optPiezas').value, 10) || 0;
+  if (pedido && res.stats.piezas !== pedido) {
+    const n = document.createElement('div');
+    n.className = 'inf-aviso';
+    if (res.stats.piezas > pedido) {
+      n.textContent = `Pediste ${pedido} piezas pero salieron ${res.stats.piezas}: a este tamaño no se puede con menos, porque cada pieza tiene que entrar en una hoja A4. Probá con un modelo más chico (menos cm) o dejá el campo vacío.`;
+    } else {
+      n.textContent = `Pediste ${pedido} piezas y salieron ${res.stats.piezas}: la cantidad es un objetivo aproximado — el reparto exacto depende de la forma del modelo. Probá con un número mayor si querés piezas aún más chicas.`;
+    }
+    avisos.appendChild(n);
+  }
   res.avisos.forEach(a => {
     const n = document.createElement('div');
     n.className = 'inf-aviso';
@@ -394,9 +413,10 @@ function regenerar() {
   // preview general: el modelo pintado con un color por pieza
   if (vista3d) vista3d.pintar(res.tri3d);
 
-  // guía de armado (asincrónica: rasteriza fotos y diagramas)
+  // guía de armado (asincrónica: rasteriza fotos y diagramas); los botones
+  // de la guía esperan esta promesa para no imprimir una guía a medio armar
   $('seccionGuia').style.display = 'block';
-  construirGuia(res).catch(e => console.error('guía:', e));
+  estado.promesaGuia = construirGuia(res).catch(e => console.error('guía:', e));
 }
 
 // ============================================================
@@ -563,6 +583,7 @@ async function procesarArchivo(archivo) {
     const buf = await archivo.arrayBuffer();
     const m = leerModelo3D(buf, archivo.name);
     estado.triangulos = m.triangulos;
+    estado.ultimaClave = null; // modelo nuevo: siempre regenerar
     estado.caja = cajaDelModelo(m.triangulos);
     estado.nombre = archivo.name.replace(/\.(stl|obj|dxf)$/i, '');
     const d = estado.caja.dim;
@@ -655,7 +676,8 @@ async function descargarPDFDirecto() {
 }
 
 // --- guía: imprimir y PDF directo (la guía es texto + imágenes) ---
-function imprimirGuia() {
+async function imprimirGuia() {
+  if (estado.promesaGuia) await estado.promesaGuia;
   const doc = $('guiaArmado').firstElementChild;
   if (!doc || !doc.classList.contains('guia-doc')) return;
   const area = $('areaImpresion');
@@ -665,6 +687,7 @@ function imprimirGuia() {
 }
 
 async function descargarGuiaPDF() {
+  if (estado.promesaGuia) await estado.promesaGuia;
   const doc = $('guiaArmado').firstElementChild;
   if (!doc || !doc.classList.contains('guia-doc') || typeof html2pdf === 'undefined') return;
   const btn = $('btnGuiaPDF');
@@ -723,6 +746,12 @@ function init() {
     timer = setTimeout(() => alCambiarDimension(id), 350);
   }));
   ['optPestanas', 'optAltoPestana', 'optNumerar', 'optPiezas'].forEach(id => $(id).addEventListener('change', regenerar));
+  // la cantidad de piezas también regenera mientras se tipea (sin esperar el foco)
+  let timerPiezas = null;
+  $('optPiezas').addEventListener('input', () => {
+    clearTimeout(timerPiezas);
+    timerPiezas = setTimeout(regenerar, 450);
+  });
 
   $('btnImprimir').addEventListener('click', imprimir);
   $('btnPDFDirecto').addEventListener('click', descargarPDFDirecto);
