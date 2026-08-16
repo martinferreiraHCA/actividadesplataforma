@@ -1,0 +1,262 @@
+/* Banco de instrumentos — catálogo, configurador y fichas de lectura */
+
+/* ---------- filtros ---------- */
+.instr-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1.4rem;
+}
+.instr-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.45em 1em;
+  border: 1.5px solid var(--ink, #111);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+}
+.instr-chip--activo {
+  background: var(--ink, #111);
+  color: var(--base, #fff);
+}
+.instr-buscador { max-width: 260px; margin-left: auto; }
+
+/* ---------- catálogo ---------- */
+.instr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 1rem;
+}
+.instr-card {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  background: var(--surface, #fff);
+  padding: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 10px;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+  color: inherit;
+  font: inherit;
+}
+.instr-card:hover, .instr-card:focus-visible {
+  transform: translate(-3px, -3px);
+  box-shadow: 6px 6px 0 var(--ink, #111);
+  border-color: var(--ink, #111);
+}
+.instr-card--activa {
+  border-color: var(--safety, #FF3E00);
+  box-shadow: 5px 5px 0 var(--safety, #FF3E00);
+}
+.instr-card__lienzo {
+  height: 132px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 6px;
+}
+.instr-card__lienzo svg { max-width: 100%; max-height: 120px; height: auto; }
+.instr-card__nombre { font-weight: 700; font-size: 0.98rem; line-height: 1.2; }
+.instr-card__cat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.65;
+}
+.instr-card__desc { font-size: 0.82rem; opacity: 0.8; line-height: 1.35; }
+
+/* ---------- configurador ---------- */
+.instr-taller {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 1.6rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .instr-taller { grid-template-columns: 1fr; }
+}
+.instr-panel {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  border-radius: 10px;
+  padding: 1.1rem;
+  background: var(--surface, transparent);
+}
+.instr-panel__titulo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  margin: 0 0 0.8rem;
+}
+.instr-param { margin-bottom: 0.85rem; }
+.instr-param__etiqueta {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+.instr-param__ayuda { font-size: 0.75rem; opacity: 0.65; margin: 0.2rem 0 0; line-height: 1.35; }
+.instr-param input[type="text"],
+.instr-param input[type="number"],
+.instr-param select {
+  width: 100%;
+  padding: 0.45em 0.6em;
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.3));
+  background: var(--base, #fff);
+  color: inherit;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88rem;
+  border-radius: 4px;
+}
+.instr-param input[type="color"] {
+  width: 62px; height: 34px; padding: 2px; border: 1.5px solid var(--borde, rgba(0,0,0,0.3));
+  background: var(--base, #fff); border-radius: 4px; cursor: pointer;
+}
+.instr-param--check { display: flex; align-items: flex-start; gap: 0.5rem; }
+.instr-param--check input { margin-top: 0.25rem; width: 16px; height: 16px; }
+.instr-param--check .instr-param__etiqueta { margin-bottom: 0; font-weight: 500; }
+
+.instr-vista {
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 1.2rem;
+  min-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+.instr-vista svg { max-width: 100%; height: auto; }
+.instr-acciones { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+.instr-acciones .btn { padding: 0.6em 1.1em; font-size: 0.75rem; }
+
+.instr-ficha-tecnica {
+  margin-top: 1rem;
+  border-left: 4px solid var(--safety, #FF3E00);
+  padding: 0.6rem 0.9rem;
+  background: var(--surface, rgba(0,0,0,0.03));
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.instr-ficha-tecnica code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  background: rgba(0,0,0,0.06);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  word-break: break-all;
+}
+.instr-comolee {
+  margin-top: 0.9rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+/* ---------- ficha de ejercicios ---------- */
+.instr-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+.instr-selector label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.25));
+  padding: 0.5em 0.7em;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+.instr-selector label:hover { border-color: var(--ink, #111); }
+.instr-selector input { width: 16px; height: 16px; }
+
+/* la hoja de ejercicios: misma pinta en pantalla y en papel */
+.ejer-hoja {
+  background: #ffffff;
+  color: #111111;
+  max-width: 950px;
+  margin: 0 auto;
+  padding: 2rem 2.2rem;
+  border: 1px solid rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  font-family: 'Space Grotesk', Arial, sans-serif;
+}
+.ejer-hoja__cab { border-bottom: 3px solid #111; padding-bottom: 0.8rem; margin-bottom: 1.4rem; }
+.ejer-hoja__titulo { font-size: 1.6rem; margin: 0 0 0.3rem; }
+.ejer-hoja__datos { display: flex; gap: 1.6rem; flex-wrap: wrap; font-size: 0.9rem; }
+.ejer-hoja__datos span { border-bottom: 1px solid #111; min-width: 170px; padding-bottom: 2px; }
+.ejer-hoja__consigna { font-size: 0.95rem; margin: 0 0 1.4rem; }
+
+.ejer-item {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1.2rem;
+  align-items: center;
+  border-bottom: 1.5px dashed rgba(0,0,0,0.3);
+  padding: 1rem 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.ejer-item:last-child { border-bottom: none; }
+/* Los instrumentos apaisados necesitan el ancho de la hoja para leerse. El
+   dibujo va arriba y el enunciado abajo: así los renglones para escribir
+   quedan siempre después de la figura. */
+.ejer-item--ancho { grid-template-columns: 1fr; align-items: stretch; gap: 0.6rem; }
+.ejer-item--ancho .ejer-item__dibujo { order: -1; }
+.ejer-item--ancho .ejer-item__dibujo svg { max-height: none; }
+.ejer-item__dibujo { display: flex; justify-content: center; }
+.ejer-item__dibujo svg { max-width: 100%; max-height: 320px; height: auto; }
+.ejer-item__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+.ejer-item__pregunta { font-size: 0.95rem; margin: 0 0 0.7rem; }
+.ejer-item__linea { border-bottom: 1.5px solid #111; height: 1.9em; margin-bottom: 0.5rem; }
+.ejer-item__pista { font-size: 0.8rem; opacity: 0.7; font-family: 'JetBrains Mono', monospace; }
+.ejer-clave {
+  margin-top: 1.6rem;
+  border: 2px solid #111;
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  background: #fafaf6;
+  break-inside: avoid;
+}
+.ejer-clave h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+.ejer-clave ol { margin: 0; padding-left: 1.3rem; font-size: 0.9rem; line-height: 1.7; }
+
+/* ---------- impresión ---------- */
+@media print {
+  #areaImpresion .ejer-hoja {
+    max-width: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  .ejer-hoja__cab, .ejer-clave, .ejer-item__pista {
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+}
+
+/* ---------- temas oscuros: el dibujo del instrumento sigue sobre papel blanco ---------- */
+body.tema-nocturno .instr-vista,
+body.tema-nocturno .instr-card__lienzo { background: #ffffff; }
+body.tema-nocturno .instr-card { background: rgba(255,255,255,0.04); }

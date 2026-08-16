@@ -345,6 +345,73 @@ notas: Las placas son las piezas finitas.</pre>
       `
     },
     {
+      id: "protocolos",
+      titulo: "Protocolos de práctico",
+      html: `
+        <p class="guia-p">La sección <strong>Diseño → Protocolos de práctico</strong> arma el documento completo de una
+        práctica de laboratorio y lo deja listo para repartir. Trae dos herramientas que se usan juntas: el
+        <strong>generador de protocolos</strong> y el <strong>banco de instrumentos</strong>.</p>
+
+        <h4 class="guia-h">1 · Las secciones del protocolo</h4>
+        <p class="guia-p">El protocolo se arma por bloques, y cada uno se edita por separado mientras la vista previa
+        de la derecha se actualiza sola:</p>
+        <ul class="guia-lista">
+          <li><strong>Fundamento teórico</strong> — la teoría mínima para entender qué se va a hacer y por qué.</li>
+          <li><strong>Objetivos</strong>, <strong>materiales</strong> y <strong>normas de seguridad</strong>.</li>
+          <li><strong>Instrumentos</strong> — se dibujan dentro del protocolo con su alcance, su apreciación y la
+          incertidumbre con la que hay que anotar cada medida.</li>
+          <li><strong>Montaje experimental</strong> — cómo se arma el dispositivo, con foto o esquema si querés.</li>
+          <li><strong>Procedimiento paso a paso</strong> — cada paso puede llevar al lado el instrumento que se usa.</li>
+          <li><strong>Toma y registro de datos</strong> — tablas <em>en blanco</em>: vos definís las columnas con su
+          unidad y su incertidumbre, y cuántas filas van.</li>
+          <li><strong>Cálculos</strong>, <strong>preguntas de análisis</strong> y <strong>conclusiones</strong> con
+          renglones para escribir a mano.</li>
+        </ul>
+
+        <h4 class="guia-h">2 · Dos versiones del mismo protocolo</h4>
+        <p class="guia-p">Arriba de la vista previa elegís la versión: la del <strong>estudiante</strong> trae los
+        espacios en blanco, el cabezal para los nombres del equipo y los instrumentos <em>sin</em> el número de la
+        lectura —leer la escala es parte del trabajo—; la del <strong>docente</strong> muestra todo y suma, en cada
+        instrumento, cómo se lee. El PDF sale de la versión que tengas elegida.</p>
+
+        <h4 class="guia-h">3 · De dónde arrancar</h4>
+        <ul class="guia-lista">
+          <li><strong>Un práctico de ejemplo</strong> — hay seis completos (densidad, ley de Hooke, ley de Ohm, calor
+          específico, péndulo simple y titulación ácido-base). Abrilos y cambiales lo que haga falta.</li>
+          <li><strong>Asistente IA</strong> — la página arma el prompt con el tema, el nivel y la cantidad de pasos;
+          lo pegás en ChatGPT, Claude o Gemini y traés la respuesta de vuelta al recuadro de texto.</li>
+          <li><strong>Texto plano</strong> — el mismo formato con <code>##</code> por sección se puede escribir a mano
+          y pegar. El botón "Ver el formato" muestra un ejemplo entero.</li>
+          <li><strong>.json guardado</strong> — para retomar el protocolo del año pasado.</li>
+        </ul>
+
+        <h4 class="guia-h">4 · El banco de instrumentos</h4>
+        <p class="guia-p">Son 16 instrumentos dibujados en vectores: regla, calibre con nonio, micrómetro, probeta,
+        bureta, jeringa, material de vidrio, termómetro, dinamómetro, balanza digital, balanza de tres brazos,
+        cronómetro, multímetro, instrumento de aguja, transportador y sensor digital. De cada uno configurás
+        <strong>hasta cuánto mide</strong>, <strong>cuánto vale la rayita más chica</strong>, <strong>cada cuánto se
+        numera</strong>, <strong>la unidad</strong> y <strong>qué lectura muestra</strong>. La misma probeta te sirve
+        para una de 10 mL con divisiones de 0,2 mL y para una de 1 L con divisiones de 20 mL.</p>
+        <div class="guia-aviso">Cada instrumento se resume en una línea de texto como
+        <code>probeta :: max=250, division=2, unidad=mL, lectura=150</code>. El botón "Copiar para el protocolo" te la
+        da lista para pegar en el generador — y es el mismo formato que le podés pedir a una IA.</div>
+
+        <h4 class="guia-h">5 · Ejercicios de lectura de escalas</h4>
+        <p class="guia-p">Abajo del banco hay un generador de <strong>hojas de ejercicios</strong>: marcás los
+        instrumentos, y sale una hoja con cada uno dibujado en una lectura <strong>al azar y sin el número</strong>,
+        con el renglón para que el estudiante escriba cuánto mide y con qué incertidumbre. Se puede regenerar todas
+        las veces que quieras —sale distinta cada vez— y viene con la clave de corrección para recortar.</p>
+
+        <h4 class="guia-h">6 · Descargas</h4>
+        <ul class="guia-lista">
+          <li><strong>PDF</strong> — imprimiendo desde el navegador o con "Descargar PDF directo".</li>
+          <li><strong>.json</strong> — para reeditar el protocolo cuando quieras.</li>
+          <li><strong>Texto plano</strong> — para pasarlo a otro lado o corregirlo con una IA.</li>
+          <li><strong>SVG y PNG</strong> de cada instrumento, para pegarlo en una prueba, un Word o una presentación.</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `

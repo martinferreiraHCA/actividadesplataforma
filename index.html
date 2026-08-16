@@ -31,8 +31,10 @@
       </span>
       <a href="lego.html">Ensamble con LEGO</a>
       <span class="nav-desplegable">
-        <a href="papel3d.html">Diseño ▾</a>
+        <a href="protocolos.html">Diseño ▾</a>
         <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
           <a href="papel3d.html">📐 Diseño 3D con papel</a>
         </span>
       </span>
@@ -186,6 +188,8 @@
         <a href="scratch.html">Fichas Scratch · micro:bit</a>
         <a href="informe-proyecto.html">Informe de proyecto</a>
         <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
         <a href="papel3d.html">Diseño 3D con papel</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
@@ -273,6 +277,34 @@
   `;
   grid.appendChild(cardPapel);
   nuevasCards.push(cardPapel);
+  idx++;
+
+  // Ficha especial: protocolos de práctico de laboratorio (página propia)
+  const cardProtocolos = document.createElement('a');
+  cardProtocolos.href = 'protocolos.html';
+  cardProtocolos.className = 'actividad-card reveal';
+  cardProtocolos.setAttribute('role', 'listitem');
+  cardProtocolos.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Protocolos de práctico</h3>
+    <p class="actividad-card__desc">El protocolo completo de una práctica de laboratorio: fundamento, objetivos, materiales, seguridad, montaje, procedimiento paso a paso, tablas de datos en blanco, cálculos, preguntas de análisis y conclusiones. Con los instrumentos dibujados y en dos versiones, la del estudiante y la del docente.</p>
+  `;
+  grid.appendChild(cardProtocolos);
+  nuevasCards.push(cardProtocolos);
+  idx++;
+
+  // Ficha especial: banco de instrumentos científicos (página propia)
+  const cardInstrumentos = document.createElement('a');
+  cardInstrumentos.href = 'instrumentos.html';
+  cardInstrumentos.className = 'actividad-card reveal';
+  cardInstrumentos.setAttribute('role', 'listitem');
+  cardInstrumentos.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Banco de instrumentos</h3>
+    <p class="actividad-card__desc">Probeta, dinamómetro, regla, calibre, termómetro, multímetro y once más, dibujados a medida con el alcance, las divisiones, la unidad y la lectura que elijas. Se descargan en SVG o PNG y arman hojas de ejercicios de lectura de escalas con su clave.</p>
+  `;
+  grid.appendChild(cardInstrumentos);
+  nuevasCards.push(cardInstrumentos);
 
   // Las tarjetas se crean por JS DESPUÉS de que el observer del template ya
   // capturó su lista estática de .reveal, así que las animamos nosotros mismos.

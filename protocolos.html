@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protocolos de práctico — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Armá el protocolo completo de una práctica de laboratorio: fundamento, objetivos, materiales, montaje, procedimiento paso a paso, tablas de datos, cálculos, preguntas de análisis y conclusiones. Con instrumentos científicos dibujados a medida y descarga en PDF.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css">
+<link rel="stylesheet" href="instrumentos.css">
+<link rel="stylesheet" href="protocolos.css">
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Del laboratorio a la hoja</div>
+      <h2 class="section__title">Protocolos<br>de Práctico<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Armá el protocolo <strong>completo</strong> de una práctica de laboratorio y descargalo listo para repartir:
+      <strong>fundamento teórico, objetivos, materiales, normas de seguridad, montaje experimental,
+      procedimiento paso a paso, tablas de datos en blanco, cálculos, preguntas de análisis y conclusiones</strong>.
+      Los <strong>instrumentos van dibujados</strong> —probeta, dinamómetro, calibre, termómetro, multímetro— con el
+      alcance, las divisiones, la unidad y la lectura que vos elijas, así los estudiantes ven exactamente con qué van
+      a medir. Salen dos versiones del mismo protocolo: la del <strong>estudiante</strong>, con los espacios en blanco
+      para completar, y la del <strong>docente</strong>, con todo a la vista. Todo pasa en tu navegador, con
+      herramientas libres y sin subir nada a ningún servidor.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Arrancá de algo</span>
+        <span class="paso-rapido__texto">Abrí un práctico de ejemplo y editalo, escribilo de cero, o pedíselo a una IA con el prompt que arma la página.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Completá las secciones</span>
+        <span class="paso-rapido__texto">Cada bloque se edita por separado y se ve al instante en la vista previa de la derecha.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Sumá instrumentos</span>
+        <span class="paso-rapido__texto">Elegilos del banco y configurales la escala. Se dibujan dentro del protocolo, en la lista y en los pasos.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 04</span>
+        <span class="paso-rapido__titulo">Descargá</span>
+        <span class="paso-rapido__texto">PDF para imprimir y repartir, o JSON para volver a editarlo el año que viene.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PLANTILLAS ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 1 — De dónde salís</div>
+    <p class="wiz-explica" style="margin-bottom:1.2rem">
+      Estos prácticos están <strong>completos y probados</strong>: abrí el que más se parezca a lo que querés dar y
+      cambiale lo que haga falta. Es mucho más rápido que empezar de cero.
+    </p>
+    <div class="proto-plantillas" id="gridPlantillas"></div>
+    <div class="instr-acciones" style="margin-top:1.2rem">
+      <button class="btn btn--ghost" id="btnVacio">📄 Empezar en blanco</button>
+      <button class="btn btn--ghost" id="btnAbrirIA">🤖 Pedírselo a una IA</button>
+      <button class="btn btn--ghost" id="btnAbrirTexto">📋 Pegar un protocolo en texto</button>
+      <button class="btn btn--ghost" id="btnImportarJSON">📂 Abrir un .json guardado</button>
+      <input type="file" id="inputJSON" accept=".json" style="display:none">
+    </div>
+
+    <!-- panel: prompt para IA -->
+    <div class="proto-panel" id="panelIA" hidden>
+      <h3 class="proto-panel__titulo">Prompt para ChatGPT, Claude o Gemini</h3>
+      <p class="ia-catalogo__ayuda">Completá los datos, copiá el prompt, pegalo en la IA que uses y traé la respuesta de vuelta al recuadro de texto. La página la entiende y la carga en el editor.</p>
+      <div class="campo-grid" style="margin-bottom:0.8rem">
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaTema">Tema del práctico</label>
+          <input class="campo__input" type="text" id="iaTema" placeholder="Ej: dilatación térmica de los metales">
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaAsignatura">Asignatura</label>
+          <input class="campo__input" type="text" id="iaAsignatura" value="Física">
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaNivel">Nivel</label>
+          <input class="campo__input" type="text" id="iaNivel" value="3° de Ciclo Básico">
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaDuracion">Duración</label>
+          <input class="campo__input" type="text" id="iaDuracion" value="90 minutos">
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaPasos">Pasos del procedimiento</label>
+          <input class="campo__input" type="number" id="iaPasos" min="3" max="20" value="8">
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="iaPreguntas">Preguntas de análisis</label>
+          <input class="campo__input" type="number" id="iaPreguntas" min="2" max="12" value="5">
+        </div>
+      </div>
+      <div class="campo" style="margin-bottom:0.8rem">
+        <label class="campo__etiqueta" for="iaEnfoque">Algo especial que quieras pedirle (opcional)</label>
+        <input class="campo__input" type="text" id="iaEnfoque" placeholder="Ej: que se pueda hacer sin laboratorio, con materiales de cocina">
+      </div>
+      <textarea class="campo__textarea" id="iaPrompt" rows="8" readonly></textarea>
+      <div class="instr-acciones">
+        <button class="btn btn--primary" id="btnCopiarPrompt">📋 Copiar el prompt</button>
+      </div>
+    </div>
+
+    <!-- panel: pegar texto -->
+    <div class="proto-panel" id="panelTexto" hidden>
+      <h3 class="proto-panel__titulo">Pegá acá el protocolo en texto</h3>
+      <p class="ia-catalogo__ayuda">Sirve tanto la respuesta de una IA como un protocolo tuyo escrito en el formato de la plataforma. Lo que pegues reemplaza lo que haya cargado ahora.</p>
+      <textarea class="campo__textarea" id="areaTexto" rows="12" placeholder="# Protocolo: ...&#10;&#10;## Fundamento&#10;..."></textarea>
+      <div class="instr-acciones">
+        <button class="btn btn--primary" id="btnCargarTexto">Cargar en el editor</button>
+        <button class="btn btn--ghost" id="btnVerFormato">Ver el formato</button>
+      </div>
+      <pre class="proto-formato" id="ejemploFormato" hidden></pre>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== EDITOR ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 2 — El protocolo</div>
+    <div class="proto-layout">
+
+      <!-- ---- columna de edición ---- -->
+      <div class="proto-editor">
+
+        <details class="proto-bloque" open>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">01</span> Datos del práctico</summary>
+          <div class="proto-bloque__cuerpo">
+            <div class="campo">
+              <label class="campo__etiqueta" for="metaTitulo">Título del práctico</label>
+              <input class="campo__input" type="text" id="metaTitulo" data-meta="titulo" placeholder="Ej: Determinación de la densidad de sólidos irregulares">
+            </div>
+            <div class="campo-grid">
+              <div class="campo">
+                <label class="campo__etiqueta" for="metaAsignatura">Asignatura</label>
+                <input class="campo__input" type="text" id="metaAsignatura" data-meta="asignatura" placeholder="Física">
+              </div>
+              <div class="campo">
+                <label class="campo__etiqueta" for="metaNivel">Nivel</label>
+                <input class="campo__input" type="text" id="metaNivel" data-meta="nivel" placeholder="3° Ciclo Básico">
+              </div>
+              <div class="campo">
+                <label class="campo__etiqueta" for="metaDuracion">Duración</label>
+                <input class="campo__input" type="text" id="metaDuracion" data-meta="duracion" placeholder="90 minutos">
+              </div>
+              <div class="campo">
+                <label class="campo__etiqueta" for="metaDocente">Docente</label>
+                <input class="campo__input" type="text" id="metaDocente" data-meta="docente" placeholder="Opcional">
+              </div>
+              <div class="campo">
+                <label class="campo__etiqueta" for="metaGrupo">Grupo</label>
+                <input class="campo__input" type="text" id="metaGrupo" data-meta="grupo" placeholder="Opcional">
+              </div>
+              <div class="campo">
+                <label class="campo__etiqueta" for="metaFecha">Fecha</label>
+                <input class="campo__input" type="text" id="metaFecha" data-meta="fecha" placeholder="Opcional">
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="proto-bloque" open>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">02</span> Fundamento teórico</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">La teoría mínima para entender qué se va a hacer y por qué. Separá los párrafos con un renglón en blanco.</p>
+            <textarea class="campo__textarea campo__textarea--grande" id="campoFundamento" rows="9" placeholder="La densidad es una propiedad característica de cada material…"></textarea>
+          </div>
+        </details>
+
+        <details class="proto-bloque" open>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">03</span> Objetivos</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">Uno por renglón. Empezá cada uno con un verbo en infinitivo: determinar, medir, comparar, verificar…</p>
+            <div id="listaObjetivos"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque" open>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">04</span> Materiales</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">Cantidad, qué es y —si hace falta— una aclaración.</p>
+            <div id="listaMateriales"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque" open>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">05</span> Instrumentos de medida</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">
+              Se dibujan dentro del protocolo con la escala que les pongas. Configurá cada uno con detalle en el
+              <a href="instrumentos.html" target="_blank" rel="noopener">banco de instrumentos</a> y pegá acá la línea que te da.
+            </p>
+            <div class="proto-agregar-instr">
+              <select class="campo__input" id="selectorInstrumento"></select>
+              <button class="btn btn--ghost" id="btnAgregarInstrumento">+ Agregar</button>
+            </div>
+            <div id="listaInstrumentos"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque">
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">06</span> Normas de seguridad</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">Precauciones concretas de <em>esta</em> práctica, no consejos generales.</p>
+            <div id="listaSeguridad"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque">
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">07</span> Montaje experimental</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">Cómo se arma el dispositivo sobre la mesada y qué hay que verificar antes de empezar. Podés sumar una foto o un esquema.</p>
+            <textarea class="campo__textarea" id="campoMontaje" rows="5" placeholder="Sobre la mesada, de izquierda a derecha…"></textarea>
+            <div class="instr-acciones">
+              <button class="btn btn--ghost" id="btnImagenMontaje">🖼️ Sumar imagen del montaje</button>
+              <button class="btn btn--ghost" id="btnQuitarImagen" hidden>✕ Quitar la imagen</button>
+              <input type="file" id="inputImagenMontaje" accept="image/*" style="display:none">
+            </div>
+          </div>
+        </details>
+
+        <details class="proto-bloque" open>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">08</span> Procedimiento paso a paso</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">Un paso por bloque, en imperativo y bien concreto. Podés asociarle un instrumento: se dibuja al lado del paso.</p>
+            <div id="listaProcedimiento"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque" open>
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">09</span> Toma y registro de datos</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">Las tablas salen <strong>en blanco</strong> para que las completen a mano. De cada columna definí el nombre, la unidad y la incertidumbre.</p>
+            <div id="listaTablas"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque">
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">10</span> Cálculos</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">Qué hay que calcular con los datos de las tablas, con qué fórmula y en qué unidad.</p>
+            <div id="listaCalculos"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque">
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">11</span> Preguntas de análisis</summary>
+          <div class="proto-bloque__cuerpo">
+            <p class="proto-ayuda">Que obliguen a pensar sobre los datos obtenidos, no a repetir la teoría.</p>
+            <div id="listaPreguntas"></div>
+          </div>
+        </details>
+
+        <details class="proto-bloque">
+          <summary class="proto-bloque__cab"><span class="proto-bloque__num">12</span> Conclusiones</summary>
+          <div class="proto-bloque__cuerpo">
+            <div class="campo">
+              <label class="campo__etiqueta" for="campoGuia">Guía para redactar la conclusión</label>
+              <textarea class="campo__textarea" id="campoGuia" rows="3" placeholder="¿Qué densidad obtuviste para cada cuerpo? ¿Cuál fue la medida que más incertidumbre aportó?"></textarea>
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="campoLineas">Renglones en blanco para escribir</label>
+              <input class="campo__input" type="number" id="campoLineas" min="0" max="30" value="8" style="max-width:120px">
+            </div>
+          </div>
+        </details>
+
+      </div>
+
+      <!-- ---- columna de vista previa ---- -->
+      <div class="proto-vista">
+        <div class="proto-vista__barra">
+          <span class="proto-vista__titulo">Vista previa</span>
+          <div class="proto-versiones">
+            <button class="instr-chip instr-chip--activo" id="btnVersionEstudiante" data-version="estudiante">Estudiante</button>
+            <button class="instr-chip" id="btnVersionDocente" data-version="docente">Docente</button>
+          </div>
+        </div>
+        <div class="proto-vista__marco" id="vistaProtocolo"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== DESCARGAS ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 3 — Llevártelo</div>
+    <div id="revisionProtocolo" class="proto-revision"></div>
+    <div class="instr-acciones" style="margin-top:1rem">
+      <button class="btn btn--primary" id="btnImprimir">PDF — Imprimir el protocolo</button>
+      <button class="btn btn--primary" id="btnPDFDirecto">⬇ Descargar PDF directo</button>
+      <button class="btn btn--ghost" id="btnGuardarJSON">💾 Guardar .json para reeditar</button>
+      <button class="btn btn--ghost" id="btnDescargarTexto">📄 Descargar en texto plano</button>
+      <span class="inf-estado" id="notaPDF" style="display:none"></span>
+    </div>
+    <p class="ia-catalogo__ayuda" style="margin-top:0.8rem">
+      El PDF sale de la versión que tengas elegida arriba: imprimí la del <strong>estudiante</strong> para repartir y
+      la del <strong>docente</strong> para vos. Lo que estés editando se guarda solo en este navegador, así que podés
+      cerrar la página y seguir después.
+    </p>
+  </div>
+</section>
+
+
+<!-- ====== ÁREA DE IMPRESIÓN ====== -->
+<div id="areaImpresion" class="fichas-impresion" aria-hidden="true"></div>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Los protocolos y los instrumentos se generan enteros en tu navegador, con herramientas libres.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script src="html2pdf.bundle.min.js"></script>
+<script type="module" src="protocolos.js"></script>
+
+</body>
+</html>
