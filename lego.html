@@ -101,7 +101,7 @@
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 04</span>
         <span class="paso-rapido__titulo">Descargá</span>
-        <span class="paso-rapido__texto">PDF para repartir en clase, .ldr para LPub3D/Studio, o borrador .json para seguir después.</span>
+        <span class="paso-rapido__texto">PDF para repartir en clase, .ldr para LPub3D/Studio, imagen .png, malla 3D .stl, lista de piezas .csv o de compra BrickLink.</span>
       </div>
     </div>
     <div class="cta-guia" style="margin-top:1.5rem">
@@ -185,6 +185,10 @@
       <span class="ve-barra-sep"></span>
       <span class="ve-barra-label">O empezá con un proyecto precargado:</span>
       <span id="barraPlantillasLego"></span>
+      <span class="ve-barra-sep"></span>
+      <span class="ve-barra-label" title="Reparte todas las piezas del modelo en pasos nuevos, de abajo hacia arriba y capa por capa. Sirve después de importar o de retocar el modelo en 3D.">Rearmar los pasos:</span>
+      <input class="campo__input" type="number" id="ldRearmarPorPaso" min="1" max="40" value="6" style="width:4.2rem" title="Piezas por paso (como máximo)">
+      <button class="tag" id="btnRearmarPasos" title="Vuelve a repartir TODAS las piezas del modelo en pasos nuevos, de abajo hacia arriba">🔁 por capas</button>
     </div>
 
     <div id="listaPasos" style="margin-top:1.5rem"></div>
@@ -480,7 +484,7 @@
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 5 — Descargar</div>
     <p class="wiz-explica">¡Ya está! Descargá el manual para repartir en clase — o guardá un borrador para seguir otro día.</p>
-    <p class="exportar-intro">El PDF sale de la vista de impresión del navegador (imprimí al <strong>100 %</strong> para que el comparador de piezas quede a tamaño real). El archivo <strong>.ldr</strong> es el modelo en formato LDraw con los pasos incluidos: se abre con LPub3D, LDView o BrickLink Studio para renders y manuales profesionales.</p>
+    <p class="exportar-intro">El PDF sale de la vista de impresión del navegador (imprimí al <strong>100 %</strong> para que el comparador de piezas quede a tamaño real). El archivo <strong>.ldr</strong> es el modelo en formato LDraw con los pasos incluidos: se abre con LPub3D, LDView o BrickLink Studio para renders y manuales profesionales. Además, el mismo modelo sale como <strong>imagen .png</strong>, como <strong>malla 3D .stl</strong> (a tamaño real, para imprimir en 3D o abrir en Blender o Tinkercad), como <strong>lista de piezas .csv</strong> para Excel y como <strong>lista de compra .xml</strong> de BrickLink.</p>
 
     <div class="descargas__grid">
       <button class="btn--descarga" id="btnLegoPDF">
@@ -490,6 +494,22 @@
       <button class="btn--descarga" id="btnLegoLDR">
         <div class="btn__etiqueta">🧱 Modelo LDraw .ldr</div>
         <div class="btn__subtexto">El modelo con sus pasos, para LPub3D, LDView o BrickLink Studio</div>
+      </button>
+      <button class="btn--descarga" id="btnLegoPNG">
+        <div class="btn__etiqueta">🖼 Imagen .png del modelo</div>
+        <div class="btn__subtexto">La foto del modelo terminado, en alta, para el pizarrón o la carátula</div>
+      </button>
+      <button class="btn--descarga" id="btnLegoSTL">
+        <div class="btn__etiqueta">🧊 Malla 3D .stl</div>
+        <div class="btn__subtexto">El modelo entero como malla, a tamaño real: impresión 3D, Blender, Tinkercad</div>
+      </button>
+      <button class="btn--descarga" id="btnLegoCSV">
+        <div class="btn__etiqueta">📋 Lista de piezas .csv</div>
+        <div class="btn__subtexto">Inventario con cantidades, número LDraw y color — se abre en Excel</div>
+      </button>
+      <button class="btn--descarga" id="btnLegoBrickLink">
+        <div class="btn__etiqueta">🛒 Lista de compra BrickLink .xml</div>
+        <div class="btn__subtexto">Wanted List para subir a BrickLink y conseguir las piezas que falten</div>
       </button>
     </div>
 

@@ -15,7 +15,7 @@
 // modelo usa piezas que no están, se avisa cuáles y se puede cargar la
 // biblioteca oficial completa de LDraw (complete.zip) para esta sesión.
 
-import { COLORES, colorPorCodigoLdraw, piezaPorDat } from './lego-catalogo.js';
+import { COLORES, colorPorCodigoLdraw, piezaPorDat, registrarPiezaImportada } from './lego-catalogo.js';
 import { motorLego } from './lego-render.js';
 
 const RUTA_LDRAW = 'lego/ldraw/';
@@ -306,6 +306,20 @@ const MAX_PASOS = 60;
 
 // Reparte las piezas en pasos: capa por capa de abajo hacia arriba, juntando
 // capas chicas hasta llegar a "piezasPorPaso" y partiendo las capas grandes.
+// Reparte una lista de piezas en pasos de armado: capa por capa de abajo
+// hacia arriba. La usan el importador y el botón «rearmar los pasos» del
+// editor, así un modelo retocado a mano vuelve a salir en fichas de una.
+// items: [{ pieza, nivel, orden }] → [{ titulo, consigna, notas, piezas }]
+export function pasosPorCapas(items, piezasPorPaso) {
+  const n = Math.max(1, Math.min(40, parseInt(piezasPorPaso, 10) || 6));
+  return agruparPorCapas(items, n).map((g, i) => ({
+    titulo: tituloGrupo(g, i),
+    consigna: textoConsigna(g.items.length, i === 0),
+    notas: '',
+    piezas: g.items.slice().sort((a, b) => a.orden - b.orden).map(x => x.pieza),
+  }));
+}
+
 function agruparPorCapas(items, piezasPorPaso) {
   const orden = items.slice().sort((a, b) => (a.nivel - b.nivel) || (a.orden - b.orden));
   const capas = [];
@@ -371,12 +385,26 @@ export async function construirGuia(analisis, opciones = {}) {
     avisos.push(`⚠ ${analisis.piezasFaltantes} pieza(s) de ${faltantes.size} tipo(s) quedaron afuera porque su archivo no está en la biblioteca local: ${lista}${faltantes.size > 12 ? '…' : ''}. Cargá el complete.zip de LDraw para incluirlas.`);
   }
 
-  // 2) medir cada tipo de pieza (hace falta para ubicarlas y para saber su altura)
+  // 2) medir cada tipo de pieza: hace falta para ubicarlas y para saber su
+  // altura, y además las que no están en el catálogo se registran con su
+  // tamaño medido para que queden editables como cualquier otra pieza.
   const tipos = [...new Set(utiles.map(c => c.dat))];
   const rotas = new Set();
+  const importadas = [];
   for (let i = 0; i < tipos.length; i++) {
     progreso(`Midiendo piezas… ${i + 1}/${tipos.length}`);
-    try { await m.medir(tipos[i]); } catch (e) { rotas.add(tipos[i]); }
+    try {
+      const caja = await m.medir(tipos[i]);
+      if (!piezaPorDat(tipos[i])) {
+        const info = registrarPiezaImportada({
+          dat: tipos[i],
+          w: (caja.max.x - caja.min.x) / 20,
+          d: (caja.max.z - caja.min.z) / 20,
+          alto: (caja.max.y - caja.min.y) / 8,
+        });
+        if (info) importadas.push(info);
+      }
+    } catch (e) { rotas.add(tipos[i]); }
   }
   const medibles = utiles.filter(c => !rotas.has(c.dat));
   if (rotas.size) {
@@ -401,26 +429,22 @@ export async function construirGuia(analisis, opciones = {}) {
   progreso('Reconociendo las piezas del catálogo…');
   const cambiosColor = new Map();
   const items = [];
-  let fueraCatalogo = 0;    // piezas que el generador no tiene en su catálogo
-  let orientacionRara = 0;  // piezas del catálogo puestas en un ángulo que el formato no sabe escribir
+  let orientacionRara = 0;  // piezas puestas en un ángulo que el formato no sabe escribir
   for (const c of medibles) {
     const pos = c.pos.map((v, i) => v + desplazar[i]);
     const caja = cajas.get(c);
     const nivel = -(caja.maxY + desplazar[1]) / 8;   // altura de la base, en placas
     let pieza = null;
-    const enCatalogo = !!piezaPorDat(c.dat);
-    if (enCatalogo) {
+    if (piezaPorDat(c.dat)) {
       const col = await colorDelCatalogo(c.color);
       if (col.cambiado && col.reemplazo) cambiosColor.set(col.nombre, col.reemplazo);
       try { pieza = await m.reconocerColocacion(c.dat, col.codigo, pos, c.mat); } catch (e) { pieza = null; }
       if (!pieza) orientacionRara++;
-    } else {
-      fueraCatalogo++;
     }
     if (!pieza) {
       const num = (v) => Math.round(v * 1000) / 1000;
       pieza = {
-        raw: `1 ${c.color} ${pos.map(num).join(' ')} ${c.mat.map(num).join(' ')} parts/${c.dat}.dat`,
+        raw: `1 ${c.color} ${pos.map(num).join(' ')} ${c.mat.map(num).join(' ')} ${c.dat}.dat`,
         dat: c.dat,
         color: c.color,
       };
@@ -432,8 +456,9 @@ export async function construirGuia(analisis, opciones = {}) {
     const lista = [...cambiosColor.entries()].slice(0, 8).map(([de, a]) => `${de} → ${a}`).join(', ');
     avisos.push(`🎨 Colores fuera de la paleta del generador, reemplazados por el más parecido: ${lista}${cambiosColor.size > 8 ? '…' : ''}.`);
   }
-  if (fueraCatalogo) {
-    avisos.push(`ℹ ${fueraCatalogo} pieza(s) no están en el catálogo del generador: se dibujan igual y salen en la lista «Buscá estas piezas», pero se editan como línea LDraw.`);
+  if (importadas.length) {
+    const lista = importadas.slice(0, 10).map(p => p.nombre).join(', ');
+    avisos.push(`🧩 ${importadas.length} tipo(s) de pieza no estaban en el catálogo: se midieron y se agregaron como piezas importadas — se editan, se mueven y se cuentan como cualquier otra (${lista}${importadas.length > 10 ? '…' : ''}).`);
   }
   if (orientacionRara) {
     avisos.push(`ℹ ${orientacionRara} pieza(s) están giradas en un ángulo que el editor no sabe describir (no es un giro de 90°): quedan bien puestas, como línea LDraw.`);
@@ -458,15 +483,7 @@ export async function construirGuia(analisis, opciones = {}) {
     });
     avisos.push(`📄 Se usaron los ${pasos.length} paso(s) que ya traía el archivo.`);
   } else {
-    const grupos = agruparPorCapas(items, piezasPorPaso);
-    grupos.forEach((g, i) => {
-      pasos.push({
-        titulo: tituloGrupo(g, i),
-        consigna: textoConsigna(g.items.length, i === 0),
-        notas: '',
-        piezas: g.items.sort((a, b) => a.orden - b.orden).map(x => x.pieza),
-      });
-    });
+    pasos.push(...pasosPorCapas(items, piezasPorPaso));
     avisos.push(`🧱 Se generaron ${pasos.length} paso(s) automáticamente, de abajo hacia arriba (hasta ${piezasPorPaso} pieza(s) por paso).`);
   }
 
@@ -486,7 +503,7 @@ export async function construirGuia(analisis, opciones = {}) {
     descripcion: '',
     pasos,
   };
-  return { doc, avisos, total: items.length };
+  return { doc, avisos, total: items.length, importadas };
 }
 
 // Nombre lindo para una pieza importada que no está en el catálogo.

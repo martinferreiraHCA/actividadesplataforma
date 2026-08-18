@@ -66,6 +66,11 @@ export function parsearLineaPieza(linea) {
     // ¿pieza sin color? probar el nombre completo y avisar
     const p = buscarPieza(nombreYColor);
     if (p) return { error: `a "${p.nombre}" le falta el color (ej: "${p.clave} rojo en ${xs} ${zs}")` };
+    // las piezas importadas de un modelo .ldr solo existen mientras la guía las
+    // tenga cargadas: si el texto viene de otra sesión, hay que reimportar
+    if (/^ldraw\s+\S+$/i.test(nombreYColor.trim())) {
+      return { error: `la pieza importada "${nombreYColor.trim()}" no está cargada: volvé a importar el modelo .ldr o abrí el borrador .json donde la guardaste` };
+    }
     return { error: `pieza o color desconocido en "${nombreYColor.trim()}"` };
   }
 
