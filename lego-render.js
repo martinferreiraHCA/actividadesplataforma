@@ -7,7 +7,7 @@
 
 import * as THREE from './lego/vendor/three.module.min.js';
 import { LDrawLoader } from './lego/vendor/LDrawLoader.js';
-import { piezaPorClave } from './lego-catalogo.js';
+import { piezaPorClave, piezaPorDat } from './lego-catalogo.js';
 
 const RUTA_LDRAW = 'lego/ldraw/';
 
@@ -42,8 +42,62 @@ async function crearMotor() {
   const medidas = new Map();     // dat -> Box3 (en coords LDraw del archivo)
   const cacheMiniaturas = new Map(); // dat|color|px -> dataURL
 
-  function parsear(texto) {
-    return new Promise((resolver) => loader.parse(texto, resolver));
+  // Parseo de un texto LDraw. Se replica lo que hace loader.parse() pero con
+  // promesas de verdad: si falta un archivo .dat, la promesa RECHAZA en vez de
+  // quedarse colgada para siempre (loader.parse solo tiene callback de éxito).
+  async function parsear(texto) {
+    const grupo = await loader.partsCache.parseModel(texto);
+    loader.applyMaterialsToMesh(grupo, '16', loader.materialLibrary, true);
+    loader.computeBuildingSteps(grupo);
+    return grupo;
+  }
+
+  // ---- Biblioteca de piezas extra (zip oficial de LDraw subido por el usuario) ----
+  // Se engancha antes del fetch normal: si la función devuelve el texto de la
+  // pieza, se usa esa; si devuelve null, sigue la biblioteca local de lego/ldraw/.
+  let resolverExtra = null;
+  const cacheParse = loader.partsCache.parseCache;
+  const fetchOriginal = cacheParse.fetchData.bind(cacheParse);
+  cacheParse.fetchData = async (nombre) => {
+    if (resolverExtra) {
+      const texto = await resolverExtra(nombre);
+      if (texto) return texto;
+    }
+    return fetchOriginal(nombre);
+  };
+
+  function limpiarCacheLdraw() {
+    loader.partsCache._cache = {};
+    cacheParse._cache = {};
+    medidas.clear();
+    cacheMiniaturas.clear();
+    disponibles.clear();
+  }
+
+  function usarBibliotecaExtra(fn) {
+    resolverExtra = fn || null;
+    limpiarCacheLdraw();
+  }
+
+  // ¿Existe el archivo de la pieza (en la biblioteca extra o en la local)?
+  const disponibles = new Map(); // dat -> Promise<boolean>
+  function existeParte(dat) {
+    const clave = String(dat).toLowerCase();
+    if (!disponibles.has(clave)) disponibles.set(clave, buscarParte(clave));
+    return disponibles.get(clave);
+  }
+
+  async function buscarParte(dat) {
+    if (resolverExtra) {
+      try { if (await resolverExtra(dat + '.dat')) return true; } catch (e) { /* sigue por la local */ }
+    }
+    for (const carpeta of ['parts/', '', 'p/']) {
+      try {
+        const r = await fetch(RUTA_LDRAW + carpeta + dat + '.dat', { cache: 'force-cache' });
+        if (r.ok) return true;
+      } catch (e) { /* probamos la carpeta siguiente */ }
+    }
+    return false;
   }
 
   // Mide la caja de una pieza (se cachea). Coordenadas nativas LDraw (y hacia abajo).
@@ -162,6 +216,14 @@ async function crearMotor() {
     return parsear(`1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 parts/${info.dat}.dat`);
   }
 
+  // Igual, pero para una pieza que no está en el catálogo (importada de un
+  // .ldr): se pide directo por su número de archivo LDraw.
+  async function grupoDat(dat, color) {
+    if (!dat) return null;
+    await medir(dat);
+    return parsear(`1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 parts/${dat}.dat`);
+  }
+
   // Huella en studs de una colocación (para el editor de cuadrícula)
   function huella(z) {
     if (z.raw) return null;
@@ -172,6 +234,83 @@ async function crearMotor() {
     if (z.volcado) [w, d] = [d, w]; // el largo pasa al eje Z
     if (z.rot === 90 || z.rot === 270) [w, d] = [d, w];
     return { x: z.x, z: z.z, w, d };
+  }
+
+  // ---- Importación de modelos .ldr/.mpd ----------------------------------
+  // Redondeo amable: las coordenadas del archivo casi siempre caen justo en la
+  // cuadrícula (o en un medio stud), pero traen ruido de coma flotante.
+  function ajustar(v, paso = 0.5, tol = 0.03) {
+    const s = Math.round(v / paso) * paso;
+    const r = Math.abs(v - s) < tol ? s : Math.round(v * 100) / 100;
+    return r === 0 ? 0 : r;
+  }
+
+  function matricesIguales(a, b) {
+    for (let i = 0; i < 9; i++) if (Math.abs(a[i] - b[i]) > 0.002) return false;
+    return true;
+  }
+
+  // Caja envolvente (coordenadas LDraw del mundo) de una pieza colocada con la
+  // matriz y la posición crudas de una línea LDraw. Sirve para recentrar el
+  // modelo importado y para saber a qué altura está cada pieza.
+  async function cajaColocada(dat, pos, mat) {
+    const caja = await medir(dat);
+    const r = cajaTransformada(caja, mat);
+    return {
+      minX: r.minX + pos[0], maxX: r.maxX + pos[0],
+      minY: r.minY + pos[1], maxY: r.maxY + pos[1],
+      minZ: r.minZ + pos[2], maxZ: r.maxZ + pos[2],
+    };
+  }
+
+  // Operación inversa de transformacion(): de una línea LDraw ya colocada al
+  // formato editable del generador ({pieza, color, x, z, nivel, rot, ...}).
+  // Devuelve null si la pieza no está en el catálogo o si su orientación no es
+  // una de las que sabe describir el formato de texto (ahí queda como cruda).
+  async function reconocerColocacion(dat, color, pos, mat) {
+    const info = piezaPorDat(dat);
+    if (!info) return null;
+    const caja = await medir(info.dat);
+    const MODOS = ['normal', 'parado', 'volcado'];
+    for (const modo of MODOS) {
+      for (const rot of [0, 90, 180, 270]) {
+        const efectiva = (rot + (info.preRot || 0)) % 360;
+        const m = modo === 'volcado' ? MATRICES_VOLCADO[rot]
+          : modo === 'parado' ? MATRICES_PARADO[efectiva]
+          : MATRICES_ROT[efectiva];
+        if (!matricesIguales(m, mat)) continue;
+        const z = { pieza: info.clave, color, x: 0, z: 0, nivel: 0, rot };
+        if (modo === 'parado') z.parado = true;
+        if (modo === 'volcado') z.volcado = true;
+        if (modo !== 'normal' || info.bbox) {
+          const r = cajaTransformada(caja, m);
+          z.x = ajustar((pos[0] + r.minX) / 20);
+          z.z = ajustar((pos[2] + r.minZ) / 20);
+          z.nivel = ajustar(-(pos[1] + r.maxY) / 8);
+        } else {
+          let w = info.w, d = info.d;
+          if (rot === 90 || rot === 270) [w, d] = [d, w];
+          z.x = ajustar(pos[0] / 20 - w / 2);
+          z.z = ajustar(pos[2] / 20 - d / 2);
+          z.nivel = ajustar(-(pos[1] + caja.max.y) / 8);
+        }
+        return z;
+      }
+    }
+    return null;
+  }
+
+  // Miniatura de una pieza que NO está en el catálogo (importada de un .ldr):
+  // se dibuja directo desde su archivo .dat.
+  async function fotoDat(dat, color, px = 200) {
+    const k = dat + '|' + color + '|' + px + '|raw';
+    if (cacheMiniaturas.has(k)) return cacheMiniaturas.get(k);
+    const url = await fotoModelo(
+      [{ raw: `1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 parts/${dat}.dat` }],
+      { ancho: px, alto: px, margen: 1.3 }
+    );
+    cacheMiniaturas.set(k, url);
+    return url;
   }
 
   function textoModelo(piezas) {
@@ -310,5 +449,8 @@ async function crearMotor() {
     return L.join('\r\n') + '\r\n';
   }
 
-  return { medir, medirTodas, huella, fotoModelo, fotoPieza, exportarLdr, lineaLdraw, transformacion, grupoPieza };
+  return {
+    medir, medirTodas, huella, fotoModelo, fotoPieza, fotoDat, exportarLdr, lineaLdraw, transformacion, grupoPieza, grupoDat,
+    reconocerColocacion, cajaColocada, existeParte, usarBibliotecaExtra, limpiarCacheLdraw,
+  };
 }

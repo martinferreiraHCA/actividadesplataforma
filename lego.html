@@ -71,7 +71,8 @@
       <h2 class="section__title">Ensamble<br>con LEGO<span class="accent">.</span></h2>
     </div>
     <p class="scratch-intro">
-      Escribí el modelo como texto plano (o pedíselo a una IA) y se dibuja en <strong>3D paso a paso</strong>, como un
+      Escribí el modelo como texto plano, pedíselo a una IA o <strong>subí un modelo que ya tengas armado</strong>
+      (<code>.ldr</code> / <code>.mpd</code> de Studio, LeoCAD o LDCad) y se dibuja en <strong>3D paso a paso</strong>, como un
       manual oficial de LEGO: cada paso muestra <strong>qué piezas buscar</strong> (con un <strong>comparador a tamaño
       real 1:1</strong> para apoyar la pieza encima y verificarla), la <strong>guía visual del armado</strong> y las
       explicaciones para el estudiante. El motor de dibujo (three.js + LDraw) y la biblioteca de piezas viven en esta
@@ -90,7 +91,7 @@
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 02</span>
         <span class="paso-rapido__titulo">Los pasos</span>
-        <span class="paso-rapido__texto">Armá el modelo paso a paso: a mano con el editor visual, pegando texto o con ayuda de una IA.</span>
+        <span class="paso-rapido__texto">Armá el modelo paso a paso: a mano con el editor visual, pegando texto, con ayuda de una IA o importando un .ldr/.mpd.</span>
       </div>
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 03</span>
@@ -139,7 +140,7 @@
 <section class="editor-section" style="padding-bottom:0">
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Armá el modelo paso a paso</div>
-    <p class="wiz-explica" style="margin-bottom:1rem"><strong>Elegí cómo crear los pasos</strong> — las tres formas se pueden combinar y todo se edita después:</p>
+    <p class="wiz-explica" style="margin-bottom:1rem"><strong>Elegí cómo crear los pasos</strong> — las cuatro formas se pueden combinar y todo se edita después:</p>
     <div class="tabs-modo tabs-modo--cards">
       <button class="tab-modo active" data-modo="visual">
         <span class="tab-modo__icono">◎</span>
@@ -160,6 +161,13 @@
         <span class="tab-modo__cuerpo">
           <span class="tab-modo__nombre">Asistente IA</span>
           <span class="tab-modo__desc">Describí qué querés armar, pasale el prompt a tu IA y su respuesta se convierte en la guía completa.</span>
+        </span>
+      </button>
+      <button class="tab-modo" data-modo="modelo">
+        <span class="tab-modo__icono">⬆</span>
+        <span class="tab-modo__cuerpo">
+          <span class="tab-modo__nombre">Importar modelo 3D</span>
+          <span class="tab-modo__desc">Subí un modelo hecho en Studio, LeoCAD o LDCad (.ldr o .mpd) y se convierte en la guía de armado paso a paso.</span>
         </span>
       </button>
     </div>
@@ -234,6 +242,80 @@
 
       <button class="btn btn--primary" id="btnProcesarLegoTexto">Procesar y cargar la guía</button>
       <div id="avisosLegoTexto" style="margin-top:1.5rem"></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PANEL: IMPORTAR MODELO LDRAW ====== -->
+<section class="editor-section panel-modo" id="panel-lego-modelo" style="display:none">
+  <div class="container">
+
+    <div class="paso-card">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">⬆</div>
+        <h2 class="paso-card__titulo">Un modelo ya hecho<br>convertido en pasos</h2>
+      </div>
+
+      <div class="alerta alerta--info" style="margin-bottom:1.2rem">
+        <strong>Ya tenés el modelo armado en la compu.</strong> Subí el archivo y el generador lo desarma en pasos:
+        reconoce cada pieza, la ubica en la cuadrícula y arma la guía de armado — con la lista
+        «Buscá estas piezas», el comparador 1:1 y las vistas 3D de cada paso. Después se edita como cualquier otra guía.
+        <br><br>
+        <strong>Formatos:</strong> <code>.ldr</code>, <code>.mpd</code> y <code>.dat</code> (LDraw: BrickLink Studio,
+        LeoCAD, LDCad, MLCad, LPub3D…). Desde <strong>Studio</strong>, exportá con
+        <em>Archivo → Exportar → Exportar como LDraw</em>; desde <strong>LeoCAD</strong>, <em>Archivo → Guardar como… → .ldr</em>.
+      </div>
+
+      <div class="ld-drop" id="ldDrop">
+        <input type="file" id="inputModeloLdr" accept=".ldr,.mpd,.dat,.txt,.io,.zip" style="display:none">
+        <div class="ld-drop__icono">🧱</div>
+        <p class="ld-drop__texto">Arrastrá acá tu modelo <strong>.ldr</strong> o <strong>.mpd</strong><br>o elegilo desde la compu</p>
+        <button class="btn btn--primary" id="btnElegirModelo" type="button">Elegir archivo</button>
+      </div>
+
+      <div class="ld-resumen" id="ldResumen" style="display:none"></div>
+
+      <div id="ldOpciones" style="display:none">
+        <div class="campo">
+          <span class="campo__etiqueta">¿Cómo se reparten las piezas en pasos?</span>
+          <label class="scratch-check ld-opcion"><input type="radio" name="ldModoPasos" value="archivo" id="ldPasosArchivo"> Usar los pasos que ya trae el archivo</label>
+          <label class="scratch-check ld-opcion"><input type="radio" name="ldModoPasos" value="auto" id="ldPasosAuto" checked> Generarlos automáticamente — de abajo hacia arriba, capa por capa</label>
+        </div>
+
+        <div class="campo" id="ldCampoPorPaso">
+          <label class="campo__etiqueta" for="ldPiezasPorPaso">Cuántas piezas por paso (como máximo)</label>
+          <input class="campo__input" type="number" id="ldPiezasPorPaso" min="1" max="40" value="6" style="width:7.5rem">
+          <p class="wiz-explica" style="margin-top:0.4rem">Menos piezas por paso = más pasos, más fáciles de seguir. Más piezas por paso = una guía más corta.</p>
+        </div>
+
+        <label class="scratch-check" style="margin-bottom:1.2rem"><input type="checkbox" id="chkReemplazarLegoModelo" checked> Reemplazar los pasos actuales</label>
+
+        <div class="scratch-agregar" style="margin-bottom:1.2rem">
+          <button class="btn btn--primary" id="btnImportarModelo" type="button">Armar la guía paso a paso</button>
+          <span class="ld-estado" id="ldEstadoImport"></span>
+        </div>
+      </div>
+
+      <details class="formato-ayuda" style="margin-bottom:1.5rem">
+        <summary class="formato-ayuda__titulo">¿Faltan piezas? Usar la biblioteca completa de LDraw</summary>
+        <div class="formato-ayuda__contenido">
+          <p style="margin-bottom:0.8rem">La página trae adentro solo las piezas del catálogo del generador. Si tu modelo
+          usa otras, se avisan al analizar el archivo y podés cargar la <strong>biblioteca oficial de LDraw</strong> para
+          que se dibujen todas: bajá <code>complete.zip</code> de
+          <a href="https://library.ldraw.org/updates?latest" target="_blank" rel="noopener">library.ldraw.org</a>
+          y cargalo acá. No se sube a ningún lado: se lee en tu propia computadora y queda disponible
+          <strong>mientras no cierres la página</strong>.</p>
+          <input type="file" id="inputBibliotecaLdr" accept=".zip" style="display:none">
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center">
+            <button class="btn btn--ghost" id="btnBibliotecaLdr" type="button" style="padding:0.5em 1.2em">Cargar complete.zip</button>
+            <span class="ld-estado" id="ldEstadoBiblioteca"></span>
+          </div>
+        </div>
+      </details>
+
+      <div id="avisosLegoModelo"></div>
     </div>
 
   </div>

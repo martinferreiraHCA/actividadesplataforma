@@ -15,7 +15,7 @@ import * as THREE from './lego/vendor/three.module.min.js';
 import { OrbitControls } from './lego/vendor/OrbitControls.js';
 import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw } from './lego-catalogo.js';
 import { motorLego } from './lego-render.js';
-import { serializarPieza, validarConexiones } from './lego-modelo.js';
+import { serializarPieza, validarConexiones, datosLineaCruda } from './lego-modelo.js';
 import { abrirSelectorPieza } from './lego-picker.js';
 
 let editor = null; // instancia única
@@ -158,7 +158,16 @@ async function crearEditor(opciones) {
     const lista = pasos();
     for (let i = 0; i < lista.length; i++) {
       for (const pieza of lista[i].piezas) {
-        if (pieza.raw) continue;
+        // Piezas crudas (importadas de un .ldr y fuera del catálogo): se
+        // dibujan en su lugar para ver el modelo completo, pero no se pueden
+        // seleccionar ni mover — su posición vive en la propia línea LDraw.
+        if (pieza.raw) {
+          const fija = await grupoDeLineaCruda(pieza);
+          if (!fija) continue;
+          entradas.push({ pieza, pasoIdx: i, grupo: fija, fija: true });
+          contenedor.add(fija);
+          continue;
+        }
         const grupo = await motor.grupoPieza(pieza.pieza, pieza.color);
         if (!grupo) continue;
         const e = { pieza, pasoIdx: i, grupo };
@@ -176,6 +185,25 @@ async function crearEditor(opciones) {
     aplicarVisibilidad();
     encuadrar();
     refrescarSeleccion();
+  }
+
+  // Construye el grupo 3D de una línea LDraw cruda, ya ubicado con la posición
+  // y la matriz que trae la propia línea.
+  async function grupoDeLineaCruda(pieza) {
+    const d = datosLineaCruda(pieza);
+    const t = String(pieza.raw).trim().split(/\s+/);
+    if (!d || t.length < 15) return null;
+    const nums = t.slice(2, 14).map(Number);
+    if (nums.some(v => !isFinite(v))) return null;
+    let grupo = null;
+    try { grupo = await motor.grupoDat(d.dat, d.color); } catch (e) { return null; }
+    if (!grupo) return null;
+    grupo.position.set(nums[0], nums[1], nums[2]);
+    const m = nums.slice(3);
+    grupo.setRotationFromMatrix(new THREE.Matrix4().set(
+      m[0], m[1], m[2], 0, m[3], m[4], m[5], 0, m[6], m[7], m[8], 0, 0, 0, 0, 1));
+    grupo.updateMatrixWorld(true);
+    return grupo;
   }
 
   function aplicarVisibilidad() {
@@ -295,7 +323,7 @@ async function crearEditor(opciones) {
   raiz.querySelector('.ed3d__selpaso').addEventListener('click', () => {
     const p = principal();
     if (!p) return;
-    seleccion = new Set(entradas.filter(e => e.pasoIdx === p.pasoIdx && e.grupo.visible));
+    seleccion = new Set(entradas.filter(e => e.pasoIdx === p.pasoIdx && e.grupo.visible && !e.fija));
     refrescarSeleccion();
   });
   raiz.querySelector('.ed3d__agrupar').addEventListener('click', () => {
@@ -414,7 +442,7 @@ async function crearEditor(opciones) {
     ray.setFromCamera(ndc, camara);
     let mejor = null, mejorDist = Infinity;
     for (const en of entradas) {
-      if (!en.grupo.visible) continue;
+      if (!en.grupo.visible || en.fija) continue;
       const hits = ray.intersectObject(en.grupo, true);
       if (hits.length && hits[0].distance < mejorDist) { mejor = en; mejorDist = hits[0].distance; }
     }
@@ -427,7 +455,7 @@ async function crearEditor(opciones) {
       else seleccion.add(mejor);
     } else if (mejor.pieza.grupo) {
       // pieza agrupada: se selecciona todo el grupo
-      seleccion = new Set(entradas.filter(en => en.pieza.grupo === mejor.pieza.grupo && en.grupo.visible));
+      seleccion = new Set(entradas.filter(en => en.pieza.grupo === mejor.pieza.grupo && en.grupo.visible && !en.fija));
     } else {
       seleccion = new Set([mejor]);
     }

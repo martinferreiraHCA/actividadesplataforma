@@ -4,7 +4,7 @@
 // y exportación a PDF (impresión), LDraw (.ldr) y borrador .json.
 
 import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw, piezaEnKit, piezasDeKit, cantidadEnKit, conectoresDe } from './lego-catalogo.js';
-import { parsearTexto, serializarDoc, nuevoPaso, nuevaPieza, piezasAgrupadas, validarConexiones } from './lego-modelo.js';
+import { parsearTexto, serializarDoc, nuevoPaso, nuevaPieza, piezasAgrupadas, validarConexiones, datosLineaCruda } from './lego-modelo.js';
 import { motorLego } from './lego-render.js';
 import { generarPromptLego } from './lego-prompt.js';
 import { PLANTILLAS_LEGO } from './lego-plantillas.js';
@@ -368,11 +368,19 @@ function filaPieza(card, paso, i, z, j) {
   fila.className = 'lego-fila-pieza';
 
   if (z.raw) {
+    const d = datosLineaCruda(z);
+    if (d) {
+      const et = document.createElement('span');
+      et.className = 've-barra-label';
+      et.textContent = 'Pieza LDraw ' + d.dat;
+      et.title = 'Pieza importada que no está en el catálogo: se dibuja igual, pero se edita como línea LDraw.';
+      fila.appendChild(et);
+    }
     const inp = document.createElement('input');
     inp.className = 'campo__input lego-fila-pieza__raw';
     inp.value = z.raw;
     inp.title = 'Línea LDraw cruda (modo avanzado)';
-    inp.addEventListener('input', () => { z.raw = inp.value; cambioPieza(card, paso, i); });
+    inp.addEventListener('input', () => { z.raw = inp.value; delete z.dat; cambioPieza(card, paso, i); });
     fila.appendChild(inp);
   } else {
     const selP = document.createElement('select');
@@ -856,17 +864,19 @@ async function construirFichaPaso(paso, numero, indice) {
     zona.appendChild(et);
     const items = document.createElement('div');
     items.className = 'lego-busca__items';
+    let hayComparador = false;
     for (const g of grupos) {
       const info = piezaPorClave(g.pieza);
+      const nombrePieza = info ? info.nombre : g.cruda ? 'Pieza LDraw ' + g.dat : g.pieza;
       const c = colorPorCodigoLdraw(g.color);
       const item = document.createElement('div');
       item.className = 'lego-busca__item';
       const img = document.createElement('img');
       img.className = 'lego-busca__img';
-      img.alt = (info ? info.nombre : g.pieza) + ' ' + (c ? c.nombre : '');
+      img.alt = nombrePieza + ' ' + (c ? c.nombre : '');
       try {
         const m = await motor();
-        const url = await m.fotoPieza(g.pieza, g.color, 200);
+        const url = g.cruda ? await m.fotoDat(g.dat, g.color, 200) : await m.fotoPieza(g.pieza, g.color, 200);
         if (url) img.src = url;
       } catch (e) { /* sin motor: la ficha sale sin miniatura */ }
       const cant = document.createElement('span');
@@ -874,12 +884,14 @@ async function construirFichaPaso(paso, numero, indice) {
       cant.textContent = g.cantidad + ' ×';
       const nom = document.createElement('span');
       nom.className = 'lego-busca__nombre';
-      nom.textContent = (info ? info.nombre : g.pieza) + (c ? ' · ' + c.nombre : '');
+      nom.textContent = nombrePieza + (c ? ' · ' + c.nombre : '');
       item.append(img, cant, nom);
 
       // la electrónica no lleva comparador: es inconfundible y su huella
-      // impresa ocuparía media hoja (el motor mide 40×112 mm)
+      // impresa ocuparía media hoja (el motor mide 40×112 mm). Las piezas
+      // importadas que no están en el catálogo tampoco: no sabemos su huella.
       if (op.comparador && info && info.cat !== 'Electrónica NXT') {
+        hayComparador = true;
         const cmp = document.createElement('div');
         cmp.className = 'lego-cmp';
         cmp.appendChild(svgComparador(info));
@@ -892,7 +904,7 @@ async function construirFichaPaso(paso, numero, indice) {
       items.appendChild(item);
     }
     zona.appendChild(items);
-    if (op.comparador) {
+    if (op.comparador && hayComparador) {
       const nota = document.createElement('p');
       nota.className = 'lego-cmp__nota';
       nota.textContent = infantil
@@ -993,14 +1005,16 @@ async function construirPortada() {
 
   const inv = document.createElement('div');
   inv.className = 'lego-portada__inventario';
+  const grupos = piezasAgrupadas(todas);
   const et = document.createElement('span');
   et.className = 'lego-busca__label';
-  et.textContent = 'Todas las piezas que vas a necesitar (' + todas.filter(z => !z.raw).length + ')';
+  et.textContent = 'Todas las piezas que vas a necesitar (' + grupos.reduce((n, g) => n + g.cantidad, 0) + ')';
   inv.appendChild(et);
   const items = document.createElement('div');
   items.className = 'lego-busca__items lego-busca__items--mini';
-  for (const g of piezasAgrupadas(todas)) {
+  for (const g of grupos) {
     const info = piezaPorClave(g.pieza);
+    const nombrePieza = info ? info.nombre : g.cruda ? 'Pieza LDraw ' + g.dat : g.pieza;
     const c = colorPorCodigoLdraw(g.color);
     const item = document.createElement('div');
     item.className = 'lego-busca__item';
@@ -1008,7 +1022,7 @@ async function construirPortada() {
     im.className = 'lego-busca__img lego-busca__img--mini';
     try {
       const m = await motor();
-      const url = await m.fotoPieza(g.pieza, g.color, 140);
+      const url = g.cruda ? await m.fotoDat(g.dat, g.color, 140) : await m.fotoPieza(g.pieza, g.color, 140);
       if (url) im.src = url;
     } catch (e) { /* sin miniatura */ }
     const cant = document.createElement('span');
@@ -1016,7 +1030,7 @@ async function construirPortada() {
     cant.textContent = g.cantidad + ' ×';
     const nom = document.createElement('span');
     nom.className = 'lego-busca__nombre';
-    nom.textContent = (info ? info.nombre : g.pieza) + (c ? ' · ' + c.nombre : '');
+    nom.textContent = nombrePieza + (c ? ' · ' + c.nombre : '');
     item.append(im, cant, nom);
     items.appendChild(item);
   }
@@ -1154,10 +1168,24 @@ function mostrarAvisos(contId, avisos) {
   cont.appendChild(div);
 }
 
-function cargarDocParseado(res, reemplazar, avisosId) {
+// opciones.validar = false para los modelos importados: el validador de
+// conexiones está pensado para las guías escritas a mano y en un modelo
+// grande, hecho en otro programa, solo generaría ruido.
+function cargarDocParseado(res, reemplazar, avisosId, opciones = {}) {
+  const validar = opciones.validar !== false;
   if (res.doc) {
     res.avisos = res.avisos.concat(avisosDeKit(res.doc.pasos));
-    try { res.avisos = res.avisos.concat(validarConexiones(res.doc.pasos)); } catch (e) { console.error('validar conexiones:', e); }
+    if (validar) {
+      try { res.avisos = res.avisos.concat(validarConexiones(res.doc.pasos)); } catch (e) { console.error('validar conexiones:', e); }
+    }
+    // Guías largas (típico al importar un modelo entero): los pasos entran
+    // plegados menos el primero. Si no, el editor tiene que dibujar cientos de
+    // selectores de pieza de golpe y la página se congela unos segundos.
+    const piezasNuevas = res.doc.pasos.reduce((n, p) => n + p.piezas.length, 0);
+    if (res.doc.pasos.length > 8 || piezasNuevas > 60) {
+      res.doc.pasos.forEach((p, i) => { p.plegado = i > 0; });
+      res.avisos.push('Los pasos entraron plegados para que el editor no se ponga lento: abrí el que quieras con «▸ Desplegar».');
+    }
   }
   mostrarAvisos(avisosId, res.avisos);
   if (!res.doc) {
@@ -1220,6 +1248,179 @@ function refrescarCamposKit() {
 }
 
 // ============================================================
+// Importar un modelo LDraw (.ldr / .mpd) y desarmarlo en pasos
+// ============================================================
+let analisisModelo = null;   // resultado de analizar el archivo elegido
+let textoModeloLdr = '';     // el texto del archivo (para re-analizar si cambia la biblioteca)
+let nombreModeloLdr = '';
+
+function importadorLdr() {
+  return import('./lego-importar-ldr.js');
+}
+
+function estadoImport(texto) {
+  const el = document.getElementById('ldEstadoImport');
+  if (el) el.textContent = texto || '';
+}
+
+function tituloDesdeArchivo(nombre) {
+  return String(nombre || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+}
+
+function pintarResumenModelo(a) {
+  const cont = document.getElementById('ldResumen');
+  const datos = [
+    { n: a.total, et: a.total === 1 ? 'pieza en el modelo' : 'piezas en el modelo' },
+    { n: a.tipos.size, et: 'tipos distintos' },
+    { n: a.pasosArchivo, et: a.pasosArchivo === 1 ? 'paso en el archivo' : 'pasos en el archivo' },
+  ];
+  if (a.submodelos) datos.push({ n: a.submodelos, et: 'submodelos' });
+  if (a.faltantes.length) datos.push({ n: a.piezasFaltantes, et: 'piezas sin archivo', falta: true });
+  cont.style.display = '';
+  cont.innerHTML = '<span class="ld-resumen__titulo">' + escHtml(nombreModeloLdr) + '</span>'
+    + '<div class="ld-resumen__datos">'
+    + datos.map(d => '<span class="ld-resumen__dato"><span class="ld-resumen__num'
+        + (d.falta ? ' ld-resumen__num--falta' : '') + '">' + d.n + '</span>'
+        + '<span class="ld-resumen__et">' + escHtml(d.et) + '</span></span>').join('')
+    + '</div>'
+    + (a.faltantes.length
+      ? '<p class="ld-estado" style="margin-top:0.8rem">⚠ No están en la biblioteca local: <strong>'
+        + escHtml(a.faltantes.slice(0, 10).join(', ')) + (a.faltantes.length > 10 ? '…' : '')
+        + '</strong>. Esas piezas se van a saltear — cargá el <code>complete.zip</code> de LDraw (más abajo) para incluirlas.</p>'
+      : '<p class="ld-estado" style="margin-top:0.8rem">✅ Todas las piezas del modelo se pueden dibujar.</p>');
+}
+
+function refrescarOpcionesImport() {
+  const auto = document.getElementById('ldPasosAuto');
+  document.getElementById('ldCampoPorPaso').style.display = auto.checked ? '' : 'none';
+}
+
+async function analizarModeloElegido(archivo) {
+  if (!archivo) return;
+  const resumen = document.getElementById('ldResumen');
+  const opciones = document.getElementById('ldOpciones');
+  mostrarAvisos('avisosLegoModelo', []);
+  analisisModelo = null;
+  nombreModeloLdr = archivo.name || 'modelo.ldr';
+  opciones.style.display = 'none';
+  resumen.style.display = '';
+  resumen.innerHTML = '<span class="ld-resumen__titulo">Analizando ' + escHtml(nombreModeloLdr) + '…</span>';
+  try {
+    const mod = await importadorLdr();
+    textoModeloLdr = await mod.leerArchivoModelo(archivo);
+    const a = await mod.analizarModelo(textoModeloLdr);
+    if (!a.total) {
+      resumen.innerHTML = '<span class="ld-resumen__titulo">No se encontraron piezas</span>'
+        + '<p class="ld-estado">El archivo no tiene líneas de pieza LDraw. ¿Es un .ldr o .mpd de verdad?</p>';
+      return;
+    }
+    analisisModelo = a;
+    pintarResumenModelo(a);
+    const conPasos = a.pasosArchivo > 1;
+    const radioArchivo = document.getElementById('ldPasosArchivo');
+    radioArchivo.disabled = !conPasos;
+    radioArchivo.parentElement.style.opacity = conPasos ? '' : '0.5';
+    radioArchivo.parentElement.title = conPasos ? '' : 'Este archivo no trae pasos marcados.';
+    radioArchivo.checked = conPasos;
+    document.getElementById('ldPasosAuto').checked = !conPasos;
+    refrescarOpcionesImport();
+    opciones.style.display = '';
+  } catch (e) {
+    console.error('importar modelo:', e);
+    resumen.innerHTML = '<span class="ld-resumen__titulo">No se pudo leer el archivo</span>'
+      + '<p class="ld-estado">' + escHtml(e.message || String(e)) + '</p>';
+  }
+}
+
+async function importarModeloLdr() {
+  if (!analisisModelo) return;
+  const btn = document.getElementById('btnImportarModelo');
+  btn.disabled = true;
+  estadoImport('Armando la guía…');
+  try {
+    const mod = await importadorLdr();
+    const res = await mod.construirGuia(analisisModelo, {
+      usarPasosArchivo: document.getElementById('ldPasosArchivo').checked,
+      piezasPorPaso: document.getElementById('ldPiezasPorPaso').value,
+      titulo: state.titulo || tituloDesdeArchivo(nombreModeloLdr),
+      onProgreso: estadoImport,
+    });
+    if (!res.doc) {
+      mostrarAvisos('avisosLegoModelo', res.avisos);
+      toast('No se pudo armar la guía con ese archivo.');
+      return;
+    }
+    const reemplazar = document.getElementById('chkReemplazarLegoModelo').checked;
+    cargarDocParseado(res, reemplazar, 'avisosLegoModelo', { validar: false });
+  } catch (e) {
+    console.error('importar modelo:', e);
+    mostrarAvisos('avisosLegoModelo', ['No se pudo importar el modelo: ' + (e.message || e)]);
+    toast('No se pudo importar el modelo.');
+  } finally {
+    btn.disabled = false;
+    estadoImport('');
+  }
+}
+
+async function cargarBibliotecaLdr(archivo) {
+  if (!archivo) return;
+  const est = document.getElementById('ldEstadoBiblioteca');
+  est.textContent = 'Leyendo el zip… (puede tardar unos segundos)';
+  try {
+    const mod = await importadorLdr();
+    const r = await mod.usarBibliotecaZip(archivo);
+    est.textContent = '✅ ' + r.piezas.toLocaleString('es') + ' archivos de pieza disponibles en esta sesión.';
+    cacheFotos.clear();
+    if (textoModeloLdr) {
+      est.textContent += ' Revisando el modelo de nuevo…';
+      const a = await mod.analizarModelo(textoModeloLdr);
+      analisisModelo = a;
+      pintarResumenModelo(a);
+      est.textContent = '✅ ' + r.piezas.toLocaleString('es') + ' archivos de pieza disponibles en esta sesión.';
+    }
+  } catch (e) {
+    console.error('biblioteca LDraw:', e);
+    est.textContent = '⚠ ' + (e.message || 'No se pudo leer el zip.');
+  }
+}
+
+function initImportarModelo() {
+  const input = document.getElementById('inputModeloLdr');
+  const zona = document.getElementById('ldDrop');
+  document.getElementById('btnElegirModelo').addEventListener('click', () => input.click());
+  zona.addEventListener('click', (e) => { if (e.target === zona) input.click(); });
+  input.addEventListener('change', () => {
+    const f = input.files && input.files[0];
+    input.value = '';
+    analizarModeloElegido(f);
+  });
+  ['dragenter', 'dragover'].forEach(ev => zona.addEventListener(ev, (e) => {
+    e.preventDefault();
+    zona.classList.add('ld-drop--encima');
+  }));
+  ['dragleave', 'drop'].forEach(ev => zona.addEventListener(ev, (e) => {
+    e.preventDefault();
+    zona.classList.remove('ld-drop--encima');
+  }));
+  zona.addEventListener('drop', (e) => {
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) analizarModeloElegido(f);
+  });
+
+  document.querySelectorAll('input[name="ldModoPasos"]').forEach(r =>
+    r.addEventListener('change', refrescarOpcionesImport));
+  document.getElementById('btnImportarModelo').addEventListener('click', importarModeloLdr);
+
+  const inputBib = document.getElementById('inputBibliotecaLdr');
+  document.getElementById('btnBibliotecaLdr').addEventListener('click', () => inputBib.click());
+  inputBib.addEventListener('change', () => {
+    const f = inputBib.files && inputBib.files[0];
+    inputBib.value = '';
+    cargarBibliotecaLdr(f);
+  });
+}
+
+// ============================================================
 // Init
 // ============================================================
 function init() {
@@ -1274,6 +1475,7 @@ function init() {
       document.getElementById('panel-lego-visual').style.display = modo === 'visual' ? '' : 'none';
       document.getElementById('panel-lego-texto').style.display = modo === 'texto' ? '' : 'none';
       document.getElementById('panel-lego-ia').style.display = modo === 'ia' ? '' : 'none';
+      document.getElementById('panel-lego-modelo').style.display = modo === 'modelo' ? '' : 'none';
     });
   });
 
@@ -1393,6 +1595,8 @@ function init() {
   });
 
   // ---- vista previa ----
+  initImportarModelo();
+
   document.getElementById('btnActualizarFichas').addEventListener('click', actualizarVistaPrevia);
 
   // ---- descargas ----

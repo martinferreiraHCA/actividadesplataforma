@@ -263,6 +263,13 @@ export function buscarColor(nombre) {
 }
 
 export function piezaPorClave(clave) { return porClave.get(clave) || null; }
+
+// Pieza del catálogo por número de archivo LDraw (ej: "3001" → ladrillo 2x4).
+// La usa el importador de modelos .ldr/.mpd para reconocer las piezas del
+// archivo y convertirlas en piezas editables de la guía.
+export function piezaPorDat(dat) {
+  return porDat.get(String(dat || '').toLowerCase().replace(/\.dat$/, '')) || null;
+}
 export function colorPorCodigoLdraw(codigo) { return colorPorCodigo.get(Number(codigo)) || null; }
 
 // --- Kits: filtro de piezas disponibles ---

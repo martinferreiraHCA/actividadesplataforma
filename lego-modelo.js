@@ -193,15 +193,37 @@ export function serializarPieza(z) {
 }
 
 // Lista de compras de un paso: agrupa por pieza+color → [{pieza, color, cantidad}]
+// Las líneas LDraw crudas que vinieron de un modelo importado (traen "dat", el
+// número de la pieza) también se cuentan, marcadas con cruda:true: no están en
+// el catálogo pero igual se dibujan y hay que buscarlas en la caja.
 export function piezasAgrupadas(piezas) {
   const mapa = new Map();
   for (const z of piezas) {
-    if (z.raw) continue;
+    if (z.raw) {
+      const d = datosLineaCruda(z);
+      if (!d) continue;
+      const k = 'raw|' + d.dat + '|' + d.color;
+      if (!mapa.has(k)) mapa.set(k, { pieza: d.dat, dat: d.dat, color: d.color, cantidad: 0, cruda: true });
+      mapa.get(k).cantidad++;
+      continue;
+    }
     const k = z.pieza + '|' + z.color;
     if (!mapa.has(k)) mapa.set(k, { pieza: z.pieza, color: z.color, cantidad: 0 });
     mapa.get(k).cantidad++;
   }
   return [...mapa.values()].sort((a, b) => b.cantidad - a.cantidad || a.pieza.localeCompare(b.pieza));
+}
+
+// Número de pieza y color de una línea LDraw cruda ("1 4 0 0 0 ... parts/3001.dat").
+export function datosLineaCruda(z) {
+  if (!z || !z.raw) return null;
+  if (z.dat) return { dat: String(z.dat).toLowerCase(), color: Number(z.color) };
+  const t = String(z.raw).trim().split(/\s+/);
+  if (t.length < 15) return null;
+  const ref = t.slice(14).join(' ').toLowerCase().replace(/\\/g, '/');
+  const dat = ref.slice(ref.lastIndexOf('/') + 1).replace(/\.dat$/, '');
+  if (!dat || !isFinite(Number(t[1]))) return null;
+  return { dat, color: Number(t[1]) };
 }
 
 export function infoPieza(clave) { return piezaPorClave(clave); }
