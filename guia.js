@@ -268,22 +268,50 @@ notas: Pista para el alumno.</pre>
       titulo: "Ensamble LEGO",
       html: `
         <p class="guia-p">La sección <strong>Ensamble con LEGO</strong> crea manuales de construcción paso a paso,
-        como los de las cajas oficiales: el modelo se describe como <strong>texto plano</strong> (o lo genera una IA)
-        y se dibuja en <strong>3D</strong> con el motor LDraw + three.js que vive en la propia página — no depende
-        de servicios externos.</p>
+        como los de las cajas oficiales: el modelo se describe como <strong>texto plano</strong> (o lo genera una IA,
+        o se <strong>importa un modelo <code>.ldr</code>/<code>.mpd</code></strong> ya armado) y se dibuja en
+        <strong>3D</strong> con el motor LDraw + three.js que vive en la propia página — no depende de servicios
+        externos.</p>
 
-        <h4 class="guia-h">1 · Crear la guía (tres formas combinables)</h4>
+        <h4 class="guia-h">1 · Crear la guía (cuatro formas combinables)</h4>
         <ul class="guia-lista">
           <li><strong>Editor Visual</strong> — agregás pasos y piezas con selectores, ubicás cada pieza con clic en la
           cuadrícula (vista desde arriba) y mirás el modelo en 3D mientras armás.</li>
           <li><strong>Importar Texto</strong> — un solo texto carga la guía entera. Ideal para reutilizar y editar en lote.</li>
           <li><strong>Asistente IA</strong> — describís qué querés armar y el prompt sale con el catálogo de piezas, la
           sintaxis y las reglas físicas explicadas; la respuesta de la IA se convierte en la guía completa de una vez.</li>
+          <li><strong>Importar modelo 3D</strong> — subís un modelo <code>.ldr</code> o <code>.mpd</code> ya armado en
+          BrickLink Studio, LeoCAD, LDCad o MLCad y la página lo <strong>desarma en pasos</strong> sola.</li>
           <li><strong>Editor 3D del modelo terminado</strong> — abrís el modelo completo en 3D, hacés clic en cualquier
           pieza y la movés, girás, cambiás de color o borrás. Como cada pieza pertenece a su paso, <strong>los pasos
           previos se corrigen automáticamente</strong>: ideal para retocar a gusto lo que generó la IA. El deslizador
           "ver hasta el paso" muestra el modelo en cualquier etapa intermedia.</li>
         </ul>
+
+        <h4 class="guia-h">Importar un modelo que ya tenés armado</h4>
+        <p class="guia-p">Si el modelo ya está hecho en la computadora, no hace falta escribirlo de nuevo: en la
+        pestaña <strong>«Importar modelo 3D»</strong> arrastrás el archivo y la página lo analiza. Reconoce cada pieza
+        contra el catálogo (así queda editable, con miniatura, inventario y comparador 1:1), la ubica en la cuadrícula,
+        apoya el modelo en el suelo y arma la guía. Las piezas que no están en el catálogo se dibujan igual y también
+        salen en la lista «Buscá estas piezas».</p>
+        <ul class="guia-lista">
+          <li><strong>Los pasos</strong> — si el archivo ya trae pasos marcados (<code>0 STEP</code>, lo que arma
+          LPub3D o Studio), se usan esos. Si no, se generan solos: <strong>de abajo hacia arriba, capa por capa</strong>,
+          con la cantidad de piezas por paso que vos elijas (menos piezas por paso = pasos más fáciles de seguir).</li>
+          <li><strong>Submodelos</strong> — un <code>.mpd</code> con subconjuntos se integra completo, cada pieza en su
+          lugar; los pasos internos de cada submodelo se respetan.</li>
+          <li><strong>Colores</strong> — los que no están en la paleta del generador se cambian por el más parecido y
+          queda avisado cuál se cambió por cuál.</li>
+          <li><strong>Formatos</strong> — <code>.ldr</code>, <code>.mpd</code> y <code>.dat</code>. Desde
+          <strong>Studio</strong>: <em>Archivo → Exportar → Exportar como LDraw</em>; desde <strong>LeoCAD</strong>:
+          <em>Guardar como… → .ldr</em>.</li>
+          <li><strong>Si faltan piezas</strong> — la página trae adentro solo las piezas de su catálogo. Cuando el
+          modelo usa otras, el análisis avisa cuáles y podés cargar el <code>complete.zip</code> oficial de LDraw
+          (library.ldraw.org) para que se dibujen todas. El zip se lee en tu propia computadora, no se sube a ningún
+          lado, y queda disponible mientras no cierres la página.</li>
+        </ul>
+        <div class="guia-aviso">Un modelo importado se edita como cualquier otra guía: podés juntar o partir pasos,
+        cambiar las consignas, sacar piezas y escribir las notas para el estudiante.</div>
 
         <h4 class="guia-h">2 · La sintaxis del texto</h4>
         <p class="guia-p">Cada paso empieza con <code>=== PASO: Título ===</code> y lleva <code>consigna:</code>,

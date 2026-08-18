@@ -247,6 +247,57 @@
 .picker-item__espera { font-size: 1.6rem; opacity: 0.3; }
 .picker-item__nombre { font-size: 0.68rem; text-align: center; line-height: 1.25; }
 
+/* ---------- importar un modelo .ldr/.mpd ---------- */
+.ld-drop {
+  border: 4px dashed rgba(0, 0, 0, 0.18);
+  background: var(--surface);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.ld-drop.ld-drop--encima {
+  border-color: var(--safety);
+  background: rgba(255, 62, 0, 0.06);
+}
+
+.ld-drop__icono { font-size: 2.6rem; line-height: 1; margin-bottom: 0.6rem; }
+
+.ld-drop__texto { margin-bottom: 1rem; line-height: 1.6; }
+
+.ld-resumen {
+  border: var(--border-thin);
+  background: var(--base);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.ld-resumen__titulo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.55;
+  display: block;
+  margin-bottom: 0.7rem;
+}
+
+.ld-resumen__datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.8rem;
+  margin: 0;
+}
+
+.ld-resumen__dato { display: flex; flex-direction: column; gap: 0.1rem; }
+.ld-resumen__num { font-size: 1.4rem; font-weight: 700; line-height: 1.1; }
+.ld-resumen__et { font-size: 0.78rem; opacity: 0.65; }
+.ld-resumen__num--falta { color: #C0392B; }
+
+.ld-estado { font-size: 0.85rem; opacity: 0.75; }
+
+.ld-opcion { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.4rem; }
+
 /* ---------- impresión ---------- */
 /* Objetivo: CADA PASO EN UNA HOJA A4. Se fija el papel, se compactan los
    bloques flexibles (imágenes y textos) y las vistas extra pasan al costado
