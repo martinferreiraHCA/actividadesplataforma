@@ -71,8 +71,10 @@
       <h2 class="section__title">Ensamble<br>con LEGO<span class="accent">.</span></h2>
     </div>
     <p class="scratch-intro">
-      Escribí el modelo como texto plano, pedíselo a una IA o <strong>subí un modelo que ya tengas armado</strong>
-      (<code>.ldr</code> / <code>.mpd</code> de Studio, LeoCAD o LDCad) y se dibuja en <strong>3D paso a paso</strong>, como un
+      Escribí el modelo como texto plano, pedíselo a una IA (con nuestra sintaxis o con el formato de
+      <strong>BrickGPT</strong>, que chequea que se pueda armar de verdad) o <strong>subí un modelo que ya tengas
+      armado</strong> (<code>.ldr</code> / <code>.mpd</code> de Studio, LeoCAD o LDCad) y se dibuja en
+      <strong>3D paso a paso</strong>, como un
       manual oficial de LEGO: cada paso muestra <strong>qué piezas buscar</strong> (con un <strong>comparador a tamaño
       real 1:1</strong> para apoyar la pieza encima y verificarla), la <strong>guía visual del armado</strong> y las
       explicaciones para el estudiante. El motor de dibujo (three.js + LDraw) y la biblioteca de piezas viven en esta
@@ -91,7 +93,7 @@
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 02</span>
         <span class="paso-rapido__titulo">Los pasos</span>
-        <span class="paso-rapido__texto">Armá el modelo paso a paso: a mano con el editor visual, pegando texto, con ayuda de una IA o importando un .ldr/.mpd.</span>
+        <span class="paso-rapido__texto">Armá el modelo paso a paso: a mano con el editor visual, pegando texto, con ayuda de una IA, con BrickGPT o importando un .ldr/.mpd.</span>
       </div>
       <div class="paso-rapido">
         <span class="paso-rapido__num">PASO 03</span>
@@ -140,7 +142,7 @@
 <section class="editor-section" style="padding-bottom:0">
   <div class="container">
     <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Armá el modelo paso a paso</div>
-    <p class="wiz-explica" style="margin-bottom:1rem"><strong>Elegí cómo crear los pasos</strong> — las cuatro formas se pueden combinar y todo se edita después:</p>
+    <p class="wiz-explica" style="margin-bottom:1rem"><strong>Elegí cómo crear los pasos</strong> — las cinco formas se pueden combinar y todo se edita después:</p>
     <div class="tabs-modo tabs-modo--cards">
       <button class="tab-modo active" data-modo="visual">
         <span class="tab-modo__icono">◎</span>
@@ -168,6 +170,13 @@
         <span class="tab-modo__cuerpo">
           <span class="tab-modo__nombre">Importar modelo 3D</span>
           <span class="tab-modo__desc">Subí un modelo hecho en Studio, LeoCAD o LDCad (.ldr o .mpd) y se convierte en la guía de armado paso a paso.</span>
+        </span>
+      </button>
+      <button class="tab-modo" data-modo="brickgpt">
+        <span class="tab-modo__icono">🧠</span>
+        <span class="tab-modo__cuerpo">
+          <span class="tab-modo__nombre">BrickGPT</span>
+          <span class="tab-modo__desc">Describí el modelo en palabras y traelo en el formato de BrickGPT: 8 ladrillos, chequeo de que se pueda armar de verdad.</span>
         </span>
       </button>
     </div>
@@ -246,6 +255,101 @@
 
       <button class="btn btn--primary" id="btnProcesarLegoTexto">Procesar y cargar la guía</button>
       <div id="avisosLegoTexto" style="margin-top:1.5rem"></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ====== PANEL: BRICKGPT ====== -->
+<section class="editor-section panel-modo" id="panel-lego-brickgpt" style="display:none">
+  <div class="container">
+
+    <div class="paso-card">
+      <div class="paso-card__cabecera">
+        <div class="paso-card__numero">🧠</div>
+        <h2 class="paso-card__titulo">Del texto al modelo<br><span style="font-size:0.6em;opacity:0.5;text-transform:none">formato BrickGPT</span></h2>
+      </div>
+
+      <div class="alerta alerta--info" style="margin-bottom:1.2rem">
+        <strong><a href="https://github.com/AvaLovelace1/BrickGPT" target="_blank" rel="noopener">BrickGPT</a></strong>
+        (Pun, Deng, Liu, Ramanan, Liu y Zhu · Carnegie Mellon University, ICCV 2025) es un sistema que arma modelos LEGO
+        a partir de una descripción en palabras, cuidando que <strong>lo que sale se pueda construir de verdad</strong>.
+        Su gracia es un formato de una simpleza total: <strong>una línea por ladrillo</strong>, con solo 8 ladrillos
+        clásicos, y unas reglas físicas que se pueden verificar.
+        <br><br>
+        Acá tenés ese formato completo: le pedís el modelo <strong>a cualquier IA</strong> con el prompt de abajo (o al
+        <a href="https://avalovelace1.github.io/BrickGPT/" target="_blank" rel="noopener">demo oficial de BrickGPT</a>,
+        que además baja un <code>.txt</code>), pegás la lista acá, la página <strong>revisa que se pueda armar</strong>
+        —fuera de la caja, choques, ladrillos flotando y piezas que no llegan al suelo, los mismos chequeos que hace
+        BrickGPT— y la convierte en la guía paso a paso.
+      </div>
+
+      <div class="ia-accesos" style="margin-bottom:1.5rem">
+        <span class="ia-accesos__label">Abrí tu IA aquí:</span>
+        <button class="ia-acceso ia-btn" data-ia-abrir="chatgpt">ChatGPT</button>
+        <button class="ia-acceso ia-btn" data-ia-abrir="claude">Claude</button>
+        <button class="ia-acceso ia-btn" data-ia-abrir="gemini">Gemini</button>
+      </div>
+
+      <form id="formPromptBrickGPT" autocomplete="off">
+        <div class="campo">
+          <label class="campo__etiqueta" for="bgQue">¿Qué hay que armar?</label>
+          <textarea class="campo__textarea" id="bgQue" rows="2" required
+            placeholder="Ej: Una silla simple, con respaldo recto y asiento cuadrado."></textarea>
+          <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Descripciones cortas y concretas, como las del entrenamiento de BrickGPT: «una mesa cuadrada con cuatro patas», «un sillón de dos cuerpos», «un puente de un solo arco».</p>
+        </div>
+        <div class="campo-grid">
+          <div class="campo">
+            <label class="campo__etiqueta" for="bgMax">Cuántos ladrillos como máximo</label>
+            <input class="campo__input" type="number" id="bgMax" min="4" max="400" placeholder="Sin límite">
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="bgExtra">Algo más para la IA (opcional)</label>
+            <input class="campo__input" type="text" id="bgExtra" placeholder="Ej: que sea bien bajito y ancho, simétrico...">
+          </div>
+        </div>
+        <button class="btn btn--primary" type="submit">Generar el prompt</button>
+      </form>
+
+      <div class="caja-prompt" id="cajaPromptBrickGPT"></div>
+      <div class="caja-prompt__acciones" id="accionesPromptBrickGPT" style="display:none">
+        <button class="btn btn--primary" id="btnCopiarPromptBrickGPT" type="button">Copiar Prompt</button>
+      </div>
+
+      <div class="campo" style="margin-top:1.5rem">
+        <label class="campo__etiqueta" for="bgTexto">Pegá acá la lista de ladrillos (o subí el .txt de BrickGPT)</label>
+        <textarea class="campo__textarea campo__textarea--grande" id="bgTexto"
+          placeholder="2x4 (0,0,0)&#10;2x4 (0,4,0)&#10;1x6 (2,1,1)"></textarea>
+      </div>
+
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
+        <button class="btn btn--ghost" id="btnEjemploBrickGPT" type="button" style="padding:0.5em 1.2em">Cargar un ejemplo</button>
+        <input type="file" id="inputBrickGPT" accept=".txt,.text" style="display:none">
+        <button class="btn btn--ghost" id="btnSubirBrickGPT" type="button" style="padding:0.5em 1.2em">Subir un .txt</button>
+        <button class="btn btn--ghost" id="btnRevisarBrickGPT" type="button" style="padding:0.5em 1.2em">🔍 Revisar si se puede armar</button>
+      </div>
+
+      <div class="campo-grid">
+        <div class="campo">
+          <label class="campo__etiqueta" for="bgColor">De qué color sale (BrickGPT no trae colores)</label>
+          <select class="campo__input" id="bgColor">
+            <option value="capas">Un color distinto por piso (más fácil de seguir)</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="bgPorPaso">Ladrillos por paso</label>
+          <input class="campo__input" type="number" id="bgPorPaso" min="1" max="40" value="6">
+          <p class="ia-catalogo__ayuda" style="margin-top:0.3rem">Los pasos se arman por pisos, de abajo hacia arriba.</p>
+        </div>
+      </div>
+
+      <label class="scratch-check" style="margin-bottom:1.2rem"><input type="checkbox" id="chkReemplazarBrickGPT" checked> Reemplazar los pasos actuales</label>
+
+      <div>
+        <button class="btn btn--primary" id="btnProcesarBrickGPT" type="button">Convertir en guía de armado</button>
+      </div>
+      <div id="avisosLegoBrickGPT" style="margin-top:1.5rem"></div>
     </div>
 
   </div>
@@ -506,6 +610,10 @@
       <button class="btn--descarga" id="btnLegoCSV">
         <div class="btn__etiqueta">📋 Lista de piezas .csv</div>
         <div class="btn__subtexto">Inventario con cantidades, número LDraw y color — se abre en Excel</div>
+      </button>
+      <button class="btn--descarga" id="btnLegoBrickGPT">
+        <div class="btn__etiqueta">🧠 Texto BrickGPT .txt</div>
+        <div class="btn__subtexto">El modelo en el formato de BrickGPT, una línea por ladrillo</div>
       </button>
       <button class="btn--descarga" id="btnLegoBrickLink">
         <div class="btn__etiqueta">🛒 Lista de compra BrickLink .xml</div>

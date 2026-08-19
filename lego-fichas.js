@@ -1381,6 +1381,124 @@ function notaExport(texto) {
 }
 
 // ============================================================
+// BrickGPT: lista de ladrillos "hxw (x,y,z)" → guía de armado
+// ============================================================
+const EJEMPLO_BRICKGPT = `2x2 (0,0,0)
+2x2 (0,4,0)
+2x2 (4,0,0)
+2x2 (4,4,0)
+6x2 (0,0,1)
+6x2 (0,4,1)
+2x6 (0,0,2)
+2x6 (2,0,2)
+2x6 (4,0,2)
+6x2 (0,4,3)
+6x2 (0,4,4)`;
+
+function brickgpt() {
+  return import('./lego-brickgpt.js');
+}
+
+function ladrillosDelTextarea(mod) {
+  const { ladrillos, errores } = mod.parsearTextoBrickGPT(document.getElementById('bgTexto').value);
+  return { ladrillos, errores };
+}
+
+async function revisarBrickGPT() {
+  const mod = await brickgpt();
+  const { ladrillos, errores } = ladrillosDelTextarea(mod);
+  if (!ladrillos.length) {
+    mostrarAvisos('avisosLegoBrickGPT', errores.concat('No se encontró ningún ladrillo. Cada línea tiene que ser como «2x4 (0,0,0)».'));
+    return null;
+  }
+  const rev = mod.revisar(ladrillos);
+  mostrarAvisos('avisosLegoBrickGPT', errores.concat(mod.avisosDeRevision(rev, ladrillos.length)));
+  return { mod, ladrillos, errores, rev };
+}
+
+async function procesarBrickGPT() {
+  const revisado = await revisarBrickGPT();
+  if (!revisado) { toast('No hay ladrillos para convertir.'); return; }
+  const { mod, ladrillos, errores, rev } = revisado;
+  const avisos = errores.concat(mod.avisosDeRevision(rev, ladrillos.length));
+  if (!rev.ok) {
+    avisos.push('El modelo se carga igual: podés arreglar lo que quedó flojo en el editor 3D y después rearmar los pasos.');
+  }
+
+  const piezas = mod.aPiezas(ladrillos, { color: document.getElementById('bgColor').value });
+  const porPaso = document.getElementById('bgPorPaso').value;
+  const items = piezas.map((pieza, i) => ({ pieza, nivel: pieza.nivel, orden: i }));
+  const importador = await importadorLdr();
+  const pasos = importador.pasosPorCapas(items, porPaso);
+  avisos.push(`🧱 ${piezas.length} ladrillo(s) repartidos en ${pasos.length} paso(s), de abajo hacia arriba.`);
+
+  const doc = {
+    titulo: state.titulo || (document.getElementById('bgQue').value || '').trim(),
+    subtitulo: '',
+    descripcion: '',
+    pasos,
+  };
+  cargarDocParseado({ doc, avisos }, document.getElementById('chkReemplazarBrickGPT').checked, 'avisosLegoBrickGPT', { validar: false });
+}
+
+async function exportarBrickGPT() {
+  if (!hayPiezas()) { toast('Todavía no hay piezas para exportar.'); return; }
+  const mod = await brickgpt();
+  const r = mod.aTextoBrickGPT(state);
+  if (!r.incluidas) {
+    notaExport('Ninguna pieza del modelo se puede escribir en el formato de BrickGPT: solo entran los 8 ladrillos clásicos (1x1, 1x2, 1x4, 1x6, 1x8, 2x2, 2x4 y 2x6) apoyados en pisos enteros.');
+    return;
+  }
+  descargarBlob(new Blob([r.texto], { type: 'text/plain;charset=utf-8' }), nombreArchivo('brickgpt.txt'));
+  const rev = mod.revisar(r.ladrillos);
+  notaExport(`Texto BrickGPT descargado: ${r.incluidas} ladrillo(s).`
+    + (r.omitidas.length ? ' Quedaron afuera ' + r.omitidas.join(', ') + '.' : '')
+    + (rev.ok ? ' Pasa el chequeo de armabilidad.' : ' Ojo: no pasa el chequeo de armabilidad (revisalo en la pestaña BrickGPT).'));
+}
+
+function initBrickGPT() {
+  const selColor = document.getElementById('bgColor');
+  COLORES.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.codigo;
+    o.textContent = 'Todo en ' + c.nombre.toLowerCase();
+    selColor.appendChild(o);
+  });
+
+  document.getElementById('formPromptBrickGPT').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const mod = await brickgpt();
+    const prompt = mod.promptBrickGPT({
+      que: document.getElementById('bgQue').value,
+      maxLadrillos: parseInt(document.getElementById('bgMax').value, 10) || 0,
+      extra: document.getElementById('bgExtra').value,
+    });
+    const caja = document.getElementById('cajaPromptBrickGPT');
+    caja.textContent = prompt;
+    caja.classList.add('caja-prompt--visible');
+    document.getElementById('accionesPromptBrickGPT').style.display = '';
+    copiarTexto(prompt, 'Prompt generado y copiado — pegalo en tu IA.');
+  });
+  document.getElementById('btnCopiarPromptBrickGPT').addEventListener('click', () => {
+    copiarTexto(document.getElementById('cajaPromptBrickGPT').textContent);
+  });
+  document.getElementById('btnEjemploBrickGPT').addEventListener('click', () => {
+    document.getElementById('bgTexto').value = EJEMPLO_BRICKGPT;
+  });
+  const inputTxt = document.getElementById('inputBrickGPT');
+  document.getElementById('btnSubirBrickGPT').addEventListener('click', () => inputTxt.click());
+  inputTxt.addEventListener('change', async () => {
+    const f = inputTxt.files && inputTxt.files[0];
+    inputTxt.value = '';
+    if (!f) return;
+    document.getElementById('bgTexto').value = await f.text();
+    revisarBrickGPT();
+  });
+  document.getElementById('btnRevisarBrickGPT').addEventListener('click', revisarBrickGPT);
+  document.getElementById('btnProcesarBrickGPT').addEventListener('click', procesarBrickGPT);
+}
+
+// ============================================================
 // Importar un modelo LDraw (.ldr / .mpd) y desarmarlo en pasos
 // ============================================================
 let analisisModelo = null;   // resultado de analizar el archivo elegido
@@ -1610,6 +1728,7 @@ function init() {
       document.getElementById('panel-lego-texto').style.display = modo === 'texto' ? '' : 'none';
       document.getElementById('panel-lego-ia').style.display = modo === 'ia' ? '' : 'none';
       document.getElementById('panel-lego-modelo').style.display = modo === 'modelo' ? '' : 'none';
+      document.getElementById('panel-lego-brickgpt').style.display = modo === 'brickgpt' ? '' : 'none';
     });
   });
 
@@ -1731,6 +1850,7 @@ function init() {
 
   // ---- vista previa ----
   initImportarModelo();
+  initBrickGPT();
 
   document.getElementById('btnActualizarFichas').addEventListener('click', actualizarVistaPrevia);
 
@@ -1741,6 +1861,7 @@ function init() {
   document.getElementById('btnLegoSTL').addEventListener('click', exportarSTL);
   document.getElementById('btnLegoCSV').addEventListener('click', exportarCSV);
   document.getElementById('btnLegoBrickLink').addEventListener('click', exportarBrickLink);
+  document.getElementById('btnLegoBrickGPT').addEventListener('click', exportarBrickGPT);
   document.getElementById('btnRearmarPasos').addEventListener('click', rearmarPasos);
   document.getElementById('btnLegoJSON').addEventListener('click', exportarJSON);
   document.getElementById('btnLegoCopiarTexto').addEventListener('click', () => {

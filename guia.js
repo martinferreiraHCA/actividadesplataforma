@@ -273,7 +273,7 @@ notas: Pista para el alumno.</pre>
         <strong>3D</strong> con el motor LDraw + three.js que vive en la propia página — no depende de servicios
         externos.</p>
 
-        <h4 class="guia-h">1 · Crear la guía (cuatro formas combinables)</h4>
+        <h4 class="guia-h">1 · Crear la guía (cinco formas combinables)</h4>
         <ul class="guia-lista">
           <li><strong>Editor Visual</strong> — agregás pasos y piezas con selectores, ubicás cada pieza con clic en la
           cuadrícula (vista desde arriba) y mirás el modelo en 3D mientras armás.</li>
@@ -282,6 +282,8 @@ notas: Pista para el alumno.</pre>
           sintaxis y las reglas físicas explicadas; la respuesta de la IA se convierte en la guía completa de una vez.</li>
           <li><strong>Importar modelo 3D</strong> — subís un modelo <code>.ldr</code> o <code>.mpd</code> ya armado en
           BrickLink Studio, LeoCAD, LDCad o MLCad y la página lo <strong>desarma en pasos</strong> sola.</li>
+          <li><strong>BrickGPT</strong> — describís el modelo en palabras y lo traés en el formato de BrickGPT: una
+          línea por ladrillo, con el chequeo de que se pueda armar de verdad.</li>
           <li><strong>Editor 3D del modelo terminado</strong> — abrís el modelo completo en 3D, hacés clic en cualquier
           pieza y la movés, girás, cambiás de color o borrás. Como cada pieza pertenece a su paso, <strong>los pasos
           previos se corrigen automáticamente</strong>: ideal para retocar a gusto lo que generó la IA. El deslizador
@@ -316,6 +318,38 @@ notas: Pista para el alumno.</pre>
         </ul>
         <div class="guia-aviso">Un modelo importado se edita como cualquier otra guía: podés juntar o partir pasos,
         cambiar las consignas, sacar piezas y escribir las notas para el estudiante.</div>
+
+        <h4 class="guia-h">BrickGPT: del texto al modelo</h4>
+        <p class="guia-p"><strong>BrickGPT</strong> (Pun, Deng, Liu, Ramanan, Liu y Zhu — Carnegie Mellon University,
+        ICCV 2025) es un sistema que arma modelos LEGO a partir de una descripción en palabras cuidando que lo que sale
+        <strong>se pueda construir de verdad</strong>. Su formato es de una simpleza total: <strong>una línea por
+        ladrillo</strong>, con solo 8 ladrillos clásicos (1×1, 1×2, 1×4, 1×6, 1×8, 2×2, 2×4 y 2×6), todos de un ladrillo
+        de alto:</p>
+        <pre class="guia-pre">2x4 (0,0,0)      ← un 2×4 apoyado en el suelo, esquina en x=0, y=0
+6x2 (0,4,1)      ← un 2×6 acostado a lo largo de x, en el piso 1
+2x2 (4,4,0)</pre>
+        <p class="guia-p">Cada línea dice <code>&lt;alto&gt;x&lt;ancho&gt; (x,y,z)</code>: el primer número ocupa el eje
+        x, el segundo el eje y, y <strong>z es el piso</strong> —no una altura en studs—, empezando por 0. Todo entra en
+        una caja de 20×20×20.</p>
+        <p class="guia-p">En la pestaña <strong>BrickGPT</strong> tenés las tres partes:</p>
+        <ul class="guia-lista">
+          <li><strong>El prompt</strong> — escribís qué querés armar y sale la instrucción con el formato, las medidas
+          permitidas y las reglas físicas explicadas. Se la pegás a <strong>cualquier IA</strong> (ChatGPT, Claude,
+          Gemini): como el formato es tan simple, cualquiera lo puede escribir. También podés usar el
+          <strong>demo oficial de BrickGPT</strong>, que baja un <code>.txt</code> para subir acá.</li>
+          <li><strong>El chequeo de armabilidad</strong> — el botón «Revisar si se puede armar» hace los mismos
+          controles que BrickGPT: que nada se salga de la caja, que no haya dos ladrillos en el mismo lugar, que ninguno
+          quede flotando y que <strong>todos se encadenen hasta el suelo</strong> (si no, el modelo saldría en pedazos
+          sueltos). Te dice exactamente qué ladrillo está mal.</li>
+          <li><strong>La conversión a guía</strong> — los ladrillos entran como piezas normales del generador, con un
+          <strong>color por piso</strong> (o todo de un color) para que los pasos se sigan de un vistazo, repartidos en
+          pasos de abajo hacia arriba. De ahí en más se edita y se descarga como cualquier otra guía.</li>
+        </ul>
+        <div class="guia-aviso">El modelo de BrickGPT es una IA que corre con Python y placa de video: no puede vivir
+        adentro de esta página. Lo que está acá es su formato, su instrucción y sus chequeos — así cualquier IA que
+        tengas a mano hace de generador y la página se encarga de que lo que salga se pueda armar. En
+        <strong>Descargar</strong> también está el <strong>texto BrickGPT .txt</strong> de tu modelo, para llevarlo a
+        las herramientas del proyecto original.</div>
 
         <h4 class="guia-h">Editar el modelo y rehacer las fichas solo</h4>
         <p class="guia-p">Una vez cargado —lo hayas escrito vos, lo haya hecho la IA o venga de un archivo— el modelo se
@@ -389,6 +423,8 @@ notas: Las placas son las piezas finitas.</pre>
           8 mm) y con Z hacia arriba: se abre en Blender, Tinkercad, Cura o cualquier programa de impresión 3D.</li>
           <li><strong>Lista de piezas .csv</strong> — el inventario completo (cantidad, pieza, número LDraw y color)
           para abrir en Excel: sirve para preparar las cajas antes de la clase.</li>
+          <li><strong>Texto BrickGPT .txt</strong> — el modelo en el formato de BrickGPT (solo los 8 ladrillos
+          clásicos apoyados en pisos enteros; el resto queda afuera y se avisa).</li>
           <li><strong>Lista de compra BrickLink .xml</strong> — la <em>Wanted List</em> para subir a BrickLink
           (<em>Want → Upload → Wanted List XML</em>) y conseguir las piezas que falten.</li>
           <li><strong>Copiar como texto / borrador .json</strong> — para editar en lote o retomar otro día (también se
