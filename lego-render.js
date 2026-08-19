@@ -103,7 +103,7 @@ async function crearMotor() {
   // Mide la caja de una pieza (se cachea). Coordenadas nativas LDraw (y hacia abajo).
   async function medir(dat) {
     if (medidas.has(dat)) return medidas.get(dat);
-    const grupo = await parsear(`1 16 0 0 0 1 0 0 0 1 0 0 0 1 parts/${dat}.dat`);
+    const grupo = await parsear(`1 16 0 0 0 1 0 0 0 1 0 0 0 1 ${dat}.dat`);
     const caja = new THREE.Box3().setFromObject(grupo);
     medidas.set(dat, caja);
     return caja;
@@ -205,7 +205,7 @@ async function crearMotor() {
     const t = transformacion(z);
     if (!t) return null;
     const num = (v) => Math.round(v * 100) / 100;
-    return `1 ${z.color} ${t.pos.map(num).join(' ')} ${t.mat.join(' ')} parts/${t.dat}.dat`;
+    return `1 ${z.color} ${t.pos.map(num).join(' ')} ${t.mat.join(' ')} ${t.dat}.dat`;
   }
 
   // Grupo three.js de una sola pieza (para el editor 3D en vivo)
@@ -213,7 +213,7 @@ async function crearMotor() {
     const info = piezaPorClave(clave);
     if (!info) return null;
     await medir(info.dat);
-    return parsear(`1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 parts/${info.dat}.dat`);
+    return parsear(`1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 ${info.dat}.dat`);
   }
 
   // Igual, pero para una pieza que no está en el catálogo (importada de un
@@ -221,7 +221,7 @@ async function crearMotor() {
   async function grupoDat(dat, color) {
     if (!dat) return null;
     await medir(dat);
-    return parsear(`1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 parts/${dat}.dat`);
+    return parsear(`1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 ${dat}.dat`);
   }
 
   // Huella en studs de una colocación (para el editor de cuadrícula)
@@ -306,7 +306,7 @@ async function crearMotor() {
     const k = dat + '|' + color + '|' + px + '|raw';
     if (cacheMiniaturas.has(k)) return cacheMiniaturas.get(k);
     const url = await fotoModelo(
-      [{ raw: `1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 parts/${dat}.dat` }],
+      [{ raw: `1 ${color} 0 0 0 1 0 0 0 1 0 0 0 1 ${dat}.dat` }],
       { ancho: px, alto: px, margen: 1.3 }
     );
     cacheMiniaturas.set(k, url);
@@ -429,6 +429,31 @@ async function crearMotor() {
     return url;
   }
 
+  // Triángulos del modelo entero en coordenadas LDraw, para exportar la malla
+  // (.stl). Devuelve un array plano: 9 números por triángulo.
+  async function trianglesModelo(piezas) {
+    await medirTodas(piezas);
+    const grupo = await parsear(textoModelo(piezas));
+    if (!grupo) return [];
+    grupo.updateMatrixWorld(true);
+    const salida = [];
+    const v = new THREE.Vector3();
+    grupo.traverse((o) => {
+      if (!o.isMesh || !o.geometry || !o.geometry.attributes || !o.geometry.attributes.position) return;
+      const pos = o.geometry.attributes.position;
+      const indice = o.geometry.index;
+      const total = indice ? indice.count : pos.count;
+      for (let i = 0; i + 2 < total; i += 3) {
+        for (let k = 0; k < 3; k++) {
+          const idx = indice ? indice.getX(i + k) : i + k;
+          v.fromBufferAttribute(pos, idx).applyMatrix4(o.matrixWorld);
+          salida.push(v.x, v.y, v.z);
+        }
+      }
+    });
+    return salida;
+  }
+
   // Exportación .ldr con pasos (compatible con LPub3D, LDView, Studio…)
   async function exportarLdr(state) {
     const todas = state.pasos.flatMap(p => p.piezas);
@@ -451,6 +476,6 @@ async function crearMotor() {
 
   return {
     medir, medirTodas, huella, fotoModelo, fotoPieza, fotoDat, exportarLdr, lineaLdraw, transformacion, grupoPieza, grupoDat,
-    reconocerColocacion, cajaColocada, existeParte, usarBibliotecaExtra, limpiarCacheLdraw,
+    reconocerColocacion, cajaColocada, existeParte, usarBibliotecaExtra, limpiarCacheLdraw, trianglesModelo,
   };
 }

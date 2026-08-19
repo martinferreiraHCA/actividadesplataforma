@@ -298,9 +298,9 @@ async function grupoDePieza(p) {
   await listoMateriales;
   const info = piezaPorClave(p.pieza);
   if (!info) return null;
-  const g = await parsear(`1 ${p.color} 0 0 0 1 0 0 0 1 0 0 0 1 parts/${info.dat}.dat`);
+  const g = await parsear(`1 ${p.color} 0 0 0 1 0 0 0 1 0 0 0 1 ${info.dat}.dat`);
   if (!cajas.has(info.dat)) {
-    const limpio = await parsear(`1 16 0 0 0 1 0 0 0 1 0 0 0 1 parts/${info.dat}.dat`);
+    const limpio = await parsear(`1 16 0 0 0 1 0 0 0 1 0 0 0 1 ${info.dat}.dat`);
     cajas.set(info.dat, new THREE.Box3().setFromObject(limpio));
   }
   return g;
@@ -609,7 +609,7 @@ function exportarTexto() {
     for (const p of c.piezas) {
       const info = piezaPorClave(p.pieza);
       if (!info) continue;
-      L.push(`1 ${p.color} ${p.pos.map(numero).join(' ')} ${p.mat.map(numero).join(' ')} parts/${info.dat}.dat`);
+      L.push(`1 ${p.color} ${p.pos.map(numero).join(' ')} ${p.mat.map(numero).join(' ')} ${info.dat}.dat`);
     }
     L.push('');
   }

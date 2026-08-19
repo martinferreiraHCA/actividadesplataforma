@@ -3,7 +3,7 @@
 // asistente IA, fichas imprimibles con comparador de piezas a escala 1:1,
 // y exportación a PDF (impresión), LDraw (.ldr) y borrador .json.
 
-import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw, piezaEnKit, piezasDeKit, cantidadEnKit, conectoresDe } from './lego-catalogo.js';
+import { PIEZAS, COLORES, CATEGORIAS, KITS, piezaPorClave, colorPorCodigoLdraw, piezaEnKit, piezasDeKit, cantidadEnKit, conectoresDe, registrarPiezaImportada } from './lego-catalogo.js';
 import { parsearTexto, serializarDoc, nuevoPaso, nuevaPieza, piezasAgrupadas, validarConexiones, datosLineaCruda } from './lego-modelo.js';
 import { motorLego } from './lego-render.js';
 import { generarPromptLego } from './lego-prompt.js';
@@ -16,6 +16,7 @@ let state = {
   subtitulo: '',
   descripcion: '',
   pasos: [],
+  piezasImportadas: [],   // piezas de un modelo .ldr que no están en el catálogo fijo
   opciones: { estiloDoc: 'clasico', numerar: true, bordes: true, salto: true, comparador: true, vistas3d: true, atenuar: false, kit: 'todas', kitsNxt: '' }
 };
 
@@ -99,8 +100,29 @@ let saveTimer = null;
 function guardarLuego() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
+    state.piezasImportadas = piezasImportadasEnUso();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* sin espacio */ }
   }, 400);
+}
+
+// Las piezas importadas (medidas de un .ldr) no viven en el catálogo del
+// código: se guardan con el borrador y se vuelven a registrar al abrirlo.
+function piezasImportadasEnUso() {
+  const usadas = new Map();
+  for (const p of state.pasos) {
+    for (const z of p.piezas) {
+      if (z.raw) continue;
+      const info = piezaPorClave(z.pieza);
+      if (info && info.importada && !usadas.has(info.clave)) {
+        usadas.set(info.clave, { dat: info.dat, nombre: info.nombre, w: info.w, d: info.d, alto: info.alto });
+      }
+    }
+  }
+  return [...usadas.values()];
+}
+
+function recuperarPiezasImportadas(lista) {
+  (lista || []).forEach(p => registrarPiezaImportada(p));
 }
 
 function cargar() {
@@ -109,6 +131,7 @@ function cargar() {
     if (!raw) return;
     const s = JSON.parse(raw);
     if (s && Array.isArray(s.pasos)) {
+      recuperarPiezasImportadas(s.piezasImportadas);
       state = Object.assign(state, s);
       state.opciones = Object.assign({}, OPCIONES_DEF, s.opciones || {});
       state.pasos.forEach(conId);
@@ -1142,6 +1165,7 @@ function importarJSON(texto) {
   try {
     const s = JSON.parse(texto);
     if (!s || !Array.isArray(s.pasos)) throw new Error('formato');
+    recuperarPiezasImportadas(s.piezasImportadas);
     state = Object.assign(state, s);
     state.opciones = Object.assign(state.opciones, s.opciones || {});
     state.pasos.forEach(conId);
@@ -1248,6 +1272,115 @@ function refrescarCamposKit() {
 }
 
 // ============================================================
+// Rearmar los pasos: reparte TODAS las piezas del modelo en pasos
+// nuevos, de abajo hacia arriba. Es lo que cierra el círculo del modelo
+// importado: se retoca en el editor 3D y las fichas se rehacen solas.
+// ============================================================
+
+// Altura de la base de una pieza, en placas (para ordenar el armado)
+async function nivelDePieza(z) {
+  if (!z.raw) return z.nivel || 0;
+  const d = datosLineaCruda(z);
+  const t = String(z.raw).trim().split(/\s+/);
+  if (!d || t.length < 15) return 0;
+  const nums = t.slice(2, 14).map(Number);
+  if (nums.some(v => !isFinite(v))) return 0;
+  try {
+    const m = await motor();
+    const caja = await m.cajaColocada(d.dat, nums.slice(0, 3), nums.slice(3));
+    return -caja.maxY / 8;
+  } catch (e) { return 0; }
+}
+
+async function rearmarPasos() {
+  const todas = state.pasos.flatMap(p => p.piezas);
+  if (!todas.length) { toast('Todavía no hay piezas para repartir en pasos.'); return; }
+  const porPaso = Math.max(1, Math.min(40, parseInt(document.getElementById('ldRearmarPorPaso').value, 10) || 6));
+  if (!confirm(`Se van a rehacer TODOS los pasos con las ${todas.length} piezas del modelo, de abajo hacia arriba y hasta ${porPaso} pieza(s) por paso.\n\nLas consignas y las notas que hayas escrito en los pasos actuales se pierden. ¿Seguimos?`)) return;
+  const btn = document.getElementById('btnRearmarPasos');
+  btn.disabled = true;
+  try {
+    const m = await motor();
+    await m.medirTodas(todas);
+    const items = [];
+    for (const z of todas) {
+      items.push({ pieza: z, nivel: Math.round((await nivelDePieza(z)) * 10) / 10, orden: items.length });
+    }
+    const mod = await import('./lego-importar-ldr.js');
+    const nuevos = mod.pasosPorCapas(items, porPaso);
+    state.pasos = nuevos.map(conId);
+    if (state.pasos.length > 8) state.pasos.forEach((p, i) => { p.plegado = i > 0; });
+    cacheFotos.clear();
+    renderLista();
+    guardarLuego();
+    toast('Listo: ' + state.pasos.length + ' paso(s) nuevos. Generá la vista previa para ver las fichas.');
+  } catch (e) {
+    console.error('rearmar pasos:', e);
+    toast('No se pudieron rearmar los pasos.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ============================================================
+// Descargas del modelo en otros formatos (.png, .stl, .csv, BrickLink)
+// ============================================================
+async function exportarPNG() {
+  if (!hayPiezas()) { toast('Todavía no hay piezas para dibujar.'); return; }
+  notaExport('Dibujando el modelo en alta…');
+  try {
+    const url = await fotoPaso(state.pasos.length - 1, { ancho: 2400, alto: 1800, margen: 1.06 });
+    if (!url) throw new Error('sin imagen');
+    const mod = await import('./lego-exportar.js');
+    descargarBlob(mod.dataURLaBlob(url), nombreArchivo('png'));
+    notaExport('Imagen .png descargada.');
+  } catch (e) {
+    console.error('png:', e);
+    notaExport('No se pudo generar la imagen.');
+  }
+}
+
+async function exportarSTL() {
+  if (!hayPiezas()) { toast('Todavía no hay piezas para exportar.'); return; }
+  notaExport('Armando la malla 3D… (en modelos grandes tarda un poco)');
+  try {
+    const m = await motor();
+    const triangulos = await m.trianglesModelo(state.pasos.flatMap(p => p.piezas));
+    if (!triangulos.length) throw new Error('sin triángulos');
+    const mod = await import('./lego-exportar.js');
+    const blob = mod.stlBinario(triangulos);
+    descargarBlob(blob, nombreArchivo('stl'));
+    const mb = (blob.size / 1048576).toFixed(1);
+    notaExport(`Malla .stl descargada: ${(triangulos.length / 9).toLocaleString('es')} triángulos, ${mb} MB. Está a tamaño real (1 stud = 8 mm) y con Z hacia arriba.`);
+  } catch (e) {
+    console.error('stl:', e);
+    notaExport('No se pudo generar la malla 3D.');
+  }
+}
+
+async function exportarCSV() {
+  if (!hayPiezas()) { toast('Todavía no hay piezas para listar.'); return; }
+  const mod = await import('./lego-exportar.js');
+  descargarBlob(new Blob([mod.inventarioCSV(state)], { type: 'text/csv;charset=utf-8' }), nombreArchivo('csv'));
+  notaExport('Lista de piezas .csv descargada (se abre con Excel o LibreOffice).');
+}
+
+async function exportarBrickLink() {
+  if (!hayPiezas()) { toast('Todavía no hay piezas para listar.'); return; }
+  const mod = await import('./lego-exportar.js');
+  const { xml, sinColor } = mod.listaBrickLink(state);
+  descargarBlob(new Blob([xml], { type: 'application/xml' }), nombreArchivo('bricklink.xml'));
+  notaExport('Lista de compra descargada. En BrickLink: Want → Upload → Wanted List XML.'
+    + (sinColor ? ` ${sinColor} pieza(s) van sin color: BrickLink las busca en cualquier color.` : ''));
+}
+
+function notaExport(texto) {
+  const nota = document.getElementById('notaExportLego');
+  nota.style.display = '';
+  nota.textContent = texto;
+}
+
+// ============================================================
 // Importar un modelo LDraw (.ldr / .mpd) y desarmarlo en pasos
 // ============================================================
 let analisisModelo = null;   // resultado de analizar el archivo elegido
@@ -1350,6 +1483,7 @@ async function importarModeloLdr() {
       toast('No se pudo armar la guía con ese archivo.');
       return;
     }
+    res.avisos.push('✏ Para retocarlo: «🧊 Abrir el editor 3D del modelo» (más abajo) — movés, girás, cambiás de color o borrás cualquier pieza. Con «🔁 Rearmar los pasos por capas» las fichas se rehacen solas con el modelo ya editado.');
     const reemplazar = document.getElementById('chkReemplazarLegoModelo').checked;
     cargarDocParseado(res, reemplazar, 'avisosLegoModelo', { validar: false });
   } catch (e) {
@@ -1576,6 +1710,7 @@ function init() {
         contenedorId: 'editor3dLego',
         getPasos: () => state.pasos,
         getEstado: () => state,
+        onRearmarPasos: rearmarPasos,
         onCambio: () => {
           // cada retoque en 3D modifica el paso dueño de la pieza:
           // se invalidan las fotos y se refresca el editor de pasos
@@ -1602,6 +1737,11 @@ function init() {
   // ---- descargas ----
   document.getElementById('btnLegoPDF').addEventListener('click', exportarPDF);
   document.getElementById('btnLegoLDR').addEventListener('click', exportarLdr);
+  document.getElementById('btnLegoPNG').addEventListener('click', exportarPNG);
+  document.getElementById('btnLegoSTL').addEventListener('click', exportarSTL);
+  document.getElementById('btnLegoCSV').addEventListener('click', exportarCSV);
+  document.getElementById('btnLegoBrickLink').addEventListener('click', exportarBrickLink);
+  document.getElementById('btnRearmarPasos').addEventListener('click', rearmarPasos);
   document.getElementById('btnLegoJSON').addEventListener('click', exportarJSON);
   document.getElementById('btnLegoCopiarTexto').addEventListener('click', () => {
     copiarTexto(serializarDoc(state), 'Guía copiada como texto: editala donde quieras y volvé a pegarla en «Importar Texto».');

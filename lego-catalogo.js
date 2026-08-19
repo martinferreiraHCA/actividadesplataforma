@@ -268,7 +268,57 @@ export function piezaPorClave(clave) { return porClave.get(clave) || null; }
 // La usa el importador de modelos .ldr/.mpd para reconocer las piezas del
 // archivo y convertirlas en piezas editables de la guía.
 export function piezaPorDat(dat) {
-  return porDat.get(String(dat || '').toLowerCase().replace(/\.dat$/, '')) || null;
+  return porDat.get(normalizarDat(dat)) || null;
+}
+
+export function normalizarDat(dat) {
+  return String(dat || '').toLowerCase().replace(/\.dat$/, '');
+}
+
+// ============================================================
+// Piezas importadas: el catálogo que crece solo
+//
+// Un modelo .ldr puede traer piezas que no están en este catálogo. En vez de
+// dejarlas como líneas LDraw intocables, el importador las mide y las registra
+// acá al vuelo, con su tamaño real en studs y placas. Desde ese momento son
+// piezas como cualquier otra: se ubican en la cuadrícula, se editan en el 3D,
+// se cuentan en el inventario y salen en las fichas.
+// ============================================================
+
+export const CAT_IMPORTADAS = 'Importadas';
+
+export function clavePiezaImportada(dat) {
+  return 'ldraw ' + normalizarDat(dat);
+}
+
+export function registrarPiezaImportada(datos) {
+  const dat = normalizarDat(datos && datos.dat);
+  if (!dat) return null;
+  const yaEstaba = porDat.get(dat);
+  if (yaEstaba && !yaEstaba.importada) return yaEstaba;   // es una pieza del catálogo de siempre
+  const clave = clavePiezaImportada(dat);
+  if (porClave.has(clave)) return porClave.get(clave);
+  const info = {
+    clave,
+    dat,
+    nombre: datos.nombre || ('Pieza LDraw ' + dat),
+    w: Math.max(1, Math.round(datos.w || 1)),
+    d: Math.max(1, Math.round(datos.d || 1)),
+    alto: Math.max(1, Math.round(datos.alto || 1)),
+    studs: 'ninguna',
+    cat: CAT_IMPORTADAS,
+    bbox: true,          // se ubica por su caja medida, no por la huella de studs
+    importada: true,
+  };
+  PIEZAS.push(info);
+  porClave.set(clave, info);
+  if (!porDat.has(dat)) porDat.set(dat, info);
+  if (!CATEGORIAS.includes(CAT_IMPORTADAS)) CATEGORIAS.push(CAT_IMPORTADAS);
+  return info;
+}
+
+export function piezasImportadas() {
+  return PIEZAS.filter(p => p.importada);
 }
 export function colorPorCodigoLdraw(codigo) { return colorPorCodigo.get(Number(codigo)) || null; }
 

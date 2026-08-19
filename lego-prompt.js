@@ -4,12 +4,15 @@
 // Si hay un kit activo (ej: NXT), el catálogo del prompt se limita a sus
 // piezas — y si se indicó cuántos kits hay, también a sus cantidades.
 
-import { COLORES, CATEGORIAS, KITS, piezasDeKit, cantidadEnKit, conectoresLegibles } from './lego-catalogo.js';
+import { COLORES, CATEGORIAS, KITS, CAT_IMPORTADAS, piezasDeKit, cantidadEnKit, conectoresLegibles } from './lego-catalogo.js';
 
 function tablaPiezas(kit, cantidadKits) {
   const piezas = piezasDeKit(kit);
   const filas = [];
   for (const cat of CATEGORIAS) {
+    // las piezas importadas de un .ldr no van al prompt: la IA solo puede
+    // diseñar con el catálogo estable
+    if (cat === CAT_IMPORTADAS) continue;
     const lista = piezas.filter(p => p.cat === cat);
     if (!lista.length) continue;
     filas.push('· ' + cat + ':');

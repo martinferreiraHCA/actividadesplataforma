@@ -300,6 +300,10 @@ notas: Pista para el alumno.</pre>
           con la cantidad de piezas por paso que vos elijas (menos piezas por paso = pasos más fáciles de seguir).</li>
           <li><strong>Submodelos</strong> — un <code>.mpd</code> con subconjuntos se integra completo, cada pieza en su
           lugar; los pasos internos de cada submodelo se respetan.</li>
+          <li><strong>Las piezas que no están en el catálogo</strong> — no quedan afuera: se miden y se agregan como
+          <strong>piezas importadas</strong>, con su tamaño real en studs y placas. Desde ese momento son piezas como
+          cualquier otra (categoría «Importadas» en los selectores): se mueven en la cuadrícula, se giran, se cambian de
+          color, cuentan en el inventario y salen en las fichas. Se guardan con el borrador <code>.json</code>.</li>
           <li><strong>Colores</strong> — los que no están en la paleta del generador se cambian por el más parecido y
           queda avisado cuál se cambió por cuál.</li>
           <li><strong>Formatos</strong> — <code>.ldr</code>, <code>.mpd</code> y <code>.dat</code>. Desde
@@ -312,6 +316,17 @@ notas: Pista para el alumno.</pre>
         </ul>
         <div class="guia-aviso">Un modelo importado se edita como cualquier otra guía: podés juntar o partir pasos,
         cambiar las consignas, sacar piezas y escribir las notas para el estudiante.</div>
+
+        <h4 class="guia-h">Editar el modelo y rehacer las fichas solo</h4>
+        <p class="guia-p">Una vez cargado —lo hayas escrito vos, lo haya hecho la IA o venga de un archivo— el modelo se
+        retoca en el <strong>editor 3D</strong>: clic en cualquier pieza y la movés, la girás, la subís o bajás, le
+        cambiás el color, la duplicás, la borrás o la pasás a otro paso. El deslizador <em>«ver hasta el paso»</em>
+        muestra el modelo en cualquier etapa.</p>
+        <p class="guia-p">Cuando el modelo quedó como querés, el botón <strong>«🔁 Rearmar los pasos por capas»</strong>
+        (está en la barra del editor de pasos y también dentro del editor 3D) <strong>vuelve a repartir todas las piezas
+        en pasos nuevos</strong>, de abajo hacia arriba, con la cantidad de piezas por paso que elijas: las fichas de
+        armado salen de nuevo, ya con el modelo editado. Ojo que rehace todos los pasos, así que las consignas y las
+        notas que hayas escrito se pierden — conviene rearmar primero y escribir los textos después.</p>
 
         <h4 class="guia-h">2 · La sintaxis del texto</h4>
         <p class="guia-p">Cada paso empieza con <code>=== PASO: Título ===</code> y lleva <code>consigna:</code>,
@@ -366,9 +381,18 @@ notas: Las placas son las piezas finitas.</pre>
           <li><strong>PDF</strong> — desde la impresión del navegador, listo para repartir.</li>
           <li><strong>Modelo LDraw .ldr</strong> — el modelo con sus pasos, compatible con
           <strong>LPub3D</strong>, <strong>LDView</strong> y <strong>BrickLink Studio</strong> para renders y manuales
-          profesionales.</li>
+          profesionales. Es el mismo formato que entiende el importador, así que se puede sacar, retocar en otro
+          programa y volver a entrar.</li>
+          <li><strong>Imagen .png</strong> — la foto del modelo terminado en alta resolución, para el pizarrón, la
+          carátula del trabajo o el aula virtual.</li>
+          <li><strong>Malla 3D .stl</strong> — el modelo entero como malla, <strong>a tamaño real</strong> (1 stud =
+          8 mm) y con Z hacia arriba: se abre en Blender, Tinkercad, Cura o cualquier programa de impresión 3D.</li>
+          <li><strong>Lista de piezas .csv</strong> — el inventario completo (cantidad, pieza, número LDraw y color)
+          para abrir en Excel: sirve para preparar las cajas antes de la clase.</li>
+          <li><strong>Lista de compra BrickLink .xml</strong> — la <em>Wanted List</em> para subir a BrickLink
+          (<em>Want → Upload → Wanted List XML</em>) y conseguir las piezas que falten.</li>
           <li><strong>Copiar como texto / borrador .json</strong> — para editar en lote o retomar otro día (también se
-          autoguarda en el navegador).</li>
+          autoguarda en el navegador). El <code>.json</code> es el único que se lleva también las piezas importadas.</li>
         </ul>
       `
     },

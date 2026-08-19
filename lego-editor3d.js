@@ -60,6 +60,7 @@ async function crearEditor(opciones) {
         <option value="0.3125">1 mm</option>
       </select>
       <button class="ficha-card__accion ed3d__recargar" title="Vuelve a dibujar el modelo desde los pasos">🔄 Recargar</button>
+      <button class="ficha-card__accion ed3d__rearmar" title="Reparte TODAS las piezas del modelo en pasos nuevos, de abajo hacia arriba y capa por capa: las fichas de armado se rehacen solas" style="display:none">🔁 Rearmar los pasos por capas</button>
       <button class="ficha-card__accion ed3d__reporte" title="Descarga un reporte .txt con la guía, los cambios de esta sesión y el detalle LDU — para pasarle a la IA de desarrollo y mejorar el sistema">📄 Reporte .txt para la IA</button>
     </div>
     <div class="calib__barra">
@@ -298,6 +299,14 @@ async function crearEditor(opciones) {
     aplicarVisibilidad();
   });
   raiz.querySelector('.ed3d__recargar').addEventListener('click', recargar);
+  const btnRearmar = raiz.querySelector('.ed3d__rearmar');
+  if (inst.opciones.onRearmarPasos) {
+    btnRearmar.style.display = '';
+    btnRearmar.addEventListener('click', async () => {
+      btnRearmar.disabled = true;
+      try { await inst.opciones.onRearmarPasos(); await recargar(); } finally { btnRearmar.disabled = false; }
+    });
+  }
   raiz.querySelector('.ed3d__reporte').addEventListener('click', descargarReporte);
   raiz.querySelectorAll('[data-ed3d-mover]').forEach(b => b.addEventListener('click', () => {
     mover(b.dataset.ed3dMover[1], b.dataset.ed3dMover[0] === '+' ? 1 : -1);
