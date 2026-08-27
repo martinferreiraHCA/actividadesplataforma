@@ -36,6 +36,7 @@
           <a href="protocolos.html">🧪 Protocolos de práctico</a>
           <a href="instrumentos.html">📏 Banco de instrumentos</a>
           <a href="papel3d.html">📐 Diseño 3D con papel</a>
+          <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
         </span>
       </span>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
@@ -191,6 +192,7 @@
         <a href="protocolos.html">Protocolos de práctico</a>
         <a href="instrumentos.html">Banco de instrumentos</a>
         <a href="papel3d.html">Diseño 3D con papel</a>
+        <a href="sello3d.html">Sello 3D desde una imagen</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
@@ -277,6 +279,20 @@
   `;
   grid.appendChild(cardPapel);
   nuevasCards.push(cardPapel);
+  idx++;
+
+  // Ficha especial: sello 3D desde una imagen (página propia)
+  const cardSello = document.createElement('a');
+  cardSello.href = 'sello3d.html';
+  cardSello.className = 'actividad-card reveal';
+  cardSello.setAttribute('role', 'listitem');
+  cardSello.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Sello 3D desde una imagen</h3>
+    <p class="actividad-card__desc">Subí un dibujo (.svg, .png o .jpg) y convertilo en un sello para estampar, un llavero o una figura en relieve: elegís las medidas en milímetros, lo revisás en 3D y descargás el .stl listo para la impresora 3D.</p>
+  `;
+  grid.appendChild(cardSello);
+  nuevasCards.push(cardSello);
   idx++;
 
   // Ficha especial: protocolos de práctico de laboratorio (página propia)

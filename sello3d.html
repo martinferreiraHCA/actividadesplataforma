@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sello 3D desde una imagen — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Subí un SVG o una imagen y convertila en un sello, llavero o figura 3D con relieve: elegís el tamaño en milímetros, la ves en 3D y descargás el STL listo para la impresora 3D. Todo en el navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css"><!-- zona de subida y chips compartidas -->
+<link rel="stylesheet" href="sello3d.css">
+<script type="importmap">
+{ "imports": { "three": "./lego/vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+          <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// De la imagen a la impresora 3D</div>
+      <h2 class="section__title">Sello 3D<br>desde una Imagen<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Subí un <strong>dibujo</strong> (un <code>.svg</code> vectorial, o una imagen <code>.png</code> / <code>.jpg</code>
+      con buen contraste) y la plataforma lo convierte en un <strong>objeto 3D con relieve</strong>: un
+      <strong>sello</strong> para estampar, un <strong>llavero</strong> con su aro, o una <strong>figura</strong> en
+      relieve para imanes y medallas. Elegís el <strong>tamaño en milímetros</strong>, el alto del relieve y de la
+      base, lo girás en 3D para revisarlo y descargás el <strong>.stl</strong> listo para llevar a la
+      <strong>impresora 3D</strong> (o para seguir editándolo en Tinkercad). Todo pasa en tu navegador, sin
+      instalar nada ni subir la imagen a ningún servidor.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Subí la imagen</span>
+        <span class="paso-rapido__texto">Un .svg dibujado en Inkscape o bajado de internet, o un .png / .jpg de trazos nítidos: logos, siluetas, letras, dibujos a marcador.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Elegí qué hacer</span>
+        <span class="paso-rapido__texto">Sello (la figura sale espejada para que estampe derecho), llavero con aro, o figura en relieve. Ajustá tamaño, relieve y base en milímetros.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Descargá el STL</span>
+        <span class="paso-rapido__texto">Revisá el modelo en 3D y bajá el archivo .stl: se imprime apoyado como se ve, sin soportes. Con arcilla o tinta, ¡a estampar!</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== SUBIDA ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — La imagen</div>
+    <div class="inf-subida" id="zonaSubida" tabindex="0" role="button" aria-label="Subir una imagen (.svg, .png o .jpg)">
+      <div class="inf-subida__icono">🖼️</div>
+      <p class="inf-subida__texto"><strong>Arrastrá acá tu imagen</strong> o hacé clic para elegirla</p>
+      <p class="inf-subida__nota">Acepta <code>.svg</code> (mejor resultado), <code>.png</code>, <code>.jpg</code> y <code>.webp</code></p>
+      <input type="file" id="inputArchivo" accept=".svg,.png,.jpg,.jpeg,.webp,.gif,.bmp" style="display:none">
+    </div>
+    <div id="estadoSubida" class="inf-estado" style="display:none"></div>
+  </div>
+</section>
+
+
+<!-- ====== OPCIONES ====== -->
+<section class="editor-section" id="seccionOpciones" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Qué querés imprimir</div>
+
+    <div class="sello-presets" role="radiogroup" aria-label="Tipo de objeto">
+      <label class="sello-preset"><input type="radio" name="preset" value="figura" checked>
+        <span class="sello-preset__icono">🏅</span><span class="sello-preset__nombre">Figura en relieve</span>
+        <span class="sello-preset__desc">Para imanes, medallas o decorar. La imagen se ve tal cual.</span></label>
+      <label class="sello-preset"><input type="radio" name="preset" value="sello">
+        <span class="sello-preset__icono">🧊</span><span class="sello-preset__nombre">Sello para estampar</span>
+        <span class="sello-preset__desc">La figura sale espejada: al apoyarlo en tinta o arcilla, estampa derecho.</span></label>
+      <label class="sello-preset"><input type="radio" name="preset" value="llavero">
+        <span class="sello-preset__icono">🔑</span><span class="sello-preset__nombre">Llavero</span>
+        <span class="sello-preset__desc">Base finita con aro para pasar la argolla.</span></label>
+    </div>
+
+    <div class="scratch-opciones" style="margin-top:1.2rem">
+      <span class="scratch-opciones__label">Ancho de la figura:</span>
+      <input class="campo__input" type="number" id="optAncho" min="10" max="300" step="1" value="50" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      <span class="scratch-opciones__label">Relieve:</span>
+      <input class="campo__input" type="number" id="optRelieve" min="0.4" max="20" step="0.2" value="2" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      <span class="scratch-opciones__label">Base:</span>
+      <input class="campo__input" type="number" id="optBase" min="1" max="30" step="0.5" value="3" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+    </div>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Forma de la base:</span>
+      <select class="campo__input" id="optForma" style="max-width:180px">
+        <option value="redondeada" selected>Redondeada</option>
+        <option value="rect">Rectangular</option>
+        <option value="circulo">Circular</option>
+        <option value="sin">Sin base (solo la figura)</option>
+      </select>
+      <span class="scratch-opciones__label">Margen:</span>
+      <input class="campo__input" type="number" id="optMargen" min="0" max="30" step="0.5" value="4" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      <label class="scratch-check"><input type="checkbox" id="optEspejar"> Espejar (para sellos)</label>
+      <label class="scratch-check"><input type="checkbox" id="optLlavero"> Aro de llavero</label>
+      <label class="scratch-check"><input type="checkbox" id="optInvertir"> Invertir (figura ↔ fondo)</label>
+    </div>
+    <div class="scratch-opciones" id="filaCalco" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Umbral claro/oscuro:</span>
+      <input type="range" id="optUmbral" min="20" max="235" step="5" value="128" style="max-width:180px">
+      <span class="scratch-opciones__label" id="valUmbral">128</span>
+      <span class="scratch-opciones__label">Detalle del calco:</span>
+      <select class="campo__input" id="optDetalle" style="max-width:150px">
+        <option value="220">Bajo (más liso)</option>
+        <option value="420" selected>Medio</option>
+        <option value="760">Alto (más fiel)</option>
+      </select>
+    </div>
+    <p class="ia-catalogo__ayuda" id="notaVectorial" style="margin-top:0.5rem;display:none">Tu SVG tiene rellenos vectoriales: se usan los trazados exactos, sin calco por píxeles. Si activás «invertir», se calca desde la imagen.</p>
+    <p class="ia-catalogo__ayuda" style="margin-top:0.5rem">«Umbral»: qué tan oscuro tiene que ser un píxel para formar parte del relieve. Si tu dibujo es claro sobre fondo oscuro, activá «invertir».</p>
+  </div>
+</section>
+
+
+<!-- ====== RESULTADO ====== -->
+<section class="editor-section editor-section--surface" id="seccionResultado" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 3 — El modelo</div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
+      <button class="btn btn--primary" id="btnSTL">⬇ Descargar STL para imprimir</button>
+    </div>
+    <div id="statsModelo" class="inf-stats" style="margin-bottom:1rem"></div>
+
+    <div class="sello-panel">
+      <div class="sello-panel__vista3d">
+        <h3 class="sello-panel__titulo">El modelo en 3D (giralo con el mouse)</h3>
+        <canvas id="lienzo3d"></canvas>
+      </div>
+      <div class="sello-panel__planta">
+        <h3 class="sello-panel__titulo">Visto desde arriba (así estampa / se imprime)</h3>
+        <canvas id="lienzoPlanta"></canvas>
+        <p class="sello-nota">Al imprimir: apoyalo como se ve, con la base contra la cama. No necesita soportes. Para sellos, un relieve de 1,5–2 mm marca bien con tinta o sobre arcilla y masa.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+        <a href="sello3d.html">Sello 3D desde una imagen</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Vista 3D y extrusión con <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT).</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script type="module" src="sello3d.js"></script>
+
+</body>
+</html>
