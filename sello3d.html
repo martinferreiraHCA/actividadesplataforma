@@ -69,8 +69,9 @@
     <p class="scratch-intro">
       Subí un <strong>dibujo</strong> (un <code>.svg</code> vectorial, o una imagen <code>.png</code> / <code>.jpg</code>
       con buen contraste) y la plataforma lo convierte en un <strong>objeto 3D con relieve</strong>: un
-      <strong>sello</strong> para estampar, un <strong>llavero</strong> con su aro, o una <strong>figura</strong> en
-      relieve para imanes y medallas. Elegís el <strong>tamaño en milímetros</strong>, el alto del relieve y de la
+      <strong>sello</strong> para estampar, un <strong>llavero</strong> con su aro, una <strong>figura</strong> en
+      relieve para imanes y medallas, o un <strong>molde de dos partes</strong> — con bisagra para que se cierre
+      como un libro, o en dos placas sueltas — que prensa arcilla, masa o plastilina. Elegís el <strong>tamaño en milímetros</strong>, el alto del relieve y de la
       base, lo girás en 3D para revisarlo y descargás el <strong>.stl</strong> listo para llevar a la
       <strong>impresora 3D</strong> (o para seguir editándolo en Tinkercad). Todo pasa en tu navegador, sin
       instalar nada ni subir la imagen a ningún servidor.
@@ -126,6 +127,9 @@
       <label class="sello-preset"><input type="radio" name="preset" value="llavero">
         <span class="sello-preset__icono">🔑</span><span class="sello-preset__nombre">Llavero</span>
         <span class="sello-preset__desc">Base finita con aro para pasar la argolla.</span></label>
+      <label class="sello-preset"><input type="radio" name="preset" value="molde">
+        <span class="sello-preset__icono">🗜️</span><span class="sello-preset__nombre">Molde de dos partes</span>
+        <span class="sello-preset__desc">Placa con el relieve y contraplaca con el hueco: se cierra y prensa arcilla o masa. Con bisagra o en dos piezas sueltas.</span></label>
     </div>
 
     <div class="scratch-opciones" style="margin-top:1.2rem">
@@ -150,6 +154,11 @@
       <label class="scratch-check"><input type="checkbox" id="optLlavero"> Aro de llavero</label>
       <label class="scratch-check"><input type="checkbox" id="optInvertir"> Invertir (figura ↔ fondo)</label>
     </div>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <label class="scratch-check"><input type="checkbox" id="optMolde"> 🗜️ Molde de dos partes (tapa y contratapa)</label>
+      <label class="scratch-check"><input type="checkbox" id="optBisagra" checked disabled> Con bisagra (se pliega y cierra como libro)</label>
+    </div>
+    <p class="ia-catalogo__ayuda" id="notaMolde" style="margin-top:0.5rem;display:none">El molde se imprime plano y abierto: a la izquierda la placa con el <strong>relieve</strong>, a la derecha la contraplaca con el <strong>hueco espejado</strong>. Con bisagra, pasá un trozo de <strong>filamento de 1,75 mm</strong> (o un escarbadientes fino) por los agujeros como eje y ya se pliega y cierra para prensar arcilla, masa o plastilina. Sin bisagra salen dos placas sueltas que se alinean solas con <strong>tetones</strong> en las esquinas.</p>
     <div class="scratch-opciones" id="filaCalco" style="margin-top:0.8rem">
       <span class="scratch-opciones__label">Umbral claro/oscuro:</span>
       <input type="range" id="optUmbral" min="20" max="235" step="5" value="128" style="max-width:180px">

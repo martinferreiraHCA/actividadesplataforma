@@ -335,6 +335,8 @@ function leerOpciones() {
     espejar: $('optEspejar').checked,
     invertir: $('optInvertir').checked,
     llavero: $('optLlavero').checked,
+    molde: $('optMolde').checked,
+    bisagra: $('optBisagra').checked,
     umbral: parseInt($('optUmbral').value, 10),
     detalle: parseInt($('optDetalle').value, 10)
   };
@@ -345,10 +347,13 @@ function ajustarControles() {
   const esVectorial = !!estado.svgTexto && !$('optInvertir').checked;
   $('filaCalco').style.display = esVectorial ? 'none' : '';
   $('notaVectorial').style.display = esVectorial ? '' : 'none';
+  const esMolde = $('optMolde').checked;
+  $('optBisagra').disabled = !esMolde;
+  $('notaMolde').style.display = esMolde ? '' : 'none';
 }
 
-// contornos → THREE.Shape en mm, centrados, con Y hacia arriba
-function armarShapes(contornos, op, yHaciaAbajo) {
+// contornos → polígonos en mm ([[x,y],...]), centrados, con Y hacia arriba
+function poligonosCentrados(contornos, op, yHaciaAbajo) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const c of contornos) {
     for (const p of c.pts) {
@@ -362,14 +367,36 @@ function armarShapes(contornos, op, yHaciaAbajo) {
   const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
   const sx = op.espejar ? -escala : escala;
   const sy = yHaciaAbajo ? -escala : escala;
-  const transformar = p => new THREE.Vector2((p[0] - cx) * sx, (p[1] - cy) * sy);
-  const shapes = [];
+  const transformar = p => [(p[0] - cx) * sx, (p[1] - cy) * sy];
+  const polis = [];
   for (const c of contornos) {
-    const shape = new THREE.Shape(c.pts.map(transformar));
-    for (const a of c.agujeros) shape.holes.push(new THREE.Path(a.map(transformar)));
-    shapes.push(shape);
+    polis.push({ ext: c.pts.map(transformar), agujeros: c.agujeros.map(a => a.map(transformar)) });
   }
-  return { shapes, anchoMM: op.anchoMM, altoMM: altoOrig * escala };
+  return { polis, anchoMM: op.anchoMM, altoMM: altoOrig * escala };
+}
+
+// polígonos → THREE.Shape (con espejo horizontal opcional, para el negativo del molde)
+function shapesDePolis(polis, espejo) {
+  const t = p => new THREE.Vector2(espejo ? -p[0] : p[0], p[1]);
+  return polis.map(c => {
+    const s = new THREE.Shape(c.ext.map(t));
+    for (const a of c.agujeros) s.holes.push(new THREE.Path(a.map(t)));
+    return s;
+  });
+}
+
+// ¿el punto cae sobre la figura? (dentro de un exterior y fuera de sus agujeros)
+function dentroDeFigura(p, polis) {
+  for (const c of polis) {
+    if (puntoDentro(p, c.ext) && !c.agujeros.some(a => puntoDentro(p, a))) return true;
+  }
+  return false;
+}
+
+function shapeRect(x0, y0, x1, y1) {
+  const s = new THREE.Shape();
+  s.moveTo(x0, y0); s.lineTo(x1, y0); s.lineTo(x1, y1); s.lineTo(x0, y1); s.closePath();
+  return s;
 }
 
 function shapeBase(forma, ancho, alto, margen) {
@@ -421,26 +448,29 @@ function construirModelo(op) {
   }
   if (!contornos || !contornos.length) return null;
 
-  const figura = armarShapes(contornos, op, yHaciaAbajo);
-  if (!figura) return null;
+  const fig = poligonosCentrados(contornos, op, yHaciaAbajo);
+  if (!fig) return null;
+  if (op.molde) return construirMolde(fig, op);
 
-  const piezas = [];
+  const piezas = [], planta = [];
+  const shapesFig = shapesDePolis(fig.polis);
   let alturaTotal = op.altoRelieve;
-  let anchoTotal = figura.anchoMM, altoTotal = figura.altoMM;
+  let anchoTotal = fig.anchoMM, altoTotal = fig.altoMM;
 
   // relieve
-  const geoRelieve = new THREE.ExtrudeGeometry(figura.shapes, { depth: op.altoRelieve, bevelEnabled: false, curveSegments: 12 });
+  const geoRelieve = new THREE.ExtrudeGeometry(shapesFig, { depth: op.altoRelieve, bevelEnabled: false, curveSegments: 12 });
   piezas.push({ geometria: geoRelieve, color: 0xc65a35 });
 
   // base
   if (op.forma !== 'sin') {
-    const base = shapeBase(op.forma, figura.anchoMM, figura.altoMM, op.margen);
+    const base = shapeBase(op.forma, fig.anchoMM, fig.altoMM, op.margen);
     const cajaBase = new THREE.Box2().setFromPoints(base.getPoints(48));
     anchoTotal = cajaBase.max.x - cajaBase.min.x;
     altoTotal = cajaBase.max.y - cajaBase.min.y;
     const geoBase = new THREE.ExtrudeGeometry(base, { depth: op.altoBase, bevelEnabled: false, curveSegments: 48 });
     geoBase.translate(0, 0, -op.altoBase);
     piezas.push({ geometria: geoBase, color: 0x9aa3b2 });
+    planta.push({ shapes: base, color: 'rgba(150,158,172,0.45)' });
     alturaTotal += op.altoBase;
 
     if (op.llavero) {
@@ -448,20 +478,149 @@ function construirModelo(op) {
       const geoAro = new THREE.ExtrudeGeometry(aro.shape, { depth: op.altoBase, bevelEnabled: false, curveSegments: 48 });
       geoAro.translate(0, 0, -op.altoBase);
       piezas.push({ geometria: geoAro, color: 0x9aa3b2 });
+      planta.push({ shapes: aro.shape, color: 'rgba(150,158,172,0.45)' });
       altoTotal = aro.topeY - cajaBase.min.y;
     }
   } else if (op.llavero) {
-    const aro = shapeAro(figura.altoMM / 2);
+    const aro = shapeAro(fig.altoMM / 2);
     const geoAro = new THREE.ExtrudeGeometry(aro.shape, { depth: op.altoRelieve, bevelEnabled: false, curveSegments: 48 });
     piezas.push({ geometria: geoAro, color: 0x9aa3b2 });
-    altoTotal = aro.topeY + figura.altoMM / 2;
+    planta.push({ shapes: aro.shape, color: 'rgba(150,158,172,0.45)' });
+    altoTotal = aro.topeY + fig.altoMM / 2;
   }
+
+  planta.push({ shapes: shapesFig, color: '#c65a35' });
 
   // todas las piezas apoyadas sobre z = 0 (la cama de la impresora)
   const zMin = op.forma !== 'sin' ? -op.altoBase : 0;
   for (const p of piezas) p.geometria.translate(0, 0, -zMin);
 
-  return { piezas, medidas: { ancho: anchoTotal, alto: altoTotal, altura: alturaTotal }, figura };
+  return { piezas, planta, medidas: { ancho: anchoTotal, alto: altoTotal, altura: alturaTotal } };
+}
+
+// ============================================================
+// Molde de dos partes: placa positiva (relieve) + placa negativa (bolsillo
+// espejado). Con bisagra impresa se pliega y cierra como un libro (el eje es
+// un trozo de filamento); sin bisagra son dos placas que alinean con tetones.
+// ============================================================
+
+function construirMolde(fig, op) {
+  const d = op.altoRelieve;
+  const dp = d + 0.3;                              // el bolsillo queda 0,3 mm más hondo para que cierre
+  const Hb = Math.max(op.altoBase, dp + 1.2);      // la placa tiene que contener al bolsillo
+  const margen = Math.max(op.margen, op.bisagra ? 4 : 7);
+  const forma = op.forma === 'sin' ? 'redondeada' : op.forma;
+  const base = shapeBase(forma, fig.anchoMM, fig.altoMM, margen);
+  const caja = new THREE.Box2().setFromPoints(base.getPoints(48));
+  const wB = caja.max.x - caja.min.x, hB = caja.max.y - caja.min.y;
+  const g = op.bisagra ? 3.8 : 2.5;                // media separación entre placas (deja lugar al barril)
+  const xA = -(wB / 2 + g), xB = wB / 2 + g;
+  const piezas = [], planta = [];
+  const extruir = (shapes, alto) => new THREE.ExtrudeGeometry(shapes, { depth: alto, bevelEnabled: false, curveSegments: 32 });
+  const espejoV2 = p => new THREE.Vector2(-p[0], p[1]);
+
+  // tetones de alineación (solo sin bisagra): en las diagonales del margen,
+  // salteando los que caerían sobre la figura
+  const tetones = [];
+  if (!op.bisagra) {
+    let px, py;
+    if (forma === 'circulo') {
+      px = py = (wB / 2 - 4.2) * 0.707;
+    } else {
+      const r = forma === 'redondeada' ? Math.min(Math.max(2, margen), wB / 2, hB / 2) : 0;
+      const inset = Math.max(4.2, 0.293 * r + 1.75);
+      px = wB / 2 - inset; py = hB / 2 - inset;
+    }
+    for (const [sx, sy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const p = [sx * px, sy * py];
+      if (!dentroDeFigura(p, fig.polis)) tetones.push(p);
+    }
+  }
+
+  // ---- placa A (positivo): base + relieve + tetones ----
+  const geoBaseA = extruir(base, Hb);
+  geoBaseA.translate(xA, 0, 0);
+  piezas.push({ geometria: geoBaseA, color: 0x9aa3b2 });
+  const shapesFig = shapesDePolis(fig.polis);
+  const geoRelieve = extruir(shapesFig, d);
+  geoRelieve.translate(xA, 0, Hb);
+  piezas.push({ geometria: geoRelieve, color: 0xc65a35 });
+  planta.push({ shapes: base, dx: xA, color: 'rgba(150,158,172,0.45)' });
+  planta.push({ shapes: shapesFig, dx: xA, color: '#c65a35' });
+  for (const p of tetones) {
+    const geo = new THREE.CylinderGeometry(1.7, 1.7, dp - 0.4, 24);
+    geo.rotateX(Math.PI / 2);
+    geo.translate(xA + p[0], p[1], Hb + (dp - 0.4) / 2);
+    piezas.push({ geometria: geo, color: 0xc65a35 });
+    const c = new THREE.Shape();
+    c.absarc(p[0], p[1], 1.7, 0, Math.PI * 2, false);
+    planta.push({ shapes: c, dx: xA, color: '#c65a35' });
+  }
+
+  // ---- placa B (negativo espejado): losa + capa superior con el bolsillo ----
+  const geoLosa = extruir(base, Hb - dp);
+  geoLosa.translate(xB, 0, 0);
+  piezas.push({ geometria: geoLosa, color: 0x9aa3b2 });
+  planta.push({ shapes: base, dx: xB, color: 'rgba(150,158,172,0.45)' });
+  const tapa = shapeBase(forma, fig.anchoMM, fig.altoMM, margen);
+  // islas: los agujeros de la figura quedan a nivel dentro del bolsillo;
+  // si otra figura vive dentro de un agujero, su bolsillo se recorta en la isla
+  const islas = [];
+  const extAnidados = new Set();
+  for (const c of fig.polis) {
+    for (const a of c.agujeros) {
+      const isla = new THREE.Shape(a.map(espejoV2));
+      for (const otro of fig.polis) {
+        if (otro !== c && puntoDentro(otro.ext[0], a)) {
+          isla.holes.push(new THREE.Path(otro.ext.map(espejoV2)));
+          extAnidados.add(otro);
+        }
+      }
+      islas.push(isla);
+    }
+  }
+  for (const c of fig.polis) {
+    if (!extAnidados.has(c)) tapa.holes.push(new THREE.Path(c.ext.map(espejoV2)));
+  }
+  for (const p of tetones) {
+    const hueco = new THREE.Path();
+    hueco.absarc(-p[0], p[1], 2.15, 0, Math.PI * 2, true);
+    tapa.holes.push(hueco);
+  }
+  const geoTapa = extruir([tapa, ...islas], dp);
+  geoTapa.translate(xB, 0, Hb - dp);
+  piezas.push({ geometria: geoTapa, color: 0x828a9c });
+  planta.push({ shapes: [tapa, ...islas], dx: xB, color: 'rgba(110,118,132,0.55)' });
+
+  // ---- bisagra: nudillos alternados con agujero para un eje de filamento ----
+  if (op.bisagra) {
+    const n = 5, sep = 0.8;
+    const L = Math.min(hB, Math.max(24, hB - 6));
+    const wN = (L - (n - 1) * sep) / n;
+    for (let i = 0; i < n; i++) {
+      const y0 = -L / 2 + i * (wN + sep);
+      const lado = i % 2 === 0 ? -1 : 1;           // pares → placa A, impares → placa B
+      // pared que une el barril con su placa (llega hasta la cama: imprime sin soportes)
+      const pared = shapeRect(Math.min(lado * (g + 2.5), lado * 0.9), 0, Math.max(lado * (g + 2.5), lado * 0.9), Hb - 1.7);
+      // barril con el agujero del eje, centrado en el pliegue a la altura de la cara
+      const barril = new THREE.Shape();
+      barril.absarc(0, Hb, 3.2, 0, Math.PI * 2, false);
+      const eje = new THREE.Path();
+      eje.absarc(0, Hb, 1.2, 0, Math.PI * 2, true);
+      barril.holes.push(eje);
+      const geo = extruir([pared, barril], wN);
+      geo.rotateX(Math.PI / 2);                    // la extrusión pasa a correr por Y
+      geo.translate(0, y0 + wN, 0);
+      piezas.push({ geometria: geo, color: 0x9aa3b2 });
+      planta.push({ shapes: shapeRect(lado === -1 ? -(g + 2.5) : -3.2, y0, lado === -1 ? 3.2 : g + 2.5, y0 + wN), color: 'rgba(150,158,172,0.7)' });
+    }
+  }
+
+  return {
+    piezas, planta,
+    medidas: { ancho: 2 * (wB + g), alto: hB, altura: Hb + d },
+    molde: true
+  };
 }
 
 // ============================================================
@@ -538,7 +697,7 @@ function iniciarVista3D() {
 // Vista 2D: cómo quedó el calco (planta del modelo)
 // ============================================================
 
-function dibujarPlanta(resultado, op) {
+function dibujarPlanta(resultado) {
   const lienzo = $('lienzoPlanta');
   const ctx = lienzo.getContext('2d');
   const W = lienzo.width = lienzo.clientWidth * (window.devicePixelRatio || 1) || 600;
@@ -550,36 +709,24 @@ function dibujarPlanta(resultado, op) {
   const esc = Math.min((W - 30) / anchoM, (H - 30) / altoM);
   const ox = W / 2 - (caja.min.x + anchoM / 2) * esc;
   const oy = H / 2 + (caja.min.y + altoM / 2) * esc;
-  const trazarShape = (shape) => {
+  for (const ent of resultado.planta) {
+    const dx = ent.dx || 0;
     const ruta = new Path2D();
     const pintar = (pts) => {
       pts.forEach((p, i) => {
-        const x = ox + p.x * esc, y = oy - p.y * esc;
+        const x = ox + (p.x + dx) * esc, y = oy - p.y * esc;
         i ? ruta.lineTo(x, y) : ruta.moveTo(x, y);
       });
       ruta.closePath();
     };
-    const ext = shape.extractPoints(24);
-    pintar(ext.shape);
-    for (const h of ext.holes) pintar(h);
-    return ruta;
-  };
-  // base
-  if (op.forma !== 'sin') {
-    ctx.fillStyle = 'rgba(150,158,172,0.45)';
-    const base = shapeBase(op.forma, resultado.figura.anchoMM, resultado.figura.altoMM, op.margen);
-    ctx.fill(trazarShape(base), 'evenodd');
-    if (op.llavero) {
-      const cajaBase = new THREE.Box2().setFromPoints(base.getPoints(48));
-      ctx.fill(trazarShape(shapeAro(cajaBase.max.y).shape), 'evenodd');
+    for (const shape of Array.isArray(ent.shapes) ? ent.shapes : [ent.shapes]) {
+      const ext = shape.extractPoints(24);
+      pintar(ext.shape);
+      for (const h of ext.holes) pintar(h);
     }
-  } else if (op.llavero) {
-    ctx.fillStyle = 'rgba(150,158,172,0.45)';
-    ctx.fill(trazarShape(shapeAro(resultado.figura.altoMM / 2).shape), 'evenodd');
+    ctx.fillStyle = ent.color;
+    ctx.fill(ruta, 'evenodd');
   }
-  // figura
-  ctx.fillStyle = '#c65a35';
-  for (const s of resultado.figura.shapes) ctx.fill(trazarShape(s), 'evenodd');
 }
 
 // ============================================================
@@ -663,7 +810,7 @@ function regenerar() {
   estado.medidas = resultado.medidas;
   if (!vista3d) vista3d = iniciarVista3D();
   vista3d.mostrar(resultado.piezas);
-  dibujarPlanta(resultado, op);
+  dibujarPlanta(resultado);
   const m = resultado.medidas;
   const nTri = resultado.piezas.reduce((s, p) => {
     const g = p.geometria;
@@ -673,7 +820,7 @@ function regenerar() {
     <span class="inf-stats__item">📏 ${m.ancho.toFixed(1)} × ${m.alto.toFixed(1)} mm</span>
     <span class="inf-stats__item">📐 ${m.altura.toFixed(1)} mm de alto total</span>
     <span class="inf-stats__item">🔺 ${Math.round(nTri).toLocaleString('es')} triángulos</span>
-    <span class="inf-stats__item">${op.espejar ? '🪞 espejado (para sellar)' : '👁 sin espejar'}</span>`;
+    <span class="inf-stats__item">${op.molde ? (op.bisagra ? '🗜️ molde con bisagra (eje: filamento)' : '🗜️ molde en dos placas con tetones') : (op.espejar ? '🪞 espejado (para sellar)' : '👁 sin espejar')}</span>`;
 }
 
 // ============================================================
@@ -681,9 +828,10 @@ function regenerar() {
 // ============================================================
 
 const PRESETS = {
-  figura: { espejar: false, llavero: false, forma: 'redondeada', relieve: 2, base: 3, margen: 4 },
-  sello: { espejar: true, llavero: false, forma: 'redondeada', relieve: 1.6, base: 5, margen: 4 },
-  llavero: { espejar: false, llavero: true, forma: 'redondeada', relieve: 1.6, base: 2.4, margen: 3 }
+  figura: { espejar: false, llavero: false, molde: false, forma: 'redondeada', relieve: 2, base: 3, margen: 4 },
+  sello: { espejar: true, llavero: false, molde: false, forma: 'redondeada', relieve: 1.6, base: 5, margen: 4 },
+  llavero: { espejar: false, llavero: true, molde: false, forma: 'redondeada', relieve: 1.6, base: 2.4, margen: 3 },
+  molde: { espejar: false, llavero: false, molde: true, bisagra: true, forma: 'redondeada', relieve: 2, base: 4, margen: 8 }
 };
 
 document.querySelectorAll('input[name="preset"]').forEach(radio => {
@@ -692,6 +840,8 @@ document.querySelectorAll('input[name="preset"]').forEach(radio => {
     if (!p) return;
     $('optEspejar').checked = p.espejar;
     $('optLlavero').checked = p.llavero;
+    $('optMolde').checked = p.molde;
+    if (p.molde) $('optBisagra').checked = p.bisagra;
     $('optForma').value = p.forma;
     $('optRelieve').value = p.relieve;
     $('optBase').value = p.base;
@@ -701,7 +851,7 @@ document.querySelectorAll('input[name="preset"]').forEach(radio => {
   });
 });
 
-for (const id of ['optAncho', 'optRelieve', 'optBase', 'optMargen', 'optForma', 'optEspejar', 'optLlavero', 'optDetalle']) {
+for (const id of ['optAncho', 'optRelieve', 'optBase', 'optMargen', 'optForma', 'optEspejar', 'optLlavero', 'optMolde', 'optBisagra', 'optDetalle']) {
   $(id).addEventListener('change', () => { ajustarControles(); regenerarPronto(); });
 }
 $('optUmbral').addEventListener('input', regenerarPronto);
