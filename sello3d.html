@@ -157,8 +157,17 @@
     <div class="scratch-opciones" style="margin-top:0.8rem">
       <label class="scratch-check"><input type="checkbox" id="optMolde"> 🗜️ Molde de dos partes (tapa y contratapa)</label>
       <label class="scratch-check"><input type="checkbox" id="optBisagra" checked disabled> Con bisagra (se pliega y cierra como libro)</label>
+      <span class="scratch-opciones__label">Holgura para el material:</span>
+      <select class="campo__input" id="optHolgura" style="max-width:230px">
+        <option value="0">0 mm — al ras (arcilla, masa)</option>
+        <option value="0.2">0,2 mm — papel común</option>
+        <option value="0.5" selected>0,5 mm — cartulina / papel grueso</option>
+        <option value="1">1 mm — cartón fino</option>
+        <option value="1.6">1,6 mm — cartón corrugado fino</option>
+        <option value="2.5">2,5 mm — cartón grueso / goma eva</option>
+      </select>
     </div>
-    <p class="ia-catalogo__ayuda" id="notaMolde" style="margin-top:0.5rem;display:none">El molde se imprime plano y abierto: a la izquierda la placa con el <strong>relieve</strong>, a la derecha la contraplaca con el <strong>hueco espejado</strong>. Con bisagra, pasá un trozo de <strong>filamento de 1,75 mm</strong> (o un escarbadientes fino) por los agujeros como eje y ya se pliega y cierra para prensar arcilla, masa o plastilina. Sin bisagra salen dos placas sueltas que se alinean solas con <strong>tetones</strong> en las esquinas.</p>
+    <p class="ia-catalogo__ayuda" id="notaMolde" style="margin-top:0.5rem;display:none">El molde se imprime plano y abierto: a la izquierda la placa con el <strong>relieve</strong>, a la derecha la contraplaca con el <strong>hueco espejado</strong>. Con bisagra, pasá un trozo de <strong>filamento de 1,75 mm</strong> (o un escarbadientes fino) por los agujeros como eje y ya se pliega y cierra para prensar el material. Sin bisagra salen dos placas sueltas que se alinean solas con <strong>tetones</strong> en las esquinas. La <strong>holgura</strong> es el grosor de lo que vas a estampar: el hueco se hace más ancho y más hondo en esa medida, así el papel o el cartón se marca <strong>sin cortarse ni romperse</strong>. Para arcilla o masa blanda usá 0 mm (al ras).</p>
     <div class="scratch-opciones" id="filaCalco" style="margin-top:0.8rem">
       <span class="scratch-opciones__label">Umbral claro/oscuro:</span>
       <input type="range" id="optUmbral" min="20" max="235" step="5" value="128" style="max-width:180px">

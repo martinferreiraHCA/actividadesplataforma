@@ -337,6 +337,7 @@ function leerOpciones() {
     llavero: $('optLlavero').checked,
     molde: $('optMolde').checked,
     bisagra: $('optBisagra').checked,
+    holgura: Math.min(3, Math.max(0, parseFloat($('optHolgura').value) || 0)),
     umbral: parseInt($('optUmbral').value, 10),
     detalle: parseInt($('optDetalle').value, 10)
   };
@@ -391,6 +392,52 @@ function dentroDeFigura(p, polis) {
     if (puntoDentro(p, c.ext) && !c.agujeros.some(a => puntoDentro(p, a))) return true;
   }
   return false;
+}
+
+// Engorda la figura `holgura` mm hacia afuera en todo el contorno (los
+// agujeros se achican). Se usa para el bolsillo del molde: dibuja los
+// polígonos en un lienzo, los "engrosa" con un trazo redondeado del doble de
+// la holgura y vuelve a calcar el resultado con marching squares.
+function dilatarPolis(polis, holgura) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const c of polis) {
+    for (const p of c.ext) {
+      if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+      if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+    }
+  }
+  const pad = holgura + 1.5;
+  const bw = maxX - minX + 2 * pad, bh = maxY - minY + 2 * pad;
+  const esc = Math.min(8, 1600 / Math.max(bw, bh));   // px por mm
+  const w = Math.max(4, Math.ceil(bw * esc)), h = Math.max(4, Math.ceil(bh * esc));
+  const lienzo = document.createElement('canvas');
+  lienzo.width = w; lienzo.height = h;
+  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, w, h);
+  const ruta = new Path2D();
+  const trazar = (pts) => {
+    pts.forEach((p, i) => {
+      const x = (p[0] - minX + pad) * esc, y = (maxY - p[1] + pad) * esc;
+      i ? ruta.lineTo(x, y) : ruta.moveTo(x, y);
+    });
+    ruta.closePath();
+  };
+  for (const c of polis) { trazar(c.ext); for (const a of c.agujeros) trazar(a); }
+  ctx.fillStyle = '#000';
+  ctx.strokeStyle = '#000';
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 2 * holgura * esc;
+  ctx.fill(ruta, 'evenodd');
+  ctx.stroke(ruta);
+  const datos = ctx.getImageData(0, 0, w, h).data;
+  const mascara = new Uint8Array(w * h);
+  for (let i = 0; i < mascara.length; i++) mascara[i] = datos[i * 4] < 128 ? 1 : 0;
+  let loops = trazarContornos(mascara, w, h);
+  loops = loops.map(l => simplificarLoop(l, 0.9)).filter(l => l.length >= 3 && Math.abs(areaFirmada(l)) > 4);
+  const aMM = p => [p[0] / esc + minX - pad, maxY + pad - p[1] / esc];
+  return anidarLoops(loops).map(c => ({ ext: c.pts.map(aMM), agujeros: c.agujeros.map(a => a.map(aMM)) }));
 }
 
 function shapeRect(x0, y0, x1, y1) {
@@ -506,7 +553,11 @@ function construirModelo(op) {
 
 function construirMolde(fig, op) {
   const d = op.altoRelieve;
-  const dp = d + 0.3;                              // el bolsillo queda 0,3 mm más hondo para que cierre
+  // holgura: el grosor del material a estampar (cartón, papel…). El bolsillo
+  // se hace más ancho en todo el contorno y más hondo en esa medida, para que
+  // el material se acomode entre las dos caras sin cortarse.
+  const dp = d + 0.3 + op.holgura;                 // profundidad del bolsillo
+  const polisNeg = op.holgura > 0 ? dilatarPolis(fig.polis, op.holgura) : fig.polis;
   const Hb = Math.max(op.altoBase, dp + 1.2);      // la placa tiene que contener al bolsillo
   const margen = Math.max(op.margen, op.bisagra ? 4 : 7);
   const forma = op.forma === 'sin' ? 'redondeada' : op.forma;
@@ -533,7 +584,7 @@ function construirMolde(fig, op) {
     }
     for (const [sx, sy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
       const p = [sx * px, sy * py];
-      if (!dentroDeFigura(p, fig.polis)) tetones.push(p);
+      if (!dentroDeFigura(p, polisNeg)) tetones.push(p);
     }
   }
 
@@ -567,10 +618,10 @@ function construirMolde(fig, op) {
   // si otra figura vive dentro de un agujero, su bolsillo se recorta en la isla
   const islas = [];
   const extAnidados = new Set();
-  for (const c of fig.polis) {
+  for (const c of polisNeg) {
     for (const a of c.agujeros) {
       const isla = new THREE.Shape(a.map(espejoV2));
-      for (const otro of fig.polis) {
+      for (const otro of polisNeg) {
         if (otro !== c && puntoDentro(otro.ext[0], a)) {
           isla.holes.push(new THREE.Path(otro.ext.map(espejoV2)));
           extAnidados.add(otro);
@@ -579,7 +630,7 @@ function construirMolde(fig, op) {
       islas.push(isla);
     }
   }
-  for (const c of fig.polis) {
+  for (const c of polisNeg) {
     if (!extAnidados.has(c)) tapa.holes.push(new THREE.Path(c.ext.map(espejoV2)));
   }
   for (const p of tetones) {
@@ -820,7 +871,8 @@ function regenerar() {
     <span class="inf-stats__item">📏 ${m.ancho.toFixed(1)} × ${m.alto.toFixed(1)} mm</span>
     <span class="inf-stats__item">📐 ${m.altura.toFixed(1)} mm de alto total</span>
     <span class="inf-stats__item">🔺 ${Math.round(nTri).toLocaleString('es')} triángulos</span>
-    <span class="inf-stats__item">${op.molde ? (op.bisagra ? '🗜️ molde con bisagra (eje: filamento)' : '🗜️ molde en dos placas con tetones') : (op.espejar ? '🪞 espejado (para sellar)' : '👁 sin espejar')}</span>`;
+    <span class="inf-stats__item">${op.molde ? (op.bisagra ? '🗜️ molde con bisagra (eje: filamento)' : '🗜️ molde en dos placas con tetones') : (op.espejar ? '🪞 espejado (para sellar)' : '👁 sin espejar')}</span>
+    ${op.molde ? `<span class="inf-stats__item">📄 holgura ${op.holgura.toFixed(1).replace('.', ',')} mm ${op.holgura > 0 ? '(para el material)' : '(al ras, para arcilla)'}</span>` : ''}`;
 }
 
 // ============================================================
@@ -831,7 +883,7 @@ const PRESETS = {
   figura: { espejar: false, llavero: false, molde: false, forma: 'redondeada', relieve: 2, base: 3, margen: 4 },
   sello: { espejar: true, llavero: false, molde: false, forma: 'redondeada', relieve: 1.6, base: 5, margen: 4 },
   llavero: { espejar: false, llavero: true, molde: false, forma: 'redondeada', relieve: 1.6, base: 2.4, margen: 3 },
-  molde: { espejar: false, llavero: false, molde: true, bisagra: true, forma: 'redondeada', relieve: 2, base: 4, margen: 8 }
+  molde: { espejar: false, llavero: false, molde: true, bisagra: true, forma: 'redondeada', relieve: 2, base: 4, margen: 8, holgura: 0.5 }
 };
 
 document.querySelectorAll('input[name="preset"]').forEach(radio => {
@@ -841,7 +893,10 @@ document.querySelectorAll('input[name="preset"]').forEach(radio => {
     $('optEspejar').checked = p.espejar;
     $('optLlavero').checked = p.llavero;
     $('optMolde').checked = p.molde;
-    if (p.molde) $('optBisagra').checked = p.bisagra;
+    if (p.molde) {
+      $('optBisagra').checked = p.bisagra;
+      $('optHolgura').value = p.holgura;
+    }
     $('optForma').value = p.forma;
     $('optRelieve').value = p.relieve;
     $('optBase').value = p.base;
@@ -851,7 +906,7 @@ document.querySelectorAll('input[name="preset"]').forEach(radio => {
   });
 });
 
-for (const id of ['optAncho', 'optRelieve', 'optBase', 'optMargen', 'optForma', 'optEspejar', 'optLlavero', 'optMolde', 'optBisagra', 'optDetalle']) {
+for (const id of ['optAncho', 'optRelieve', 'optBase', 'optMargen', 'optForma', 'optEspejar', 'optLlavero', 'optMolde', 'optBisagra', 'optHolgura', 'optDetalle']) {
   $(id).addEventListener('change', () => { ajustarControles(); regenerarPronto(); });
 }
 $('optUmbral').addEventListener('input', regenerarPronto);
