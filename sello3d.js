@@ -710,8 +710,40 @@ function construirMolde(fig, op) {
   const extruir = (shapes, alto) => new THREE.ExtrudeGeometry(shapes, { depth: alto, bevelEnabled: false, curveSegments: 32 });
   const espejoV2 = p => new THREE.Vector2(-p[0], p[1]);
 
-  // tetones de alineación (solo sin bisagra): en las diagonales del margen,
-  // salteando los que caerían sobre la figura
+  const crearBase = () => shapeBase(forma, fig.anchoMM, fig.altoMM, margen);
+
+  // imanes de cierre: van en las CARAS QUE SE ENFRENTAN al cerrar el molde,
+  // cada bolsillo de una placa alineado con su par de la otra — así los
+  // imanes se atraen y el molde queda cerrado imantado (pegalos de a pares,
+  // comprobando antes que se atraigan entre placas). Se saltean las
+  // posiciones que caerían sobre la figura o su bolsillo.
+  const hp = Math.min(op.hIman + 0.2, Hb - 1);
+  const rIman = op.dIman / 2 + 0.2;
+  let posCierre = [];
+  if (op.imanes && hp > 0.4) {
+    posCierre = posImanes(forma, wB, hB, margen, op.dIman)
+      .filter(p => !dentroDeFigura(p, polisNeg) && !dentroDeFigura([-p[0], p[1]], polisNeg));
+  }
+  const agujerosIman = (shape, espejo) => {
+    for (const p of posCierre) {
+      const h = new THREE.Path();
+      h.absarc(espejo ? -p[0] : p[0], p[1], rIman, 0, Math.PI * 2, true);
+      shape.holes.push(h);
+    }
+    return shape;
+  };
+  const plantaImanes = (dx, espejo) => {
+    for (const p of posCierre) {
+      const c = new THREE.Shape();
+      c.absarc(espejo ? -p[0] : p[0], p[1], rIman, 0, Math.PI * 2, false);
+      planta.push({ shapes: c, dx, color: 'rgba(60,64,75,0.4)' });
+    }
+  };
+  let nImanes = posCierre.length * 2;
+
+  // tetones de alineación (solo sin bisagra): en las diagonales del margen, o
+  // en los puntos medios de los lados cuando las diagonales las ocupan los
+  // imanes; se saltean los que caerían sobre la figura
   const tetones = [];
   if (!op.bisagra) {
     let px, py;
@@ -722,29 +754,29 @@ function construirMolde(fig, op) {
       const inset = Math.max(4.2, 0.293 * r + 1.75);
       px = wB / 2 - inset; py = hB / 2 - inset;
     }
-    for (const [sx, sy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-      const p = [sx * px, sy * py];
-      if (!dentroDeFigura(p, polisNeg)) tetones.push(p);
+    const lugares = posCierre.length
+      ? [[0, py], [0, -py], [px, 0], [-px, 0]]
+      : [[px, py], [px, -py], [-px, py], [-px, -py]];
+    for (const p of lugares) {
+      if (!dentroDeFigura(p, polisNeg) && !dentroDeFigura([-p[0], p[1]], polisNeg)) tetones.push(p);
     }
   }
 
   // ---- placa A (positivo): base + relieve + tetones ----
-  const crearBase = () => shapeBase(forma, fig.anchoMM, fig.altoMM, margen);
-  const ponerImanes = (dx, alto) => {
-    const conImanes = extruirBaseConImanes(crearBase, alto, op, forma, wB, hB, margen);
-    for (const g of conImanes.geos) {
-      g.translate(dx, 0, 0);
-      piezas.push({ geometria: g, color: 0x9aa3b2 });
-    }
-    planta.push({ shapes: base, dx: dx, color: 'rgba(150,158,172,0.45)' });
-    for (const p of conImanes.imanes) {
-      const c = new THREE.Shape();
-      c.absarc(p[0], p[1], op.dIman / 2 + 0.2, 0, Math.PI * 2, false);
-      planta.push({ shapes: c, dx: dx, color: 'rgba(60,64,75,0.4)' });
-    }
-    return conImanes.imanes.length;
-  };
-  let nImanes = ponerImanes(xA, Hb);
+  if (posCierre.length) {
+    const solido = extruir(crearBase(), Hb - hp);
+    solido.translate(xA, 0, 0);
+    piezas.push({ geometria: solido, color: 0x9aa3b2 });
+    const capa = extruir(agujerosIman(crearBase(), false), hp);
+    capa.translate(xA, 0, Hb - hp);
+    piezas.push({ geometria: capa, color: 0x9aa3b2 });
+  } else {
+    const geoBaseA = extruir(crearBase(), Hb);
+    geoBaseA.translate(xA, 0, 0);
+    piezas.push({ geometria: geoBaseA, color: 0x9aa3b2 });
+  }
+  planta.push({ shapes: base, dx: xA, color: 'rgba(150,158,172,0.45)' });
+  plantaImanes(xA, false);
   const shapesFig = shapesDePolis(fig.polis);
   const geoRelieve = extruirRelieve(shapesFig, d, op.redondear);
   geoRelieve.translate(xA, 0, Hb);
@@ -760,9 +792,7 @@ function construirMolde(fig, op) {
     planta.push({ shapes: c, dx: xA, color: '#c65a35' });
   }
 
-  // ---- placa B (negativo espejado): losa + capa superior con el bolsillo ----
-  nImanes += ponerImanes(xB, Hb - dp);
-  const tapa = shapeBase(forma, fig.anchoMM, fig.altoMM, margen);
+  // ---- placa B (negativo espejado) ----
   // islas: los agujeros de la figura quedan a nivel dentro del bolsillo;
   // si otra figura vive dentro de un agujero, su bolsillo se recorta en la isla
   const islas = [];
@@ -779,18 +809,36 @@ function construirMolde(fig, op) {
       islas.push(isla);
     }
   }
-  for (const c of polisNeg) {
-    if (!extAnidados.has(c)) tapa.holes.push(new THREE.Path(c.ext.map(espejoV2)));
+  const agujerosCavidad = (shape) => {
+    for (const c of polisNeg) {
+      if (!extAnidados.has(c)) shape.holes.push(new THREE.Path(c.ext.map(espejoV2)));
+    }
+    for (const p of tetones) {
+      const hueco = new THREE.Path();
+      hueco.absarc(-p[0], p[1], 2.15, 0, Math.PI * 2, true);
+      shape.holes.push(hueco);
+    }
+    return shape;
+  };
+  // la placa se apila en capas según qué agujeros atraviesan cada tramo:
+  // el bolsillo (los últimos dp mm) y los imanes (los últimos hp mm)
+  const cortes = [...new Set([0, Hb - dp, posCierre.length ? Hb - hp : Hb, Hb]
+    .map(v => Math.round(v * 1000) / 1000))].filter(v => v >= 0 && v <= Hb).sort((a, b) => a - b);
+  for (let i = 0; i < cortes.length - 1; i++) {
+    const z0 = cortes[i], esp = cortes[i + 1] - z0;
+    if (esp <= 0.01) continue;
+    const conCavidad = z0 >= Hb - dp - 0.001;
+    const conIman = posCierre.length > 0 && z0 >= Hb - hp - 0.001;
+    let shape = crearBase();
+    if (conCavidad) shape = agujerosCavidad(shape);
+    if (conIman) shape = agujerosIman(shape, true);
+    const geo = extruir(conCavidad ? [shape, ...islas] : [shape], esp);
+    geo.translate(xB, 0, z0);
+    piezas.push({ geometria: geo, color: conCavidad ? 0x828a9c : 0x9aa3b2 });
   }
-  for (const p of tetones) {
-    const hueco = new THREE.Path();
-    hueco.absarc(-p[0], p[1], 2.15, 0, Math.PI * 2, true);
-    tapa.holes.push(hueco);
-  }
-  const geoTapa = extruir([tapa, ...islas], dp);
-  geoTapa.translate(xB, 0, Hb - dp);
-  piezas.push({ geometria: geoTapa, color: 0x828a9c });
-  planta.push({ shapes: [tapa, ...islas], dx: xB, color: 'rgba(110,118,132,0.55)' });
+  planta.push({ shapes: base, dx: xB, color: 'rgba(150,158,172,0.45)' });
+  planta.push({ shapes: [agujerosCavidad(crearBase()), ...islas], dx: xB, color: 'rgba(110,118,132,0.55)' });
+  plantaImanes(xB, true);
 
   // ---- bisagra: nudillos alternados con agujero para un eje de filamento ----
   if (op.bisagra) {
@@ -967,6 +1015,88 @@ function generarSTL(piezas) {
   }
   return { buffer, triangulos: total };
 }
+
+// ============================================================
+// Exportar 3MF (dos colores: base y relieve, para impresoras multicolor)
+// ============================================================
+
+function generar3MF(piezas) {
+  const colores = [];
+  const indiceColor = (c) => {
+    const hex = '#' + c.toString(16).padStart(6, '0').toUpperCase();
+    let i = colores.indexOf(hex);
+    if (i < 0) { colores.push(hex); i = colores.length - 1; }
+    return i;
+  };
+  let objetos = '', items = '', id = 2;
+  for (const pieza of piezas) {
+    const g = pieza.geometria.index ? pieza.geometria.toNonIndexed() : pieza.geometria;
+    const pos = g.getAttribute('position');
+    const mapa = new Map();
+    const verts = [], tris = [];
+    const idVert = (x, y, z) => {
+      const k = x.toFixed(3) + ',' + y.toFixed(3) + ',' + z.toFixed(3);
+      let i = mapa.get(k);
+      if (i === undefined) {
+        i = verts.length;
+        verts.push('<vertex x="' + x.toFixed(3) + '" y="' + y.toFixed(3) + '" z="' + z.toFixed(3) + '"/>');
+        mapa.set(k, i);
+      }
+      return i;
+    };
+    for (let i = 0; i < pos.count; i += 3) {
+      const a = idVert(pos.getX(i), pos.getY(i), pos.getZ(i));
+      const b = idVert(pos.getX(i + 1), pos.getY(i + 1), pos.getZ(i + 1));
+      const c = idVert(pos.getX(i + 2), pos.getY(i + 2), pos.getZ(i + 2));
+      if (a !== b && b !== c && a !== c) tris.push('<triangle v1="' + a + '" v2="' + b + '" v3="' + c + '"/>');
+    }
+    objetos += '<object id="' + id + '" type="model" pid="1" pindex="' + indiceColor(pieza.color) + '">' +
+      '<mesh><vertices>' + verts.join('') + '</vertices><triangles>' + tris.join('') + '</triangles></mesh></object>';
+    items += '<item objectid="' + id + '"/>';
+    id++;
+  }
+  const materiales = colores.map((hex, i) => '<base name="Color ' + (i + 1) + '" displaycolor="' + hex + '"/>').join('');
+  const modelo = '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<model unit="millimeter" xml:lang="es" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">' +
+    '<metadata name="Application">Generador de Actividades — Sello 3D</metadata>' +
+    '<resources><basematerials id="1">' + materiales + '</basematerials>' + objetos + '</resources>' +
+    '<build>' + items + '</build></model>';
+  const tipos = '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>';
+  const rels = '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Target="/3D/3dmodel.model" Id="rel0" ' +
+    'Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>';
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', tipos);
+  zip.file('_rels/.rels', rels);
+  zip.file('3D/3dmodel.model', modelo);
+  return zip.generateAsync({ type: 'blob', mimeType: 'model/3mf', compression: 'DEFLATE' });
+}
+
+function descargarBlob(blob, nombre) {
+  const enlace = document.createElement('a');
+  enlace.href = URL.createObjectURL(blob);
+  enlace.download = nombre;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(enlace.href), 4000);
+}
+
+$('btn3MF').addEventListener('click', () => {
+  if (!estado.piezas) { toast('Primero subí una imagen'); return; }
+  if (typeof JSZip === 'undefined') { toast('No se pudo cargar el empaquetador ZIP; usá el STL'); return; }
+  generar3MF(estado.piezas).then(blob => {
+    descargarBlob(blob, (estado.nombre || 'sello') + '-3d.3mf');
+    toast('3MF descargado: en el slicer vas a ver la base y el relieve como colores separados');
+  }).catch(err => {
+    console.error(err);
+    toast('No pude armar el 3MF: ' + err.message);
+  });
+});
 
 $('btnSTL').addEventListener('click', () => {
   if (!estado.piezas) { toast('Primero subí una imagen'); return; }

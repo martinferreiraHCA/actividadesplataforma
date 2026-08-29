@@ -221,7 +221,7 @@
       <span class="scratch-opciones__label">Grosor:</span>
       <input class="campo__input" type="number" id="optAltoIman" min="0.5" max="5" step="0.5" value="2" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
     </div>
-    <p class="ia-catalogo__ayuda" style="margin-top:0.5rem">«Suavizado»: redondea las puntas y esquinas del logo para que quede más liso y orgánico (los detalles más finos que el radio elegido se pierden). «Bordes redondeados»: el relieve termina en hombros curvos en vez de aristas — estampa parejo y sin filo. «Imanes»: la base sale con 4 bolsillos cilíndricos por abajo, a la medida de tus imanes de neodimio más 0,4 mm de juego, para pegarlos al ras (con la figura del lado de afuera podés usarlo de imán de heladera o pizarra).</p>
+    <p class="ia-catalogo__ayuda" style="margin-top:0.5rem">«Suavizado»: redondea las puntas y esquinas del logo para que quede más liso y orgánico (los detalles más finos que el radio elegido se pierden). «Bordes redondeados»: el relieve termina en hombros curvos en vez de aristas — estampa parejo y sin filo. «Imanes»: la base sale con 4 bolsillos cilíndricos por abajo, a la medida de tus imanes de neodimio más 0,4 mm de juego, para pegarlos al ras (con la figura del lado de afuera podés usarlo de imán de heladera o pizarra). En el <strong>molde de dos partes</strong> los bolsillos van en las <strong>caras que se enfrentan</strong>, cada uno alineado con su par de la otra placa: el molde cierra solo, imantado. Pegá los imanes de a pares comprobando <strong>antes</strong> que se atraigan entre placas (si uno queda al revés, repele).</p>
     <div class="scratch-opciones" style="margin-top:0.8rem">
       <label class="scratch-check"><input type="checkbox" id="optMolde"> 🗜️ Molde de dos partes (tapa y contratapa)</label>
       <label class="scratch-check"><input type="checkbox" id="optBisagra" checked disabled> Con bisagra (se pliega y cierra como libro)</label>
@@ -259,6 +259,8 @@
     <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 3 — El modelo</div>
     <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
       <button class="btn btn--primary" id="btnSTL">⬇ Descargar STL para imprimir</button>
+      <button class="btn btn--primary" id="btn3MF">⬇ Descargar 3MF (dos colores)</button>
+      <span class="ia-catalogo__ayuda" style="margin:0">STL: un color, sirve en cualquier slicer. 3MF: base y relieve como colores separados, para impresoras multicolor o cambio de filamento por capa.</span>
     </div>
     <div id="statsModelo" class="inf-stats" style="margin-bottom:1rem"></div>
 
@@ -299,6 +301,7 @@
 
 <div class="toast" id="toast" role="status"></div>
 
+<script src="jszip.min.js"></script>
 <script src="tema.js"></script>
 <script src="guia.js"></script>
 <script src="templatemo-axis-script.js"></script>
