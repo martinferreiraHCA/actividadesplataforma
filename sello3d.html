@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<!-- fuentes para los sellos de texto -->
+<link href="https://fonts.googleapis.com/css2?family=Lobster&family=Pacifico&family=Oswald:wght@700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Courier+Prime:wght@700&family=Bungee&family=Chewy&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="templatemo-axis-industrial.css">
 <link rel="stylesheet" href="generador.css">
 <link rel="stylesheet" href="scratch.css">
@@ -107,6 +109,19 @@
       <p class="inf-subida__nota">Acepta <code>.svg</code> (mejor resultado), <code>.png</code>, <code>.jpg</code> y <code>.webp</code></p>
       <input type="file" id="inputArchivo" accept=".svg,.png,.jpg,.jpeg,.webp,.gif,.bmp" style="display:none">
     </div>
+    <div class="sello-fuentes-alt">
+      <div class="sello-fuentes-alt__col">
+        <span class="scratch-opciones__label">…o escribí un texto (nombre, firma, frase):</span>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.4rem">
+          <input class="campo__input" type="text" id="inputTextoSolo" placeholder="Ej: Colegio HCA — 3°B" style="max-width:320px">
+          <button class="btn btn--primary" id="btnSoloTexto" type="button">🅰 Crear con este texto</button>
+        </div>
+      </div>
+      <div class="sello-fuentes-alt__col">
+        <span class="scratch-opciones__label">…o elegí un ícono listo:</span>
+        <div id="gridIconos" class="sello-iconos"></div>
+      </div>
+    </div>
     <div id="estadoSubida" class="inf-estado" style="display:none"></div>
   </div>
 </section>
@@ -153,6 +168,41 @@
       <label class="scratch-check"><input type="checkbox" id="optEspejar"> Espejar (para sellos)</label>
       <label class="scratch-check"><input type="checkbox" id="optLlavero"> Aro de llavero</label>
       <label class="scratch-check"><input type="checkbox" id="optInvertir"> Invertir (figura ↔ fondo)</label>
+      <span class="scratch-opciones__label">Rotar:</span>
+      <select class="campo__input" id="optRotar" style="max-width:90px">
+        <option value="0" selected>0°</option>
+        <option value="90">90°</option>
+        <option value="180">180°</option>
+        <option value="270">270°</option>
+      </select>
+    </div>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Texto:</span>
+      <input class="campo__input" type="text" id="optTexto" placeholder="Opcional: se suma a la figura" style="max-width:240px">
+      <span class="scratch-opciones__label">Fuente:</span>
+      <select class="campo__input" id="optFuente" style="max-width:170px">
+        <option value="Space Grotesk" selected>Space Grotesk</option>
+        <option value="Oswald">Oswald (condensada)</option>
+        <option value="Playfair Display">Playfair (serif)</option>
+        <option value="Courier Prime">Courier (máquina)</option>
+        <option value="JetBrains Mono">JetBrains (mono)</option>
+        <option value="Lobster">Lobster (cursiva)</option>
+        <option value="Pacifico">Pacifico (redonda)</option>
+        <option value="Caveat">Caveat (manuscrita)</option>
+        <option value="Bungee">Bungee (bloque)</option>
+        <option value="Chewy">Chewy (divertida)</option>
+      </select>
+      <span class="scratch-opciones__label">Ubicación:</span>
+      <select class="campo__input" id="optPosTexto" style="max-width:150px">
+        <option value="abajo" selected>Debajo de la figura</option>
+        <option value="arriba">Encima de la figura</option>
+      </select>
+      <span class="scratch-opciones__label">Tamaño:</span>
+      <select class="campo__input" id="optTamTexto" style="max-width:110px">
+        <option value="chico">Chico</option>
+        <option value="medio" selected>Medio</option>
+        <option value="grande">Grande</option>
+      </select>
     </div>
     <div class="scratch-opciones" style="margin-top:0.8rem">
       <span class="scratch-opciones__label">Suavizado del contorno:</span>

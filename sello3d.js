@@ -343,6 +343,11 @@ function leerOpciones() {
     imanes: $('optImanes').checked,
     dIman: Math.min(20, Math.max(3, parseFloat($('optDiamIman').value) || 8)),
     hIman: Math.min(5, Math.max(0.5, parseFloat($('optAltoIman').value) || 2)),
+    texto: $('optTexto').value.trim().slice(0, 120),
+    fuente: $('optFuente').value,
+    posTexto: $('optPosTexto').value,           // abajo | arriba
+    tamTexto: $('optTamTexto').value,           // chico | medio | grande
+    rotar: parseInt($('optRotar').value, 10) || 0,
     umbral: parseInt($('optUmbral').value, 10),
     detalle: parseInt($('optDetalle').value, 10)
   };
@@ -350,7 +355,7 @@ function leerOpciones() {
 
 // muestra u oculta los controles del calco según el modo activo
 function ajustarControles() {
-  const esVectorial = !!estado.svgTexto && !$('optInvertir').checked;
+  const esVectorial = !!estado.svgTexto && !$('optInvertir').checked && !$('optTexto').value.trim();
   $('filaCalco').style.display = esVectorial ? 'none' : '';
   $('notaVectorial').style.display = esVectorial ? '' : 'none';
   const esMolde = $('optMolde').checked;
@@ -360,6 +365,11 @@ function ajustarControles() {
 
 // contornos → polígonos en mm ([[x,y],...]), centrados, con Y hacia arriba
 function poligonosCentrados(contornos, op, yHaciaAbajo) {
+  const rot = op.rotar || 0;
+  if (rot) {
+    const girar = rot === 90 ? p => [p[1], -p[0]] : rot === 180 ? p => [-p[0], -p[1]] : p => [-p[1], p[0]];
+    contornos = contornos.map(c => ({ pts: c.pts.map(girar), agujeros: c.agujeros.map(a => a.map(girar)) }));
+  }
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const c of contornos) {
     for (const p of c.pts) {
@@ -551,11 +561,52 @@ function extruirBaseConImanes(crearBase, alto, op, forma, wB, hB, margen) {
 }
 
 // Construye las piezas (geometrías en mm, Z hacia arriba, apoyadas en z=0)
+// Lienzo con la imagen y/o el texto, en negro sobre blanco, listo para calcar
+function lienzoCompuesto(op) {
+  const img = estado.imagen;
+  const lineas = op.texto ? op.texto.split('\n').map(s => s.trim()).filter(Boolean) : [];
+  if (!img && !lineas.length) return null;
+  const W = 900;
+  const medidor = document.createElement('canvas').getContext('2d');
+  let fontPx = W * ({ chico: 0.11, medio: 0.18, grande: 0.28 }[op.tamTexto] || 0.18);
+  if (!img && lineas.length) fontPx = W * 0.24;      // solo texto: bien grande
+  const armarFont = px => '700 ' + px + 'px "' + op.fuente + '", sans-serif';
+  if (lineas.length) {
+    medidor.font = armarFont(fontPx);
+    const maxW = Math.max(...lineas.map(l => medidor.measureText(l).width));
+    if (maxW > W * 0.94) fontPx *= (W * 0.94) / maxW;
+  }
+  const interlinea = fontPx * 1.18;
+  const hTexto = lineas.length ? lineas.length * interlinea + fontPx * 0.12 : 0;
+  const hImg = img ? Math.round((img.naturalHeight || img.height) * (W / (img.naturalWidth || img.width))) : 0;
+  const gap = img && lineas.length ? Math.round(W * 0.045) : 0;
+  const H = Math.max(20, hImg + gap + Math.ceil(hTexto));
+  const lienzo = document.createElement('canvas');
+  lienzo.width = W; lienzo.height = H;
+  const ctx = lienzo.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  const pintarTexto = (y0) => {
+    ctx.fillStyle = '#000';
+    ctx.font = armarFont(fontPx);
+    ctx.textAlign = 'center';
+    lineas.forEach((l, i) => ctx.fillText(l, W / 2, y0 + (i + 0.86) * interlinea));
+  };
+  if (img && op.posTexto === 'arriba') {
+    pintarTexto(0);
+    ctx.drawImage(img, 0, hTexto + gap, W, hImg);
+  } else {
+    if (img) ctx.drawImage(img, 0, 0, W, hImg);
+    if (lineas.length) pintarTexto(hImg + gap);
+  }
+  return lienzo;
+}
+
 function construirModelo(op) {
-  let contornos, yHaciaAbajo;
-  if (estado.svgTexto && !op.invertir) {
+  let contornos, yHaciaAbajo = true;
+  const conTexto = !!op.texto;
+  if (estado.svgTexto && !op.invertir && !conTexto) {
     contornos = contornosDesdeSVG(estado.svgTexto);
-    yHaciaAbajo = true;
     if (!contornos) {
       // svg solo con trazos (sin rellenos): se calca desde los píxeles
       contornos = contornosDesdeCalco(estado.imagen, op.detalle, op.umbral, false);
@@ -563,8 +614,9 @@ function construirModelo(op) {
       $('notaVectorial').style.display = 'none';
     }
   } else {
-    contornos = contornosDesdeCalco(estado.imagen, op.detalle, op.umbral, op.invertir);
-    yHaciaAbajo = true;
+    const lienzo = lienzoCompuesto(op);
+    if (!lienzo) return null;
+    contornos = contornosDesdeCalco(lienzo, op.detalle, op.umbral, op.invertir);
   }
   if (!contornos || !contornos.length) return null;
 
@@ -940,8 +992,8 @@ function regenerarPronto() {
 }
 
 function regenerar() {
-  if (!estado.imagen && !estado.svgTexto) return;
   const op = leerOpciones();
+  if (!estado.imagen && !estado.svgTexto && !op.texto) return;
   $('valUmbral').textContent = op.umbral;
   let resultado = null;
   try {
@@ -1004,8 +1056,100 @@ document.querySelectorAll('input[name="preset"]').forEach(radio => {
   });
 });
 
-for (const id of ['optAncho', 'optRelieve', 'optBase', 'optMargen', 'optForma', 'optEspejar', 'optLlavero', 'optMolde', 'optBisagra', 'optHolgura', 'optSuavizar', 'optRedondear', 'optImanes', 'optDiamIman', 'optAltoIman', 'optDetalle']) {
+for (const id of ['optAncho', 'optRelieve', 'optBase', 'optMargen', 'optForma', 'optEspejar', 'optLlavero', 'optMolde', 'optBisagra', 'optHolgura', 'optSuavizar', 'optRedondear', 'optImanes', 'optDiamIman', 'optAltoIman', 'optDetalle', 'optRotar', 'optPosTexto', 'optTamTexto']) {
   $(id).addEventListener('change', () => { ajustarControles(); regenerarPronto(); });
 }
 $('optUmbral').addEventListener('input', regenerarPronto);
 $('optInvertir').addEventListener('change', () => { ajustarControles(); regenerar(); });
+
+// ============================================================
+// Texto con fuentes (se espera a que la fuente cargue antes de calcar)
+// ============================================================
+
+function conFuenteLista(hacer) {
+  const f = $('optFuente').value;
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load('700 80px "' + f + '"').then(hacer, hacer);
+  } else {
+    hacer();
+  }
+}
+
+$('optTexto').addEventListener('input', () => conFuenteLista(() => { ajustarControles(); regenerarPronto(); }));
+$('optFuente').addEventListener('change', () => conFuenteLista(() => { ajustarControles(); regenerarPronto(); }));
+
+// activa la app cuando todavía no se subió nada (sello de solo texto)
+function activarSecciones(descripcion) {
+  const est = $('estadoSubida');
+  est.style.display = '';
+  est.textContent = descripcion;
+  $('seccionOpciones').style.display = '';
+  $('seccionResultado').style.display = '';
+  ajustarControles();
+}
+
+$('btnSoloTexto').addEventListener('click', () => {
+  const t = $('inputTextoSolo').value.trim();
+  if (!t) { toast('Escribí primero el texto del sello'); $('inputTextoSolo').focus(); return; }
+  estado.svgTexto = null;
+  estado.imagen = null;
+  estado.nombre = t.toLowerCase().replace(/[^a-z0-9ñáéíóúü]+/gi, '-').replace(/^-|-$/g, '').slice(0, 30) || 'texto';
+  $('optTexto').value = t;
+  activarSecciones('✔ Sello de texto: «' + t + '» — cambiá la fuente y el resto en el paso 2');
+  conFuenteLista(regenerar);
+  $('seccionOpciones').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+$('inputTextoSolo').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnSoloTexto').click(); });
+
+// ============================================================
+// Íconos listos (dibujos vectoriales propios de la plataforma)
+// ============================================================
+
+const ICONOS = [
+  ['estrella', 'M50 4 L61 38 L97 38 L68 60 L79 95 L50 73 L21 95 L32 60 L3 38 L39 38 Z'],
+  ['corazon', 'M50 90 C14 62 4 40 12 26 C20 12 40 12 50 28 C60 12 80 12 88 26 C96 40 86 62 50 90 Z'],
+  ['sol', 'M50 28 A22 22 0 1 0 50 72 A22 22 0 1 0 50 28 Z M46 2 h8 v16 h-8 Z M46 82 h8 v16 h-8 Z M2 46 h16 v8 H2 Z M82 46 h16 v8 H82 Z M15 21 l6 -6 l11 11 l-6 6 Z M68 74 l6 -6 l11 11 l-6 6 Z M79 15 l6 6 l-11 11 l-6 -6 Z M26 68 l6 6 l-11 11 l-6 -6 Z'],
+  ['luna', 'M62 4 A46 46 0 1 0 62 96 A38 38 0 1 1 62 4 Z'],
+  ['flor', 'M50 34 A14 14 0 1 1 50 6 A14 14 0 1 1 50 34 Z M50 94 A14 14 0 1 1 50 66 A14 14 0 1 1 50 94 Z M34 50 A14 14 0 1 1 6 50 A14 14 0 1 1 34 50 Z M94 50 A14 14 0 1 1 66 50 A14 14 0 1 1 94 50 Z M50 62 A12 12 0 1 1 50 38 A12 12 0 1 1 50 62 Z'],
+  ['hoja', 'M50 4 C88 26 92 66 52 96 C48 96 48 96 48 92 L48 40 L40 60 C20 52 16 30 50 4 Z M46 44 L46 92 C14 74 16 40 46 44 Z'],
+  ['rayo', 'M58 4 L22 56 L44 56 L40 96 L78 42 L54 42 Z'],
+  ['casa', 'M50 6 L96 46 L84 46 L84 94 L58 94 L58 64 L42 64 L42 94 L16 94 L16 46 L4 46 Z'],
+  ['huella', 'M50 92 C36 92 26 84 30 72 C33 63 42 58 50 58 C58 58 67 63 70 72 C74 84 64 92 50 92 Z M22 56 A10 12 0 1 1 22 32 A10 12 0 1 1 22 56 Z M78 56 A10 12 0 1 1 78 32 A10 12 0 1 1 78 56 Z M39 40 A9 12 0 1 1 39 16 A9 12 0 1 1 39 40 Z M61 40 A9 12 0 1 1 61 16 A9 12 0 1 1 61 40 Z'],
+  ['nota', 'M38 8 L86 4 L86 62 A14 12 0 1 1 78 62 L78 24 L46 27 L46 76 A14 12 0 1 1 38 76 Z'],
+  ['carita', 'M50 96 A46 46 0 1 1 50 4 A46 46 0 1 1 50 96 Z M34 44 A7 9 0 1 0 34 26 A7 9 0 1 0 34 44 Z M66 44 A7 9 0 1 0 66 26 A7 9 0 1 0 66 44 Z M24 58 C32 74 68 74 76 58 C70 84 30 84 24 58 Z'],
+  ['tilde', 'M8 56 L20 44 L38 62 L80 12 L92 22 L38 84 Z'],
+  ['gota', 'M50 4 C68 36 82 52 82 68 A32 30 0 1 1 18 68 C18 52 32 36 50 4 Z'],
+  ['rombo', 'M50 3 L97 50 L50 97 L3 50 Z M50 25 L75 50 L50 75 L25 50 Z'],
+  ['engranaje', 'M43 4 h14 l3 12 a36 36 0 0 1 10 4 l11 -6 l10 10 l-6 11 a36 36 0 0 1 4 10 l12 3 v14 l-12 3 a36 36 0 0 1 -4 10 l6 11 l-10 10 l-11 -6 a36 36 0 0 1 -10 4 l-3 12 H43 l-3 -12 a36 36 0 0 1 -10 -4 l-11 6 l-10 -10 l6 -11 a36 36 0 0 1 -4 -10 l-12 -3 V43 l12 -3 a36 36 0 0 1 4 -10 l-6 -11 l10 -10 l11 6 a36 36 0 0 1 10 -4 Z M50 66 A16 16 0 1 0 50 34 A16 16 0 1 0 50 66 Z'],
+  ['bandera', 'M14 4 h8 v92 h-8 Z M28 8 C44 0 56 16 72 8 L86 12 L86 52 L72 48 C56 56 44 40 28 48 Z']
+];
+
+function svgDeIcono(path) {
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="' + path + '" fill="black" fill-rule="evenodd"/></svg>';
+}
+
+(function armarGrillaIconos() {
+  const grid = $('gridIconos');
+  for (const [nombre, path] of ICONOS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sello-icono';
+    btn.title = nombre;
+    btn.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="' + path + '" fill="currentColor" fill-rule="evenodd"/></svg>';
+    btn.addEventListener('click', async () => {
+      const svg = svgDeIcono(path);
+      try {
+        estado.svgTexto = svg;
+        estado.imagen = await rasterizarSVG(svg);
+        estado.nombre = nombre;
+      } catch (err) {
+        toast('No pude cargar el ícono: ' + err.message);
+        return;
+      }
+      activarSecciones('✔ Ícono «' + nombre + '» — le podés sumar texto en el paso 2');
+      regenerar();
+      $('seccionOpciones').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    grid.appendChild(btn);
+  }
+})();
