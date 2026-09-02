@@ -288,6 +288,10 @@ purgado listo para la impresora 3D.
   voladores; fusión volumétrica (TSDF) de las tomas giradas o mapa de alturas para un relieve de una sola
   toma; **afinado automático del eje y del sentido de giro** comparando las tomas; extracción con surface
   nets; conservar sólo la pieza más grande, suavizado de Taubin, reducción de triángulos, base plana cerrada.
+- **Asistente guiado**: chequeo en vivo de la escena (inclinación, mesa, distancia, tamaño, encaje en la
+  caja, centrado, huecos) con el consejo para cada problema; rosa de ángulos con el plan de tomas y la
+  instrucción de a qué marca girar; puntaje y consejo por toma con repetición individual; e informe del
+  modelo con el porcentaje de superficie vista, el lado que quedó rellenado a ciegas y qué mejorar.
 - **Salidas**: STL binario, OBJ y nube de puntos PLY, con Z hacia arriba y en milímetros.
 - **Modo de demostración** con una pieza sintética (con el ruido del sensor) para practicar sin Kinect.
 

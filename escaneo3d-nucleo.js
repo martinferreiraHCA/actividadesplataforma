@@ -838,12 +838,12 @@ export function reconstruir(tomas, marco, opciones = {}, avisar = () => {}) {
   avisar('Extrayendo la superficie');
   let malla = extraerMalla(F, vol);
   const info = { componentes: 1 };
-  if (!malla.idx.length) return { malla, info, vol };
+  if (!malla.idx.length) return { malla, info, vol, campo: F };
   if (opciones.mayorComponente !== false) { malla = mayorComponente(malla); info.componentes = malla.componentes; }
   if (opciones.suavizado) { avisar('Suavizando'); malla = suavizar(malla, opciones.suavizado); }
   if (opciones.reducir) { avisar('Reduciendo triángulos'); malla = reducir(malla, opciones.reducir * vol.voxel); }
   if (opciones.escala && opciones.escala !== 1) malla = escalar(malla, opciones.escala);
-  return { malla, info, vol };
+  return { malla, info, vol, campo: F };
 }
 
 // ============================================================
@@ -977,4 +977,214 @@ export function sintetizarToma(anguloGrados = 0, opciones = {}) {
     z[v * intr.ancho + u] = crudoAmm(mmAcrudo(prof));
   }
   return z;
+}
+
+// ============================================================
+// Asistente: evaluación de la escena, de cada toma y de la cobertura
+// ============================================================
+
+// Estado de la escena en vivo, para la lista de chequeo antes de capturar.
+// Devuelve { items: [{ clave, ok: true|false|null, texto, consejo }], resumen }.
+export function evaluarEscena(z, plano, marco, caja, opciones = {}) {
+  const intr = opciones.intr || INTR;
+  const corte = opciones.corte ?? 4;
+  const zmin = opciones.zmin || 0, zmax = opciones.zmax || 1e9;
+  const items = [];
+  if (!plano || !marco) {
+    items.push({ clave: 'mesa', ok: false, texto: 'No se detectó la mesa', consejo: 'Apuntá el Kinect hacia abajo para que se vea una buena porción de mesa vacía dentro del rango de distancia, y apretá «Detectar la mesa».' });
+    return { items, listo: false };
+  }
+  const inclinacion = Math.acos(Math.min(1, Math.abs(plano.n[1]))) * 180 / Math.PI;
+  let okIncl = null, consejoIncl = '';
+  if (inclinacion < 15) { okIncl = false; consejoIncl = 'El Kinect está casi horizontal: no va a ver la parte de arriba de la pieza. Incliná el sensor entre 25° y 40° hacia abajo (subilo o apoyalo sobre algo).'; }
+  else if (inclinacion > 60) { okIncl = false; consejoIncl = 'El Kinect mira demasiado hacia abajo: los costados de la pieza salen mal. Bajalo hasta unos 25°–40° (salvo que quieras el modo relieve).'; }
+  else okIncl = true;
+  items.push({ clave: 'inclinacion', ok: okIncl, texto: `Inclinación del Kinect: ${inclinacion.toFixed(0)}°`, consejo: consejoIncl });
+
+  // píxeles por clase
+  const clases = clasificarPixeles(z, marco, caja, { corte, zmin, zmax, intr });
+  let nMesa = 0, nPieza = 0, nSinDato = 0, nFuera = 0;
+  const hx = caja.ancho / 2, hz = caja.profundo / 2;
+  const xs = [], ys = [], zs = [];
+  let sumD = 0;
+  let bordeX = 0, bordeZ = 0, bordeTop = 0;
+  const { O, X, U, Z } = marco;
+  for (let v = 0; v < intr.alto; v++) for (let u = 0; u < intr.ancho; u++) {
+    const i = v * intr.ancho + u;
+    const c = clases[i];
+    if (c === 0) { nSinDato++; continue; }
+    if (c === 2) { nMesa++; continue; }
+    if (c === 1) { nFuera++; continue; }
+    nPieza++;
+    const d = z[i];
+    const px = (u - intr.cx) * d / intr.fx, py = (v - intr.cy) * d / intr.fy;
+    const dx = px - O[0], dy = py - O[1], dz = d - O[2];
+    const x = X[0] * dx + X[1] * dy + X[2] * dz, y = U[0] * dx + U[1] * dy + U[2] * dz, zz = Z[0] * dx + Z[1] * dy + Z[2] * dz;
+    xs.push(x); ys.push(y); zs.push(zz);
+    sumD += d;
+    if (Math.abs(x) > hx - 8) bordeX++;
+    if (Math.abs(zz) > hz - 8) bordeZ++;
+    if (y > caja.alto - 8) bordeTop++;
+  }
+  const total = intr.ancho * intr.alto;
+  const fracMesa = nMesa / total;
+  items.push({
+    clave: 'mesa', ok: fracMesa > 0.08, texto: `Mesa visible: ${(fracMesa * 100).toFixed(0)}% de la imagen`,
+    consejo: fracMesa > 0.08 ? '' : 'Se ve poca mesa alrededor de la pieza. Alejá un poco el Kinect o inclinalo más: la mesa es la referencia para el eje de giro.'
+  });
+  if (nPieza < 300) {
+    items.push({ clave: 'pieza', ok: false, texto: 'No hay nada dentro de la caja de escaneo', consejo: 'Apoyá la pieza sobre la base giratoria, en el centro del círculo blanco. Si está pero no se pinta de naranja, subí el «corte» si la base es gruesa, o agrandá la caja.' });
+    return { items, listo: false };
+  }
+  const distancia = sumD / nPieza;
+  // medidas robustas: percentiles 2 y 98, para que unos pocos píxeles de ruido no las agranden
+  xs.sort((a, b) => a - b); ys.sort((a, b) => a - b); zs.sort((a, b) => a - b);
+  const pct = (arr, q) => arr[Math.min(arr.length - 1, Math.floor(q * arr.length))];
+  const minX = pct(xs, 0.02), maxX = pct(xs, 0.98), maxY = pct(ys, 0.99), minZ = pct(zs, 0.02), maxZ = pct(zs, 0.98);
+  let okDist = true, consejoDist = '';
+  if (distancia < 600) { okDist = false; consejoDist = 'La pieza está muy cerca: el Kinect v1 no mide bien por debajo de 60 cm. Alejala o alejá el sensor.'; }
+  else if (distancia > 1300) { okDist = false; consejoDist = 'La pieza está lejos y cada píxel abarca varios milímetros: acercá el Kinect a 70–100 cm para más detalle.'; }
+  items.push({ clave: 'distancia', ok: okDist, texto: `Distancia a la pieza: ${(distancia / 10).toFixed(0)} cm`, consejo: consejoDist });
+
+  const ancho = maxX - minX, alto = maxY - corte, fondo = maxZ - minZ;
+  let okTam = true, consejoTam = '';
+  if (Math.max(ancho, alto) < 50) { okTam = false; consejoTam = 'La pieza es muy chica para este sensor (menos de 5 cm): va a salir sin detalle. Probá con algo más grande o acercá el Kinect al mínimo (60 cm).'; }
+  items.push({ clave: 'tamano', ok: okTam, texto: `Tamaño visible: ${ancho.toFixed(0)} × ${fondo.toFixed(0)} × ${alto.toFixed(0)} mm`, consejo: consejoTam });
+
+  const recorte = (bordeX + bordeZ + bordeTop) / nPieza;
+  let consejoRec = '';
+  if (recorte > 0.02) {
+    const lados = [];
+    if (bordeX / nPieza > 0.01) lados.push('los costados (ancho)');
+    if (bordeZ / nPieza > 0.01) lados.push('adelante o atrás (fondo)');
+    if (bordeTop / nPieza > 0.01) lados.push('arriba (alto)');
+    consejoRec = `La pieza toca el borde de la caja por ${lados.join(' y ')}: agrandá la caja o corré el eje con las flechas para que quede toda adentro.`;
+  }
+  items.push({ clave: 'caja', ok: recorte <= 0.02, texto: recorte <= 0.02 ? 'La pieza entra en la caja' : 'La pieza se sale de la caja', consejo: consejoRec });
+
+  const centroX = (minX + maxX) / 2, centroZ = (minZ + maxZ) / 2;
+  const desc = Math.hypot(centroX, centroZ);
+  items.push({
+    clave: 'centrado', ok: desc < Math.max(15, ancho * 0.15), texto: `Pieza descentrada del eje: ${desc.toFixed(0)} mm`,
+    consejo: desc < Math.max(15, ancho * 0.15) ? '' : `La pieza no está sobre el eje de giro: movela hacia el centro de la base o corré el eje ${Math.abs(centroX) > Math.abs(centroZ) ? (centroX > 0 ? 'a la derecha' : 'a la izquierda') : (centroZ > 0 ? 'hacia el fondo' : 'hacia la cámara')} con las flechas. Si gira descentrada, las tomas no encajan.`
+  });
+
+  // huecos dentro de la silueta de la pieza: píxeles sin dato rodeados de pieza
+  let huecos = 0;
+  for (let v = 1; v < intr.alto - 1; v++) for (let u = 1; u < intr.ancho - 1; u++) {
+    const i = v * intr.ancho + u;
+    if (clases[i] !== 0) continue;
+    let vecinos = 0;
+    if (clases[i - 1] === 3) vecinos++; if (clases[i + 1] === 3) vecinos++; if (clases[i - intr.ancho] === 3) vecinos++; if (clases[i + intr.ancho] === 3) vecinos++;
+    if (vecinos >= 2) huecos++;
+  }
+  const fracHuecos = huecos / (nPieza + huecos);
+  items.push({
+    clave: 'huecos', ok: fracHuecos < 0.08, texto: `Huecos sin dato en la pieza: ${(fracHuecos * 100).toFixed(0)}%`,
+    consejo: fracHuecos < 0.08 ? '' : 'El sensor no ve partes de la pieza: superficies negras, brillantes, transparentes o muy inclinadas. Cubrilas con cinta de papel o una capa de talco, apagá el sol directo sobre la mesa, y activá «Rellenar huecos chicos».'
+  });
+  const listo = items.every(it => it.ok !== false || it.clave === 'huecos' || it.clave === 'centrado');
+  return { items, listo, medidas: { ancho, alto, fondo, distancia, nPieza } };
+}
+
+// Calidad de una toma ya capturada. cuadros (opcional): los cuadros crudos de la toma, para
+// medir si algo se movió. Devuelve { puntaje: 0..100, nivel: 'buena'|'regular'|'mala', consejos: [] }.
+export function evaluarToma(z, marco, caja, opciones = {}) {
+  const intr = opciones.intr || INTR;
+  const escena = evaluarEscena(z, marco ? marco.plano : null, marco, caja, opciones);
+  const consejos = [];
+  let puntaje = 100;
+  for (const it of escena.items) {
+    if (it.ok === false) {
+      const peso = { pieza: 100, caja: 35, huecos: 25, distancia: 20, centrado: 20, tamano: 20, mesa: 10, inclinacion: 10 }[it.clave] || 10;
+      puntaje -= peso;
+      if (it.consejo) consejos.push(it.consejo);
+    }
+  }
+  // ruido: rugosidad local dentro de la pieza (diferencia con el vecino de la derecha)
+  if (escena.medidas) {
+    const clases = clasificarPixeles(z, marco, caja, { corte: opciones.corte ?? 4, zmin: opciones.zmin, zmax: opciones.zmax, intr });
+    let suma = 0, n = 0;
+    for (let i = 0; i < z.length - 1; i++) {
+      if (clases[i] !== 3 || clases[i + 1] !== 3) continue;
+      const d = Math.abs(z[i] - z[i + 1]);
+      if (d < 40) { suma += d; n++; }
+    }
+    const rugosidad = n ? suma / n : 0;
+    if (rugosidad > 6) { puntaje -= 15; consejos.push(`La superficie sale muy rugosa (${rugosidad.toFixed(1)} mm entre píxeles vecinos): subí los «cuadros por toma» a 10 o 20, acercá el Kinect y evitá la luz del sol sobre la pieza.`); }
+    else if (rugosidad > 3.5) { puntaje -= 5; }
+  }
+  // movimiento durante la toma
+  if (opciones.cuadros && opciones.cuadros.length > 2) {
+    const c = opciones.cuadros;
+    let suma = 0, n = 0;
+    for (let i = 0; i < z.length; i += 7) {
+      const ref = z[i]; if (!(ref > 0)) continue;
+      let dev = 0, m = 0;
+      for (const cu of c) { const v = cu[i]; if (v > 0) { dev += Math.abs(v - ref); m++; } }
+      if (m) { suma += dev / m; n++; }
+    }
+    const movimiento = n ? suma / n : 0;
+    if (movimiento > 6) { puntaje -= 25; consejos.push(`Algo se movió durante la toma (${movimiento.toFixed(1)} mm de variación entre cuadros): no toques la pieza ni el Kinect hasta que termine de capturar, y usá la cuenta regresiva.`); }
+  }
+  puntaje = Math.max(0, Math.min(100, puntaje));
+  const nivel = puntaje >= 75 ? 'buena' : puntaje >= 45 ? 'regular' : 'mala';
+  if (!consejos.length) consejos.push('Toma en buen estado.');
+  return { puntaje, nivel, consejos, medidas: escena.medidas || null };
+}
+
+// Plan de tomas para el modo de giro: qué ángulos hacen falta y cuáles faltan.
+export function planDeTomas(tomas, paso = 45) {
+  const plan = [];
+  for (let a = 0; a < 360; a += paso) plan.push(a);
+  const norm = a => ((a % 360) + 360) % 360;
+  const estado = plan.map(a => {
+    const idx = tomas.findIndex(t => Math.abs(norm(t.angulo) - a) <= paso / 2 - 1e-6 || Math.abs(norm(t.angulo) - a - 360) <= paso / 2 - 1e-6);
+    return { angulo: a, toma: idx >= 0 ? idx : null };
+  });
+  const faltan = estado.filter(e => e.toma === null).map(e => e.angulo);
+  const siguiente = faltan.length ? faltan[0] : null;
+  return { plan: estado, faltan, siguiente, completas: plan.length - faltan.length, total: plan.length };
+}
+
+// Cobertura del modelo: qué parte de la superficie se rellenó sin haberla visto, y de qué lado.
+// Devuelve { fraccionNoVista, sectores: [{ desde, hasta, fraccion }], arriba, consejos }.
+export function analizarCobertura(vol, F, opciones = {}) {
+  const { nx, ny, nz, voxel, origen, peso, corte } = vol;
+  const sectores = new Array(8).fill(0);
+  const total8 = new Array(8).fill(0);
+  let vistos = 0, noVistos = 0, arribaNo = 0, arribaTot = 0;
+  let maxY = corte;
+  let idx = 0;
+  for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++, idx++) {
+    const y = origen[1] + j * voxel;
+    if (y < corte + voxel || F[idx] >= 0) continue;
+    // ¿es superficie? nodo interior con algún vecino exterior
+    let sup = false;
+    if (i > 0 && F[idx - 1] >= 0) sup = true;
+    else if (i < nx - 1 && F[idx + 1] >= 0) sup = true;
+    else if (j > 0 && F[idx - nx] >= 0) sup = true;
+    else if (j < ny - 1 && F[idx + nx] >= 0) sup = true;
+    else if (k > 0 && F[idx - nx * ny] >= 0) sup = true;
+    else if (k < nz - 1 && F[idx + nx * ny] >= 0) sup = true;
+    if (!sup) continue;
+    if (y > maxY) maxY = y;
+    const x = origen[0] + i * voxel, z = origen[2] + k * voxel;
+    const ang = ((Math.atan2(x, -z) * 180 / Math.PI) + 360) % 360; // 0° = lado que mira a la cámara en la toma 0
+    const s = Math.floor(ang / 45) % 8;
+    total8[s]++;
+    const noVisto = peso[idx] === 0;
+    if (noVisto) { noVistos++; sectores[s]++; } else vistos++;
+    if (opciones.altoPieza && y > opciones.altoPieza * 0.8) { arribaTot++; if (noVisto) arribaNo++; }
+  }
+  const totalSup = vistos + noVistos || 1;
+  const fraccionNoVista = noVistos / totalSup;
+  const porSector = sectores.map((n, s) => ({ desde: s * 45, hasta: s * 45 + 45, fraccion: total8[s] ? n / total8[s] : 0, nodos: n }));
+  const consejos = [];
+  const peores = porSector.filter(p => p.fraccion > 0.25 && p.nodos > 20).sort((a, b) => b.fraccion - a.fraccion);
+  for (const p of peores.slice(0, 3)) consejos.push(`El lado que quedó entre ${p.desde}° y ${p.hasta}° se rellenó sin verse (${(p.fraccion * 100).toFixed(0)}% de esa cara): sumá una toma con la pieza girada a unos ${p.desde + 22}°.`);
+  const arriba = arribaTot ? arribaNo / arribaTot : 0;
+  if (arriba > 0.3) consejos.push(`La parte de arriba se vio poco (${(arriba * 100).toFixed(0)}% rellenada a ciegas): para la próxima incliná más el Kinect (35°–45°) o apoyá la pieza de costado y hacé un segundo escaneo.`);
+  if (fraccionNoVista > 0.35 && !consejos.length) consejos.push('Más de un tercio de la superficie se rellenó sin verse: hacé tomas cada 30° y revisá que la pieza gire centrada en el eje.');
+  return { fraccionNoVista, sectores: porSector, arriba, consejos };
 }

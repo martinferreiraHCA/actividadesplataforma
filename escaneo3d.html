@@ -157,6 +157,11 @@
         <p class="kin-nota">Apuntá el Kinect un poco hacia abajo (20°–40°) para que vea la mesa y la parte de arriba de la pieza. Mantenelo quieto durante todo el escaneo: lo que gira es la pieza, no la cámara.</p>
       </div>
       <div class="kin-controles">
+        <div class="kin-bloque kin-bloque--asistente">
+          <p class="kin-bloque__titulo">✅ Chequeo de la escena <span class="kin-asistente__estado" id="chequeoEstado"></span></p>
+          <ul class="kin-chequeo" id="listaChequeo"><li class="kin-chequeo__item kin-chequeo__item--espera">Esperando la imagen del sensor…</li></ul>
+          <p class="kin-nota">Se actualiza solo con lo que ve el Kinect. Cuando todo esté en verde, pasá a las tomas. Lo amarillo es una mejora posible, no un impedimento.</p>
+        </div>
         <div class="kin-bloque">
           <p class="kin-bloque__titulo">Distancia útil</p>
           <div class="kin-fila"><label for="optZmin">Desde</label><input type="range" id="optZmin" min="400" max="2000" step="10" value="500"><span class="kin-valor" id="valZmin">500 mm</span></div>
@@ -240,6 +245,14 @@
     <p class="ia-catalogo__ayuda" id="notaModo" style="margin-top:0.6rem">Girá la pieza sobre la base <strong>siempre para el mismo lado</strong> y en pasos parejos (marcá la base con una raya cada 45°, o usá una tarima de LEGO con tetones como referencia). Después de cada toma el ángulo avanza solo. Con 8 tomas (cada 45°) ya sale una pieza cerrada; con 12 (cada 30°) queda más fiel. No hace falta que el giro sea perfecto: la plataforma afina el eje y el sentido comparando las tomas.</p>
     <p class="ia-catalogo__ayuda" id="notaRelieve" style="margin-top:0.6rem;display:none">Para un relieve alcanza con <strong>una sola toma</strong>: el Kinect mirando la pieza desde arriba (o bien de frente si es una placa apoyada). Todo lo que quede por debajo de la superficie vista se rellena macizo hasta la mesa, como un sello. Podés sumar tomas giradas para cubrir lo que quedó tapado.</p>
 
+    <div class="kin-plan" id="planTomas">
+      <svg class="kin-rosa" id="rosaAngulos" viewBox="-128 -128 256 256" role="img" aria-label="Plan de tomas alrededor de la pieza"></svg>
+      <div class="kin-plan__texto">
+        <p class="kin-plan__paso" id="planPaso">Toma 1 de 8</p>
+        <p class="kin-plan__instruccion" id="planInstruccion">Apoyá la pieza centrada en la base, con la marca de 0° mirando al Kinect, y capturá.</p>
+        <p class="kin-nota" id="planNota">La rosa muestra la pieza vista desde arriba. El ojo es el Kinect; cada punto, una toma: gris = falta, verde = buena, amarillo = regular, rojo = conviene repetirla. Hacé clic en un punto para elegir ese ángulo.</p>
+      </div>
+    </div>
     <div class="kin-capturas" id="listaCapturas"></div>
     <div class="scratch-opciones" style="margin-top:1rem">
       <button class="btn" id="btnGuardarTomas" type="button">💾 Guardar las tomas (.json)</button>
@@ -303,6 +316,7 @@
     <div class="kin-progreso" id="progreso" style="display:none"></div>
 
     <div id="zonaResultado" style="display:none;margin-top:1.2rem">
+      <div class="kin-bloque kin-informe" id="informeEscaneo"></div>
       <div class="kin-descargas">
         <button class="btn btn--primary" id="btnSTL" type="button">⬇ Descargar STL para imprimir</button>
         <button class="btn" id="btnOBJ" type="button">⬇ Descargar OBJ</button>
