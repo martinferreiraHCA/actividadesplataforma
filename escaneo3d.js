@@ -172,7 +172,6 @@ async function usarFuente(fuente, tipo) {
   $('btnDemo').style.display = tipo === 'demo' ? 'none' : '';
   $('btnPuente').style.display = tipo === 'puente' ? 'none' : '';
   $('seccionEncuadre').style.display = '';
-  $('seccionCapturas').style.display = '';
   actualizarModo();
   if (tipo === 'demo') {
     mostrarEstado('demo', 'Pieza de demostración', 'Una caja con una esfera y una manija, dibujada con el mismo ruido que el sensor real. Sirve para probar todo el flujo sin el Kinect.');
@@ -594,8 +593,9 @@ function dibujarVista() {
     const o = i * 4;
     if (!(d > 0)) { px[o] = 40; px[o + 1] = 40; px[o + 2] = 40; px[o + 3] = 255; continue; }
     colorProfundidad(d, zmin, zmax, c);
-    const cl = clases ? clases[i] : (d < zmin || d > zmax ? 1 : 3);
-    if (cl === 2) { px[o] = c[0] * 0.35 + 60; px[o + 1] = c[1] * 0.35 + 160; px[o + 2] = c[2] * 0.35 + 70; }
+    const cl = clases ? clases[i] : (d < zmin || d > zmax ? 1 : (libreActivo ? 4 : 3));
+    if (cl === 4) { px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2]; }
+    else if (cl === 2) { px[o] = c[0] * 0.35 + 60; px[o + 1] = c[1] * 0.35 + 160; px[o + 2] = c[2] * 0.35 + 70; }
     else if (cl === 3) { px[o] = Math.min(255, c[0] * 0.3 + 200); px[o + 1] = c[1] * 0.3 + 90; px[o + 2] = c[2] * 0.3 + 20; }
     else { px[o] = c[0] * 0.25 + 30; px[o + 1] = c[1] * 0.25 + 50; px[o + 2] = c[2] * 0.25 + 90; }
     px[o + 3] = 255;
@@ -647,14 +647,61 @@ function actualizarModo() {
   const relieve = modo === 'relieve', libre = modo === 'libre';
   $('notaModo').style.display = relieve || libre ? 'none' : '';
   $('notaRelieve').style.display = relieve ? '' : 'none';
+  $('ayudaLibre').style.display = libre ? '' : 'none';
   $('zonaLibre').style.display = libre ? '' : 'none';
-  for (const id of ['listaCapturas', 'btnGuardarTomas', 'btnCargarTomas', 'btnBorrarTomas']) $(id).style.display = libre ? 'none' : '';
-  $('btnCapturar').style.display = libre ? 'none' : '';
-  $('optAngulo').parentElement.style.display = libre ? 'none' : '';
+  $('barraLibre').style.display = libre ? '' : 'none';
+  $('barraTomas').style.display = libre ? 'none' : '';
+  $('chequeoBloque').style.display = libre ? 'none' : '';
+  $('opcionesVolumen').style.display = modo === 'volumen' ? '' : 'none';
+  $('btnDetectarMesa').style.display = libre ? 'none' : '';
+  $('seccionCapturas').style.display = libre ? 'none' : '';
+  $('spanAngulo').style.display = modo === 'volumen' ? '' : 'none';
+  $('estadoCaptura').textContent = '';
   if (!libre && estado.libre) libreDetener();
   actualizarPlan();
   libreBotones();
 }
+
+// ============================================================
+// Presets: la mejor configuración para cada tipo de escaneo
+// ============================================================
+
+const PRESETS = {
+  cabeza: { modo: 'libre', libLado: 500, libVoxel: 5, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 0,
+    nota: 'Cabeza o busto a mano: la persona quieta, vos girás alrededor a 70–90 cm. Volumen de 50 cm y detalle de 5 mm; si sólo querés la cabeza, bajá el volumen a 40 cm.' },
+  cuerpo: { modo: 'libre', libLado: 800, libVoxel: 6, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2,
+    nota: 'Medio cuerpo a mano: la persona sentada y quieta, vos a 1 m dando la vuelta. Volumen de 80 cm y 6 mm de detalle para que el seguimiento sea ágil.' },
+  grande: { modo: 'libre', libLado: 1000, libVoxel: 8, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2,
+    nota: 'Objeto grande a mano (silla, escultura, maqueta): volumen de 1 m y 8 mm de detalle. Dá la vuelta completa a 1–1,2 m, despacio.' },
+  chica: { modo: 'volumen', optAncho: 160, optProfundo: 160, optAlto: 160, optCorte: 4, optZmin: 450, optZmax: 1000, optPaso: 30, optCuadros: 20, optVoxel: 2, optSuavizado: 5, optRelleno: 'solido', optReducir: 0,
+    nota: 'Pieza chica (5–15 cm) sobre base giratoria: acercá el Kinect al mínimo (60 cm), caja de 16 cm, una toma cada 30° con 20 cuadros para bajar el ruido, y detalle de 2 mm.' },
+  mediana: { modo: 'volumen', optAncho: 400, optProfundo: 400, optAlto: 350, optCorte: 4, optZmin: 500, optZmax: 1300, optPaso: 45, optCuadros: 10, optVoxel: 3, optSuavizado: 5, optRelleno: 'solido', optReducir: 0,
+    nota: 'Pieza mediana (15–40 cm) sobre base giratoria, a 70–100 cm: caja de 40 cm, una toma cada 45° con 10 cuadros, detalle de 3 mm.' },
+  relieve: { modo: 'relieve', optAncho: 300, optProfundo: 300, optAlto: 120, optCorte: 3, optZmin: 450, optZmax: 1000, optCuadros: 20, optVoxel: 2, optSuavizado: 2, optRelleno: 'solido', optReducir: 0,
+    nota: 'Relieve o placa: el Kinect mirando desde arriba a 60–80 cm, una sola toma de 20 cuadros, detalle de 2 mm y suavizado leve para no perder los bordes.' },
+  personalizado: { nota: 'Personalizado: los ajustes quedan como los dejaste (modo, caja, paso, cuadros y resolución).' }
+};
+
+function aplicarPreset(nombre) {
+  const p = PRESETS[nombre]; if (!p) return;
+  for (const [id, valor] of Object.entries(p)) {
+    if (id === 'modo' || id === 'nota') continue;
+    const el = $(id); if (!el) continue;
+    el.value = String(valor);
+    if (id === 'optZmin') $('valZmin').textContent = valor + ' mm';
+    if (id === 'optZmax') $('valZmax').textContent = valor + ' mm';
+  }
+  if (p.modo) $('optModo').value = p.modo;
+  $('presetNota').textContent = p.nota || '';
+  actualizarModo();
+  if (estado.plano && estado.ultimoMm && p.modo !== 'libre') { estado.desplazamiento = [0, 0]; recentrar(true); }
+  dibujarVista();
+}
+document.querySelectorAll('input[name="preset"]').forEach(r => r.addEventListener('change', () => aplicarPreset(r.value)));
+$('optModo').addEventListener('change', () => { const r = document.querySelector('input[name="preset"][value="personalizado"]'); if (r) r.checked = true; $('presetNota').textContent = PRESETS.personalizado.nota; });
+$('btnGenerarBarra').addEventListener('click', () => { $('seccionModelo').style.display = ''; generar(); });
+$('btnRepetirUltima').addEventListener('click', () => { if (!estado.tomas.length) { toast('Todavía no hay tomas'); return; } repetirToma(estado.tomas.length - 1); });
+$('btnBorrarUltima').addEventListener('click', () => { if (!estado.tomas.length) { toast('No hay tomas para borrar'); return; } estado.tomas.pop(); estado.ajuste = null; dibujarCapturas(); actualizarPlan(); toast('Última toma borrada'); });
 $('optModo').addEventListener('change', actualizarModo);
 
 async function capturar() {
@@ -819,6 +866,7 @@ function dibujarCapturas() {
   });
 }
 dibujarCapturas();
+aplicarPreset('mediana');
 
 $('btnBorrarTomas').addEventListener('click', () => {
   if (!estado.tomas.length) return;
