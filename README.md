@@ -305,6 +305,22 @@ purgado listo para la impresora 3D.
   websockets` y `python kinect-puente.py`; `--demo` para probar sin Kinect.
 - **Modo de demostración** con una pieza sintética (con el ruido del sensor) para practicar sin Kinect.
 
+## Diseño → Arenero de realidad aumentada
+
+`arenero.html` es la versión para el navegador del **Augmented Reality Sandbox** (AR Sandbox / SARndbox)
+desarrollado originalmente por UC Davis – KeckCAVES (Oliver Kreylos): un Kinect mira una caja de arena
+desde arriba y un proyector pinta sobre la arena un **mapa topográfico** en vivo (colores por altura, curvas
+de nivel, sombreado) con **agua** que corre por los valles y llueve cuando se pone la mano encima.
+
+- Misma conexión que el escaneo 3D (WebUSB directo, puente local `kinect-puente.py`, demostración).
+- Región de la caja marcada sobre la imagen; base por plano automático o **calibración de la arena plana**
+  (mediana de 30 cuadros, píxel a píxel); suavizado temporal; las manos se detectan por altura y no cuentan
+  como relieve.
+- Agua: modelo de flujo entre celdas de 4×4 píxeles con evaporación; lluvia bajo la mano o sobre toda la caja;
+  nivel del mar ajustable; relieve congelable.
+- **Ventana del proyector** (`arenero-proyector.html`) que recibe los cuadros por `postMessage` y aplica una
+  homografía CSS con cuatro esquinas arrastrables (o con teclado), con grilla de calibración.
+
 ## Tecnología
 
 - HTML + CSS + Vanilla JS (ES modules)
@@ -341,4 +357,7 @@ Sección Diseño:
 /escaneo3d-libre.js       ← Escaneo a mano alzada: seguimiento de cámara y fusión (Web Worker)
 /kinect-usb.js            ← Driver WebUSB del Kinect v1 y guías de instalación
 /kinect-puente.py         ← Puente local Kinect → navegador (libusb + WebSocket)
+/kinect-puente-cliente.js ← Cliente del puente local (compartido)
+/arenero.html /.js /.css  ← Arenero de realidad aumentada (AR Sandbox)
+/arenero-proyector.html   ← Ventana del proyector con calibración de esquinas
 ```

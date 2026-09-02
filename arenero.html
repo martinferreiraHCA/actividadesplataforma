@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arenero de realidad aumentada — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Arenero de realidad aumentada (AR Sandbox) con un Kinect y un proyector, desde el navegador: la arena se convierte en un mapa topográfico con curvas de nivel, sombreado y agua que fluye y llueve con la mano.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css">
+<link rel="stylesheet" href="escaneo3d.css"><!-- estado de conexión, bloques, filas -->
+<link rel="stylesheet" href="arenero.css">
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+          <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
+          <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
+          <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia="arenero">Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Geografía que se toca</div>
+      <h2 class="section__title">Arenero de<br>Realidad Aumentada<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Una caja con arena, un <strong>Kinect</strong> mirándola desde arriba y un <strong>proyector</strong> apuntando a la
+      arena: al modelar montañas y valles con las manos, la arena se pinta al instante como un <strong>mapa
+      topográfico</strong> (colores por altura, curvas de nivel y sombreado), y con la mano abierta por encima
+      <strong>llueve</strong>: el agua corre por los valles, se junta en lagos y se evapora. Es la versión para el
+      navegador del <strong>Augmented Reality Sandbox</strong> (AR Sandbox / SARndbox) desarrollado originalmente por
+      <a href="https://arsandbox.ucdavis.edu" target="_blank" rel="noopener">UC Davis – KeckCAVES</a> (Oliver Kreylos), reescrita
+      para no instalar nada: usa el mismo Kinect y el mismo puente local que el escaneo 3D.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 01</span><span class="paso-rapido__titulo">Armá la caja</span><span class="paso-rapido__texto">Una caja de 60 × 80 cm con 10–15 cm de arena. El Kinect y el proyector, 1 m por encima, mirando hacia abajo (un caño, una repisa, un trípode con brazo).</span></div>
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 02</span><span class="paso-rapido__titulo">Conectá y marcá</span><span class="paso-rapido__texto">Conectá el Kinect (directo, o por el puente local), marcá el borde de la caja sobre la imagen y calibrá la arena plana.</span></div>
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 03</span><span class="paso-rapido__titulo">Proyectá</span><span class="paso-rapido__texto">Abrí la ventana del proyector, llevala a su pantalla en pantalla completa y arrastrá las cuatro esquinas hasta que el mapa caiga justo sobre la arena.</span></div>
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 04</span><span class="paso-rapido__titulo">A modelar</span><span class="paso-rapido__texto">Montañas, valles, cuencas, islas. Mano abierta arriba: lluvia. Subí o bajá el nivel del mar para ver qué se inunda.</span></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 1: CONEXIÓN ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — El Kinect</div>
+    <div class="kin-estado" id="estadoKinect">
+      <span class="kin-estado__luz"></span>
+      <div class="kin-estado__texto">
+        <strong id="estadoTitulo">Sin Kinect conectado</strong>
+        <small id="estadoDetalle">Conectalo, usá el puente local o probá la demostración.</small>
+      </div>
+      <div class="kin-estado__acciones">
+        <button class="btn btn--primary" id="btnConectar" type="button">🔌 Conectar Kinect</button>
+        <button class="btn" id="btnPuente" type="button">🔗 Conectar por el puente local</button>
+        <button class="btn" id="btnDemo" type="button">🧪 Probar sin Kinect</button>
+        <button class="btn" id="btnDesconectar" type="button" style="display:none">Desconectar</button>
+      </div>
+    </div>
+    <p class="kin-nota">Los drivers, el puente local y el diagnóstico están explicados en la página <a href="escaneo3d.html">Escaneo 3D con Kinect</a>: es la misma conexión. En Windows, usá el puente local (<code>python kinect-puente.py</code>).</p>
+  </div>
+</section>
+
+
+<!-- ====== PASO 2: EL ARENERO ====== -->
+<section class="editor-section" id="seccionArenero" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.8rem">// Paso 2 — El arenero</div>
+    <div class="are-panel">
+      <div class="are-vista">
+        <canvas id="lienzoMapa" width="640" height="480"></canvas>
+        <div class="are-comandos">
+          <div class="are-comandos__grupo">
+            <select class="campo__input" id="optVista" style="max-width:190px">
+              <option value="mapa" selected>ver el mapa</option>
+              <option value="profundidad">ver el sensor (marcar la caja)</option>
+            </select>
+            <button class="btn btn--primary" id="btnCalibrar" type="button" title="Aplaná la arena y calibrá la base píxel a píxel">📐 Calibrar arena plana</button>
+            <button class="btn" id="btnPlano" type="button" title="Vuelve a ajustar un plano automático como base">Plano auto</button>
+          </div>
+          <div class="are-comandos__grupo">
+            <button class="btn" id="btnLluvia" type="button">🌧 Lluvia</button>
+            <button class="btn" id="btnVaciar" type="button">🚱 Vaciar</button>
+            <button class="btn" id="btnNivelMenos" type="button" title="Bajar el nivel del mar 5 mm">🌊 −</button>
+            <button class="btn" id="btnNivelMas" type="button" title="Subir el nivel del mar 5 mm">🌊 +</button>
+            <button class="btn" id="btnCongelar" type="button">❄ Congelar el relieve</button>
+          </div>
+          <div class="are-comandos__grupo are-comandos__grupo--derecha">
+            <button class="btn btn--primary" id="btnProyector" type="button">📽 Abrir proyector</button>
+            <button class="btn" id="btnGrilla" type="button" title="Grilla numerada para alinear las esquinas sobre la arena">#</button>
+            <button class="btn" id="btnGuardarMapa" type="button" title="Guarda el mapa actual como imagen">💾 PNG</button>
+          </div>
+        </div>
+        <p class="kin-comandos__estado"><span class="kin-valor" id="estadoBarra"></span></p>
+        <div class="are-leyenda" aria-hidden="true">
+          <span style="background:#0a2878"></span><span style="background:#1e6ebe"></span><span style="background:#78c8e6"></span><span style="background:#3c9646"></span><span style="background:#82be50"></span><span style="background:#dcc85a"></span><span style="background:#aa783c"></span><span style="background:#785a46"></span><span style="background:#fff"></span>
+        </div>
+        <div class="are-leyenda-texto"><span>mar profundo</span><span>costa</span><span>llanura</span><span>sierra</span><span>cumbre nevada</span></div>
+        <p class="kin-nota" id="notaBase">Base: todavía no hay. Se ajusta un plano automático con los primeros cuadros; para más precisión, aplaná la arena y usá «Calibrar arena plana».</p>
+      </div>
+
+      <div class="kin-controles">
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Mapa</p>
+          <div class="kin-fila"><label for="optEscala">Colores</label>
+            <select class="campo__input" id="optEscala" style="max-width:170px"><option value="topografico" selected>topográfico</option><option value="calor">calor</option><option value="gris">grises</option></select>
+            <label class="scratch-check"><input type="checkbox" id="optCurvas" checked> Curvas de nivel</label>
+            <label class="scratch-check"><input type="checkbox" id="optSombra" checked> Sombreado</label>
+          </div>
+          <div class="kin-fila"><label for="optNivelMar">Nivel del mar</label><input type="range" id="optNivelMar" min="-150" max="150" step="1" value="0"><span class="kin-valor" id="valNivelMar">0 mm</span></div>
+          <div class="kin-fila"><label for="optRango">Altura máxima</label><input type="range" id="optRango" min="40" max="400" step="10" value="150"><span class="kin-valor" id="valRango">150 mm</span></div>
+          <div class="kin-fila"><label for="optIntervalo">Curvas cada</label><input type="range" id="optIntervalo" min="2" max="50" step="1" value="10"><span class="kin-valor" id="valIntervalo">10 mm</span></div>
+        </div>
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Agua</p>
+          <div class="kin-fila"><label class="scratch-check"><input type="checkbox" id="optAgua" checked> Simular agua</label>
+            <label for="optLluvia">Lluvia</label><select class="campo__input" id="optLluvia" style="max-width:110px"><option value="0.5">suave</option><option value="1" selected>normal</option><option value="2.5">torrencial</option></select></div>
+          <div class="kin-fila"><label for="optEvaporacion">Evaporación</label><select class="campo__input" id="optEvaporacion" style="max-width:120px"><option value="0">ninguna</option><option value="1" selected>lenta</option><option value="4">rápida</option></select></div>
+          <div class="kin-fila"><label for="optMano">Mano a más de</label><input type="range" id="optMano" min="60" max="400" step="5" value="200"><span class="kin-valor" id="valMano">200 mm</span></div>
+          <p class="kin-nota">Todo lo que esté a más de esa altura sobre la arena se toma como una mano: no cuenta como relieve y hace llover debajo. Ponelo por encima de la montaña más alta que vayan a modelar.</p>
+        </div>
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Proyector: esquinas</p>
+          <div class="are-esquinas">
+            <button class="btn btn--primary" type="button" data-esquina="0">1</button><button class="btn" type="button" data-esquina="1">2</button><button class="btn" type="button" data-esquina="2">3</button><button class="btn" type="button" data-esquina="3">4</button>
+            <div class="are-cruz" aria-label="Mover la esquina elegida">
+              <span></span><button type="button" data-mover="0,-1">▲</button><span></span>
+              <button type="button" data-mover="-1,0">◀</button><button type="button" id="btnEsquinasReset" title="Volver a las esquinas de la pantalla">↺</button><button type="button" data-mover="1,0">▶</button>
+              <span></span><button type="button" data-mover="0,1">▼</button><span></span>
+            </div>
+          </div>
+          <p class="kin-nota" id="valEsquinas"></p>
+          <p class="kin-nota">En la ventana del proyector también podés arrastrar las esquinas con el mouse, o usar las teclas 1-4 y las flechas. Activá la grilla (#) para verlas sobre la arena. Con «C» se ocultan los marcadores.</p>
+        </div>
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Sensor</p>
+          <div class="kin-fila"><label for="optSuavizado">Suavizado</label><select class="campo__input" id="optSuavizado" style="max-width:130px"><option value="0.6">poco</option><option value="0.3" selected>normal</option><option value="0.12">mucho</option></select></div>
+          <div class="kin-fila"><label for="optZmin">Desde</label><input type="range" id="optZmin" min="400" max="1500" step="10" value="500"><span class="kin-valor" id="valZmin">500 mm</span></div>
+          <div class="kin-fila"><label for="optZmax">Hasta</label><input type="range" id="optZmax" min="600" max="2500" step="10" value="1400"><span class="kin-valor" id="valZmax">1400 mm</span></div>
+        </div>
+      </div>
+    </div>
+
+    <details class="kin-guia" style="margin-top:1rem">
+      <summary>Cómo armarlo y usarlo en clase</summary>
+      <div class="kin-guia__cuerpo">
+        <ol class="kin-guia__pasos">
+          <li><strong>La caja</strong>: 60 × 80 cm (la proporción 3:4 del Kinect), bordes de 15 cm, 10–15 cm de arena fina y un poco húmeda para que se modele. Arena blanca o clara: el proyector se ve mejor.</li>
+          <li><strong>Kinect y proyector</strong>, uno al lado del otro, 90–110 cm por encima de la arena, mirando hacia abajo. Un proyector de tiro corto ayuda; si no, subilo más y bajá la luz del salón.</li>
+          <li><strong>Marcar la caja</strong>: en «ver el sensor» arrastrá un rectángulo sobre el borde interior de la caja. Sólo eso se convierte en mapa.</li>
+          <li><strong>Calibrar la arena plana</strong>: aplaná la arena, sacá las manos y apretá «Calibrar». Esa altura pasa a ser el nivel del mar (podés correrlo con 🌊 − / +).</li>
+          <li><strong>Proyector</strong>: «Abrir proyector» abre una ventana negra; arrastrala a la pantalla del proyector y ponela en pantalla completa (F11). Activá la grilla y arrastrá las esquinas 1 a 4 hasta que el rectángulo rojo coincida con el borde de la caja.</li>
+          <li><strong>Actividades</strong>: cuencas hidrográficas y divisorias de aguas (llové y mirá adónde va el agua); curvas de nivel (que armen una montaña con una curva cada 2 cm); islas y subida del nivel del mar; represas y lagos; relieve del Uruguay (cuchillas, penillanura, sierras) modelado con la mano.</li>
+        </ol>
+        <p class="kin-nota">Nada se sube a ningún servidor: la profundidad se procesa en tu computadora. La simulación del agua es un modelo simple de flujo entre celdas (no la ecuación de Saint-Venant del SARndbox original), suficiente para ver cuencas, divisorias y lagos.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+        <a href="sello3d.html">Sello 3D desde una imagen</a>
+        <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
+        <a href="arenero.html">Arenero de realidad aumentada</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Inspirado en el <a href="https://arsandbox.ucdavis.edu" target="_blank" rel="noopener">AR Sandbox de UC Davis – KeckCAVES</a>; protocolo del Kinect según <a href="https://openkinect.org" target="_blank" rel="noopener">OpenKinect / libfreenect</a>.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script type="module" src="arenero.js"></script>
+
+</body>
+</html>

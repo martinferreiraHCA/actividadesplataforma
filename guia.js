@@ -633,6 +633,35 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
       `
     },
     {
+      id: "arenero",
+      titulo: "Arenero de realidad aumentada",
+      html: `
+        <p class="guia-p"><strong>arenero.html</strong> es la versión para el navegador del <strong>Augmented Reality Sandbox</strong>
+        (AR Sandbox / SARndbox) de UC Davis – KeckCAVES: una caja de arena, un Kinect mirándola desde arriba y un
+        proyector apuntando a la arena. Al modelar con las manos, la arena se pinta al instante como un mapa
+        topográfico, y con la mano abierta por encima llueve.</p>
+        <h4 class="guia-h">1 · Armado</h4>
+        <ul class="guia-lista">
+          <li>Caja de 60 × 80 cm con 10–15 cm de arena clara, algo húmeda.</li>
+          <li>Kinect y proyector 90–110 cm por encima, mirando hacia abajo. Misma conexión que el escaneo 3D
+          (directo, o el puente local en Windows).</li>
+        </ul>
+        <h4 class="guia-h">2 · Puesta a punto</h4>
+        <ol class="guia-pasos">
+          <li>«Ver el sensor» y arrastrar un rectángulo sobre el borde interior de la caja.</li>
+          <li>Aplanar la arena y «Calibrar arena plana»: esa altura es el nivel del mar.</li>
+          <li>«Abrir proyector», llevar esa ventana a la pantalla del proyector (F11) y arrastrar las esquinas 1 a 4
+          hasta que el mapa caiga sobre la arena. La grilla (#) ayuda.</li>
+        </ol>
+        <h4 class="guia-h">3 · Qué se ve</h4>
+        <ul class="guia-lista">
+          <li>Colores por altura (mar, costa, llanura, sierra, cumbre), curvas de nivel cada N mm y sombreado.</li>
+          <li>Agua que corre hacia lo bajo, se junta en lagos y se evapora; lluvia con la mano o con el botón.</li>
+          <li>Nivel del mar ajustable, relieve congelable, mapa descargable en PNG.</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `
