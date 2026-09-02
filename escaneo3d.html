@@ -161,181 +161,214 @@
 </section>
 
 
-<!-- ====== PASO 2: ENCUADRE ====== -->
+<!-- ====== PASO 2: ESCANEAR ====== -->
 <section class="editor-section" id="seccionEncuadre" style="display:none">
   <div class="container">
-    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Encuadre, mesa y eje de giro</div>
-    <div class="kin-panel">
+    <div class="section__eyebrow" style="margin-bottom:0.8rem">// Paso 2 — Escanear</div>
+
+    <div class="kin-presets" id="presets" role="radiogroup" aria-label="Qué vas a escanear">
+      <label class="kin-preset"><input type="radio" name="preset" value="cabeza"><span class="kin-preset__icono">🗿</span><span class="kin-preset__nombre">Cabeza o busto</span><span class="kin-preset__desc">A mano alrededor de la persona · 50 cm · 5 mm</span></label>
+      <label class="kin-preset"><input type="radio" name="preset" value="cuerpo"><span class="kin-preset__icono">🧍</span><span class="kin-preset__nombre">Medio cuerpo</span><span class="kin-preset__desc">A mano · 80 cm · 6 mm</span></label>
+      <label class="kin-preset"><input type="radio" name="preset" value="grande"><span class="kin-preset__icono">🏺</span><span class="kin-preset__nombre">Objeto grande a mano</span><span class="kin-preset__desc">Silla, escultura, maqueta · 1 m · 8 mm</span></label>
+      <label class="kin-preset"><input type="radio" name="preset" value="chica"><span class="kin-preset__icono">🧸</span><span class="kin-preset__nombre">Pieza chica en base giratoria</span><span class="kin-preset__desc">5 a 15 cm · cada 30° · 2 mm · 20 cuadros</span></label>
+      <label class="kin-preset"><input type="radio" name="preset" value="mediana" checked><span class="kin-preset__icono">📦</span><span class="kin-preset__nombre">Pieza mediana en base giratoria</span><span class="kin-preset__desc">15 a 40 cm · cada 45° · 3 mm</span></label>
+      <label class="kin-preset"><input type="radio" name="preset" value="relieve"><span class="kin-preset__icono">🪙</span><span class="kin-preset__nombre">Relieve o placa</span><span class="kin-preset__desc">Una toma desde arriba · 2 mm</span></label>
+      <label class="kin-preset"><input type="radio" name="preset" value="personalizado"><span class="kin-preset__icono">⚙️</span><span class="kin-preset__nombre">Personalizado</span><span class="kin-preset__desc">Dejá los ajustes como están</span></label>
+    </div>
+    <p class="kin-nota" id="presetNota" style="margin:0.4rem 0 1rem"></p>
+
+    <div class="kin-panel kin-panel--trabajo">
       <div class="kin-vista">
         <canvas id="lienzoVista" width="640" height="480"></canvas>
         <div class="kin-vista__cuenta" id="cuentaRegresiva"></div>
-        <div class="kin-vista__leyenda">
-          <span style="--c:#ff8c3a">dentro de la caja (lo que se escanea)</span>
-          <span style="--c:#5fbf7a">la mesa</span>
-          <span style="--c:#4a6fa5">fuera de la caja</span>
-          <span style="--c:#333">sin dato</span>
-          <span style="--c:#fff">caja, eje y base giratoria</span>
+
+        <div class="kin-comandos" id="barraComandos">
+          <div class="kin-comandos__grupo" id="barraTomas">
+            <button class="btn btn--primary" id="btnCapturar" type="button">📸 Capturar</button>
+            <span class="kin-comandos__campo" id="spanAngulo">a <input class="campo__input" type="number" id="optAngulo" min="-360" max="720" step="1" value="0">°</span>
+            <button class="btn" id="btnRepetirUltima" type="button" title="Repite la última toma en su mismo ángulo">↻ Repetir última</button>
+            <button class="btn" id="btnBorrarUltima" type="button" title="Borra la última toma">🗑 Última</button>
+            <label class="scratch-check" title="Cuenta regresiva de 3 segundos antes de capturar"><input type="checkbox" id="optCuenta" checked> 3 s</label>
+          </div>
+          <div class="kin-comandos__grupo" id="barraLibre" style="display:none">
+            <button class="btn btn--primary" id="btnLibreIniciar" type="button">▶ Empezar</button>
+            <button class="btn" id="btnLibrePausar" type="button" disabled>⏸ Pausar</button>
+            <button class="btn" id="btnLibreReiniciar" type="button" disabled>↺ De nuevo</button>
+            <button class="btn btn--primary" id="btnLibreTerminar" type="button" disabled>✅ Terminar</button>
+          </div>
+          <div class="kin-comandos__grupo kin-comandos__grupo--derecha">
+            <button class="btn" id="btnDetectarMesa" type="button" title="Vuelve a buscar la mesa y a centrar el eje">📐 Mesa</button>
+            <button class="btn btn--primary" id="btnGenerarBarra" type="button" title="Arma el modelo 3D con lo capturado hasta ahora">⚙️ Generar modelo</button>
+          </div>
         </div>
-        <p class="kin-nota">Apuntá el Kinect un poco hacia abajo (20°–40°) para que vea la mesa y la parte de arriba de la pieza. Mantenelo quieto durante todo el escaneo: lo que gira es la pieza, no la cámara.</p>
+        <p class="kin-comandos__estado"><span class="kin-valor" id="estadoCaptura"></span></p>
+
+        <div class="kin-plan kin-plan--compacto" id="planTomas">
+          <svg class="kin-rosa" id="rosaAngulos" viewBox="-128 -128 256 256" role="img" aria-label="Plan de tomas alrededor de la pieza"></svg>
+          <div class="kin-plan__texto">
+            <p class="kin-plan__paso" id="planPaso">Toma 1 de 8</p>
+            <p class="kin-plan__instruccion" id="planInstruccion">Apoyá la pieza centrada en la base, con la marca de 0° mirando al Kinect, y capturá.</p>
+            <p class="kin-nota" id="planNota">Gris = falta · verde = buena · amarillo = regular · rojo = repetir. Clic en un punto para elegir ese ángulo.</p>
+          </div>
+        </div>
+
+        <div class="kin-vista__leyenda">
+          <span style="--c:#ff8c3a">se escanea</span>
+          <span style="--c:#5fbf7a">mesa</span>
+          <span style="--c:#4a6fa5">fuera</span>
+          <span style="--c:#333">sin dato</span>
+          <span style="--c:#fff">caja / volumen</span>
+        </div>
       </div>
+
       <div class="kin-controles">
-        <div class="kin-bloque kin-bloque--asistente">
+        <div id="zonaLibre" style="display:none">
+          <div class="kin-libre__vista">
+            <canvas id="lienzoLibre" width="320" height="240"></canvas>
+            <div class="kin-libre__semaforo" id="libreSemaforo"><span class="kin-libre__luz"></span><span id="libreEstado">Sin empezar</span></div>
+          </div>
+          <p class="kin-nota" id="libreContadores" style="margin:0.4rem 0 0.6rem">El modelo se va formando acá, visto desde donde está el Kinect.</p>
+          <div class="kin-bloque">
+            <p class="kin-bloque__titulo">Escaneo a mano</p>
+            <div class="kin-fila">
+              <label for="libLado">Volumen</label>
+              <select class="campo__input" id="libLado" style="max-width:150px">
+                <option value="300">30 cm</option>
+                <option value="400">40 cm (cabeza)</option>
+                <option value="500" selected>50 cm (busto)</option>
+                <option value="600">60 cm</option>
+                <option value="800">80 cm (medio cuerpo)</option>
+                <option value="1000">1 m</option>
+              </select>
+              <label for="libVoxel">Detalle</label>
+              <select class="campo__input" id="libVoxel" style="max-width:120px">
+                <option value="4">4 mm</option>
+                <option value="5" selected>5 mm</option>
+                <option value="6">6 mm</option>
+                <option value="8">8 mm</option>
+              </select>
+            </div>
+            <div class="kin-fila">
+              <label for="libDistancia">Centro</label>
+              <select class="campo__input" id="libDistancia" style="max-width:230px">
+                <option value="0" selected>donde apunta el centro</option>
+                <option value="600">a 60 cm</option>
+                <option value="700">a 70 cm</option>
+                <option value="800">a 80 cm</option>
+                <option value="1000">a 1 m</option>
+                <option value="1200">a 1,2 m</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="kin-bloque kin-bloque--asistente" id="chequeoBloque">
           <p class="kin-bloque__titulo">✅ Chequeo de la escena <span class="kin-asistente__estado" id="chequeoEstado"></span></p>
           <ul class="kin-chequeo" id="listaChequeo"><li class="kin-chequeo__item kin-chequeo__item--espera">Esperando la imagen del sensor…</li></ul>
-          <p class="kin-nota">Se actualiza solo con lo que ve el Kinect. Cuando todo esté en verde, pasá a las tomas. Lo amarillo es una mejora posible, no un impedimento.</p>
         </div>
-        <div class="kin-bloque">
-          <p class="kin-bloque__titulo">Distancia útil</p>
-          <div class="kin-fila"><label for="optZmin">Desde</label><input type="range" id="optZmin" min="400" max="2000" step="10" value="500"><span class="kin-valor" id="valZmin">500 mm</span></div>
-          <div class="kin-fila"><label for="optZmax">Hasta</label><input type="range" id="optZmax" min="500" max="3000" step="10" value="1300"><span class="kin-valor" id="valZmax">1300 mm</span></div>
-          <p class="kin-nota">Todo lo que esté más lejos (la pared, la gente) se ignora. Dejá la mesa y la pieza dentro del rango.</p>
-        </div>
-        <div class="kin-bloque">
-          <p class="kin-bloque__titulo">La mesa</p>
+
+        <div class="kin-bloque" id="modoBloque">
           <div class="kin-fila">
-            <button class="btn" id="btnDetectarMesa" type="button">📐 Detectar la mesa</button>
-            <select class="campo__input" id="optRegionMesa" style="max-width:190px">
-              <option value="abajo" selected>buscarla abajo</option>
-              <option value="toda">buscarla en toda la imagen</option>
-              <option value="centro">buscarla en el centro</option>
+            <label for="optModo">Modo</label>
+            <select class="campo__input" id="optModo" style="max-width:100%">
+              <option value="volumen" selected>Girando la pieza sobre una base (varias tomas)</option>
+              <option value="relieve">Relieve: una toma desde arriba</option>
+              <option value="libre">A mano alzada: mover el Kinect alrededor</option>
             </select>
           </div>
-          <div class="kin-fila"><label for="optCorte">Corte sobre la mesa</label><input class="campo__input" type="number" id="optCorte" min="0" max="80" step="1" value="4"><span>mm</span></div>
-          <p class="kin-nota" id="notaMesa">Todavía no se detectó la mesa.</p>
-          <p class="kin-nota">«Corte»: a qué altura sobre la mesa empieza la pieza. Si usás una base giratoria gruesa, poné su altura acá para que no salga en el modelo.</p>
-        </div>
-        <div class="kin-bloque">
-          <p class="kin-bloque__titulo">Caja de escaneo (mm)</p>
-          <div class="kin-fila">
-            <label for="optAncho">Ancho</label><input class="campo__input" type="number" id="optAncho" min="40" max="800" step="10" value="240">
-            <label for="optProfundo">Fondo</label><input class="campo__input" type="number" id="optProfundo" min="40" max="800" step="10" value="240">
-            <label for="optAlto">Alto</label><input class="campo__input" type="number" id="optAlto" min="20" max="800" step="10" value="200">
-          </div>
-          <div class="kin-fila" style="align-items:flex-start">
-            <div class="kin-cruz" aria-label="Mover el eje de giro">
-              <span></span><button type="button" data-mover="0,-5" title="Eje hacia la cámara (5 mm)">▲</button><span></span>
-              <button type="button" data-mover="-5,0" title="Eje a la izquierda (5 mm)">◀</button>
-              <button type="button" class="kin-cruz__centro" id="btnRecentrar" title="Volver a centrar el eje en la pieza">auto</button>
-              <button type="button" data-mover="5,0" title="Eje a la derecha (5 mm)">▶</button>
-              <span></span><button type="button" data-mover="0,5" title="Eje hacia el fondo (5 mm)">▼</button><span></span>
-            </div>
-            <div style="flex:1 1 140px">
-              <p class="kin-nota" style="margin:0">Eje de giro: <span class="kin-valor" id="valEje">0, 0</span></p>
-              <p class="kin-nota">Movelo hasta que el círculo blanco quede centrado en la base giratoria y la caja envuelva toda la pieza. Con dos o más tomas, la plataforma lo afina sola.</p>
-            </div>
+          <div class="kin-fila" id="opcionesVolumen">
+            <label for="optPaso">Paso de giro</label>
+            <select class="campo__input" id="optPaso" style="max-width:90px">
+              <option value="15">15°</option>
+              <option value="30">30°</option>
+              <option value="45" selected>45°</option>
+              <option value="60">60°</option>
+              <option value="90">90°</option>
+            </select>
+            <label for="optCuadros">Cuadros por toma</label>
+            <select class="campo__input" id="optCuadros" style="max-width:110px">
+              <option value="1">1</option>
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+            </select>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
 
-
-<!-- ====== PASO 3: CAPTURAS ====== -->
-<section class="editor-section editor-section--surface" id="seccionCapturas" style="display:none">
-  <div class="container">
-    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 3 — Las tomas</div>
-    <div class="scratch-opciones">
-      <span class="scratch-opciones__label">Modo:</span>
-      <select class="campo__input" id="optModo" style="max-width:300px">
-        <option value="volumen" selected>Girando la pieza (varias tomas, 360°)</option>
-        <option value="relieve">Relieve: una toma desde arriba</option>
-        <option value="libre">A mano alzada: mover el Kinect alrededor (cabezas, personas, objetos grandes)</option>
-      </select>
-      <span class="scratch-opciones__label">Paso de giro:</span>
-      <select class="campo__input" id="optPaso" style="max-width:110px">
-        <option value="15">15°</option>
-        <option value="30">30°</option>
-        <option value="45" selected>45°</option>
-        <option value="60">60°</option>
-        <option value="90">90°</option>
-      </select>
-      <span class="scratch-opciones__label">Cuadros por toma:</span>
-      <select class="campo__input" id="optCuadros" style="max-width:120px">
-        <option value="1">1 (rápido)</option>
-        <option value="5">5</option>
-        <option value="10" selected>10 (menos ruido)</option>
-        <option value="20">20</option>
-      </select>
-    </div>
-    <div class="scratch-opciones" style="margin-top:0.8rem">
-      <span class="scratch-opciones__label">Ángulo de esta toma:</span>
-      <input class="campo__input" type="number" id="optAngulo" min="-360" max="720" step="1" value="0" style="max-width:90px"> <span class="scratch-opciones__label">°</span>
-      <label class="scratch-check"><input type="checkbox" id="optCuenta" checked> Cuenta regresiva de 3 s</label>
-      <button class="btn btn--primary" id="btnCapturar" type="button">📸 Capturar esta toma</button>
-      <span class="kin-valor" id="estadoCaptura"></span>
-    </div>
-    <p class="ia-catalogo__ayuda" id="notaModo" style="margin-top:0.6rem">Girá la pieza sobre la base <strong>siempre para el mismo lado</strong> y en pasos parejos (marcá la base con una raya cada 45°, o usá una tarima de LEGO con tetones como referencia). Después de cada toma el ángulo avanza solo. Con 8 tomas (cada 45°) ya sale una pieza cerrada; con 12 (cada 30°) queda más fiel. No hace falta que el giro sea perfecto: la plataforma afina el eje y el sentido comparando las tomas.</p>
-    <p class="ia-catalogo__ayuda" id="notaRelieve" style="margin-top:0.6rem;display:none">Para un relieve alcanza con <strong>una sola toma</strong>: el Kinect mirando la pieza desde arriba (o bien de frente si es una placa apoyada). Todo lo que quede por debajo de la superficie vista se rellena macizo hasta la mesa, como un sello. Podés sumar tomas giradas para cubrir lo que quedó tapado.</p>
-
-    <div id="zonaLibre" style="display:none">
+    <div id="seccionCapturas">
+      <div class="kin-capturas" id="listaCapturas"></div>
       <div class="scratch-opciones" style="margin-top:0.8rem">
-        <span class="scratch-opciones__label">Tamaño del volumen:</span>
-        <select class="campo__input" id="libLado" style="max-width:200px">
-          <option value="300">30 cm (objeto chico)</option>
-          <option value="400">40 cm (una cabeza)</option>
-          <option value="500" selected>50 cm (cabeza y hombros)</option>
-          <option value="600">60 cm</option>
-          <option value="800">80 cm (medio cuerpo)</option>
-          <option value="1000">1 m</option>
-        </select>
-        <span class="scratch-opciones__label">Resolución:</span>
-        <select class="campo__input" id="libVoxel" style="max-width:150px">
-          <option value="4">Fina (4 mm)</option>
-          <option value="5" selected>Media (5 mm)</option>
-          <option value="6">Gruesa (6 mm)</option>
-          <option value="8">Rápida (8 mm)</option>
-        </select>
-        <span class="scratch-opciones__label">Centro del volumen:</span>
-        <select class="campo__input" id="libDistancia" style="max-width:220px">
-          <option value="0" selected>donde apunta el centro de la imagen</option>
-          <option value="600">a 60 cm</option>
-          <option value="700">a 70 cm</option>
-          <option value="800">a 80 cm</option>
-          <option value="1000">a 1 m</option>
-          <option value="1200">a 1,2 m</option>
-        </select>
+        <button class="btn" id="btnGuardarTomas" type="button">💾 Guardar las tomas (.json)</button>
+        <button class="btn" id="btnCargarTomas" type="button">📂 Cargar tomas guardadas</button>
+        <input type="file" id="inputTomas" accept=".json,application/json" style="display:none">
+        <button class="btn" id="btnBorrarTomas" type="button">🗑 Borrar todas</button>
       </div>
-      <div class="scratch-opciones" style="margin-top:0.8rem">
-        <button class="btn btn--primary" id="btnLibreIniciar" type="button">▶ Empezar el escaneo libre</button>
-        <button class="btn" id="btnLibrePausar" type="button" disabled>⏸ Pausar</button>
-        <button class="btn" id="btnLibreReiniciar" type="button" disabled>↺ Empezar de nuevo</button>
-        <button class="btn btn--primary" id="btnLibreTerminar" type="button" disabled>✅ Terminar y generar el modelo</button>
-      </div>
-      <div class="kin-libre">
-        <div class="kin-libre__vista">
-          <canvas id="lienzoLibre" width="320" height="240"></canvas>
-          <div class="kin-libre__semaforo" id="libreSemaforo"><span class="kin-libre__luz"></span><span id="libreEstado">Sin empezar</span></div>
-        </div>
-        <div class="kin-bloque">
-          <p class="kin-bloque__titulo">Cómo escanear a mano</p>
-          <ol class="kin-guia__pasos" style="font-size:0.86rem">
-            <li>La persona se sienta <strong>quieta</strong>, mirando a un punto fijo, con el pelo recogido si es largo (el pelo negro casi no se ve). Luz pareja, sin sol directo.</li>
-            <li>Apuntá el Kinect a la cara a <strong>70 – 90 cm</strong>, con la cabeza en el <strong>centro</strong> de la imagen, y apretá «Empezar». La caja blanca que aparece sobre la imagen es el volumen que se va a llenar: tiene que envolver la cabeza.</li>
-            <li>Movete <strong>despacio y en arco</strong> alrededor de la persona, siempre a la misma distancia, apuntando a la cabeza. En la vista de acá al lado ves el modelo que se va formando desde donde estás.</li>
-            <li>Si el semáforo se pone en <strong>rojo</strong>, el Kinect se movió demasiado rápido: volvé despacio a la última posición donde se veía bien el modelo y esperá el verde. Pasá dos veces por las zonas con huecos (debajo del mentón, la nuca, detrás de las orejas).</li>
-            <li>Cuando diste la vuelta completa, «Terminar»: el modelo se cierra, se purga y se puede descargar como los demás.</li>
-          </ol>
-          <p class="kin-nota" id="libreContadores"></p>
+    </div>
+
+    <details class="kin-guia" id="ajustesAvanzados" style="margin-top:1rem">
+      <summary>Ajustes finos: distancia útil, mesa, caja de escaneo y eje de giro</summary>
+      <div class="kin-guia__cuerpo">
+        <div class="kin-ajustes">
+          <div class="kin-bloque">
+            <p class="kin-bloque__titulo">Distancia útil</p>
+            <div class="kin-fila"><label for="optZmin">Desde</label><input type="range" id="optZmin" min="400" max="2000" step="10" value="500"><span class="kin-valor" id="valZmin">500 mm</span></div>
+            <div class="kin-fila"><label for="optZmax">Hasta</label><input type="range" id="optZmax" min="500" max="3000" step="10" value="1300"><span class="kin-valor" id="valZmax">1300 mm</span></div>
+            <p class="kin-nota">Todo lo que esté más lejos (la pared, la gente) se ignora.</p>
+          </div>
+          <div class="kin-bloque">
+            <p class="kin-bloque__titulo">La mesa</p>
+            <div class="kin-fila">
+              <select class="campo__input" id="optRegionMesa" style="max-width:190px">
+                <option value="abajo" selected>buscarla abajo</option>
+                <option value="toda">buscarla en toda la imagen</option>
+                <option value="centro">buscarla en el centro</option>
+              </select>
+              <label for="optCorte">Corte</label><input class="campo__input" type="number" id="optCorte" min="0" max="80" step="1" value="4"><span>mm</span>
+            </div>
+            <p class="kin-nota" id="notaMesa">Todavía no se detectó la mesa.</p>
+            <p class="kin-nota">«Corte»: altura sobre la mesa desde la que empieza la pieza. Si la base giratoria es gruesa, poné su altura acá.</p>
+          </div>
+          <div class="kin-bloque">
+            <p class="kin-bloque__titulo">Caja de escaneo (mm) y eje de giro</p>
+            <div class="kin-fila">
+              <label for="optAncho">Ancho</label><input class="campo__input" type="number" id="optAncho" min="40" max="800" step="10" value="240">
+              <label for="optProfundo">Fondo</label><input class="campo__input" type="number" id="optProfundo" min="40" max="800" step="10" value="240">
+              <label for="optAlto">Alto</label><input class="campo__input" type="number" id="optAlto" min="20" max="800" step="10" value="200">
+            </div>
+            <div class="kin-fila" style="align-items:flex-start">
+              <div class="kin-cruz" aria-label="Mover el eje de giro">
+                <span></span><button type="button" data-mover="0,-5" title="Eje hacia la cámara (5 mm)">▲</button><span></span>
+                <button type="button" data-mover="-5,0" title="Eje a la izquierda (5 mm)">◀</button>
+                <button type="button" class="kin-cruz__centro" id="btnRecentrar" title="Volver a centrar el eje en la pieza">auto</button>
+                <button type="button" data-mover="5,0" title="Eje a la derecha (5 mm)">▶</button>
+                <span></span><button type="button" data-mover="0,5" title="Eje hacia el fondo (5 mm)">▼</button><span></span>
+              </div>
+              <div style="flex:1 1 140px">
+                <p class="kin-nota" style="margin:0">Eje de giro: <span class="kin-valor" id="valEje">0, 0</span></p>
+                <p class="kin-nota">Movelo hasta que el círculo blanco quede centrado en la base giratoria y la caja envuelva toda la pieza. Con dos o más tomas, se afina solo.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="kin-plan" id="planTomas">
-      <svg class="kin-rosa" id="rosaAngulos" viewBox="-128 -128 256 256" role="img" aria-label="Plan de tomas alrededor de la pieza"></svg>
-      <div class="kin-plan__texto">
-        <p class="kin-plan__paso" id="planPaso">Toma 1 de 8</p>
-        <p class="kin-plan__instruccion" id="planInstruccion">Apoyá la pieza centrada en la base, con la marca de 0° mirando al Kinect, y capturá.</p>
-        <p class="kin-nota" id="planNota">La rosa muestra la pieza vista desde arriba. El ojo es el Kinect; cada punto, una toma: gris = falta, verde = buena, amarillo = regular, rojo = conviene repetirla. Hacé clic en un punto para elegir ese ángulo.</p>
+    </details>
+
+    <details class="kin-guia" style="margin-top:0.6rem">
+      <summary>Consejos para este modo</summary>
+      <div class="kin-guia__cuerpo">
+        <p class="ia-catalogo__ayuda" id="notaModo">Apuntá el Kinect un poco hacia abajo (20°–40°) para que vea la mesa y la parte de arriba de la pieza, y no lo muevas: lo que gira es la pieza. Girá la base <strong>siempre para el mismo lado</strong> y en pasos parejos (marcá el borde cada 45°, o usá una tarima de LEGO como referencia). El ángulo avanza solo después de cada toma. Con 8 tomas sale una pieza cerrada; con 12, más fiel. La plataforma afina el eje y el sentido comparando las tomas.</p>
+        <p class="ia-catalogo__ayuda" id="notaRelieve" style="display:none">Para un relieve alcanza con <strong>una sola toma</strong>: el Kinect mirando la pieza desde arriba (o de frente si es una placa apoyada). Todo lo que quede debajo de la superficie vista se rellena macizo hasta la mesa, como un sello. Podés sumar tomas giradas para cubrir lo tapado.</p>
+        <ol class="kin-guia__pasos" id="ayudaLibre" style="display:none;font-size:0.88rem">
+          <li>La persona se sienta <strong>quieta</strong>, mirando a un punto fijo, con el pelo recogido si es largo (el pelo negro casi no se ve). Luz pareja, sin sol directo.</li>
+          <li>Apuntá a la cara a <strong>70 – 90 cm</strong>, con la cabeza en el <strong>centro</strong> de la imagen, y apretá «Empezar». La caja blanca sobre la imagen es el volumen que se llena: tiene que envolver la cabeza.</li>
+          <li>Movete <strong>despacio y en arco</strong> alrededor, siempre a la misma distancia, apuntando a la cabeza. A la derecha ves el modelo que se va formando.</li>
+          <li>Semáforo <strong>rojo</strong>: te moviste rápido. Volvé despacio a la última posición buena y esperá el verde. Pasá dos veces por las zonas con huecos (mentón, nuca, detrás de las orejas).</li>
+          <li>Vuelta completa → «Terminar»: el modelo se cierra, se purga y se descarga como los demás.</li>
+        </ol>
       </div>
-    </div>
-    <div class="kin-capturas" id="listaCapturas"></div>
-    <div class="scratch-opciones" style="margin-top:1rem">
-      <button class="btn" id="btnGuardarTomas" type="button">💾 Guardar las tomas (.json)</button>
-      <button class="btn" id="btnCargarTomas" type="button">📂 Cargar tomas guardadas</button>
-      <input type="file" id="inputTomas" accept=".json,application/json" style="display:none">
-      <button class="btn" id="btnBorrarTomas" type="button">🗑 Borrar todas</button>
-    </div>
-    <p class="kin-nota">Guardar las tomas sirve para escanear en clase con el Kinect y armar el modelo después en otra computadora, o para volver a generarlo con otras opciones sin escanear de nuevo.</p>
+    </details>
   </div>
 </section>
 
