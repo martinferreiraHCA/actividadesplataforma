@@ -599,9 +599,11 @@ function dibujarVista() {
   const { zmin, zmax } = leerRango();
   const caja = leerCaja();
   const corte = leerCorte();
+  const modo = $('optModo').value;
   const libreActivo = !!(estado.libre && estado.libre.activo);
+  const modoLibre = modo === 'libre';
   // la clasificación (mesa / caja / fuera) se calcula a media resolución: 4 veces más rápido
-  const clases = estado.marco && !libreActivo ? N.clasificarPixeles(z, estado.marco, caja, { corte, zmin, zmax, paso: 2 }) : null;
+  const clases = estado.marco && !modoLibre ? N.clasificarPixeles(z, estado.marco, caja, { corte, zmin, zmax, paso: 2 }) : null;
   const c = [0, 0, 0];
   for (let i = 0; i < z.length; i++) {
     const d = z[i];
@@ -610,7 +612,7 @@ function dibujarVista() {
     colorProfundidad(d, zmin, zmax, c);
     let cl;
     if (clases) { const fila = (i / W) | 0; cl = clases[(fila & ~1) * W + ((i - fila * W) & ~1)]; }
-    else cl = d < zmin || d > zmax ? 1 : (libreActivo ? 4 : 3);
+    else cl = d < zmin || d > zmax ? 1 : (modoLibre ? 4 : 3);
     if (cl === 4) { px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2]; }
     else if (cl === 2) { px[o] = c[0] * 0.35 + 60; px[o + 1] = c[1] * 0.35 + 160; px[o + 2] = c[2] * 0.35 + 70; }
     else if (cl === 3) { px[o] = Math.min(255, c[0] * 0.3 + 200); px[o + 1] = c[1] * 0.3 + 90; px[o + 2] = c[2] * 0.3 + 20; }
@@ -618,13 +620,23 @@ function dibujarVista() {
     px[o + 3] = 255;
   }
   ctxVista.putImageData(imagenVista, 0, 0);
-  if (libreActivo) {
-    const segs = estado.libre.segmentos || [];
-    ctxVista.lineWidth = 2; ctxVista.strokeStyle = 'rgba(255,255,255,0.9)';
-    ctxVista.beginPath();
-    for (const [a, b] of segs) { ctxVista.moveTo(a[0], a[1]); ctxVista.lineTo(b[0], b[1]); }
-    ctxVista.stroke();
-    ctxVista.strokeStyle = '#ffdd55'; ctxVista.beginPath(); ctxVista.arc(W / 2, H / 2, 12, 0, Math.PI * 2); ctxVista.stroke();
+  if (modoLibre) {
+    // a mano: sólo el volumen (cuando ya arrancó) y la mira del centro; nada de mesa, base ni eje
+    if (libreActivo) {
+      const segs = estado.libre.segmentos || [];
+      ctxVista.lineWidth = 2; ctxVista.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctxVista.beginPath();
+      for (const [a, b] of segs) { ctxVista.moveTo(a[0], a[1]); ctxVista.lineTo(b[0], b[1]); }
+      ctxVista.stroke();
+    }
+    ctxVista.lineWidth = 2; ctxVista.strokeStyle = '#ffdd55';
+    ctxVista.beginPath(); ctxVista.arc(W / 2, H / 2, 12, 0, Math.PI * 2); ctxVista.stroke();
+    ctxVista.beginPath(); ctxVista.moveTo(W / 2 - 20, H / 2); ctxVista.lineTo(W / 2 + 20, H / 2); ctxVista.moveTo(W / 2, H / 2 - 20); ctxVista.lineTo(W / 2, H / 2 + 20); ctxVista.stroke();
+    if (!libreActivo) {
+      ctxVista.fillStyle = 'rgba(0,0,0,0.55)'; ctxVista.fillRect(0, H - 34, W, 34);
+      ctxVista.fillStyle = '#fff'; ctxVista.font = '15px "Space Grotesk", sans-serif';
+      ctxVista.fillText('Apuntá la mira a la cabeza (o al centro del objeto) y apretá «Empezar».', 12, H - 12);
+    }
   } else if (estado.marco) {
     const p = N.proyectarCaja(estado.marco, caja);
     ctxVista.lineWidth = 2;
@@ -632,7 +644,7 @@ function dibujarVista() {
     ctxVista.beginPath();
     for (const [a, b] of p.segmentos) { ctxVista.moveTo(a[0], a[1]); ctxVista.lineTo(b[0], b[1]); }
     ctxVista.stroke();
-    if (p.circulo.length > 2) {
+    if (modo === 'volumen' && p.circulo.length > 2) {
       ctxVista.strokeStyle = 'rgba(255,255,255,0.75)';
       ctxVista.setLineDash([6, 4]);
       ctxVista.beginPath();
@@ -640,7 +652,7 @@ function dibujarVista() {
       ctxVista.stroke();
       ctxVista.setLineDash([]);
     }
-    if (p.eje) {
+    if (modo === 'volumen' && p.eje) {
       ctxVista.strokeStyle = '#ffdd55';
       ctxVista.beginPath(); ctxVista.moveTo(p.eje[0][0], p.eje[0][1]); ctxVista.lineTo(p.eje[1][0], p.eje[1][1]); ctxVista.stroke();
       ctxVista.fillStyle = '#ffdd55';
@@ -675,6 +687,7 @@ function actualizarModo() {
   $('spanAngulo').style.display = modo === 'volumen' ? '' : 'none';
   $('estadoCaptura').textContent = '';
   if (!libre && estado.libre) libreDetener();
+  if (estado.ultimoMm) dibujarVista();
   actualizarPlan();
   libreBotones();
 }
