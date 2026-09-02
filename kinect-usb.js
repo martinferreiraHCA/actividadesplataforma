@@ -84,7 +84,10 @@ export function explicarError(err, fase) {
     return { titulo: 'El Kinect no responde a los comandos', detalle: 'Suele ser falta de alimentación: el Kinect necesita su fuente de 12 V enchufada, no alcanza con el USB. Desenchufá todo, conectá primero la fuente y después el USB, y reintentá. Detalle técnico: ' + msg, guia: 'fuente' };
   }
   if (fase === 'flujo') {
-    return { titulo: 'Se cortó el flujo de datos', detalle: 'Probá otro puerto USB (directo a la computadora, sin hub; mejor USB 2.0) y un cable más corto. Detalle técnico: ' + msg, guia: null };
+    const base = 'El Kinect responde a los comandos pero las lecturas del flujo de profundidad fallan. ';
+    if (so === 'windows') return { titulo: 'No llega el flujo de profundidad', detalle: base + 'En Windows esto pasa cuando el driver no es WinUSB (en Zadig elegí WinUSB, no libusbK ni libusb-win32), en Windows 7 (que no soporta este tipo de transferencias) o con el Kinect enchufado a un hub. Probá un puerto USB 2.0 directo de la computadora, desenchufá y volvé a enchufar, y reintentá. Detalle técnico: ' + msg, guia: 'drivers' };
+    if (so === 'linux') return { titulo: 'No llega el flujo de profundidad', detalle: base + 'Fijate que el módulo gspca_kinect esté descargado (lsmod | grep gspca) y probá un puerto USB 2.0 directo, sin hub. Detalle técnico: ' + msg, guia: 'drivers' };
+    return { titulo: 'No llega el flujo de profundidad', detalle: base + 'Probá otro puerto USB (directo a la computadora, sin hub; mejor USB 2.0), un cable más corto, y desenchufar y volver a enchufar el Kinect. Detalle técnico: ' + msg, guia: null };
   }
   return { titulo: 'Error con el Kinect', detalle: msg, guia: null };
 }
@@ -207,9 +210,13 @@ export class KinectV1 {
       }
       this.interfaz = elegido.itf.interfaceNumber;
       await dispositivo.claimInterface(this.interfaz);
-      if (elegido.alt && elegido.alt.alternateSetting !== 0) await dispositivo.selectAlternateInterface(this.interfaz, elegido.alt.alternateSetting);
+      // Se selecciona el ajuste alternativo aunque sea el 0: en Windows, WinUSB recién
+      // reserva el ancho de banda isócrono al hacerlo.
+      this.alternativa = elegido.alt ? elegido.alt.alternateSetting : 0;
+      try { await dispositivo.selectAlternateInterface(this.interfaz, this.alternativa); } catch (e) { /* algunos sistemas no lo permiten con el 0; seguimos */ }
       this.epProfundidad = elegido.ep.endpointNumber;
       this.tamPaquete = elegido.ep.packetSize;
+      this.descripcion = `interfaz ${this.interfaz}, alt ${this.alternativa}, endpoint ${this.epProfundidad}, paquetes de ${this.tamPaquete} bytes`;
     } catch (e) {
       throw Object.assign(new Error(e.message), { fase: 'reclamar', original: e });
     }
@@ -265,29 +272,49 @@ export class KinectV1 {
       await this._escribirRegistro(0x13, 0x01);  // 640×480
       await this._escribirRegistro(0x14, 0x1e);  // 30 cuadros por segundo
       await this._escribirRegistro(0x16, 0x00);  // sin registro con la cámara color
-      await this._escribirRegistro(0x06, 0x02);  // arrancar
-      await this._escribirRegistro(0x17, 0x00);  // sin espejar
     } catch (e) {
       throw Object.assign(new Error(e.message), { fase: 'comando', original: e });
     }
     this.corriendo = true;
     this.enCurso = false;
-    this.estadisticas = { cuadros: 0, incompletos: 0, perdidos: 0, paquetes: 0, ultimoCuadro: 0 };
-    const largos = new Array(this.paquetesPorTransferencia).fill(this.tamPaquete);
+    this.erroresSeguidos = 0;
+    this.estadisticas = { cuadros: 0, incompletos: 0, perdidos: 0, paquetes: 0, errores: 0, ultimoCuadro: 0 };
+    // Las lecturas isócronas se encolan ANTES de dar la orden de arranque, como hace
+    // libfreenect: así el primer cuadro ya tiene dónde caer. Un error de transferencia
+    // suelto no corta nada (en Windows suelen aparecer algunos al arrancar): se reintenta,
+    // se prueba con transferencias más chicas, y sólo si fallan muchas seguidas se avisa.
     const trabajador = async () => {
       while (this.corriendo) {
+        const largos = new Array(this.paquetesPorTransferencia).fill(this.tamPaquete);
         let r;
         try { r = await this.dispositivo.isochronousTransferIn(this.epProfundidad, largos); }
         catch (e) {
           if (!this.corriendo) return;
-          this.corriendo = false;
-          if (this.onError) this.onError(Object.assign(new Error(e.message), { fase: 'flujo', original: e }));
-          return;
+          this.estadisticas.errores++;
+          this.erroresSeguidos++;
+          if (this.erroresSeguidos === 12 && this.paquetesPorTransferencia > 8) this.paquetesPorTransferencia = 8;
+          if (this.erroresSeguidos === 24 && this.paquetesPorTransferencia > 4) this.paquetesPorTransferencia = 4;
+          if (this.erroresSeguidos >= 60) {
+            this.corriendo = false;
+            if (this.onError) this.onError(Object.assign(new Error(e.message + ' (' + this.descripcion + ')'), { fase: 'flujo', original: e }));
+            return;
+          }
+          await esperar(this.erroresSeguidos < 12 ? 20 : 80);
+          continue;
         }
+        this.erroresSeguidos = 0;
         if (this.corriendo) this._procesar(r);
       }
     };
     for (let i = 0; i < this.transferenciasEnVuelo; i++) trabajador();
+    await esperar(30);
+    try {
+      await this._escribirRegistro(0x06, 0x02);  // arrancar
+      await this._escribirRegistro(0x17, 0x00);  // sin espejar
+    } catch (e) {
+      this.corriendo = false;
+      throw Object.assign(new Error(e.message), { fase: 'comando', original: e });
+    }
   }
 
   _procesar(resultado) {
