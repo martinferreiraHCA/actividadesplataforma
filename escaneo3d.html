@@ -240,6 +240,7 @@
       <select class="campo__input" id="optModo" style="max-width:300px">
         <option value="volumen" selected>Girando la pieza (varias tomas, 360°)</option>
         <option value="relieve">Relieve: una toma desde arriba</option>
+        <option value="libre">A mano alzada: mover el Kinect alrededor (cabezas, personas, objetos grandes)</option>
       </select>
       <span class="scratch-opciones__label">Paso de giro:</span>
       <select class="campo__input" id="optPaso" style="max-width:110px">
@@ -267,6 +268,58 @@
     <p class="ia-catalogo__ayuda" id="notaModo" style="margin-top:0.6rem">Girá la pieza sobre la base <strong>siempre para el mismo lado</strong> y en pasos parejos (marcá la base con una raya cada 45°, o usá una tarima de LEGO con tetones como referencia). Después de cada toma el ángulo avanza solo. Con 8 tomas (cada 45°) ya sale una pieza cerrada; con 12 (cada 30°) queda más fiel. No hace falta que el giro sea perfecto: la plataforma afina el eje y el sentido comparando las tomas.</p>
     <p class="ia-catalogo__ayuda" id="notaRelieve" style="margin-top:0.6rem;display:none">Para un relieve alcanza con <strong>una sola toma</strong>: el Kinect mirando la pieza desde arriba (o bien de frente si es una placa apoyada). Todo lo que quede por debajo de la superficie vista se rellena macizo hasta la mesa, como un sello. Podés sumar tomas giradas para cubrir lo que quedó tapado.</p>
 
+    <div id="zonaLibre" style="display:none">
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Tamaño del volumen:</span>
+        <select class="campo__input" id="libLado" style="max-width:200px">
+          <option value="300">30 cm (objeto chico)</option>
+          <option value="400">40 cm (una cabeza)</option>
+          <option value="500" selected>50 cm (cabeza y hombros)</option>
+          <option value="600">60 cm</option>
+          <option value="800">80 cm (medio cuerpo)</option>
+          <option value="1000">1 m</option>
+        </select>
+        <span class="scratch-opciones__label">Resolución:</span>
+        <select class="campo__input" id="libVoxel" style="max-width:150px">
+          <option value="4">Fina (4 mm)</option>
+          <option value="5" selected>Media (5 mm)</option>
+          <option value="6">Gruesa (6 mm)</option>
+          <option value="8">Rápida (8 mm)</option>
+        </select>
+        <span class="scratch-opciones__label">Centro del volumen:</span>
+        <select class="campo__input" id="libDistancia" style="max-width:220px">
+          <option value="0" selected>donde apunta el centro de la imagen</option>
+          <option value="600">a 60 cm</option>
+          <option value="700">a 70 cm</option>
+          <option value="800">a 80 cm</option>
+          <option value="1000">a 1 m</option>
+          <option value="1200">a 1,2 m</option>
+        </select>
+      </div>
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <button class="btn btn--primary" id="btnLibreIniciar" type="button">▶ Empezar el escaneo libre</button>
+        <button class="btn" id="btnLibrePausar" type="button" disabled>⏸ Pausar</button>
+        <button class="btn" id="btnLibreReiniciar" type="button" disabled>↺ Empezar de nuevo</button>
+        <button class="btn btn--primary" id="btnLibreTerminar" type="button" disabled>✅ Terminar y generar el modelo</button>
+      </div>
+      <div class="kin-libre">
+        <div class="kin-libre__vista">
+          <canvas id="lienzoLibre" width="320" height="240"></canvas>
+          <div class="kin-libre__semaforo" id="libreSemaforo"><span class="kin-libre__luz"></span><span id="libreEstado">Sin empezar</span></div>
+        </div>
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Cómo escanear a mano</p>
+          <ol class="kin-guia__pasos" style="font-size:0.86rem">
+            <li>La persona se sienta <strong>quieta</strong>, mirando a un punto fijo, con el pelo recogido si es largo (el pelo negro casi no se ve). Luz pareja, sin sol directo.</li>
+            <li>Apuntá el Kinect a la cara a <strong>70 – 90 cm</strong>, con la cabeza en el <strong>centro</strong> de la imagen, y apretá «Empezar». La caja blanca que aparece sobre la imagen es el volumen que se va a llenar: tiene que envolver la cabeza.</li>
+            <li>Movete <strong>despacio y en arco</strong> alrededor de la persona, siempre a la misma distancia, apuntando a la cabeza. En la vista de acá al lado ves el modelo que se va formando desde donde estás.</li>
+            <li>Si el semáforo se pone en <strong>rojo</strong>, el Kinect se movió demasiado rápido: volvé despacio a la última posición donde se veía bien el modelo y esperá el verde. Pasá dos veces por las zonas con huecos (debajo del mentón, la nuca, detrás de las orejas).</li>
+            <li>Cuando diste la vuelta completa, «Terminar»: el modelo se cierra, se purga y se puede descargar como los demás.</li>
+          </ol>
+          <p class="kin-nota" id="libreContadores"></p>
+        </div>
+      </div>
+    </div>
     <div class="kin-plan" id="planTomas">
       <svg class="kin-rosa" id="rosaAngulos" viewBox="-128 -128 256 256" role="img" aria-label="Plan de tomas alrededor de la pieza"></svg>
       <div class="kin-plan__texto">

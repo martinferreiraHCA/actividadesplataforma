@@ -288,6 +288,10 @@ purgado listo para la impresora 3D.
   voladores; fusión volumétrica (TSDF) de las tomas giradas o mapa de alturas para un relieve de una sola
   toma; **afinado automático del eje y del sentido de giro** comparando las tomas; extracción con surface
   nets; conservar sólo la pieza más grande, suavizado de Taubin, reducción de triángulos, base plana cerrada.
+- **Escaneo a mano alzada** (`escaneo3d-libre.js`, en un Web Worker): KinectFusion simplificado. Con la pose
+  anterior se raycastea el volumen TSDF (mapa de puntos y normales, que además es la vista previa en vivo), el
+  cuadro nuevo se alinea por ICP punto-a-plano con asociación proyectiva a 160×120, y se integra con la pose
+  obtenida. Semáforo de seguimiento, pausa, reinicio y cierre con el mismo purgado y las mismas descargas.
 - **Asistente guiado**: chequeo en vivo de la escena (inclinación, mesa, distancia, tamaño, encaje en la
   caja, centrado, huecos) con el consejo para cada problema; rosa de ángulos con el plan de tomas y la
   instrucción de a qué marca girar; puntaje y consejo por toma con repetición individual; e informe del
@@ -332,6 +336,7 @@ Sección Diseño:
 /escaneo3d.html           ← Escaneo 3D con Kinect
 /escaneo3d.js             ← Página: conexión, vista en vivo, tomas, modelo
 /escaneo3d-nucleo.js      ← Fusión volumétrica, malla, purgado y exportación (sin DOM)
+/escaneo3d-libre.js       ← Escaneo a mano alzada: seguimiento de cámara y fusión (Web Worker)
 /kinect-usb.js            ← Driver WebUSB del Kinect v1 y guías de instalación
 /kinect-puente.py         ← Puente local Kinect → navegador (libusb + WebSocket)
 ```
