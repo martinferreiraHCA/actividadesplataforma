@@ -37,6 +37,7 @@
           <a href="instrumentos.html">📏 Banco de instrumentos</a>
           <a href="papel3d.html">📐 Diseño 3D con papel</a>
           <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
+          <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
         </span>
       </span>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
@@ -193,6 +194,7 @@
         <a href="instrumentos.html">Banco de instrumentos</a>
         <a href="papel3d.html">Diseño 3D con papel</a>
         <a href="sello3d.html">Sello 3D desde una imagen</a>
+        <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
@@ -293,6 +295,20 @@
   `;
   grid.appendChild(cardSello);
   nuevasCards.push(cardSello);
+  idx++;
+
+  // Ficha especial: escaneo 3D con Kinect (página propia)
+  const cardEscaneo = document.createElement('a');
+  cardEscaneo.href = 'escaneo3d.html';
+  cardEscaneo.className = 'actividad-card reveal';
+  cardEscaneo.setAttribute('role', 'listitem');
+  cardEscaneo.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Escaneo 3D con Kinect</h3>
+    <p class="actividad-card__desc">Conectá un Kinect de Xbox 360 a la computadora y escaneá piezas reales desde el navegador: girás la pieza, se fusionan las tomas, se purga el modelo (sin mesa, sin ruido, base cerrada) y descargás el .stl para imprimir o seguir diseñando. Con guía para instalar el driver.</p>
+  `;
+  grid.appendChild(cardEscaneo);
+  nuevasCards.push(cardEscaneo);
   idx++;
 
   // Ficha especial: protocolos de práctico de laboratorio (página propia)

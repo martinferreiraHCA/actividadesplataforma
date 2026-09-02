@@ -557,6 +557,59 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
       `
     },
     {
+      id: "escaneo",
+      titulo: "Escaneo 3D con Kinect",
+      html: `
+        <p class="guia-p"><strong>escaneo3d.html</strong> convierte un <strong>Kinect de Xbox 360</strong> (el primero,
+        modelos 1414 y 1473, o el Kinect for Windows v1) en un escáner 3D de piezas, sin instalar programas: el
+        navegador habla con el sensor por <strong>WebUSB</strong>, muestra la profundidad en vivo, junta las tomas
+        que hacés girando la pieza y arma un modelo purgado listo para la impresora 3D.</p>
+
+        <h4 class="guia-h">1 · Qué hace falta</h4>
+        <ul class="guia-lista">
+          <li><strong>Chrome o Edge</strong> en una computadora. Firefox y Safari no tienen WebUSB.</li>
+          <li>El Kinect con su <strong>fuente de 12 V</strong> (el adaptador con cable en Y). Sólo con el USB no enciende.</li>
+          <li>Una vez, el <strong>driver</strong>: en Windows se le pone WinUSB con Zadig (dos minutos); en Linux se descarga
+          el módulo <code>gspca_kinect</code> y se agrega una regla udev; en Mac y ChromeOS no hace falta nada. La página
+          trae la guía paso a paso para cada sistema y la abre sola si la conexión falla.</li>
+          <li>Una <strong>base giratoria</strong> casera: un plato, una tapa, una tarima de LEGO. Marcá el borde cada 30° o 45°.</li>
+        </ul>
+
+        <h4 class="guia-h">2 · El flujo</h4>
+        <ol class="guia-pasos">
+          <li><strong>Conectar.</strong> «Conectar Kinect» y elegirlo en el diálogo del navegador. Si ya le diste permiso,
+          la próxima vez se conecta solo al enchufarlo (plug and play).</li>
+          <li><strong>Encuadrar.</strong> El Kinect apuntando un poco hacia abajo, la pieza a 60 cm – 1,2 m. La plataforma
+          detecta la <strong>mesa</strong> y dibuja sobre la imagen la <strong>caja de escaneo</strong>, el eje y el círculo
+          de la base. Lo naranja es lo que se escanea; lo verde, la mesa. Acomodá la caja y el eje con las flechas.</li>
+          <li><strong>Capturar.</strong> Una toma, girar la pieza un paso (siempre para el mismo lado), otra toma… Cada toma
+          promedia varios cuadros para bajar el ruido. Con 8 tomas (cada 45°) sale una pieza cerrada.</li>
+          <li><strong>Generar.</strong> Elegís resolución, suavizado y relleno, y la plataforma fusiona las tomas en un
+          volumen, afina sola el <strong>eje y el sentido de giro</strong> comparando las tomas, saca la mesa y los pedazos
+          sueltos, cierra la base y extrae la malla. Se descarga en <strong>STL</strong>, <strong>OBJ</strong> o como nube
+          de puntos <strong>PLY</strong>.</li>
+        </ol>
+
+        <h4 class="guia-h">3 · Los dos modos</h4>
+        <ul class="guia-lista">
+          <li><strong>Girando la pieza</strong>: varias tomas alrededor; lo que ninguna toma vio se rellena macizo. Para
+          piezas enteras.</li>
+          <li><strong>Relieve</strong>: una sola toma desde arriba; todo lo que queda debajo de la superficie vista se
+          rellena hasta la mesa, como un sello o una placa. Para bajorrelieves, letras, siluetas apoyadas.</li>
+        </ul>
+
+        <h4 class="guia-h">4 · Consejos</h4>
+        <ul class="guia-lista">
+          <li>El Kinect no ve lo <strong>negro brillante, el vidrio ni los espejos</strong>: pintá o cubrí con cinta de papel.</li>
+          <li>Piezas de <strong>8 a 40 cm</strong> salen bien; por debajo de 5 cm el sensor no tiene resolución.</li>
+          <li>La cámara <strong>no se mueve</strong> durante el escaneo: lo que gira es la pieza.</li>
+          <li>Podés <strong>guardar las tomas</strong> en un .json y generar el modelo después en otra computadora, o probar
+          otras opciones sin volver a escanear.</li>
+          <li>Sin Kinect a mano, el botón «Probar sin Kinect» carga una pieza de demostración para practicar todo el flujo.</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `
