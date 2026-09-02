@@ -110,6 +110,18 @@ export class EscanerLibre {
     this.cuadros = 0; this.integrados = 0; this.perdidos = 0; this.seguidos = 0;
     this.calidad = { inliers: 0, validos: 0, residuo: 0, ok: false };
     this.hayModelo = false;
+    // desde qué lados ya se miró el centro del volumen: 36 sectores de acimut × 3 franjas de altura
+    this.cobertura = new Uint8Array(36 * 3);
+  }
+
+  _anotarCobertura() {
+    const t = this.t;
+    const az = Math.atan2(t[0], -t[2]); // 0 = donde arrancó la cámara
+    const el = Math.atan2(t[1], Math.hypot(t[0], t[2]));
+    const s = ((Math.round(az * 18 / Math.PI) % 36) + 36) % 36;
+    const f = el < -0.26 ? 0 : el > 0.26 ? 2 : 1; // abajo / al nivel / arriba (±15°)
+    this.cobertura[f * 36 + s] = 1;
+    this.acimut = az; this.elevacion = el;
   }
 
   // ---------- mapa de puntos y normales del cuadro (160×120) ----------
@@ -335,6 +347,7 @@ export class EscanerLibre {
       this._integrar(z, this.R, this.t);
       this.hayModelo = true;
       this.integrados = 1;
+      this._anotarCobertura();
       this.Rprev = this.R.slice(); this.tprev = this.t.slice();
       this._raycast(this.R, this.t);
       this.calidad = { inliers: 0, validos: 0, residuo: 0, ok: true, primero: true };
@@ -363,6 +376,7 @@ export class EscanerLibre {
       this.R = res.R; this.t = res.t;
       this._integrar(z, this.R, this.t);
       this.integrados++;
+      this._anotarCobertura();
       this.seguidos = 0;
       this.Rprev = this.R.slice(); this.tprev = this.t.slice();
     } else {
@@ -374,7 +388,8 @@ export class EscanerLibre {
   }
 
   estado() {
-    return { cuadros: this.cuadros, integrados: this.integrados, perdidos: this.perdidos, seguidos: this.seguidos, calidad: this.calidad, R: this.R.slice(), t: this.t.slice(), imagen: this.imagen, ancho: this.W, alto: this.H };
+    return { cuadros: this.cuadros, integrados: this.integrados, perdidos: this.perdidos, seguidos: this.seguidos, calidad: this.calidad, R: this.R.slice(), t: this.t.slice(), imagen: this.imagen, ancho: this.W, alto: this.H,
+      cobertura: Array.from(this.cobertura), acimut: this.acimut || 0, elevacion: this.elevacion || 0, distanciaCentro: Math.hypot(this.t[0], this.t[1], this.t[2]) };
   }
 
   // Esquinas del volumen proyectadas en la imagen completa con la pose actual (para dibujarlo encima).
@@ -410,6 +425,7 @@ export class EscanerLibre {
   reiniciar() {
     const { tsdf, peso, visto, oculto, superficie } = this.vol;
     tsdf.fill(0); peso.fill(0); visto.fill(0); oculto.fill(0); superficie.fill(0);
+    this.cobertura.fill(0);
     this.R = [-1, 0, 0, 0, -1, 0, 0, 0, 1]; this.t = [0, 0, -this.distancia];
     this.Rprev = this.R.slice(); this.tprev = this.t.slice(); this.Rant = null; this.tant = null;
     this.cuadros = 0; this.integrados = 0; this.perdidos = 0; this.seguidos = 0; this.hayModelo = false;

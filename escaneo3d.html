@@ -213,6 +213,12 @@
           </div>
         </div>
 
+        <div class="kin-hud-opciones" id="hudOpciones" style="display:none">
+          <label class="scratch-check"><input type="checkbox" id="hudVolumen" checked> Volumen</label>
+          <label class="scratch-check"><input type="checkbox" id="hudGuia" checked> Guía de cabeza</label>
+          <label class="scratch-check"><input type="checkbox" id="hudEscala" checked> Escala 10 cm</label>
+          <span class="kin-nota" style="margin:0">La distancia al centro se lee en la mira; verde = rango ideal para el detalle elegido.</span>
+        </div>
         <div class="kin-vista__leyenda">
           <span style="--c:#ff8c3a">se escanea</span>
           <span style="--c:#5fbf7a">mesa</span>
@@ -228,7 +234,7 @@
             <canvas id="lienzoLibre" width="320" height="240"></canvas>
             <div class="kin-libre__semaforo" id="libreSemaforo"><span class="kin-libre__luz"></span><span id="libreEstado">Sin empezar</span></div>
           </div>
-          <p class="kin-nota" id="libreContadores" style="margin:0.4rem 0 0.6rem">El modelo se va formando acá, visto desde donde está el Kinect.</p>
+          <p class="kin-nota" id="libreContadores" style="margin:0.4rem 0 0.6rem">El modelo se va formando acá, visto desde donde está el Kinect. El anillo muestra desde qué lados ya miraste (verde) y dónde estás (amarillo); las tres franjas son desde abajo, al nivel y desde arriba.</p>
           <div class="kin-bloque">
             <p class="kin-bloque__titulo">Escaneo a mano</p>
             <div class="kin-fila">
@@ -442,7 +448,12 @@
         <button class="btn" id="btnOBJ" type="button">⬇ Descargar OBJ</button>
         <button class="btn" id="btnPLY" type="button">⬇ Nube de puntos (PLY)</button>
       </div>
-      <div id="statsModelo" class="inf-stats" style="margin-bottom:1rem"></div>
+      <div id="statsModelo" class="inf-stats" style="margin-bottom:0.6rem"></div>
+      <div class="scratch-opciones" style="margin-bottom:0.8rem">
+        <button class="btn" id="btnMedir" type="button" title="Hacé clic en dos puntos del modelo para medir la distancia entre ellos">📏 Medir en el modelo</button>
+        <button class="btn" id="btnMedirBorrar" type="button">Borrar medidas</button>
+        <span class="kin-valor" id="medidaTexto"></span>
+      </div>
       <div class="kin-resultado">
         <div>
           <canvas id="lienzo3d"></canvas>

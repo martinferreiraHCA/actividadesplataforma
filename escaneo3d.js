@@ -380,7 +380,7 @@ async function libreIniciar() {
       if (c.primero) libreSemaforo('ok', 'Primera vista tomada: empezá a moverte despacio');
       else if (c.ok) libreSemaforo(c.inliers < 1000 ? 'aviso' : 'ok', c.inliers < 1000 ? 'Siguiendo, pero con pocos puntos: acercate o apuntá mejor' : 'Siguiendo · ' + m.integrados + ' vistas fundidas');
       else libreSemaforo('perdido', m.seguidos > 8 ? 'Perdí el seguimiento: volvé despacio a la última posición buena' : 'Se movió muy rápido: frená un momento');
-      $('libreContadores').textContent = `${m.integrados} vistas fundidas · ${m.perdidos} cuadros descartados · ${m.cuadros} recibidos · vóxel ${L.voxel || ''} mm`;
+      $('libreContadores').textContent = `${m.integrados} vistas fundidas · ${m.perdidos} descartados · alrededor cubierto: ${L.gradosCubiertos || 0}° de 360° · vóxel ${L.voxel || ''} mm`;
       libreBotones();
       return;
     }
@@ -410,6 +410,8 @@ function dibujarLibre(m) {
   tmp.getContext('2d').putImageData(new ImageData(m.imagen, m.ancho, m.alto), 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(tmp, 0, 0, lienzo.width, lienzo.height);
+  const grados = dibujarCobertura(ctx, m, lienzo.width, lienzo.height);
+  if (estado.libre) { estado.libre.ultimoEstado = m; estado.libre.gradosCubiertos = grados; }
 }
 
 function librePausar() {
@@ -456,6 +458,7 @@ function libreMostrarMalla(m) {
     `${m.integrados} vistas fundidas · vóxel ${m.voxel.toFixed(1)} mm`
   ].map(s => `<span class="inf-stat">${s}</span>`).join('');
   const consejos = [];
+  if (L.gradosCubiertos !== undefined && L.gradosCubiertos < 300) consejos.push(`Recorriste ${L.gradosCubiertos}° de los 360° alrededor: lo que no se miró se rellenó a ciegas. Para la próxima, seguí el anillo de la vista previa hasta que quede verde entero, incluida la franja de arriba (mirando un poco desde arriba de la cabeza).`);
   if (!cierre.cerrada) consejos.push('La malla quedó abierta donde el modelo toca el borde del volumen (por ejemplo, el cuello o los hombros): es normal en una cabeza. Si querés una base plana, dejá que el cuello salga por abajo del volumen.');
   if (L.perdidos > L.integrados * 0.5) consejos.push('Se descartaron muchos cuadros por movimiento rápido: la próxima vez movete más despacio y en un arco continuo.');
   if (m.info.componentes > 3) consejos.push('Quedaron pedazos sueltos (fondo, hombros, pelo): probá con un volumen más chico o «Empezar de nuevo» más cerca de la cabeza.');
@@ -575,6 +578,7 @@ for (const id of ['optZmin', 'optZmax']) {
   });
 }
 for (const id of ['optAncho', 'optAlto', 'optProfundo', 'optCorte']) $(id).addEventListener('input', () => { if (id === 'optCorte') actualizarMarco(); dibujarVista(); });
+for (const id of ['hudVolumen', 'hudGuia', 'hudEscala', 'libVoxel']) $(id).addEventListener('change', () => dibujarVista());
 
 // ============================================================
 // Vista en vivo
@@ -621,22 +625,7 @@ function dibujarVista() {
   }
   ctxVista.putImageData(imagenVista, 0, 0);
   if (modoLibre) {
-    // a mano: sólo el volumen (cuando ya arrancó) y la mira del centro; nada de mesa, base ni eje
-    if (libreActivo) {
-      const segs = estado.libre.segmentos || [];
-      ctxVista.lineWidth = 2; ctxVista.strokeStyle = 'rgba(255,255,255,0.9)';
-      ctxVista.beginPath();
-      for (const [a, b] of segs) { ctxVista.moveTo(a[0], a[1]); ctxVista.lineTo(b[0], b[1]); }
-      ctxVista.stroke();
-    }
-    ctxVista.lineWidth = 2; ctxVista.strokeStyle = '#ffdd55';
-    ctxVista.beginPath(); ctxVista.arc(W / 2, H / 2, 12, 0, Math.PI * 2); ctxVista.stroke();
-    ctxVista.beginPath(); ctxVista.moveTo(W / 2 - 20, H / 2); ctxVista.lineTo(W / 2 + 20, H / 2); ctxVista.moveTo(W / 2, H / 2 - 20); ctxVista.lineTo(W / 2, H / 2 + 20); ctxVista.stroke();
-    if (!libreActivo) {
-      ctxVista.fillStyle = 'rgba(0,0,0,0.55)'; ctxVista.fillRect(0, H - 34, W, 34);
-      ctxVista.fillStyle = '#fff'; ctxVista.font = '15px "Space Grotesk", sans-serif';
-      ctxVista.fillText('Apuntá la mira a la cabeza (o al centro del objeto) y apretá «Empezar».', 12, H - 12);
-    }
+    dibujarHudLibre(z, W, H, libreActivo);
   } else if (estado.marco) {
     const p = N.proyectarCaja(estado.marco, caja);
     ctxVista.lineWidth = 2;
@@ -667,6 +656,104 @@ function dibujarVista() {
   }
 }
 
+// ------------------------------------------------------------
+// Asistente visual de apunte (modo a mano): distancia en la mira con rango ideal,
+// guía del tamaño de una cabeza a esa distancia, barra de escala y el volumen.
+// ------------------------------------------------------------
+
+function rangoIdeal() {
+  const voxel = +$('libVoxel').value || 5;
+  if (voxel <= 2) return [520, 680];
+  if (voxel <= 3) return [560, 800];
+  if (voxel <= 5) return [600, 1000];
+  return [700, 1300];
+}
+
+function dibujarHudLibre(z, W, H, libreActivo) {
+  const ctx = ctxVista;
+  const cx = W / 2, cy = H / 2;
+  // distancia en la mira: mediana de un bloque de 15×15
+  const vals = [];
+  for (let v = cy - 7; v <= cy + 7; v++) for (let u = cx - 7; u <= cx + 7; u++) { const d = z[v * W + u]; if (d > 0) vals.push(d); }
+  vals.sort((a, b) => a - b);
+  const d = vals.length > 20 ? vals[vals.length >> 1] : 0;
+  const [dMin, dMax] = rangoIdeal();
+  let color = '#ffdd55', texto = 'sin dato en la mira';
+  if (d) {
+    if (d < 480) { color = '#ff5a5a'; texto = `${(d / 10).toFixed(0)} cm — demasiado cerca, alejate`; }
+    else if (d < dMin) { color = '#ffb347'; texto = `${(d / 10).toFixed(0)} cm — un poco cerca (ideal ${dMin / 10}–${dMax / 10} cm)`; }
+    else if (d <= dMax) { color = '#5ee27a'; texto = `${(d / 10).toFixed(0)} cm — bien`; }
+    else { color = '#ffb347'; texto = `${(d / 10).toFixed(0)} cm — acercate (ideal ${dMin / 10}–${dMax / 10} cm)`; }
+  }
+  const dRef = d || (dMin + dMax) / 2;
+  const pxPorMm = N.INTR.fx / dRef;
+  // volumen
+  if (libreActivo && $('hudVolumen').checked) {
+    const segs = estado.libre.segmentos || [];
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    for (const [a, b] of segs) { ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  // guía de cabeza: óvalo de 15 × 22 cm a la distancia de la mira
+  if ($('hudGuia').checked) {
+    const rx = 75 * pxPorMm, ry = 110 * pxPorMm;
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.setLineDash([8, 6]);
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.fillText('cabeza', cx - 22, cy - ry - 6);
+  }
+  // escala de 10 cm
+  if ($('hudEscala').checked) {
+    const largo = 100 * pxPorMm;
+    ctx.lineWidth = 3; ctx.strokeStyle = '#fff';
+    ctx.beginPath(); ctx.moveTo(14, H - 48); ctx.lineTo(14 + largo, H - 48); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(14, H - 54); ctx.lineTo(14, H - 42); ctx.moveTo(14 + largo, H - 54); ctx.lineTo(14 + largo, H - 42); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = '12px "JetBrains Mono", monospace'; ctx.fillText('10 cm a esa distancia', 14, H - 58);
+  }
+  // mira
+  ctx.lineWidth = 2; ctx.strokeStyle = color;
+  ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx - 22, cy); ctx.lineTo(cx + 22, cy); ctx.moveTo(cx, cy - 22); ctx.lineTo(cx, cy + 22); ctx.stroke();
+  // cartel de distancia
+  ctx.font = 'bold 16px "Space Grotesk", sans-serif';
+  const ancho = ctx.measureText(texto).width + 20;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(cx - ancho / 2, cy + 28, ancho, 26);
+  ctx.fillStyle = color; ctx.fillText(texto, cx - ancho / 2 + 10, cy + 46);
+  // aviso inferior
+  ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, H - 30, W, 30);
+  ctx.fillStyle = '#fff'; ctx.font = '14px "Space Grotesk", sans-serif';
+  if (!libreActivo) ctx.fillText('Encuadrá la cabeza en el óvalo, con la mira en la nariz, y apretá «Empezar».', 12, H - 10);
+  else {
+    const L = estado.libre;
+    const c = L && L.ultimoEstado && L.ultimoEstado.calidad;
+    ctx.fillText(c && !c.ok ? 'Frená: volvé despacio a la última posición buena hasta que el semáforo dé verde.' : 'Movete despacio en arco, manteniendo la mira sobre la cabeza y la distancia en verde.', 12, H - 10);
+  }
+}
+
+// anillo de cobertura sobre la vista previa del modelo
+function dibujarCobertura(ctx, m, ancho, alto) {
+  if (!m.cobertura) return;
+  const R = 34, cx = ancho - R - 12, cy = alto - R - 12;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.arc(cx, cy, R + 8, 0, Math.PI * 2); ctx.fill();
+  const radios = [[R - 20, R - 13], [R - 11, R - 4], [R - 2, R + 5]]; // abajo, al nivel, arriba
+  for (let f = 0; f < 3; f++) for (let s = 0; s < 36; s++) {
+    const a0 = (s - 0.5) * Math.PI / 18 - Math.PI / 2, a1 = (s + 0.5) * Math.PI / 18 - Math.PI / 2;
+    ctx.beginPath(); ctx.arc(cx, cy, radios[f][1], a0, a1); ctx.arc(cx, cy, radios[f][0], a1, a0, true); ctx.closePath();
+    ctx.fillStyle = m.cobertura[f * 36 + s] ? 'rgba(94,226,122,0.9)' : 'rgba(255,255,255,0.15)';
+    ctx.fill();
+  }
+  const a = m.acimut - Math.PI / 2;
+  ctx.strokeStyle = '#ffdd55'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * (R + 6), cy + Math.sin(a) * (R + 6)); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+  ctx.fillText('👁', cx, cy + 4);
+  ctx.restore();
+  let cubiertos = 0; for (let s = 0; s < 36; s++) if (m.cobertura[36 + s] || m.cobertura[s] || m.cobertura[72 + s]) cubiertos++;
+  return cubiertos * 10;
+}
+
 // ============================================================
 // Capturas
 // ============================================================
@@ -681,6 +768,7 @@ function actualizarModo() {
   $('barraLibre').style.display = libre ? '' : 'none';
   $('barraTomas').style.display = libre ? 'none' : '';
   $('chequeoBloque').style.display = libre ? 'none' : '';
+  $('hudOpciones').style.display = libre ? '' : 'none';
   $('opcionesVolumen').style.display = modo === 'volumen' ? '' : 'none';
   $('btnDetectarMesa').style.display = libre ? 'none' : '';
   $('seccionCapturas').style.display = libre ? 'none' : '';
@@ -1114,15 +1202,52 @@ function iniciarVista3D() {
   medir();
   window.addEventListener('resize', medir);
   (function animar() { requestAnimationFrame(animar); controles.update(); renderer.render(escena, camara); })();
+  // medición entre dos puntos del modelo
+  const medicion = { activa: false, puntos: [], objetos: [], malla: null };
+  const rayo = new THREE.Raycaster();
+  let bajada = null;
+  lienzo.addEventListener('pointerdown', (e) => { bajada = [e.clientX, e.clientY]; });
+  lienzo.addEventListener('pointerup', (e) => {
+    if (!medicion.activa || !bajada || !medicion.malla) return;
+    if (Math.hypot(e.clientX - bajada[0], e.clientY - bajada[1]) > 4) return; // fue un giro, no un clic
+    const r = lienzo.getBoundingClientRect();
+    const nd = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    rayo.setFromCamera(nd, camara);
+    const hits = rayo.intersectObject(medicion.malla);
+    if (!hits.length) return;
+    const p = hits[0].point.clone();
+    if (medicion.puntos.length === 2) { medicion.puntos = []; medicion.objetos.forEach(o => grupo.remove(o)); medicion.objetos = []; }
+    medicion.puntos.push(p);
+    const tam = medicion.malla.geometry.boundingBox.getSize(new THREE.Vector3()).length() / 120;
+    const esfera = new THREE.Mesh(new THREE.SphereGeometry(tam, 12, 12), new THREE.MeshBasicMaterial({ color: 0xff3e00 }));
+    esfera.position.copy(p); grupo.add(esfera); medicion.objetos.push(esfera);
+    if (medicion.puntos.length === 2) {
+      const [a, b] = medicion.puntos;
+      const linea = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), new THREE.LineBasicMaterial({ color: 0xff3e00 }));
+      grupo.add(linea); medicion.objetos.push(linea);
+      const d = a.distanceTo(b);
+      $('medidaTexto').textContent = `${d.toFixed(1)} mm (${(d / 10).toFixed(1)} cm) entre los dos puntos`;
+    } else {
+      $('medidaTexto').textContent = 'Ahora hacé clic en el segundo punto';
+    }
+  });
   return {
+    medir(activar) {
+      medicion.activa = activar;
+      lienzo.style.cursor = activar ? 'crosshair' : '';
+      if (activar) $('medidaTexto').textContent = 'Hacé clic en un punto del modelo';
+    },
+    borrarMedidas() { medicion.puntos = []; medicion.objetos.forEach(o => grupo.remove(o)); medicion.objetos = []; $('medidaTexto').textContent = ''; },
     mostrar(malla, base) {
       while (grupo.children.length) grupo.remove(grupo.children[0]);
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(Float32Array.from(malla.pos), 3));
       geo.setIndex(new THREE.BufferAttribute(Uint32Array.from(malla.idx), 1));
       geo.computeVertexNormals();
-      grupo.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xd8a24a, metalness: 0.05, roughness: 0.65, side: THREE.DoubleSide })));
+      const objeto = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xd8a24a, metalness: 0.05, roughness: 0.65, side: THREE.DoubleSide }));
+      grupo.add(objeto);
       geo.computeBoundingBox();
+      medicion.malla = objeto; medicion.puntos = []; medicion.objetos = []; $('medidaTexto').textContent = '';
       const caja = geo.boundingBox;
       const tam = caja.getSize(new THREE.Vector3());
       const r = tam.length() / 2 || 1;
@@ -1151,6 +1276,13 @@ function descargar(blob, nombre) {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
+$('btnMedir').addEventListener('click', () => {
+  if (!vista3d) return;
+  const activo = $('btnMedir').classList.toggle('btn--primary');
+  vista3d.medir(activo);
+  toast(activo ? 'Modo medición: hacé clic en dos puntos del modelo (arrastrá para girar)' : 'Medición desactivada');
+});
+$('btnMedirBorrar').addEventListener('click', () => { if (vista3d) vista3d.borrarMedidas(); });
 $('btnSTL').addEventListener('click', () => {
   if (!estado.malla) return;
   descargar(new Blob([N.aSTL(estado.malla)], { type: 'model/stl' }), 'escaneo-kinect.stl');
