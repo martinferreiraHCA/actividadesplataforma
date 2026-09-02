@@ -173,6 +173,35 @@ $('btnConectar').addEventListener('click', async () => {
   await conectarKinect(dispositivo);
 });
 $('btnDesconectar').addEventListener('click', desconectar);
+
+$('btnDiagnostico').addEventListener('click', async () => {
+  const w = estadoWebUSB();
+  if (!w.disponible) { mostrarEstado('error', 'Este navegador no puede conectar el Kinect', w.razon); return; }
+  if (estado.fuente) await desconectar();
+  let dispositivo;
+  try {
+    const lista = await KinectV1.autorizados();
+    dispositivo = lista[0] || await KinectV1.pedirPermiso();
+  } catch (e) { informarError(e, 'pedir'); return; }
+  const zona = $('zonaDiagnostico'); zona.style.display = '';
+  const texto = $('diagnosticoTexto'); texto.value = '';
+  const k = new KinectV1();
+  try {
+    $('diagnosticoEstado').textContent = 'Abriendo el Kinect…';
+    await k.abrir(dispositivo);
+    texto.value = await k.diagnosticar(m => { $('diagnosticoEstado').textContent = m; });
+    $('diagnosticoEstado').textContent = 'Listo. Copiá el informe y mandalo.';
+  } catch (e) {
+    texto.value = 'No se pudo completar el diagnóstico (' + (e.fase || '') + '): ' + e.message + '\n' + navigator.userAgent;
+    $('diagnosticoEstado').textContent = 'Falló antes de poder probar las lecturas.';
+  } finally {
+    try { await k.cerrar(); } catch (e) { /* nada */ }
+  }
+});
+$('btnCopiarDiagnostico').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('diagnosticoTexto').value); toast('Informe copiado'); }
+  catch (e) { $('diagnosticoTexto').select(); toast('Seleccionado: copialo con Ctrl+C'); }
+});
 $('btnDemo').addEventListener('click', async () => {
   $('optAngulo').value = 0;
   await usarFuente(new SimuladorKinect(), 'demo');

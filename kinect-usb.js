@@ -292,8 +292,8 @@ export class KinectV1 {
           if (!this.corriendo) return;
           this.estadisticas.errores++;
           this.erroresSeguidos++;
-          if (this.erroresSeguidos === 12 && this.paquetesPorTransferencia > 8) this.paquetesPorTransferencia = 8;
-          if (this.erroresSeguidos === 24 && this.paquetesPorTransferencia > 4) this.paquetesPorTransferencia = 4;
+          if (this.erroresSeguidos === 12) this.paquetesPorTransferencia = 8;
+          if (this.erroresSeguidos === 24) this.paquetesPorTransferencia = 32;
           if (this.erroresSeguidos >= 60) {
             this.corriendo = false;
             if (this.onError) this.onError(Object.assign(new Error(e.message + ' (' + this.descripcion + ')'), { fase: 'flujo', original: e }));
@@ -345,6 +345,63 @@ export class KinectV1 {
         }
       }
     }
+  }
+
+  // Diagnóstico: prueba el flujo con distintas configuraciones y arma un informe de texto
+  // para mandar cuando algo no anda. No usa las lecturas normales; hay que llamarlo con el
+  // dispositivo recién abierto (abrir) y sin haber arrancado la profundidad.
+  async diagnosticar(avisar = () => {}) {
+    const dev = this.dispositivo;
+    const L = [];
+    const ua = navigator.userAgent;
+    L.push('Informe de diagnóstico del Kinect — ' + new Date().toISOString());
+    L.push('Sistema: ' + sistemaOperativo() + ' · ' + ua);
+    L.push('Dispositivo: ' + dev.manufacturerName + ' / ' + dev.productName + ' · vid 0x' + dev.vendorId.toString(16) + ' pid 0x' + dev.productId.toString(16) + ' · USB ' + dev.usbVersionMajor + '.' + dev.usbVersionMinor + ' · versión ' + dev.deviceVersionMajor + '.' + dev.deviceVersionMinor);
+    L.push('Configuraciones: ' + dev.configurations.length + ' · activa: ' + (dev.configuration ? dev.configuration.configurationValue : 'ninguna'));
+    for (const cfg of dev.configurations) for (const itf of cfg.interfaces) for (const alt of itf.alternates) {
+      L.push(`  cfg ${cfg.configurationValue} · interfaz ${itf.interfaceNumber} (${itf.claimed ? 'reclamada' : 'libre'}) · alt ${alt.alternateSetting} · clase ${alt.interfaceClass}/${alt.interfaceSubclass}/${alt.interfaceProtocol}`);
+      for (const ep of alt.endpoints) L.push(`     endpoint ${ep.endpointNumber} ${ep.direction} ${ep.type} · ${ep.packetSize} bytes`);
+    }
+    L.push('Elegido: ' + this.descripcion);
+    // control
+    try { const v = await this._leerRegistro(0x0000); L.push('Comando de lectura de registro: OK (valor ' + v + ')'); }
+    catch (e) { L.push('Comando de lectura de registro: FALLÓ · ' + e.message); }
+    const probar = async (etiqueta, ep, n, tam) => {
+      const largos = new Array(n).fill(tam);
+      let ok = 0, err = '', bytes = 0, estados = {};
+      for (let i = 0; i < 6; i++) {
+        try {
+          const r = await dev.isochronousTransferIn(ep, largos);
+          ok++;
+          for (const pk of r.packets) { bytes += pk.data ? pk.data.byteLength : 0; estados[pk.status] = (estados[pk.status] || 0) + 1; }
+        } catch (e) { err = e.name + ': ' + e.message; await esperar(15); }
+      }
+      L.push(`  ${etiqueta}: ep ${ep} × ${n} paquetes de ${tam} → ${ok}/6 lecturas OK, ${bytes} bytes, estados ${JSON.stringify(estados)}${err ? ' · último error: ' + err : ''}`);
+      return ok;
+    };
+    avisar('Probando lecturas antes de arrancar el flujo…');
+    L.push('Lecturas con el flujo detenido:');
+    for (const n of [8, 16, 1]) await probar('detenido', this.epProfundidad, n, this.tamPaquete);
+    // reseleccionar alt y volver a probar
+    try { await dev.selectAlternateInterface(this.interfaz, this.alternativa); L.push('selectAlternateInterface(' + this.interfaz + ', ' + this.alternativa + '): OK'); }
+    catch (e) { L.push('selectAlternateInterface: FALLÓ · ' + e.message); }
+    avisar('Arrancando el flujo de profundidad…');
+    try {
+      await this._escribirRegistro(0x105, 0x00); await this._escribirRegistro(0x06, 0x00);
+      await this._escribirRegistro(0x12, 0x03); await this._escribirRegistro(0x13, 0x01); await this._escribirRegistro(0x14, 0x1e);
+      await this._escribirRegistro(0x16, 0x00); await this._escribirRegistro(0x06, 0x02); await this._escribirRegistro(0x17, 0x00);
+      L.push('Arranque del flujo: comandos OK');
+    } catch (e) { L.push('Arranque del flujo: FALLÓ · ' + e.message); }
+    await esperar(200);
+    L.push('Lecturas con el flujo andando:');
+    let total = 0;
+    for (const n of [8, 16, 32, 64, 1]) total += await probar('andando', this.epProfundidad, n, this.tamPaquete);
+    // paquetes más chicos que el máximo y el otro endpoint (video), por si el problema es el tamaño
+    total += await probar('andando, paquete de 1024', this.epProfundidad, 8, 1024);
+    total += await probar('andando, endpoint de video', 1, 8, 1920);
+    try { await this._escribirRegistro(0x06, 0x00); } catch (e) { /* nada */ }
+    L.push(total ? 'RESULTADO: alguna configuración lee datos.' : 'RESULTADO: ninguna configuración de lectura isócrona funciona en este sistema/navegador.');
+    return L.join('\n');
   }
 
   async detener() {

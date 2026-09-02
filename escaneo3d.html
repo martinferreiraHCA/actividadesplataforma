@@ -117,7 +117,14 @@
         <button class="btn btn--primary" id="btnConectar" type="button">🔌 Conectar Kinect</button>
         <button class="btn" id="btnDesconectar" type="button" style="display:none">Desconectar</button>
         <button class="btn" id="btnDemo" type="button">🧪 Probar sin Kinect (pieza de demostración)</button>
+        <button class="btn" id="btnDiagnostico" type="button" title="Prueba el Kinect con distintas configuraciones y arma un informe para pedir ayuda">🩺 Diagnóstico</button>
       </div>
+    </div>
+    <div class="kin-bloque" id="zonaDiagnostico" style="display:none;margin-bottom:1rem">
+      <p class="kin-bloque__titulo">🩺 Informe de diagnóstico</p>
+      <p class="kin-nota" id="diagnosticoEstado" style="margin:0 0 0.5rem"></p>
+      <textarea class="campo__input" id="diagnosticoTexto" rows="14" readonly style="width:100%;font-family:'JetBrains Mono',monospace;font-size:0.75rem;white-space:pre;overflow:auto"></textarea>
+      <div class="kin-fila" style="margin-top:0.5rem"><button class="btn" id="btnCopiarDiagnostico" type="button">📋 Copiar el informe</button><span class="kin-nota" style="margin:0">Pegalo en el pedido de ayuda: dice qué configuración de lectura funciona y cuál no.</span></div>
     </div>
 
     <div class="kin-requisitos">
