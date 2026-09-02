@@ -137,21 +137,28 @@
           </div>
         </div>
         <p class="kin-comandos__estado"><span class="kin-valor" id="estadoBarra"></span></p>
-        <div class="are-leyenda" aria-hidden="true">
-          <span style="background:#0a2878"></span><span style="background:#1e6ebe"></span><span style="background:#78c8e6"></span><span style="background:#3c9646"></span><span style="background:#82be50"></span><span style="background:#dcc85a"></span><span style="background:#aa783c"></span><span style="background:#785a46"></span><span style="background:#fff"></span>
-        </div>
-        <div class="are-leyenda-texto"><span>mar profundo</span><span>costa</span><span>llanura</span><span>sierra</span><span>cumbre nevada</span></div>
+        <canvas class="are-leyenda-canvas" id="lienzoLeyenda" width="256" height="14" aria-hidden="true"></canvas>
+        <div class="are-leyenda-texto"><span>− altura máxima</span><span>nivel del mar</span><span>+ altura máxima</span></div>
         <p class="kin-nota" id="notaBase">Base: todavía no hay. Se ajusta un plano automático con los primeros cuadros; para más precisión, aplaná la arena y usá «Calibrar arena plana».</p>
       </div>
 
       <div class="kin-controles">
         <div class="kin-bloque">
           <p class="kin-bloque__titulo">Mapa</p>
+          <div class="kin-fila"><label for="optModoMapa">Modo</label>
+            <select class="campo__input" id="optModoMapa" style="max-width:220px"><option value="mapa" selected>mapa topográfico</option><option value="diferencia">diferencia con el relieve objetivo</option></select>
+          </div>
           <div class="kin-fila"><label for="optEscala">Colores</label>
-            <select class="campo__input" id="optEscala" style="max-width:170px"><option value="topografico" selected>topográfico</option><option value="calor">calor</option><option value="gris">grises</option></select>
+            <select class="campo__input" id="optEscala" style="max-width:190px"><option value="topografico" selected>SARndbox (topográfico)</option><option value="calor">calor</option><option value="gris">grises</option><option value="personalizada">personalizada (CPT)</option></select>
             <label class="scratch-check"><input type="checkbox" id="optCurvas" checked> Curvas de nivel</label>
             <label class="scratch-check"><input type="checkbox" id="optSombra" checked> Sombreado</label>
           </div>
+          <div id="zonaCPT" style="display:none">
+            <textarea class="campo__input" id="optCPT" rows="6" style="width:100%;font-family:'JetBrains Mono',monospace;font-size:0.75rem" placeholder="altura_mm r g b, una parada por línea"></textarea>
+            <div class="kin-fila"><button class="btn" id="btnAplicarCPT" type="button">Aplicar escala</button><button class="btn" id="btnCPTDefecto" type="button">Volver a la del SARndbox</button></div>
+            <p class="kin-nota">Mismo formato que los archivos .cpt del SARndbox: altura (en mm) y color r g b. Las alturas se estiran a la «altura máxima».</p>
+          </div>
+          <div class="kin-fila"><label for="optLuzAcimut">Luz</label><input type="range" id="optLuzAcimut" min="0" max="359" step="1" value="315"><input type="range" id="optLuzElevacion" min="10" max="80" step="1" value="45"><span class="kin-valor" id="valLuz">315° / 45°</span></div>
           <div class="kin-fila"><label for="optNivelMar">Nivel del mar</label><input type="range" id="optNivelMar" min="-150" max="150" step="1" value="0"><span class="kin-valor" id="valNivelMar">0 mm</span></div>
           <div class="kin-fila"><label for="optRango">Altura máxima</label><input type="range" id="optRango" min="40" max="400" step="10" value="150"><span class="kin-valor" id="valRango">150 mm</span></div>
           <div class="kin-fila"><label for="optIntervalo">Curvas cada</label><input type="range" id="optIntervalo" min="2" max="50" step="1" value="10"><span class="kin-valor" id="valIntervalo">10 mm</span></div>
@@ -160,7 +167,9 @@
           <p class="kin-bloque__titulo">Agua</p>
           <div class="kin-fila"><label class="scratch-check"><input type="checkbox" id="optAgua" checked> Simular agua</label>
             <label for="optLluvia">Lluvia</label><select class="campo__input" id="optLluvia" style="max-width:110px"><option value="0.5">suave</option><option value="1" selected>normal</option><option value="2.5">torrencial</option></select></div>
-          <div class="kin-fila"><label for="optEvaporacion">Evaporación</label><select class="campo__input" id="optEvaporacion" style="max-width:120px"><option value="0">ninguna</option><option value="1" selected>lenta</option><option value="4">rápida</option></select></div>
+          <div class="kin-fila"><label for="optEvaporacion">Evaporación</label><select class="campo__input" id="optEvaporacion" style="max-width:120px"><option value="0">ninguna</option><option value="1" selected>lenta</option><option value="4">rápida</option></select>
+            <label for="optVelocidad">Velocidad</label><select class="campo__input" id="optVelocidad" style="max-width:110px"><option value="0.5">lenta</option><option value="1" selected>normal</option><option value="2">rápida</option></select></div>
+          <div class="kin-fila"><label for="optHerramienta">Con el mouse</label><select class="campo__input" id="optHerramienta" style="max-width:220px"><option value="agua" selected>agregar agua (Shift: quitar)</option><option value="quitar">quitar agua</option><option value="ninguna">nada</option></select></div>
           <div class="kin-fila"><label for="optMano">Mano a más de</label><input type="range" id="optMano" min="60" max="400" step="5" value="200"><span class="kin-valor" id="valMano">200 mm</span></div>
           <p class="kin-nota">Todo lo que esté a más de esa altura sobre la arena se toma como una mano: no cuenta como relieve y hace llover debajo. Ponelo por encima de la montaña más alta que vayan a modelar.</p>
         </div>
@@ -178,8 +187,16 @@
           <p class="kin-nota">En la ventana del proyector también podés arrastrar las esquinas con el mouse, o usar las teclas 1-4 y las flechas. Activá la grilla (#) para verlas sobre la arena. Con «C» se ocultan los marcadores.</p>
         </div>
         <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Relieve objetivo (herramienta DEM)</p>
+          <div class="kin-fila"><button class="btn" id="btnGuardarRelieve" type="button">💾 Guardar relieve</button><button class="btn" id="btnCargarRelieve" type="button">📂 Cargar objetivo</button><button class="btn" id="btnObjetivoActual" type="button">📌 Objetivo = actual</button><input type="file" id="inputRelieve" accept=".json,application/json" style="display:none"></div>
+          <div class="kin-fila"><label for="optTolerancia">Tolerancia</label><input type="range" id="optTolerancia" min="2" max="30" step="1" value="6"><span class="kin-valor" id="valTolerancia">±6 mm</span></div>
+          <p class="kin-nota">Con un objetivo cargado y el modo «diferencia», el mapa muestra en verde lo que ya coincide, en rojo donde sobra arena y en azul donde falta: sirve para reproducir un terreno dado.</p>
+        </div>
+        <div class="kin-bloque">
           <p class="kin-bloque__titulo">Sensor</p>
-          <div class="kin-fila"><label for="optSuavizado">Suavizado</label><select class="campo__input" id="optSuavizado" style="max-width:130px"><option value="0.6">poco</option><option value="0.3" selected>normal</option><option value="0.12">mucho</option></select></div>
+          <div class="kin-fila"><label for="optSuavizado">Respuesta</label><select class="campo__input" id="optSuavizado" style="max-width:130px"><option value="0.5">rápida</option><option value="0.25" selected>normal</option><option value="0.1">lenta</option></select>
+            <label for="optEstabilidad">Estabilidad</label><input type="range" id="optEstabilidad" min="1" max="8" step="0.5" value="3"><span class="kin-valor" id="valEstabilidad">±3 mm</span></div>
+          <p class="kin-nota">Filtro de estabilidad del SARndbox: la arena sólo se actualiza cuando la medición se mantuvo estable dentro de ese margen; más bajo = mapa más quieto pero más lento en seguir la mano.</p>
           <div class="kin-fila"><label for="optZmin">Desde</label><input type="range" id="optZmin" min="400" max="1500" step="10" value="500"><span class="kin-valor" id="valZmin">500 mm</span></div>
           <div class="kin-fila"><label for="optZmax">Hasta</label><input type="range" id="optZmax" min="600" max="2500" step="10" value="1400"><span class="kin-valor" id="valZmax">1400 mm</span></div>
         </div>
@@ -197,7 +214,7 @@
           <li><strong>Proyector</strong>: «Abrir proyector» abre una ventana negra; arrastrala a la pantalla del proyector y ponela en pantalla completa (F11). Activá la grilla y arrastrá las esquinas 1 a 4 hasta que el rectángulo rojo coincida con el borde de la caja.</li>
           <li><strong>Actividades</strong>: cuencas hidrográficas y divisorias de aguas (llové y mirá adónde va el agua); curvas de nivel (que armen una montaña con una curva cada 2 cm); islas y subida del nivel del mar; represas y lagos; relieve del Uruguay (cuchillas, penillanura, sierras) modelado con la mano.</li>
         </ol>
-        <p class="kin-nota">Nada se sube a ningún servidor: la profundidad se procesa en tu computadora. La simulación del agua es un modelo simple de flujo entre celdas (no la ecuación de Saint-Venant del SARndbox original), suficiente para ver cuencas, divisorias y lagos.</p>
+        <p class="kin-nota">Nada se sube a ningún servidor: la profundidad se procesa en tu computadora. El agua se simula con el modelo de tuberías virtuales (la versión discreta de las aguas someras de Saint-Venant): tiene inercia, ondas y remansos.</p>
       </div>
     </details>
   </div>

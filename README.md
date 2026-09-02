@@ -314,10 +314,16 @@ de nivel, sombreado) con **agua** que corre por los valles y llueve cuando se po
 
 - Misma conexión que el escaneo 3D (WebUSB directo, puente local `kinect-puente.py`, demostración).
 - Región de la caja marcada sobre la imagen; base por plano automático o **calibración de la arena plana**
-  (mediana de 30 cuadros, píxel a píxel); suavizado temporal; las manos se detectan por altura y no cuentan
-  como relieve.
-- Agua: modelo de flujo entre celdas de 4×4 píxeles con evaporación; lluvia bajo la mano o sobre toda la caja;
-  nivel del mar ajustable; relieve congelable.
+  (mediana de 30 cuadros, píxel a píxel); **filtro de estabilidad** como el del SARndbox (media y varianza con
+  histéresis, para que el relieve solo cambie cuando la arena realmente se movió); las manos se detectan por
+  altura y no cuentan como relieve.
+- Agua: **aguas someras con inercia** (modelo de tuberías con momento, fricción y evaporación) sobre una grilla
+  de 160×120; lluvia bajo la mano o sobre toda la caja; herramientas de agua con el puntero (agregar, quitar,
+  nube de lluvia); nivel del mar y velocidad ajustables; relieve congelable.
+- Mapa de colores: escala SARndbox, calor y grises, o **CPT personalizada** (pegando el texto de una tabla
+  .cpt); sombreado por dirección de luz (acimut y elevación); curvas de nivel; leyenda de alturas.
+- **Modo diferencia / DEM objetivo**: se guarda un relieve y luego se pinta en verde lo que coincide, rojo lo
+  que sobra y azul lo que falta, con tolerancia ajustable (para "modelar hasta llegar al objetivo").
 - **Ventana del proyector** (`arenero-proyector.html`) que recibe los cuadros por `postMessage` y aplica una
   homografía CSS con cuatro esquinas arrastrables (o con teclado), con grilla de calibración.
 

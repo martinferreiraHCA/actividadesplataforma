@@ -13,3 +13,4 @@
 .are-esquinas .btn { padding: 0.35em 0.7em; font-size: 0.78rem; }
 .are-cruz { display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(3, 30px); gap: 3px; }
 .are-cruz button { border: 1.5px solid var(--borde, rgba(0,0,0,0.3)); background: var(--surface, #fff); border-radius: 6px; cursor: pointer; color: inherit; }
+.are-leyenda-canvas { width: 100%; height: 14px; display: block; margin-top: 0.6rem; border-radius: 6px; }

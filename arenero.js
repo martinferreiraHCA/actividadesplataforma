@@ -25,6 +25,8 @@ const estado = {
   base: null,                          // profundidad de referencia por píxel (arena plana calibrada)
   plano: null,                         // plano de la arena, si no hay calibración
   altura: new Float32Array(W * H),     // altura sobre la base (mm, positiva hacia arriba)
+  media: new Float32Array(W * H), varianza: new Float32Array(W * H), // filtro de estabilidad
+  objetivo: null,                      // relieve objetivo (herramienta DEM)
   mano: new Uint8Array(W * H),
   terreno: new Float32Array(GW * GH),  // altura por celda del agua
   agua: new Float32Array(GW * GH),
@@ -43,8 +45,8 @@ const estado = {
 // Ajustes (con memoria en el navegador)
 // ============================================================
 
-const AJUSTES = ['optEscala', 'optNivelMar', 'optRango', 'optIntervalo', 'optCurvas', 'optSombra', 'optAgua', 'optLluvia', 'optEvaporacion', 'optMano', 'optSuavizado', 'optZmin', 'optZmax'];
-function leer(id) { const el = $(id); return el.type === 'checkbox' ? el.checked : +el.value; }
+const AJUSTES = ['optEscala', 'optNivelMar', 'optRango', 'optIntervalo', 'optCurvas', 'optSombra', 'optAgua', 'optLluvia', 'optEvaporacion', 'optMano', 'optSuavizado', 'optZmin', 'optZmax', 'optEstabilidad', 'optVelocidad', 'optLuzAcimut', 'optLuzElevacion', 'optTolerancia', 'optHerramienta', 'optCPT'];
+function leer(id) { const el = $(id); return el.type === 'checkbox' ? el.checked : (el.tagName === 'TEXTAREA' ? el.value : +el.value); }
 function guardarAjustes() {
   const o = {}; for (const id of AJUSTES) o[id] = leer(id);
   o.region = estado.region; o.esquinas = estado.esquinas;
@@ -66,6 +68,9 @@ function actualizarEtiquetas() {
   $('valMano').textContent = leer('optMano') + ' mm';
   $('valZmin').textContent = leer('optZmin') + ' mm';
   $('valZmax').textContent = leer('optZmax') + ' mm';
+  $('valEstabilidad').textContent = '±' + leer('optEstabilidad') + ' mm';
+  $('valLuz').textContent = leer('optLuzAcimut') + '° / ' + leer('optLuzElevacion') + '°';
+  $('valTolerancia').textContent = '±' + leer('optTolerancia') + ' mm';
 }
 
 // ============================================================
@@ -180,7 +185,7 @@ function procesar() {
   if (estado.calibrando) { estado.calibrando.cuadros.push(Float32Array.from(mm)); $('estadoBarra').textContent = `calibrando ${estado.calibrando.cuadros.length}/${estado.calibrando.total}…`; if (estado.calibrando.cuadros.length >= estado.calibrando.total) terminarCalibracion(); }
   if (!estado.base && !estado.plano && ahora - (estado.ultimoPlano || 0) > 1500) { estado.ultimoPlano = ahora; detectarPlano(mm); }
   actualizarTerreno(mm);
-  if (leer('optAgua')) { simularAgua(); simularAgua(); }
+  if (leer('optAgua')) { simularAgua(); simularAgua(); simularAgua(); }
   dibujar();
   enviarAlProyector();
 }
@@ -224,7 +229,7 @@ function terminarCalibracion() {
     else if (plano) { const den = plano.n[0] * (u - cx) / fx + plano.n[1] * (v - cy) / fy + plano.n[2]; base[i] = Math.abs(den) > 1e-6 ? -plano.d / den : 0; }
   }
   estado.base = base; estado.plano = plano; estado.baseTipo = 'arena';
-  estado.agua.fill(0);
+  estado.agua.fill(0); estado.flujo.fill(0); estado.media.fill(0); estado.suave.fill(0);
   $('estadoBarra').textContent = 'base calibrada con la arena plana';
   $('notaBase').textContent = 'Base: arena plana calibrada píxel a píxel. Lo que agregues sale como montaña; lo que saques, como valle o mar.';
   toast('Arena calibrada: ahora modelá');
@@ -234,11 +239,15 @@ function terminarCalibracion() {
 // Terreno, manos y agua
 // ============================================================
 
+// Filtro de estabilidad por píxel, como en el SARndbox: la superficie sólo se actualiza cuando
+// la medición se mantuvo estable (varianza baja) y cambió más que la histéresis. Así una mano
+// que pasa, o el ruido del sensor, no dejan bultos ni titilan.
 function actualizarTerreno(mm) {
-  const { suave, base, altura, mano, terreno, region } = estado;
+  const { suave, base, altura, mano, terreno, region, media, varianza } = estado;
   if (!base) return;
   const alpha = leer('optSuavizado');
   const umbralMano = leer('optMano');
+  const maxVar = leer('optEstabilidad') ** 2, histeresis = 0.8;
   const zmin = leer('optZmin'), zmax = leer('optZmax');
   for (let v = region.y0; v < region.y1; v++) for (let u = region.x0; u < region.x1; u++) {
     const i = v * W + u;
@@ -248,7 +257,12 @@ function actualizarTerreno(mm) {
     if (h > umbralMano) { mano[i] = 1; continue; }   // una mano (o un brazo) por encima: no es arena
     mano[i] = 0;
     if (estado.congelado) continue;
-    suave[i] = suave[i] ? suave[i] + alpha * (z - suave[i]) : z;
+    if (!media[i]) { media[i] = z; varianza[i] = 100; }
+    const d = z - media[i];
+    media[i] += alpha * d;
+    varianza[i] += alpha * (d * d - varianza[i]);
+    if (varianza[i] < maxVar && Math.abs(media[i] - suave[i]) > histeresis) suave[i] = media[i];
+    else if (!suave[i]) suave[i] = z;
     altura[i] = base[i] - suave[i];
   }
   // terreno por celda (promedio del bloque) y lluvia bajo las manos
@@ -260,39 +274,59 @@ function actualizarTerreno(mm) {
     for (let dv = 0; dv < GC; dv++) for (let du = 0; du < GC; du++) { const i = (gy * GC + dv) * W + gx * GC + du; if (mano[i]) m++; s += altura[i]; c++; }
     const g = gy * GW + gx;
     terreno[g] = s / c;
-    if (aguaOn && m > 4) estado.agua[g] += lluvia * 0.15 * m / (GC * GC);
+    if (aguaOn && m > 4) estado.agua[g] += lluvia * 0.12 * m / (GC * GC);
     if (aguaOn && estado.lluviaGlobal > 0) estado.agua[g] += lluvia * 0.05;
   }
   if (estado.lluviaGlobal > 0) estado.lluviaGlobal--;
 }
 
-// Modelo de tuberías simplificado: el agua baja hacia las celdas vecinas más bajas.
+// Aguas someras con inercia (modelo de tuberías virtuales, la versión discreta de Saint-Venant
+// que usan los areneros de realidad aumentada): cada celda guarda el caudal que sale por sus
+// cuatro caras; el caudal se acelera con la diferencia de nivel, se frena por fricción y no
+// puede sacar más agua de la que hay. El agua tiene ondas, se mueve con impulso y se remansa.
 function simularAgua() {
   const { terreno, agua, flujo, region } = estado;
-  const evap = 1 - leer('optEvaporacion') * 0.002;
+  const evap = leer('optEvaporacion') * 0.0012;
   const gx0 = region.x0 / GC | 0, gx1 = region.x1 / GC | 0, gy0 = region.y0 / GC | 0, gy1 = region.y1 / GC | 0;
-  const k = 0.22;
+  const g = leer('optVelocidad') * 0.12, friccion = 0.985;
   for (let gy = gy0; gy < gy1; gy++) for (let gx = gx0; gx < gx1; gx++) {
-    const g = gy * GW + gx;
-    const w = agua[g];
-    if (w <= 0.01) { flujo[g * 4] = flujo[g * 4 + 1] = flujo[g * 4 + 2] = flujo[g * 4 + 3] = 0; continue; }
-    const Hc = terreno[g] + w;
+    const c = gy * GW + gx;
+    const w = agua[c];
+    const Hc = terreno[c] + w;
+    const vec = [gx > gx0 ? c - 1 : -1, gx < gx1 - 1 ? c + 1 : -1, gy > gy0 ? c - GW : -1, gy < gy1 - 1 ? c + GW : -1];
     let total = 0;
-    const vec = [gx > gx0 ? g - 1 : -1, gx < gx1 - 1 ? g + 1 : -1, gy > gy0 ? g - GW : -1, gy < gy1 - 1 ? g + GW : -1];
     for (let d = 0; d < 4; d++) {
       const n = vec[d];
       let f = 0;
-      if (n >= 0) { const dH = Hc - (terreno[n] + agua[n]); if (dH > 0) f = k * dH; }
-      flujo[g * 4 + d] = f; total += f;
+      if (n >= 0) { f = flujo[c * 4 + d] * friccion + g * (Hc - (terreno[n] + agua[n])); if (f < 0) f = 0; }
+      flujo[c * 4 + d] = f; total += f;
     }
-    if (total > w) { const s = w / total; for (let d = 0; d < 4; d++) flujo[g * 4 + d] *= s; }
+    if (total > w) { const k = w / total; for (let d = 0; d < 4; d++) flujo[c * 4 + d] *= k; }
   }
   for (let gy = gy0; gy < gy1; gy++) for (let gx = gx0; gx < gx1; gx++) {
-    const g = gy * GW + gx;
-    const vec = [gx > gx0 ? g - 1 : -1, gx < gx1 - 1 ? g + 1 : -1, gy > gy0 ? g - GW : -1, gy < gy1 - 1 ? g + GW : -1];
-    let salida = 0;
-    for (let d = 0; d < 4; d++) { const f = flujo[g * 4 + d]; salida += f; if (vec[d] >= 0) agua[vec[d]] += f; }
-    agua[g] = Math.max(0, (agua[g] - salida) * evap);
+    const c = gy * GW + gx;
+    let entra = 0;
+    if (gx > gx0) entra += flujo[(c - 1) * 4 + 1];
+    if (gx < gx1 - 1) entra += flujo[(c + 1) * 4 + 0];
+    if (gy > gy0) entra += flujo[(c - GW) * 4 + 3];
+    if (gy < gy1 - 1) entra += flujo[(c + GW) * 4 + 2];
+    const sale = flujo[c * 4] + flujo[c * 4 + 1] + flujo[c * 4 + 2] + flujo[c * 4 + 3];
+    let w = agua[c] - sale + entra - evap;
+    if (w < 0.02) w = 0;
+    agua[c] = w;
+  }
+}
+
+// herramientas de agua con el mouse sobre el mapa
+function aguaEn(x, y, cantidad) {
+  const r = estado.region;
+  const u = r.x0 + x * (r.x1 - r.x0) / W, v = r.y0 + y * (r.y1 - r.y0) / H;
+  const gx = u / GC | 0, gy = v / GC | 0;
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const X = gx + dx, Y = gy + dy;
+    if (X < r.x0 / GC || Y < r.y0 / GC || X >= r.x1 / GC || Y >= r.y1 / GC) continue;
+    const g = Y * GW + X;
+    estado.agua[g] = Math.max(0, estado.agua[g] + cantidad * (1 - (dx * dx + dy * dy) / 12));
   }
 }
 
@@ -306,33 +340,78 @@ const salida = document.createElement('canvas'); salida.width = W; salida.height
 const ctxSalida = salida.getContext('2d');
 let imagen = ctxSalida.createImageData(W, H);
 
-const ESCALAS = {
-  topografico: [[-1, [10, 40, 120]], [-0.35, [30, 110, 190]], [-0.02, [120, 200, 230]], [0, [60, 150, 70]], [0.25, [130, 190, 80]], [0.5, [220, 200, 90]], [0.7, [170, 120, 60]], [0.88, [120, 90, 70]], [1, [255, 255, 255]]],
-  gris: [[-1, [30, 30, 30]], [1, [235, 235, 235]]],
-  calor: [[-1, [20, 20, 90]], [-0.3, [40, 90, 200]], [0.1, [60, 190, 120]], [0.5, [250, 220, 60]], [1, [220, 40, 30]]]
-};
-function color(t, escala, out) {
-  const e = ESCALAS[escala] || ESCALAS.topografico;
+// Escala de colores por defecto del SARndbox (HeightColorMap.cpt), con las alturas en mm
+// referidas a un rango de ±400 mm; se estira al «rango» elegido.
+const CPT_SARNDBOX = `-400 0 0 80
+-300 0 30 100
+-200 0 50 120
+-125 19 108 160
+-7.5 24 140 205
+-2.5 135 206 250
+-0.5 176 226 255
+0 0 97 71
+2.5 16 122 47
+60 232 215 125
+125 161 67 0
+200 130 30 30
+250 161 161 161
+325 206 206 206
+400 255 255 255`;
+const CPT_CALOR = `-400 20 20 90\n-120 40 90 200\n40 60 190 120\n200 250 220 60\n400 220 40 30`;
+const CPT_GRIS = `-400 30 30 30\n400 235 235 235`;
+
+// texto CPT (altura_mm r g b por línea) → [[t normalizado, [r,g,b]], …]
+function parsearCPT(texto, rango) {
+  const paradas = [];
+  for (const linea of texto.split(/\n/)) {
+    const t = linea.trim(); if (!t || t.startsWith('#')) continue;
+    const p = t.split(/[\s,;]+/).map(Number);
+    if (p.length < 4 || p.some(isNaN)) continue;
+    paradas.push([p[0], [p[1], p[2], p[3]]]);
+  }
+  paradas.sort((a, b) => a[0] - b[0]);
+  const escalaMax = Math.max(...paradas.map(p => Math.abs(p[0])), 1);
+  return paradas.map(p => [p[0] / escalaMax, p[1]]); // normalizado a [-1, 1]: ±rango
+}
+let escalaActual = parsearCPT(CPT_SARNDBOX);
+function elegirEscala() {
+  const e = $('optEscala').value;
+  const texto = e === 'personalizada' ? $('optCPT').value : e === 'calor' ? CPT_CALOR : e === 'gris' ? CPT_GRIS : CPT_SARNDBOX;
+  const parsed = parsearCPT(texto);
+  if (parsed.length >= 2) escalaActual = parsed; else toast('La escala necesita al menos dos líneas «altura r g b»');
+  dibujarLeyenda();
+}
+function color(t, out) {
+  const e = escalaActual;
   if (t <= e[0][0]) { out[0] = e[0][1][0]; out[1] = e[0][1][1]; out[2] = e[0][1][2]; return; }
   for (let i = 1; i < e.length; i++) {
     if (t <= e[i][0]) {
-      const f = (t - e[i - 1][0]) / (e[i][0] - e[i - 1][0]);
+      const f = (t - e[i - 1][0]) / (e[i][0] - e[i - 1][0] || 1);
       const a = e[i - 1][1], b = e[i][1];
       out[0] = a[0] + (b[0] - a[0]) * f; out[1] = a[1] + (b[1] - a[1]) * f; out[2] = a[2] + (b[2] - a[2]) * f; return;
     }
   }
   const u = e[e.length - 1][1]; out[0] = u[0]; out[1] = u[1]; out[2] = u[2];
 }
+function dibujarLeyenda() {
+  const c = $('lienzoLeyenda'); const cx = c.getContext('2d'); const col = [0, 0, 0];
+  for (let x = 0; x < c.width; x++) { color(x / (c.width - 1) * 2 - 1, col); cx.fillStyle = `rgb(${col[0] | 0},${col[1] | 0},${col[2] | 0})`; cx.fillRect(x, 0, 1, c.height); }
+}
 
 function dibujar() {
-  const { altura, agua, region, base, mano } = estado;
+  const { altura, agua, region, base, mano, objetivo } = estado;
   const px = imagen.data;
-  const escala = $('optEscala').value;
   const nivelMar = leer('optNivelMar'), rango = Math.max(20, leer('optRango'));
   const intervalo = Math.max(2, leer('optIntervalo')), curvas = leer('optCurvas'), sombra = leer('optSombra');
-  const c = [0, 0, 0];
+  const modoDif = $('optModoMapa').value === 'diferencia' && objetivo;
+  const tol = leer('optTolerancia');
+  // luz para el sombreado
+  const az = leer('optLuzAcimut') * Math.PI / 180, el = leer('optLuzElevacion') * Math.PI / 180;
+  const lx = Math.cos(el) * Math.sin(az), ly = -Math.cos(el) * Math.cos(az), lz = Math.sin(el);
   const rw = region.x1 - region.x0, rh = region.y1 - region.y0;
-  // la salida cubre sólo la región de la arena, estirada a 640×480
+  const mmPorPx = (leer('optZmin') + leer('optZmax')) / 2 / N.INTR.fx; // tamaño aproximado de un píxel en la arena
+  const c = [0, 0, 0];
+  const t0 = performance.now();
   for (let y = 0; y < H; y++) {
     const v = region.y0 + Math.floor(y * rh / H);
     for (let x = 0; x < W; x++) {
@@ -340,37 +419,51 @@ function dibujar() {
       const i = v * W + u, o = (y * W + x) * 4;
       if (!base) { px[o] = px[o + 1] = px[o + 2] = 30; px[o + 3] = 255; continue; }
       const e = altura[i] - nivelMar;
-      const t = Math.max(-1, Math.min(1, e / rango));
-      color(t, escala, c);
+      let r, g, b;
+      if (modoDif) {
+        const d = altura[i] - objetivo[i];
+        if (Math.abs(d) <= tol) { r = 80; g = 200; b = 90; }
+        else if (d > 0) { const f = Math.min(1, (d - tol) / 60); r = 120 + 135 * f; g = 120 - 90 * f; b = 60; }
+        else { const f = Math.min(1, (-d - tol) / 60); r = 60; g = 120 - 60 * f; b = 140 + 115 * f; }
+      } else {
+        color(Math.max(-1, Math.min(1, e / rango)), c); r = c[0]; g = c[1]; b = c[2];
+      }
       let s = 1;
       if (sombra && u > region.x0 && v > region.y0) {
-        const dx = altura[i] - altura[i - 1], dy = altura[i] - altura[i - W];
-        s = Math.max(0.55, Math.min(1.25, 1 + (dx - dy) * 0.06));
+        const dx = (altura[i] - altura[i - 1]) / mmPorPx, dy = (altura[i] - altura[i - W]) / mmPorPx;
+        const nl = Math.hypot(dx, dy, 1);
+        const dot = (-dx * lx - dy * ly + lz) / nl;
+        s = Math.max(0.35, Math.min(1.3, 0.45 + 0.75 * dot));
       }
       if (curvas && u > region.x0 && v > region.y0) {
         const n0 = Math.floor(e / intervalo);
-        if (n0 !== Math.floor((altura[i - 1] - nivelMar) / intervalo) || n0 !== Math.floor((altura[i - W] - nivelMar) / intervalo)) s *= (n0 % 5 === 0) ? 0.35 : 0.6;
+        if (n0 !== Math.floor((altura[i - 1] - nivelMar) / intervalo) || n0 !== Math.floor((altura[i - W] - nivelMar) / intervalo)) s *= (n0 % 5 === 0) ? 0.3 : 0.6;
       }
-      let r = c[0] * s, g = c[1] * s, b = c[2] * s;
-      const w = agua[(v / GC | 0) * GW + (u / GC | 0)];
-      if (w > 1.5) {
-        const a = Math.min(0.85, 0.35 + w / 60);
-        const prof = Math.min(1, w / 80);
-        r = r * (1 - a) + (40 - 30 * prof) * a; g = g * (1 - a) + (120 - 60 * prof) * a; b = b * (1 - a) + (220 - 40 * prof) * a;
+      r *= s; g *= s; b *= s;
+      const gi = (v / GC | 0) * GW + (u / GC | 0);
+      const w = agua[gi];
+      if (w > 1) {
+        const a = Math.min(0.88, 0.3 + w / 50);
+        const prof = Math.min(1, w / 90);
+        // brillo por la pendiente de la superficie del agua (ondas)
+        let ola = 0;
+        if (u > region.x0 + GC) { const w2 = agua[gi - 1]; ola = Math.max(-0.25, Math.min(0.25, (w - w2 + terreno_(gi) - terreno_(gi - 1)) * 0.02)); }
+        r = r * (1 - a) + (50 - 35 * prof + 90 * ola) * a; g = g * (1 - a) + (140 - 70 * prof + 90 * ola) * a; b = b * (1 - a) + (230 - 50 * prof + 60 * ola) * a;
       }
-      if (mano[i]) { r = r * 0.6 + 90; g = g * 0.6 + 90; b = b * 0.6 + 90; }
+      if (mano[i]) { // nube de lluvia bajo la mano
+        const gota = ((x * 7 + y * 13 + (t0 / 40 | 0) * 5) % 23) === 0;
+        r = r * 0.55 + 70; g = g * 0.55 + 75; b = b * 0.55 + 95;
+        if (gota) { r = 120; g = 170; b = 255; }
+      }
       px[o] = r; px[o + 1] = g; px[o + 2] = b; px[o + 3] = 255;
     }
   }
   ctxSalida.putImageData(imagen, 0, 0);
   if (estado.grilla) dibujarGrilla(ctxSalida);
-  // vista previa: profundidad cruda con la región marcada, o el mapa
-  if ($('optVista').value === 'mapa') {
-    ctx.drawImage(salida, 0, 0);
-  } else {
-    dibujarProfundidad();
-  }
+  if ($('optVista').value === 'mapa') ctx.drawImage(salida, 0, 0);
+  else dibujarProfundidad();
 }
+function terreno_(g) { return estado.terreno[g]; }
 
 function dibujarProfundidad() {
   const z = estado.ultimoMm; if (!z) return;
@@ -401,6 +494,65 @@ function dibujarGrilla(c) {
   c.fillText('1', 16, 40); c.fillText('2', W - 34, 40); c.fillText('3', W - 34, H - 16); c.fillText('4', 16, H - 16);
   c.restore();
 }
+
+// ============================================================
+// Relieve objetivo (herramienta DEM del SARndbox): guardar y cargar la superficie
+// ============================================================
+
+function guardarRelieve() {
+  if (!estado.base) { toast('Todavía no hay relieve'); return; }
+  const r = estado.region;
+  const datos = new Int16Array((r.x1 - r.x0) * (r.y1 - r.y0));
+  let k = 0;
+  for (let v = r.y0; v < r.y1; v++) for (let u = r.x0; u < r.x1; u++) datos[k++] = Math.round(estado.altura[v * W + u]);
+  const u8 = new Uint8Array(datos.buffer); let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192));
+  const blob = new Blob([JSON.stringify({ formato: 'arenero-relieve', version: 1, region: r, unidad: 'mm', altura: btoa(s) })], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'arenero-relieve.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('Relieve guardado');
+}
+async function cargarRelieve(archivo) {
+  try {
+    const d = JSON.parse(await archivo.text());
+    if (d.formato !== 'arenero-relieve') throw new Error('no es un relieve del arenero');
+    const s = atob(d.altura); const u8 = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i);
+    const datos = new Int16Array(u8.buffer);
+    // se estira a la región actual (si la caja se marcó distinto)
+    const r = estado.region, rs = d.region;
+    const obj = new Float32Array(W * H);
+    const rw = rs.x1 - rs.x0, rh = rs.y1 - rs.y0;
+    for (let v = r.y0; v < r.y1; v++) for (let u = r.x0; u < r.x1; u++) {
+      const su = Math.min(rw - 1, Math.floor((u - r.x0) * rw / (r.x1 - r.x0))), sv = Math.min(rh - 1, Math.floor((v - r.y0) * rh / (r.y1 - r.y0)));
+      obj[v * W + u] = datos[sv * rw + su];
+    }
+    estado.objetivo = obj;
+    $('optModoMapa').value = 'diferencia';
+    toast('Relieve objetivo cargado: verde = igual, rojo = sobra arena, azul = falta arena');
+  } catch (e) { toast('No pude leer el relieve: ' + e.message); }
+}
+$('btnGuardarRelieve').addEventListener('click', guardarRelieve);
+$('btnCargarRelieve').addEventListener('click', () => $('inputRelieve').click());
+$('inputRelieve').addEventListener('change', (e) => { if (e.target.files[0]) cargarRelieve(e.target.files[0]); e.target.value = ''; });
+$('btnObjetivoActual').addEventListener('click', () => { if (!estado.base) return; estado.objetivo = Float32Array.from(estado.altura); $('optModoMapa').value = 'diferencia'; toast('El relieve actual es ahora el objetivo: modificá la arena y volvé a igualarlo'); });
+$('optEscala').addEventListener('change', () => { $('zonaCPT').style.display = $('optEscala').value === 'personalizada' ? '' : 'none'; elegirEscala(); });
+$('btnAplicarCPT').addEventListener('click', elegirEscala);
+$('btnCPTDefecto').addEventListener('click', () => { $('optCPT').value = CPT_SARNDBOX; elegirEscala(); });
+if (!$('optCPT').value) $('optCPT').value = CPT_SARNDBOX;
+
+// herramientas de agua sobre el mapa
+let pintando = false;
+lienzo.addEventListener('pointerdown', (e) => {
+  if ($('optVista').value !== 'mapa') return;
+  const h = $('optHerramienta').value; if (h === 'ninguna') return;
+  pintando = true; lienzo.setPointerCapture(e.pointerId);
+  const r = lienzo.getBoundingClientRect();
+  aguaEn((e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height, (h === 'quitar' || e.shiftKey) ? -20 : 8);
+});
+lienzo.addEventListener('pointermove', (e) => {
+  if (!pintando) return;
+  const r = lienzo.getBoundingClientRect();
+  aguaEn((e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height, ($('optHerramienta').value === 'quitar' || e.shiftKey) ? -20 : 4);
+});
+lienzo.addEventListener('pointerup', () => { pintando = false; });
 
 // selección de la región arrastrando sobre la vista de profundidad
 let arrastre = null;
@@ -496,4 +648,6 @@ document.addEventListener('keydown', (e) => {
 cargarAjustes();
 actualizarEtiquetas();
 mostrarEsquinas();
+$('zonaCPT').style.display = $('optEscala').value === 'personalizada' ? '' : 'none';
+elegirEscala();
 window.addEventListener('beforeunload', () => { if (estado.fuente) estado.fuente.cerrar(); if (estado.proyector && !estado.proyector.closed) estado.proyector.close(); });
