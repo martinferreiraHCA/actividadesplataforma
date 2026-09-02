@@ -273,3 +273,6 @@
 .kin-plan--compacto .kin-plan__paso { font-size: 1.05rem; }
 .kin-plan--compacto .kin-plan__instruccion { font-size: 0.9rem; }
 .kin-ajustes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.8rem; }
+
+/* asistente visual de apunte */
+.kin-hud-opciones { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; margin-top: 0.5rem; font-size: 0.85rem; }
