@@ -604,8 +604,12 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           quedó rellenado a ciegas y a qué ángulo sumar una toma, si falta cubrir la parte de arriba, y qué opción cambiar.</li>
         </ul>
 
-        <h4 class="guia-h">3 · Los dos modos</h4>
+        <h4 class="guia-h">3 · Los tres modos</h4>
         <ul class="guia-lista">
+          <li><strong>A mano alzada</strong>: el Kinect se mueve alrededor de la persona o el objeto, que se quedan
+          quietos. La página sigue la posición de la cámara cuadro a cuadro y va fundiendo todo en un volumen; en la
+          vista previa ves el modelo formándose desde donde estás, y un semáforo avisa si te moviste muy rápido. Para
+          cabezas, bustos y objetos grandes, sin base giratoria ni mesa.</li>
           <li><strong>Girando la pieza</strong>: varias tomas alrededor; lo que ninguna toma vio se rellena macizo. Para
           piezas enteras.</li>
           <li><strong>Relieve</strong>: una sola toma desde arriba; todo lo que queda debajo de la superficie vista se

@@ -33,6 +33,7 @@ const estado = {
   puntos: null,
   ajuste: null,          // resultado de ajustarEje
   reemplazar: null,      // índice de la toma que se está repitiendo
+  libre: null,           // escaneo a mano alzada: { worker, activo, pausa, ocupado, segmentos, ... }
   ultimoChequeo: 0,
   dibujoPendiente: false
 };
@@ -42,13 +43,15 @@ const estado = {
 // ============================================================
 
 class SimuladorKinect {
-  constructor() { this.corriendo = false; this.semilla = 1; }
+  constructor() { this.corriendo = false; this.semilla = 1; this.anguloLibre = 0; }
   get modelo() { return 'Pieza de demostración (sin Kinect)'; }
   async iniciarProfundidad(onCuadro) {
     this.corriendo = true;
     const paso = () => {
       if (!this.corriendo) return;
-      const angulo = +$('optAngulo').value || 0;
+      // en modo libre la «cámara» da la vuelta sola: girar la pieza delante de una cámara fija es lo mismo
+      if (estado.libre && estado.libre.activo && !estado.libre.pausa) this.anguloLibre = (this.anguloLibre + 1.2) % 360;
+      const angulo = (estado.libre && estado.libre.activo) ? this.anguloLibre : (+$('optAngulo').value || 0);
       const mm = N.sintetizarToma(angulo, { semilla: this.semilla++ });
       onCuadro({ mm });
       this.timer = setTimeout(paso, 120);
@@ -303,7 +306,8 @@ function recibirCuadro(cuadro) {
       $('estadoDetalle').textContent = `${fps.toFixed(0)} cuadros/s · ${est.cuadros || 0} recibidos · ${est.incompletos || 0} incompletos · ${est.perdidos || 0} con paquetes perdidos · ${est.errores || 0} errores de transferencia`;
     }
   }
-  if (!estado.plano) detectarMesa(true);
+  if (estado.libre && estado.libre.activo) { alimentarLibre(mm); }
+  else if (!estado.plano) detectarMesa(true);
   if (estado.capturando) {
     const c = estado.capturando;
     c.cuadros.push(Float32Array.from(mm));
@@ -314,8 +318,158 @@ function recibirCuadro(cuadro) {
     estado.dibujoPendiente = true;
     requestAnimationFrame(() => { estado.dibujoPendiente = false; dibujarVista(); });
   }
-  if (ahora - estado.ultimoChequeo > 1200 && !estado.capturando) { estado.ultimoChequeo = ahora; chequearEscena(); }
+  if (ahora - estado.ultimoChequeo > 1200 && !estado.capturando && !(estado.libre && estado.libre.activo)) { estado.ultimoChequeo = ahora; chequearEscena(); }
 }
+
+// ============================================================
+// Escaneo libre (a mano alzada): el worker sigue la cámara y funde los cuadros
+// ============================================================
+
+function libreSemaforo(clase, texto) {
+  $('libreSemaforo').className = 'kin-libre__semaforo' + (clase ? ' kin-libre__semaforo--' + clase : '');
+  $('libreEstado').textContent = texto;
+}
+
+function libreBotones() {
+  const L = estado.libre;
+  const activo = !!(L && L.activo);
+  $('btnLibreIniciar').disabled = activo;
+  $('btnLibrePausar').disabled = !activo;
+  $('btnLibrePausar').textContent = L && L.pausa ? '▶ Reanudar' : '⏸ Pausar';
+  $('btnLibreReiniciar').disabled = !activo;
+  $('btnLibreTerminar').disabled = !activo || !(L.integrados > 0);
+}
+
+async function libreIniciar() {
+  if (!estado.fuente || !estado.ultimoMm) { toast('Primero conectá el Kinect (o la demostración)'); return; }
+  if (estado.libre && estado.libre.worker) estado.libre.worker.terminate();
+  let distancia = +$('libDistancia').value;
+  if (!distancia) {
+    // profundidad mediana alrededor del centro de la imagen
+    const z = estado.ultimoMm, W = N.INTR.ancho, vals = [];
+    for (let v = 200; v < 280; v += 4) for (let u = 280; u < 360; u += 4) { const d = z[v * W + u]; if (d > 0) vals.push(d); }
+    vals.sort((a, b) => a - b);
+    distancia = vals.length ? vals[vals.length >> 1] : 800;
+    if (distancia < 450) { toast('El centro de la imagen está muy cerca: alejate a 70–90 cm'); return; }
+  }
+  const worker = new Worker('./escaneo3d-libre.js', { type: 'module' });
+  estado.libre = { worker, activo: true, pausa: false, ocupado: false, segmentos: [], integrados: 0, perdidos: 0, cuadros: 0, distancia };
+  worker.onmessage = (ev) => {
+    const m = ev.data;
+    const L = estado.libre;
+    if (!L || L.worker !== worker) return;
+    if (m.tipo === 'listo') { libreSemaforo('aviso', 'Buscando la primera vista…'); return; }
+    if (m.tipo === 'estado') {
+      L.ocupado = false;
+      L.integrados = m.integrados; L.perdidos = m.perdidos; L.cuadros = m.cuadros; L.segmentos = m.segmentos;
+      dibujarLibre(m);
+      const c = m.calidad;
+      if (c.primero) libreSemaforo('ok', 'Primera vista tomada: empezá a moverte despacio');
+      else if (c.ok) libreSemaforo(c.inliers < 1000 ? 'aviso' : 'ok', c.inliers < 1000 ? 'Siguiendo, pero con pocos puntos: acercate o apuntá mejor' : 'Siguiendo · ' + m.integrados + ' vistas fundidas');
+      else libreSemaforo('perdido', m.seguidos > 8 ? 'Perdí el seguimiento: volvé despacio a la última posición buena' : 'Se movió muy rápido: frená un momento');
+      $('libreContadores').textContent = `${m.integrados} vistas fundidas · ${m.perdidos} cuadros descartados · ${m.cuadros} recibidos · vóxel ${L.voxel || ''} mm`;
+      libreBotones();
+      return;
+    }
+    if (m.tipo === 'malla') { libreMostrarMalla(m); return; }
+    if (m.tipo === 'error') { toast('Error en el escaneo libre: ' + m.mensaje); libreSemaforo('perdido', m.mensaje); }
+  };
+  worker.postMessage({ tipo: 'iniciar', opciones: { lado: +$('libLado').value || 500, voxel: +$('libVoxel').value || 5, distancia } });
+  estado.libre.voxel = +$('libVoxel').value || 5;
+  libreSemaforo('aviso', 'Preparando el volumen…');
+  libreBotones();
+  toast('Escaneo libre en marcha: mové el Kinect despacio alrededor');
+}
+
+function alimentarLibre(mm) {
+  const L = estado.libre;
+  if (!L || !L.activo || L.pausa || L.ocupado) return;
+  L.ocupado = true;
+  const copia = Float32Array.from(mm);
+  L.worker.postMessage({ tipo: 'cuadro', z: copia }, [copia.buffer]);
+}
+
+function dibujarLibre(m) {
+  const lienzo = $('lienzoLibre');
+  const ctx = lienzo.getContext('2d');
+  if (!dibujarLibre._tmp) { dibujarLibre._tmp = document.createElement('canvas'); dibujarLibre._tmp.width = m.ancho; dibujarLibre._tmp.height = m.alto; }
+  const tmp = dibujarLibre._tmp;
+  tmp.getContext('2d').putImageData(new ImageData(m.imagen, m.ancho, m.alto), 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(tmp, 0, 0, lienzo.width, lienzo.height);
+}
+
+function librePausar() {
+  const L = estado.libre; if (!L || !L.activo) return;
+  L.pausa = !L.pausa;
+  libreSemaforo(L.pausa ? 'pausa' : 'aviso', L.pausa ? 'En pausa: el modelo se conserva; reanudá desde la misma posición' : 'Reanudando…');
+  libreBotones();
+}
+
+function libreReiniciar() {
+  const L = estado.libre; if (!L || !L.worker) return;
+  L.worker.postMessage({ tipo: 'reiniciar' });
+  L.integrados = 0; L.perdidos = 0; L.cuadros = 0; L.pausa = false; L.ocupado = false;
+  libreSemaforo('aviso', 'De nuevo: apuntá a la cabeza y quedate quieto un segundo');
+  libreBotones();
+}
+
+function libreTerminar() {
+  const L = estado.libre; if (!L || !L.activo) return;
+  L.pausa = true;
+  libreSemaforo('pausa', 'Armando el modelo…');
+  progreso('Extrayendo la superficie del escaneo libre…');
+  $('seccionModelo').style.display = '';
+  L.worker.postMessage({ tipo: 'malla', opciones: {
+    relleno: $('optRelleno').value, mayorComponente: $('optMayor').checked,
+    suavizado: +$('optSuavizado').value || 0, reducir: +$('optReducir').value || 0, escala: (+$('optEscala').value || 100) / 100
+  } });
+}
+
+function libreMostrarMalla(m) {
+  const L = estado.libre;
+  const malla = { pos: m.pos, idx: m.idx };
+  if (!malla.idx.length) { progreso('No se formó ninguna superficie: el volumen quedó vacío. Empezá de nuevo apuntando a la cabeza a 70–90 cm.'); L.pausa = false; libreBotones(); return; }
+  estado.malla = malla;
+  estado.puntos = null;
+  const med = N.medidasMalla(malla);
+  const cierre = N.esCerrada(malla);
+  $('statsModelo').innerHTML = [
+    `${med.triangulos.toLocaleString('es')} triángulos`,
+    `${med.ancho.toFixed(0)} × ${med.profundo.toFixed(0)} × ${med.alto.toFixed(0)} mm (ancho × fondo × alto)`,
+    `${med.volumenCm3.toFixed(1)} cm³`,
+    cierre.cerrada ? 'malla cerrada ✔' : `${cierre.aristasAbiertas} aristas abiertas`,
+    m.info.componentes > 1 ? `${m.info.componentes - 1} pedazos sueltos descartados` : 'una sola pieza',
+    `${m.integrados} vistas fundidas · vóxel ${m.voxel.toFixed(1)} mm`
+  ].map(s => `<span class="inf-stat">${s}</span>`).join('');
+  const consejos = [];
+  if (!cierre.cerrada) consejos.push('La malla quedó abierta donde el modelo toca el borde del volumen (por ejemplo, el cuello o los hombros): es normal en una cabeza. Si querés una base plana, dejá que el cuello salga por abajo del volumen.');
+  if (L.perdidos > L.integrados * 0.5) consejos.push('Se descartaron muchos cuadros por movimiento rápido: la próxima vez movete más despacio y en un arco continuo.');
+  if (m.info.componentes > 3) consejos.push('Quedaron pedazos sueltos (fondo, hombros, pelo): probá con un volumen más chico o «Empezar de nuevo» más cerca de la cabeza.');
+  consejos.push('Zonas huecas o rugosas: volvé a escanear pasando dos veces por ahí, o subí el suavizado.');
+  $('informeEscaneo').innerHTML = `<p class="kin-bloque__titulo">📋 Informe del escaneo libre</p><ul>${consejos.map(c => `<li>${c}</li>`).join('')}</ul>`;
+  progreso('Listo: modelo del escaneo libre.');
+  $('zonaResultado').style.display = '';
+  if (!vista3d) vista3d = iniciarVista3D();
+  vista3d.mostrar(malla, med.min[1]);
+  $('zonaResultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  L.pausa = false;
+  libreBotones();
+}
+
+function libreDetener() {
+  const L = estado.libre;
+  if (!L) return;
+  if (L.worker) L.worker.terminate();
+  estado.libre = null;
+  libreSemaforo(null, 'Sin empezar');
+  libreBotones();
+}
+
+$('btnLibreIniciar').addEventListener('click', libreIniciar);
+$('btnLibrePausar').addEventListener('click', librePausar);
+$('btnLibreReiniciar').addEventListener('click', libreReiniciar);
+$('btnLibreTerminar').addEventListener('click', libreTerminar);
 
 // ============================================================
 // Asistente: chequeo de la escena en vivo
@@ -432,7 +586,8 @@ function dibujarVista() {
   const { zmin, zmax } = leerRango();
   const caja = leerCaja();
   const corte = leerCorte();
-  const clases = estado.marco ? N.clasificarPixeles(z, estado.marco, caja, { corte, zmin, zmax }) : null;
+  const libreActivo = !!(estado.libre && estado.libre.activo);
+  const clases = estado.marco && !libreActivo ? N.clasificarPixeles(z, estado.marco, caja, { corte, zmin, zmax }) : null;
   const c = [0, 0, 0];
   for (let i = 0; i < z.length; i++) {
     const d = z[i];
@@ -446,7 +601,14 @@ function dibujarVista() {
     px[o + 3] = 255;
   }
   ctxVista.putImageData(imagenVista, 0, 0);
-  if (estado.marco) {
+  if (libreActivo) {
+    const segs = estado.libre.segmentos || [];
+    ctxVista.lineWidth = 2; ctxVista.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctxVista.beginPath();
+    for (const [a, b] of segs) { ctxVista.moveTo(a[0], a[1]); ctxVista.lineTo(b[0], b[1]); }
+    ctxVista.stroke();
+    ctxVista.strokeStyle = '#ffdd55'; ctxVista.beginPath(); ctxVista.arc(W / 2, H / 2, 12, 0, Math.PI * 2); ctxVista.stroke();
+  } else if (estado.marco) {
     const p = N.proyectarCaja(estado.marco, caja);
     ctxVista.lineWidth = 2;
     ctxVista.strokeStyle = 'rgba(255,255,255,0.9)';
@@ -481,10 +643,17 @@ function dibujarVista() {
 // ============================================================
 
 function actualizarModo() {
-  const relieve = $('optModo').value === 'relieve';
-  $('notaModo').style.display = relieve ? 'none' : '';
+  const modo = $('optModo').value;
+  const relieve = modo === 'relieve', libre = modo === 'libre';
+  $('notaModo').style.display = relieve || libre ? 'none' : '';
   $('notaRelieve').style.display = relieve ? '' : 'none';
+  $('zonaLibre').style.display = libre ? '' : 'none';
+  for (const id of ['listaCapturas', 'btnGuardarTomas', 'btnCargarTomas', 'btnBorrarTomas']) $(id).style.display = libre ? 'none' : '';
+  $('btnCapturar').style.display = libre ? 'none' : '';
+  $('optAngulo').parentElement.style.display = libre ? 'none' : '';
+  if (!libre && estado.libre) libreDetener();
   actualizarPlan();
+  libreBotones();
 }
 $('optModo').addEventListener('change', actualizarModo);
 
@@ -550,7 +719,7 @@ function repetirToma(i) {
 // ============================================================
 
 function actualizarPlan() {
-  const relieve = $('optModo').value === 'relieve';
+  const relieve = $('optModo').value !== 'volumen';
   $('planTomas').style.display = relieve ? 'none' : '';
   if (relieve) return null;
   const paso = +$('optPaso').value || 45;
@@ -719,6 +888,7 @@ $('inputTomas').addEventListener('change', async (e) => {
 function progreso(msg) { const p = $('progreso'); p.style.display = ''; p.textContent = msg; }
 
 async function generar() {
+  if ($('optModo').value === 'libre') { if (estado.libre && estado.libre.activo) libreTerminar(); else toast('En el modo a mano alzada, primero «Empezar el escaneo libre»'); return; }
   if (!estado.tomas.length) { toast('Primero capturá al menos una toma'); return; }
   if (!estado.marco) { toast('Falta detectar la mesa (o cargar un archivo de tomas con la mesa guardada)'); return; }
   const btn = $('btnGenerar');
@@ -912,7 +1082,7 @@ $('btnOBJ').addEventListener('click', () => {
   toast('OBJ descargado');
 });
 $('btnPLY').addEventListener('click', () => {
-  if (!estado.puntos) return;
+  if (!estado.puntos) { toast('El escaneo libre no guarda nube de puntos: usá el STL o el OBJ'); return; }
   descargar(new Blob([N.aPLY(estado.puntos)], { type: 'application/octet-stream' }), 'escaneo-kinect-puntos.ply');
   toast('Nube de puntos descargada (abrila en MeshLab o CloudCompare)');
 });
