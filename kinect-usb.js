@@ -21,6 +21,17 @@ export const MODELOS = {
 export const FILTROS = Object.keys(MODELOS).map(pid => ({ vendorId: KINECT_VENDOR, productId: +pid }));
 
 export const ANCHO = 640, ALTO = 480;
+
+// wMaxPacketSize de un endpoint isócrono de alta velocidad: los bits 0-10 son el tamaño de
+// cada transacción y los bits 11-12 cuántas transacciones entran por microcuadro (menos 1).
+// El Kinect declara 0x0BC0 = 2 × 960 = 1920 bytes por microcuadro. Algunos navegadores
+// informan el valor crudo (3008); pedir paquetes de ese tamaño hace fallar las lecturas.
+export function tamanoRealDePaquete(valor) {
+  if (!(valor > 0)) return 1920;
+  if (valor <= 1024) return valor;
+  const base = valor & 0x7ff, mult = ((valor >> 11) & 3) + 1;
+  return base * mult;
+}
 export const BYTES_CUADRO = ANCHO * ALTO * 11 / 8; // 422400
 
 // ------------------------------------------------------------
@@ -215,8 +226,11 @@ export class KinectV1 {
       this.alternativa = elegido.alt ? elegido.alt.alternateSetting : 0;
       try { await dispositivo.selectAlternateInterface(this.interfaz, this.alternativa); } catch (e) { /* algunos sistemas no lo permiten con el 0; seguimos */ }
       this.epProfundidad = elegido.ep.endpointNumber;
-      this.tamPaquete = elegido.ep.packetSize;
-      this.descripcion = `interfaz ${this.interfaz}, alt ${this.alternativa}, endpoint ${this.epProfundidad}, paquetes de ${this.tamPaquete} bytes`;
+      this.tamPaqueteCrudo = elegido.ep.packetSize;
+      this.tamPaquete = tamanoRealDePaquete(elegido.ep.packetSize);
+      this.descripcion = `interfaz ${this.interfaz}, alt ${this.alternativa}, endpoint ${this.epProfundidad}, paquetes de ${this.tamPaquete} bytes (descriptor ${this.tamPaqueteCrudo})`;
+      // resetear el pipe antes de leer (en Windows, WinUSB lo necesita a veces tras reclamar la interfaz)
+      try { await dispositivo.clearHalt('in', this.epProfundidad); } catch (e) { /* no en todos los sistemas */ }
     } catch (e) {
       throw Object.assign(new Error(e.message), { fase: 'reclamar', original: e });
     }
@@ -379,9 +393,10 @@ export class KinectV1 {
       L.push(`  ${etiqueta}: ep ${ep} × ${n} paquetes de ${tam} → ${ok}/6 lecturas OK, ${bytes} bytes, estados ${JSON.stringify(estados)}${err ? ' · último error: ' + err : ''}`);
       return ok;
     };
+    try { await dev.clearHalt('in', this.epProfundidad); L.push('clearHalt(in, ' + this.epProfundidad + '): OK'); } catch (e) { L.push('clearHalt: FALLÓ · ' + e.message); }
     avisar('Probando lecturas antes de arrancar el flujo…');
     L.push('Lecturas con el flujo detenido:');
-    for (const n of [8, 16, 1]) await probar('detenido', this.epProfundidad, n, this.tamPaquete);
+    for (const t of [1920, 960, 3008]) await probar('detenido', this.epProfundidad, 8, t);
     // reseleccionar alt y volver a probar
     try { await dev.selectAlternateInterface(this.interfaz, this.alternativa); L.push('selectAlternateInterface(' + this.interfaz + ', ' + this.alternativa + '): OK'); }
     catch (e) { L.push('selectAlternateInterface: FALLÓ · ' + e.message); }
@@ -395,9 +410,10 @@ export class KinectV1 {
     await esperar(200);
     L.push('Lecturas con el flujo andando:');
     let total = 0;
-    for (const n of [8, 16, 32, 64, 1]) total += await probar('andando', this.epProfundidad, n, this.tamPaquete);
-    // paquetes más chicos que el máximo y el otro endpoint (video), por si el problema es el tamaño
-    total += await probar('andando, paquete de 1024', this.epProfundidad, 8, 1024);
+    for (const t of [1920, 960, 2880, 3840, 3008, 1760, 1024, 512]) total += await probar('andando', this.epProfundidad, 8, t);
+    for (const n of [16, 24, 32, 64, 1, 4]) total += await probar('andando', this.epProfundidad, n, 1920);
+    try { await dev.clearHalt('in', this.epProfundidad); } catch (e) { /* nada */ }
+    total += await probar('andando, tras clearHalt', this.epProfundidad, 8, 1920);
     total += await probar('andando, endpoint de video', 1, 8, 1920);
     try { await this._escribirRegistro(0x06, 0x00); } catch (e) { /* nada */ }
     L.push(total ? 'RESULTADO: alguna configuración lee datos.' : 'RESULTADO: ninguna configuración de lectura isócrona funciona en este sistema/navegador.');
