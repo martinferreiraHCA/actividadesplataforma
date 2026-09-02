@@ -341,14 +341,16 @@ export function aMarcoPieza(pts, marco, anguloGrados = 0, sentido = 1) {
 }
 
 // Clasifica cada píxel para la vista previa: 0 sin dato, 1 fuera, 2 mesa, 3 dentro de la caja.
+// paso: 1 clasifica todos los píxeles; 2 sólo los de filas y columnas pares (el resto queda en 0).
 export function clasificarPixeles(z, marco, caja, opciones = {}) {
   const intr = opciones.intr || INTR;
   const corte = opciones.corte ?? 5;
   const zmin = opciones.zmin || 0, zmax = opciones.zmax || 1e9;
+  const paso = opciones.paso || 1;
   const { O, X, U, Z } = marco;
   const hx = caja.ancho / 2, hz = caja.profundo / 2, alto = caja.alto;
   const salida = new Uint8Array(z.length);
-  for (let v = 0; v < intr.alto; v++) for (let u = 0; u < intr.ancho; u++) {
+  for (let v = 0; v < intr.alto; v += paso) for (let u = 0; u < intr.ancho; u += paso) {
     const i = v * intr.ancho + u;
     const d = z[i]; if (!(d > 0)) continue;
     if (d < zmin || d > zmax) { salida[i] = 1; continue; }
@@ -1001,15 +1003,16 @@ export function evaluarEscena(z, plano, marco, caja, opciones = {}) {
   else okIncl = true;
   items.push({ clave: 'inclinacion', ok: okIncl, texto: `Inclinación del Kinect: ${inclinacion.toFixed(0)}°`, consejo: consejoIncl });
 
-  // píxeles por clase
-  const clases = clasificarPixeles(z, marco, caja, { corte, zmin, zmax, intr });
+  // píxeles por clase, muestreando uno de cada dos en cada eje (alcanza y es 4 veces más rápido)
+  const P = 2;
+  const clases = clasificarPixeles(z, marco, caja, { corte, zmin, zmax, intr, paso: P });
   let nMesa = 0, nPieza = 0, nSinDato = 0, nFuera = 0;
   const hx = caja.ancho / 2, hz = caja.profundo / 2;
   const xs = [], ys = [], zs = [];
   let sumD = 0;
   let bordeX = 0, bordeZ = 0, bordeTop = 0;
   const { O, X, U, Z } = marco;
-  for (let v = 0; v < intr.alto; v++) for (let u = 0; u < intr.ancho; u++) {
+  for (let v = 0; v < intr.alto; v += P) for (let u = 0; u < intr.ancho; u += P) {
     const i = v * intr.ancho + u;
     const c = clases[i];
     if (c === 0) { nSinDato++; continue; }
@@ -1026,13 +1029,13 @@ export function evaluarEscena(z, plano, marco, caja, opciones = {}) {
     if (Math.abs(zz) > hz - 8) bordeZ++;
     if (y > caja.alto - 8) bordeTop++;
   }
-  const total = intr.ancho * intr.alto;
+  const total = (intr.ancho / P) * (intr.alto / P);
   const fracMesa = nMesa / total;
   items.push({
     clave: 'mesa', ok: fracMesa > 0.08, texto: `Mesa visible: ${(fracMesa * 100).toFixed(0)}% de la imagen`,
     consejo: fracMesa > 0.08 ? '' : 'Se ve poca mesa alrededor de la pieza. Alejá un poco el Kinect o inclinalo más: la mesa es la referencia para el eje de giro.'
   });
-  if (nPieza < 300) {
+  if (nPieza < 300 / (P * P)) {
     items.push({ clave: 'pieza', ok: false, texto: 'No hay nada dentro de la caja de escaneo', consejo: 'Apoyá la pieza sobre la base giratoria, en el centro del círculo blanco. Si está pero no se pinta de naranja, subí el «corte» si la base es gruesa, o agrandá la caja.' });
     return { items, listo: false };
   }
@@ -1071,11 +1074,11 @@ export function evaluarEscena(z, plano, marco, caja, opciones = {}) {
 
   // huecos dentro de la silueta de la pieza: píxeles sin dato rodeados de pieza
   let huecos = 0;
-  for (let v = 1; v < intr.alto - 1; v++) for (let u = 1; u < intr.ancho - 1; u++) {
+  for (let v = P; v < intr.alto - P; v += P) for (let u = P; u < intr.ancho - P; u += P) {
     const i = v * intr.ancho + u;
-    if (clases[i] !== 0) continue;
+    if (clases[i] !== 0 || z[i] > 0) continue;
     let vecinos = 0;
-    if (clases[i - 1] === 3) vecinos++; if (clases[i + 1] === 3) vecinos++; if (clases[i - intr.ancho] === 3) vecinos++; if (clases[i + intr.ancho] === 3) vecinos++;
+    if (clases[i - P] === 3) vecinos++; if (clases[i + P] === 3) vecinos++; if (clases[i - P * intr.ancho] === 3) vecinos++; if (clases[i + P * intr.ancho] === 3) vecinos++;
     if (vecinos >= 2) huecos++;
   }
   const fracHuecos = huecos / (nPieza + huecos);

@@ -290,34 +290,48 @@ $('btnDemo').addEventListener('click', async () => {
 
 let cuadrosRecibidos = 0, tiempoFps = performance.now(), fps = 0;
 
+// Los cuadros llegan a 15–30 por segundo; la página procesa siempre SÓLO el último que llegó,
+// una vez por cuadro de pantalla, y descarta los intermedios. Así nunca se acumula cola ni
+// se atrasa la imagen aunque la computadora sea lenta.
+let cuadroPendiente = null, procesoProgramado = false, ultimaMesaAuto = 0, dibujados = 0;
+
 function recibirCuadro(cuadro) {
+  cuadrosRecibidos++;
+  if (cuadro.mm) cuadroPendiente = { mm: cuadro.mm };
+  else cuadroPendiente = { crudo11: cuadro.crudo11.slice ? cuadro.crudo11.slice() : Uint8Array.from(cuadro.crudo11) };
+  if (!procesoProgramado) { procesoProgramado = true; requestAnimationFrame(procesarCuadroPendiente); }
+}
+
+function procesarCuadroPendiente() {
+  procesoProgramado = false;
+  const cuadro = cuadroPendiente;
+  cuadroPendiente = null;
+  if (!cuadro) return;
   let mm;
   if (cuadro.mm) mm = cuadro.mm;
   else { N.desempaquetar11(cuadro.crudo11, estado.crudo16); mm = N.crudoAmapa(estado.crudo16); }
   estado.ultimoMm = mm;
-  cuadrosRecibidos++;
+  dibujados++;
   const ahora = performance.now();
   if (ahora - tiempoFps > 1000) {
     fps = cuadrosRecibidos * 1000 / (ahora - tiempoFps);
-    cuadrosRecibidos = 0; tiempoFps = ahora;
+    const fpsDib = dibujados * 1000 / (ahora - tiempoFps);
+    cuadrosRecibidos = 0; dibujados = 0; tiempoFps = ahora;
     if (estado.tipo === 'kinect' || estado.tipo === 'puente') {
       const est = estado.fuente.estadisticas || {};
-      $('estadoDetalle').textContent = `${fps.toFixed(0)} cuadros/s · ${est.cuadros || 0} recibidos · ${est.incompletos || 0} incompletos · ${est.perdidos || 0} con paquetes perdidos · ${est.errores || 0} errores de transferencia`;
+      $('estadoDetalle').textContent = `${fps.toFixed(0)} cuadros/s del sensor · ${fpsDib.toFixed(0)} en pantalla · ${est.cuadros || 0} recibidos · ${est.incompletos || 0} incompletos · ${est.perdidos || 0} con paquetes perdidos · ${est.errores || 0} errores de transferencia`;
     }
   }
   if (estado.libre && estado.libre.activo) { alimentarLibre(mm); }
-  else if (!estado.plano) detectarMesa(true);
+  else if (!estado.plano && ahora - ultimaMesaAuto > 1500) { ultimaMesaAuto = ahora; detectarMesa(true); }
   if (estado.capturando) {
     const c = estado.capturando;
     c.cuadros.push(Float32Array.from(mm));
     $('estadoCaptura').textContent = `capturando ${c.cuadros.length}/${c.total}…`;
     if (c.cuadros.length >= c.total) { estado.capturando = null; terminarCaptura(c); }
   }
-  if (!estado.dibujoPendiente) {
-    estado.dibujoPendiente = true;
-    requestAnimationFrame(() => { estado.dibujoPendiente = false; dibujarVista(); });
-  }
-  if (ahora - estado.ultimoChequeo > 1200 && !estado.capturando && !(estado.libre && estado.libre.activo)) { estado.ultimoChequeo = ahora; chequearEscena(); }
+  dibujarVista();
+  if (ahora - estado.ultimoChequeo > 1500 && !estado.capturando && !(estado.libre && estado.libre.activo)) { estado.ultimoChequeo = ahora; chequearEscena(); }
 }
 
 // ============================================================
@@ -371,7 +385,7 @@ async function libreIniciar() {
       return;
     }
     if (m.tipo === 'malla') { libreMostrarMalla(m); return; }
-    if (m.tipo === 'error') { toast('Error en el escaneo libre: ' + m.mensaje); libreSemaforo('perdido', m.mensaje); }
+    if (m.tipo === 'error') { L.ocupado = false; toast('Error en el escaneo libre: ' + m.mensaje); libreSemaforo('perdido', m.mensaje); }
   };
   worker.postMessage({ tipo: 'iniciar', opciones: { lado: +$('libLado').value || 500, voxel: +$('libVoxel').value || 5, distancia } });
   estado.libre.voxel = +$('libVoxel').value || 5;
@@ -586,14 +600,17 @@ function dibujarVista() {
   const caja = leerCaja();
   const corte = leerCorte();
   const libreActivo = !!(estado.libre && estado.libre.activo);
-  const clases = estado.marco && !libreActivo ? N.clasificarPixeles(z, estado.marco, caja, { corte, zmin, zmax }) : null;
+  // la clasificación (mesa / caja / fuera) se calcula a media resolución: 4 veces más rápido
+  const clases = estado.marco && !libreActivo ? N.clasificarPixeles(z, estado.marco, caja, { corte, zmin, zmax, paso: 2 }) : null;
   const c = [0, 0, 0];
   for (let i = 0; i < z.length; i++) {
     const d = z[i];
     const o = i * 4;
     if (!(d > 0)) { px[o] = 40; px[o + 1] = 40; px[o + 2] = 40; px[o + 3] = 255; continue; }
     colorProfundidad(d, zmin, zmax, c);
-    const cl = clases ? clases[i] : (d < zmin || d > zmax ? 1 : (libreActivo ? 4 : 3));
+    let cl;
+    if (clases) { const fila = (i / W) | 0; cl = clases[(fila & ~1) * W + ((i - fila * W) & ~1)]; }
+    else cl = d < zmin || d > zmax ? 1 : (libreActivo ? 4 : 3);
     if (cl === 4) { px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2]; }
     else if (cl === 2) { px[o] = c[0] * 0.35 + 60; px[o + 1] = c[1] * 0.35 + 160; px[o + 2] = c[2] * 0.35 + 70; }
     else if (cl === 3) { px[o] = Math.min(255, c[0] * 0.3 + 200); px[o + 1] = c[1] * 0.3 + 90; px[o + 2] = c[2] * 0.3 + 20; }
