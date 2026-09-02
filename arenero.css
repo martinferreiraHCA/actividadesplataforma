@@ -1,0 +1,15 @@
+/* Arenero de realidad aumentada — pantalla */
+.are-panel { display: grid; grid-template-columns: minmax(320px, 1.6fr) minmax(280px, 1fr); gap: 1.2rem; align-items: start; }
+@media (max-width: 900px) { .are-panel { grid-template-columns: 1fr; } }
+.are-vista canvas { width: 100%; aspect-ratio: 4 / 3; display: block; border: 1px solid var(--borde, rgba(0,0,0,0.25)); border-radius: 10px; background: #222; touch-action: none; cursor: crosshair; }
+.are-comandos { display: flex; flex-wrap: wrap; gap: 0.5rem 0.6rem; align-items: center; margin-top: 0.6rem; padding: 0.6rem 0.7rem; border: 1.5px solid var(--accent, #c65a35); border-radius: 10px; background: var(--surface, #fff); }
+.are-comandos .btn { padding: 0.45em 0.9em; font-size: 0.8rem; }
+.are-comandos__grupo { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.are-comandos__grupo--derecha { margin-left: auto; }
+.are-leyenda { display: flex; gap: 0; margin-top: 0.6rem; border-radius: 6px; overflow: hidden; height: 14px; }
+.are-leyenda span { flex: 1; }
+.are-leyenda-texto { display: flex; justify-content: space-between; font-size: 0.75rem; opacity: 0.75; font-family: 'JetBrains Mono', monospace; }
+.are-esquinas { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.are-esquinas .btn { padding: 0.35em 0.7em; font-size: 0.78rem; }
+.are-cruz { display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(3, 30px); gap: 3px; }
+.are-cruz button { border: 1.5px solid var(--borde, rgba(0,0,0,0.3)); background: var(--surface, #fff); border-radius: 6px; cursor: pointer; color: inherit; }

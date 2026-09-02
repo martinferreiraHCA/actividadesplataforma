@@ -38,6 +38,7 @@
           <a href="papel3d.html">📐 Diseño 3D con papel</a>
           <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
           <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
+          <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
         </span>
       </span>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
@@ -195,6 +196,7 @@
         <a href="papel3d.html">Diseño 3D con papel</a>
         <a href="sello3d.html">Sello 3D desde una imagen</a>
         <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
+        <a href="arenero.html">Arenero de realidad aumentada</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
@@ -309,6 +311,20 @@
   `;
   grid.appendChild(cardEscaneo);
   nuevasCards.push(cardEscaneo);
+  idx++;
+
+  // Ficha especial: arenero de realidad aumentada (página propia)
+  const cardArenero = document.createElement('a');
+  cardArenero.href = 'arenero.html';
+  cardArenero.className = 'actividad-card reveal';
+  cardArenero.setAttribute('role', 'listitem');
+  cardArenero.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Arenero de realidad aumentada</h3>
+    <p class="actividad-card__desc">Una caja de arena, un Kinect y un proyector: la arena se pinta como un mapa topográfico con curvas de nivel y sombreado, y con la mano encima llueve y el agua corre por los valles. Versión para el navegador del AR Sandbox de UC Davis – KeckCAVES.</p>
+  `;
+  grid.appendChild(cardArenero);
+  nuevasCards.push(cardArenero);
   idx++;
 
   // Ficha especial: protocolos de práctico de laboratorio (página propia)

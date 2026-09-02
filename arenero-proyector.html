@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Arenero — ventana del proyector</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; cursor: none; }
+  body.calibrando { cursor: default; }
+  #lienzo { position: absolute; left: 0; top: 0; width: 640px; height: 480px; transform-origin: 0 0; image-rendering: auto; }
+  .esquina { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 3px solid #ffdd55; border-radius: 50%; background: rgba(0,0,0,0.4); color: #fff; font: bold 12px sans-serif; text-align: center; line-height: 16px; display: none; cursor: move; }
+  .esquina.activa { border-color: #ff3e00; background: #ff3e00; }
+  body.calibrando .esquina { display: block; }
+  #ayuda { position: absolute; left: 12px; bottom: 10px; color: #fff; font: 13px sans-serif; background: rgba(0,0,0,0.5); padding: 6px 10px; border-radius: 6px; display: none; }
+  body.calibrando #ayuda { display: block; }
+</style>
+</head>
+<body>
+<canvas id="lienzo" width="640" height="480"></canvas>
+<div class="esquina" id="e0">1</div><div class="esquina" id="e1">2</div><div class="esquina" id="e2">3</div><div class="esquina" id="e3">4</div>
+<div id="ayuda">Calibración: arrastrá las esquinas hasta que la imagen caiga justo sobre la arena. Teclas: 1-4 elige esquina, flechas la mueven, C oculta/muestra las esquinas, F11 pantalla completa.</div>
+<script>
+  const lienzo = document.getElementById('lienzo');
+  const ctx = lienzo.getContext('2d');
+  let esquinas = [[0.02, 0.02], [0.98, 0.02], [0.98, 0.98], [0.02, 0.98]];
+  let activa = 0;
+  let calibrando = true;
+
+  // homografía que lleva el rectángulo 640×480 a las cuatro esquinas (en píxeles de la ventana)
+  function homografia(dst) {
+    const sx = [0, 640, 640, 0], sy = [0, 0, 480, 480];
+    // resolver 8 incógnitas con eliminación de Gauss
+    const A = [], b = [];
+    for (let i = 0; i < 4; i++) {
+      const x = sx[i], y = sy[i], X = dst[i][0], Y = dst[i][1];
+      A.push([x, y, 1, 0, 0, 0, -X * x, -X * y]); b.push(X);
+      A.push([0, 0, 0, x, y, 1, -Y * x, -Y * y]); b.push(Y);
+    }
+    const n = 8;
+    for (let c = 0; c < n; c++) {
+      let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+      if (Math.abs(A[c][c]) < 1e-12) return null;
+      for (let r = 0; r < n; r++) { if (r === c) continue; const f = A[r][c] / A[c][c]; for (let k = c; k < n; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
+    }
+    const h = b.map((v, i) => v / A[i][i]);
+    return [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1];
+  }
+
+  function aplicar() {
+    const w = window.innerWidth, h = window.innerHeight;
+    const dst = esquinas.map(e => [e[0] * w, e[1] * h]);
+    const m = homografia(dst);
+    if (m) {
+      // CSS matrix3d (por columnas) a partir de la homografía 3×3
+      lienzo.style.transform = `matrix3d(${m[0]},${m[3]},0,${m[6]}, ${m[1]},${m[4]},0,${m[7]}, 0,0,1,0, ${m[2]},${m[5]},0,1)`;
+    }
+    esquinas.forEach((e, i) => { const el = document.getElementById('e' + i); el.style.left = (e[0] * w) + 'px'; el.style.top = (e[1] * h) + 'px'; el.classList.toggle('activa', i === activa); });
+    document.body.classList.toggle('calibrando', calibrando);
+  }
+
+  window.addEventListener('message', (ev) => {
+    const m = ev.data || {};
+    if (m.tipo === 'cuadro' && m.bitmap) { ctx.drawImage(m.bitmap, 0, 0); m.bitmap.close && m.bitmap.close(); }
+    else if (m.tipo === 'esquinas') { esquinas = m.esquinas; if (m.activa !== undefined) activa = m.activa; aplicar(); }
+  });
+  window.addEventListener('resize', aplicar);
+  const avisar = () => { if (window.opener) window.opener.postMessage({ tipo: 'esquinas', esquinas }, '*'); };
+
+  // arrastre de esquinas
+  let arrastrando = -1;
+  document.querySelectorAll('.esquina').forEach((el, i) => el.addEventListener('pointerdown', (e) => { arrastrando = i; activa = i; el.setPointerCapture(e.pointerId); aplicar(); }));
+  window.addEventListener('pointermove', (e) => { if (arrastrando < 0) return; esquinas[arrastrando] = [e.clientX / window.innerWidth, e.clientY / window.innerHeight]; aplicar(); });
+  window.addEventListener('pointerup', () => { if (arrastrando < 0) return; arrastrando = -1; avisar(); });
+  window.addEventListener('keydown', (e) => {
+    const p = 0.004;
+    if (e.key >= '1' && e.key <= '4') activa = +e.key - 1;
+    else if (e.key === 'ArrowLeft') esquinas[activa][0] -= p; else if (e.key === 'ArrowRight') esquinas[activa][0] += p;
+    else if (e.key === 'ArrowUp') esquinas[activa][1] -= p; else if (e.key === 'ArrowDown') esquinas[activa][1] += p;
+    else if (e.key === 'c' || e.key === 'C') calibrando = !calibrando;
+    else return;
+    e.preventDefault(); aplicar(); avisar();
+  });
+  aplicar();
+  if (window.opener) window.opener.postMessage({ tipo: 'listo' }, '*');
+</script>
+</body>
+</html>

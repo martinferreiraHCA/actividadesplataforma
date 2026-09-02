@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './lego/vendor/OrbitControls.js';
 import * as N from './escaneo3d-nucleo.js';
 import { KinectV1, estadoWebUSB, sistemaOperativo, explicarError, GUIAS, MODELOS } from './kinect-usb.js';
+import { PuenteKinect } from './kinect-puente-cliente.js';
 
 const $ = id => document.getElementById(id);
 
@@ -60,42 +61,6 @@ class SimuladorKinect {
   }
   async detener() { this.corriendo = false; clearTimeout(this.timer); }
   async cerrar() { await this.detener(); }
-}
-
-// ============================================================
-// Puente local (kinect-puente.py): los cuadros llegan por WebSocket desde un programa
-// que lee el Kinect con libusb en esta misma computadora.
-// ============================================================
-
-class PuenteKinect {
-  constructor(url = 'ws://127.0.0.1:9876') { this.url = url; this.ws = null; this.corriendo = false; this.modelo = 'Kinect por el puente local'; this.estadisticas = { cuadros: 0, incompletos: 0, perdidos: 0, errores: 0 }; this.descripcion = url; }
-  iniciarProfundidad(onCuadro) {
-    return new Promise((resolver, rechazar) => {
-      let abierto = false;
-      let ws;
-      try { ws = new WebSocket(this.url); } catch (e) { rechazar(Object.assign(new Error(e.message), { fase: 'puente' })); return; }
-      ws.binaryType = 'arraybuffer';
-      this.ws = ws;
-      ws.onopen = () => { abierto = true; this.corriendo = true; resolver(); };
-      ws.onmessage = (ev) => {
-        if (typeof ev.data === 'string') {
-          try { const est = JSON.parse(ev.data); if (est.modelo) this.modelo = est.modelo + ' (puente local)'; } catch (e) { /* nada */ }
-          return;
-        }
-        const bytes = new Uint8Array(ev.data);
-        if (bytes.length !== 422400) { this.estadisticas.incompletos++; return; }
-        this.estadisticas.cuadros++;
-        onCuadro({ crudo11: bytes, tiempo: performance.now() });
-      };
-      ws.onerror = () => { if (!abierto) rechazar(Object.assign(new Error('no responde nadie en ' + this.url), { fase: 'puente' })); };
-      ws.onclose = () => {
-        if (!abierto) { rechazar(Object.assign(new Error('no responde nadie en ' + this.url), { fase: 'puente' })); return; }
-        if (this.corriendo) { this.corriendo = false; if (this.onError) this.onError(Object.assign(new Error('se cerró la conexión con el puente'), { fase: 'puente' })); }
-      };
-    });
-  }
-  async detener() { this.corriendo = false; }
-  async cerrar() { this.corriendo = false; if (this.ws) { try { this.ws.close(); } catch (e) { /* nada */ } this.ws = null; } }
 }
 
 // ============================================================
