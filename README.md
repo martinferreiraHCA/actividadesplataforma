@@ -269,6 +269,28 @@ La página también genera **hojas de ejercicios de lectura de escalas**: cada i
 una lectura al azar y sin el número, con renglones para la medida y su incertidumbre, y con la clave
 de corrección aparte.
 
+## Diseño → Escaneo 3D con Kinect
+
+`escaneo3d.html` convierte un **Kinect de Xbox 360** (v1: modelos 1414, 1473 y Kinect for Windows v1) en un
+escáner 3D de piezas, directo desde el navegador y sin instalar programas: la página habla con el sensor por
+**WebUSB** con el mismo protocolo que libfreenect (`kinect-usb.js`), muestra la profundidad en vivo con la caja
+de escaneo dibujada encima, y con las tomas que se hacen girando la pieza sobre una base arma un modelo
+purgado listo para la impresora 3D.
+
+- **Plug and play**: una vez que se le dio permiso, el Kinect se conecta solo al enchufarlo. Si la conexión
+  falla, la página muestra la **guía para instalar el driver** del sistema en uso (Zadig + WinUSB en Windows;
+  `gspca_kinect` en lista negra y regla udev en Linux; nada en macOS y ChromeOS).
+- **Encuadre**: detección de la mesa (RANSAC de un plano), caja de escaneo, eje de giro y círculo de la base
+  proyectados sobre la imagen; corte a la altura de la base giratoria.
+- **Tomas**: cada toma promedia varios cuadros (mediana píxel a píxel) y se guarda con su ángulo; se pueden
+  guardar y cargar en `.json` para generar el modelo en otra computadora.
+- **Fusión y purgado** (`escaneo3d-nucleo.js`, sin dependencias): filtros de mediana, huecos y puntos
+  voladores; fusión volumétrica (TSDF) de las tomas giradas o mapa de alturas para un relieve de una sola
+  toma; **afinado automático del eje y del sentido de giro** comparando las tomas; extracción con surface
+  nets; conservar sólo la pieza más grande, suavizado de Taubin, reducción de triángulos, base plana cerrada.
+- **Salidas**: STL binario, OBJ y nube de puntos PLY, con Z hacia arriba y en milímetros.
+- **Modo de demostración** con una pieza sintética (con el ruido del sensor) para practicar sin Kinect.
+
 ## Tecnología
 
 - HTML + CSS + Vanilla JS (ES modules)
@@ -299,4 +321,8 @@ Sección Diseño:
 /instrumentos.js          ← Motor de dibujo SVG de los 33 instrumentos
 /instrumentos-ui.js       ← Catálogo, configurador y hojas de ejercicios
 /papel3d.html             ← Diseño 3D con papel (papercraft)
+/escaneo3d.html           ← Escaneo 3D con Kinect
+/escaneo3d.js             ← Página: conexión, vista en vivo, tomas, modelo
+/escaneo3d-nucleo.js      ← Fusión volumétrica, malla, purgado y exportación (sin DOM)
+/kinect-usb.js            ← Driver WebUSB del Kinect v1 y guías de instalación
 ```

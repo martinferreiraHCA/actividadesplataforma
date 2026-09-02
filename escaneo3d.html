@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escaneo 3D con Kinect — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Conectá un Kinect de Xbox 360 a la computadora y escaneá piezas en 3D desde el navegador: girás la pieza, se fusionan las tomas, se limpia el modelo y descargás el STL listo para imprimir o seguir diseñando.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css"><!-- chips y estadísticas compartidas -->
+<link rel="stylesheet" href="escaneo3d.css">
+<script type="importmap">
+{ "imports": { "three": "./lego/vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+          <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
+          <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia="escaneo">Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// De la pieza real al modelo 3D</div>
+      <h2 class="section__title">Escaneo 3D<br>con Kinect<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Enchufá un <strong>Kinect de Xbox 360</strong> (el primero, el de la barra negra con el pie
+      motorizado) a la computadora y escaneá <strong>piezas reales</strong> desde el navegador, sin
+      instalar programas: la pieza se apoya sobre una base giratoria, se hacen varias tomas dándola
+      vuelta, la plataforma las <strong>fusiona</strong> en un solo volumen, lo <strong>purga</strong>
+      (saca la mesa, el ruido y los puntos sueltos, cierra la base, suaviza) y te deja bajar el
+      <strong>.stl</strong> listo para la impresora 3D, para Tinkercad o para pasarlo a
+      <a href="papel3d.html">Diseño 3D con papel</a>. Todo pasa en tu computadora: nada se sube a ningún servidor.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Conectá el Kinect</span>
+        <span class="paso-rapido__texto">Con su fuente de 12 V y en Chrome o Edge. Si el sistema no lo reconoce, acá abajo está la guía para ponerle el driver.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Encuadrá la pieza</span>
+        <span class="paso-rapido__texto">La plataforma detecta la mesa y dibuja la caja de escaneo. Acomodás la caja y el eje de giro sobre la imagen de profundidad.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Girá y capturá</span>
+        <span class="paso-rapido__texto">Una toma cada 30° o 45°, girando la pieza sobre una base (una tapa, un plato, una tarima de LEGO). O una sola toma desde arriba para relieves.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 04</span>
+        <span class="paso-rapido__titulo">Purgá y descargá</span>
+        <span class="paso-rapido__texto">Elegís resolución, suavizado y relleno; revisás el modelo en 3D y bajás el STL, OBJ o la nube de puntos.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 1: CONEXIÓN ====== -->
+<section class="editor-section editor-section--surface" id="seccionConexion">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — El Kinect</div>
+
+    <div class="kin-estado" id="estadoKinect">
+      <span class="kin-estado__luz"></span>
+      <div class="kin-estado__texto">
+        <strong id="estadoTitulo">Sin Kinect conectado</strong>
+        <small id="estadoDetalle">Enchufalo y apretá «Conectar Kinect». Si ya le diste permiso antes, se conecta solo.</small>
+      </div>
+      <div class="kin-estado__acciones">
+        <button class="btn btn--primary" id="btnConectar" type="button">🔌 Conectar Kinect</button>
+        <button class="btn" id="btnDesconectar" type="button" style="display:none">Desconectar</button>
+        <button class="btn" id="btnDemo" type="button">🧪 Probar sin Kinect (pieza de demostración)</button>
+      </div>
+    </div>
+
+    <div class="kin-requisitos">
+      <div class="kin-requisito"><span class="kin-requisito__icono">🔌</span><strong>La fuente de 12 V.</strong> El Kinect no anda sólo con el USB: necesita el adaptador con el cable en Y (el que traía para consolas viejas). Sin la fuente, la computadora no lo ve.</div>
+      <div class="kin-requisito"><span class="kin-requisito__icono">🌐</span><strong>Chrome o Edge</strong> en una computadora (Windows, Linux, Mac o ChromeOS). Firefox y Safari no pueden hablar con dispositivos USB.</div>
+      <div class="kin-requisito"><span class="kin-requisito__icono">🎥</span><strong>Kinect v1</strong>: modelos 1414, 1473 o Kinect for Windows v1. El Kinect de Xbox One (el rectangular, USB 3) no sirve para esto.</div>
+      <div class="kin-requisito"><span class="kin-requisito__icono">📏</span><strong>Distancia de 60 cm a 1,2 m.</strong> Funciona mejor con piezas de 8 a 40 cm, mates, opacas. Lo negro brillante, el vidrio y los espejos no se ven.</div>
+    </div>
+
+    <details class="kin-guia" id="guiaDrivers">
+      <summary id="guiaTituloResumen">¿No aparece el Kinect en la lista? Instalá el driver (un minuto, una sola vez)</summary>
+      <div class="kin-guia__cuerpo">
+        <div class="kin-guia__tabs" id="guiaTabs"></div>
+        <div id="guiaContenido"></div>
+        <p class="kin-nota">Cuando termines: desenchufá y volvé a enchufar el USB del Kinect, recargá esta página y apretá «Conectar Kinect». En el diálogo del navegador va a aparecer como «Xbox NUI Camera».</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+
+<!-- ====== PASO 2: ENCUADRE ====== -->
+<section class="editor-section" id="seccionEncuadre" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — Encuadre, mesa y eje de giro</div>
+    <div class="kin-panel">
+      <div class="kin-vista">
+        <canvas id="lienzoVista" width="640" height="480"></canvas>
+        <div class="kin-vista__cuenta" id="cuentaRegresiva"></div>
+        <div class="kin-vista__leyenda">
+          <span style="--c:#ff8c3a">dentro de la caja (lo que se escanea)</span>
+          <span style="--c:#5fbf7a">la mesa</span>
+          <span style="--c:#4a6fa5">fuera de la caja</span>
+          <span style="--c:#333">sin dato</span>
+          <span style="--c:#fff">caja, eje y base giratoria</span>
+        </div>
+        <p class="kin-nota">Apuntá el Kinect un poco hacia abajo (20°–40°) para que vea la mesa y la parte de arriba de la pieza. Mantenelo quieto durante todo el escaneo: lo que gira es la pieza, no la cámara.</p>
+      </div>
+      <div class="kin-controles">
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Distancia útil</p>
+          <div class="kin-fila"><label for="optZmin">Desde</label><input type="range" id="optZmin" min="400" max="2000" step="10" value="500"><span class="kin-valor" id="valZmin">500 mm</span></div>
+          <div class="kin-fila"><label for="optZmax">Hasta</label><input type="range" id="optZmax" min="500" max="3000" step="10" value="1300"><span class="kin-valor" id="valZmax">1300 mm</span></div>
+          <p class="kin-nota">Todo lo que esté más lejos (la pared, la gente) se ignora. Dejá la mesa y la pieza dentro del rango.</p>
+        </div>
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">La mesa</p>
+          <div class="kin-fila">
+            <button class="btn" id="btnDetectarMesa" type="button">📐 Detectar la mesa</button>
+            <select class="campo__input" id="optRegionMesa" style="max-width:190px">
+              <option value="abajo" selected>buscarla abajo</option>
+              <option value="toda">buscarla en toda la imagen</option>
+              <option value="centro">buscarla en el centro</option>
+            </select>
+          </div>
+          <div class="kin-fila"><label for="optCorte">Corte sobre la mesa</label><input class="campo__input" type="number" id="optCorte" min="0" max="80" step="1" value="4"><span>mm</span></div>
+          <p class="kin-nota" id="notaMesa">Todavía no se detectó la mesa.</p>
+          <p class="kin-nota">«Corte»: a qué altura sobre la mesa empieza la pieza. Si usás una base giratoria gruesa, poné su altura acá para que no salga en el modelo.</p>
+        </div>
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Caja de escaneo (mm)</p>
+          <div class="kin-fila">
+            <label for="optAncho">Ancho</label><input class="campo__input" type="number" id="optAncho" min="40" max="800" step="10" value="240">
+            <label for="optProfundo">Fondo</label><input class="campo__input" type="number" id="optProfundo" min="40" max="800" step="10" value="240">
+            <label for="optAlto">Alto</label><input class="campo__input" type="number" id="optAlto" min="20" max="800" step="10" value="200">
+          </div>
+          <div class="kin-fila" style="align-items:flex-start">
+            <div class="kin-cruz" aria-label="Mover el eje de giro">
+              <span></span><button type="button" data-mover="0,-5" title="Eje hacia la cámara (5 mm)">▲</button><span></span>
+              <button type="button" data-mover="-5,0" title="Eje a la izquierda (5 mm)">◀</button>
+              <button type="button" class="kin-cruz__centro" id="btnRecentrar" title="Volver a centrar el eje en la pieza">auto</button>
+              <button type="button" data-mover="5,0" title="Eje a la derecha (5 mm)">▶</button>
+              <span></span><button type="button" data-mover="0,5" title="Eje hacia el fondo (5 mm)">▼</button><span></span>
+            </div>
+            <div style="flex:1 1 140px">
+              <p class="kin-nota" style="margin:0">Eje de giro: <span class="kin-valor" id="valEje">0, 0</span></p>
+              <p class="kin-nota">Movelo hasta que el círculo blanco quede centrado en la base giratoria y la caja envuelva toda la pieza. Con dos o más tomas, la plataforma lo afina sola.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PASO 3: CAPTURAS ====== -->
+<section class="editor-section editor-section--surface" id="seccionCapturas" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 3 — Las tomas</div>
+    <div class="scratch-opciones">
+      <span class="scratch-opciones__label">Modo:</span>
+      <select class="campo__input" id="optModo" style="max-width:300px">
+        <option value="volumen" selected>Girando la pieza (varias tomas, 360°)</option>
+        <option value="relieve">Relieve: una toma desde arriba</option>
+      </select>
+      <span class="scratch-opciones__label">Paso de giro:</span>
+      <select class="campo__input" id="optPaso" style="max-width:110px">
+        <option value="15">15°</option>
+        <option value="30">30°</option>
+        <option value="45" selected>45°</option>
+        <option value="60">60°</option>
+        <option value="90">90°</option>
+      </select>
+      <span class="scratch-opciones__label">Cuadros por toma:</span>
+      <select class="campo__input" id="optCuadros" style="max-width:120px">
+        <option value="1">1 (rápido)</option>
+        <option value="5">5</option>
+        <option value="10" selected>10 (menos ruido)</option>
+        <option value="20">20</option>
+      </select>
+    </div>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Ángulo de esta toma:</span>
+      <input class="campo__input" type="number" id="optAngulo" min="-360" max="720" step="1" value="0" style="max-width:90px"> <span class="scratch-opciones__label">°</span>
+      <label class="scratch-check"><input type="checkbox" id="optCuenta" checked> Cuenta regresiva de 3 s</label>
+      <button class="btn btn--primary" id="btnCapturar" type="button">📸 Capturar esta toma</button>
+      <span class="kin-valor" id="estadoCaptura"></span>
+    </div>
+    <p class="ia-catalogo__ayuda" id="notaModo" style="margin-top:0.6rem">Girá la pieza sobre la base <strong>siempre para el mismo lado</strong> y en pasos parejos (marcá la base con una raya cada 45°, o usá una tarima de LEGO con tetones como referencia). Después de cada toma el ángulo avanza solo. Con 8 tomas (cada 45°) ya sale una pieza cerrada; con 12 (cada 30°) queda más fiel. No hace falta que el giro sea perfecto: la plataforma afina el eje y el sentido comparando las tomas.</p>
+    <p class="ia-catalogo__ayuda" id="notaRelieve" style="margin-top:0.6rem;display:none">Para un relieve alcanza con <strong>una sola toma</strong>: el Kinect mirando la pieza desde arriba (o bien de frente si es una placa apoyada). Todo lo que quede por debajo de la superficie vista se rellena macizo hasta la mesa, como un sello. Podés sumar tomas giradas para cubrir lo que quedó tapado.</p>
+
+    <div class="kin-capturas" id="listaCapturas"></div>
+    <div class="scratch-opciones" style="margin-top:1rem">
+      <button class="btn" id="btnGuardarTomas" type="button">💾 Guardar las tomas (.json)</button>
+      <button class="btn" id="btnCargarTomas" type="button">📂 Cargar tomas guardadas</button>
+      <input type="file" id="inputTomas" accept=".json,application/json" style="display:none">
+      <button class="btn" id="btnBorrarTomas" type="button">🗑 Borrar todas</button>
+    </div>
+    <p class="kin-nota">Guardar las tomas sirve para escanear en clase con el Kinect y armar el modelo después en otra computadora, o para volver a generarlo con otras opciones sin escanear de nuevo.</p>
+  </div>
+</section>
+
+
+<!-- ====== PASO 4: PURGADO Y MODELO ====== -->
+<section class="editor-section" id="seccionModelo" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 4 — Purgado y modelo 3D</div>
+    <div class="scratch-opciones">
+      <span class="scratch-opciones__label">Resolución:</span>
+      <select class="campo__input" id="optVoxel" style="max-width:190px">
+        <option value="2">Fina (2 mm, más lenta)</option>
+        <option value="3" selected>Media (3 mm)</option>
+        <option value="4">Gruesa (4 mm)</option>
+        <option value="6">Muy gruesa (6 mm, rápida)</option>
+      </select>
+      <span class="scratch-opciones__label">Suavizado:</span>
+      <select class="campo__input" id="optSuavizado" style="max-width:140px">
+        <option value="0">Ninguno</option>
+        <option value="2">Leve</option>
+        <option value="5" selected>Medio</option>
+        <option value="10">Fuerte</option>
+      </select>
+      <span class="scratch-opciones__label">Triángulos:</span>
+      <select class="campo__input" id="optReducir" style="max-width:190px">
+        <option value="0" selected>Todos</option>
+        <option value="2">Reducir (mitad de detalle)</option>
+        <option value="3">Reducir mucho</option>
+      </select>
+      <span class="scratch-opciones__label">Escala:</span>
+      <input class="campo__input" type="number" id="optEscala" min="1" max="1000" step="1" value="100" style="max-width:80px"> <span class="scratch-opciones__label">%</span>
+    </div>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Purgado del mapa:</span>
+      <label class="scratch-check"><input type="checkbox" id="optMediana" checked> Filtro de mediana (saca el ruido fino)</label>
+      <label class="scratch-check"><input type="checkbox" id="optHuecos" checked> Rellenar huecos chicos</label>
+      <label class="scratch-check"><input type="checkbox" id="optVoladores" checked> Quitar puntos voladores</label>
+    </div>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Purgado del modelo:</span>
+      <label class="scratch-check"><input type="checkbox" id="optMayor" checked> Conservar sólo la pieza más grande</label>
+      <label class="scratch-check"><input type="checkbox" id="optAjustarEje" checked> Afinar el eje y el sentido de giro con las tomas</label>
+      <select class="campo__input" id="optRelleno" style="max-width:260px">
+        <option value="solido" selected>Macizo y con base plana (para imprimir)</option>
+        <option value="cascara">Sólo la cáscara escaneada</option>
+      </select>
+      <label class="scratch-check"><input type="checkbox" id="optHuecosVacios"> Tratar lo sin dato como vacío</label>
+    </div>
+    <p class="ia-catalogo__ayuda" style="margin-top:0.6rem">«Macizo»: lo que ninguna toma vio (el interior y lo que quedó tapado) se rellena, y el modelo sale cerrado, apoyado sobre una base plana a la altura del corte. «Cáscara»: sólo las superficies vistas, con un espesor de unos milímetros; sirve para revisar el escaneo. «Sin dato como vacío»: los píxeles negros del Kinect (superficies oscuras o brillantes) se toman como aire en vez de como desconocido; ayuda cuando la sombra del sensor deja bultos, pero puede agujerear piezas negras.</p>
+    <div class="scratch-opciones" style="margin-top:1rem">
+      <button class="btn btn--primary" id="btnGenerar" type="button">⚙️ Generar el modelo 3D</button>
+    </div>
+    <div class="kin-progreso" id="progreso" style="display:none"></div>
+
+    <div id="zonaResultado" style="display:none;margin-top:1.2rem">
+      <div class="kin-descargas">
+        <button class="btn btn--primary" id="btnSTL" type="button">⬇ Descargar STL para imprimir</button>
+        <button class="btn" id="btnOBJ" type="button">⬇ Descargar OBJ</button>
+        <button class="btn" id="btnPLY" type="button">⬇ Nube de puntos (PLY)</button>
+      </div>
+      <div id="statsModelo" class="inf-stats" style="margin-bottom:1rem"></div>
+      <div class="kin-resultado">
+        <div>
+          <canvas id="lienzo3d"></canvas>
+          <p class="kin-nota">Giralo con el mouse (rueda para acercar). El STL sale con la base apoyada en Z = 0, en milímetros: en el slicer se imprime tal cual, sin soportes si la pieza no tiene voladizos grandes.</p>
+        </div>
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">¿Y ahora?</p>
+          <ul class="guia-lista" style="margin:0;padding-left:1.2rem;font-size:0.88rem;line-height:1.5">
+            <li><strong>Imprimirlo:</strong> abrí el .stl en el slicer (Cura, PrusaSlicer, Bambu Studio). Si el modelo es muy grande, usá la escala.</li>
+            <li><strong>Seguir diseñando:</strong> importá el .stl en Tinkercad para agregarle piezas, hacerle agujeros o unirlo con otro diseño.</li>
+            <li><strong>Armarlo en papel:</strong> llevá el .stl a <a href="papel3d.html">Diseño 3D con papel</a> (conviene «Reducir mucho» los triángulos primero).</li>
+            <li><strong>Rehacerlo:</strong> cambiá las opciones de arriba y volvé a generar; las tomas quedan.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+        <a href="sello3d.html">Sello 3D desde una imagen</a>
+        <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Vista 3D con <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT). Protocolo del Kinect según <a href="https://openkinect.org" target="_blank" rel="noopener">OpenKinect / libfreenect</a>.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script type="module" src="escaneo3d.js"></script>
+
+</body>
+</html>
