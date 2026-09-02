@@ -590,6 +590,20 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           de puntos <strong>PLY</strong>.</li>
         </ol>
 
+        <h4 class="guia-h">El asistente te va guiando</h4>
+        <ul class="guia-lista">
+          <li><strong>Chequeo de la escena</strong> en vivo: inclinación del Kinect, mesa visible, distancia y tamaño de
+          la pieza, si entra en la caja, si está centrada en el eje y cuántos huecos sin dato tiene. Cada punto en rojo
+          o amarillo trae el consejo para arreglarlo.</li>
+          <li><strong>Rosa de ángulos</strong>: la pieza vista desde arriba con el ojo del Kinect abajo; cada punto es una
+          toma del plan (gris = falta, verde = buena, amarillo = regular, rojo = repetir). Te dice a qué marca girar la
+          base en cada paso.</li>
+          <li><strong>Calidad de cada toma</strong>: puntaje de 0 a 100 y el consejo principal (se movió algo, hay huecos,
+          la pieza se sale de la caja, mucho ruido…), con «↻ repetir» para rehacer sólo esa toma en el mismo ángulo.</li>
+          <li><strong>Informe del escaneo</strong> al generar: qué porcentaje de la superficie vio el sensor, qué lado
+          quedó rellenado a ciegas y a qué ángulo sumar una toma, si falta cubrir la parte de arriba, y qué opción cambiar.</li>
+        </ul>
+
         <h4 class="guia-h">3 · Los dos modos</h4>
         <ul class="guia-lista">
           <li><strong>Girando la pieza</strong>: varias tomas alrededor; lo que ninguna toma vio se rellena macizo. Para

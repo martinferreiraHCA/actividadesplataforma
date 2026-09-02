@@ -190,3 +190,51 @@
   min-height: 2.2em;
 }
 .kin-descargas { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.8rem 0; }
+
+/* asistente: chequeo de la escena */
+.kin-bloque--asistente { border-color: var(--accent, #c65a35); }
+.kin-asistente__estado { font-size: 0.75rem; font-weight: 400; opacity: 0.8; margin-left: 0.4rem; }
+.kin-chequeo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.kin-chequeo__item { font-size: 0.85rem; line-height: 1.4; padding-left: 1.5em; position: relative; }
+.kin-chequeo__item::before { content: '●'; position: absolute; left: 0; top: 0; color: #9a9a9a; }
+.kin-chequeo__item--ok::before { content: '✔'; color: #2e9e5b; }
+.kin-chequeo__item--mal::before { content: '✖'; color: #d9534f; }
+.kin-chequeo__item--aviso::before { content: '▲'; color: #e6a700; font-size: 0.8em; top: 0.15em; }
+.kin-chequeo__item--espera { opacity: 0.6; }
+.kin-chequeo__consejo { display: block; font-size: 0.8rem; opacity: 0.85; margin-top: 0.1rem; }
+
+/* plan de tomas: rosa de ángulos */
+.kin-plan {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1.2rem;
+  align-items: center;
+  margin-top: 1.2rem;
+  padding: 0.9rem 1rem;
+  border: 1.5px solid var(--accent, #c65a35);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+}
+@media (max-width: 700px) { .kin-plan { grid-template-columns: 1fr; justify-items: center; } }
+.kin-rosa { width: 220px; height: 220px; }
+.kin-rosa__punto { cursor: pointer; }
+.kin-rosa__punto:hover circle { stroke-width: 4; }
+.kin-plan__paso { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.25rem; margin: 0 0 0.3rem; }
+.kin-plan__instruccion { margin: 0 0 0.4rem; font-size: 1rem; line-height: 1.45; }
+
+/* calidad por toma */
+.kin-captura__calidad { display: flex; align-items: center; gap: 0.35rem; padding: 0 0.45rem 0.35rem; font-size: 0.75rem; }
+.kin-captura__sello { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.kin-captura--buena .kin-captura__sello { background: #2e9e5b; }
+.kin-captura--regular .kin-captura__sello { background: #e6a700; }
+.kin-captura--mala .kin-captura__sello { background: #d9534f; }
+.kin-captura--mala { border-color: #d9534f; }
+.kin-captura__repetir { border: none; background: transparent; cursor: pointer; font-size: 0.75rem; text-decoration: underline; color: inherit; padding: 0; margin-left: auto; }
+.kin-captura__consejos { font-size: 0.74rem; line-height: 1.35; padding: 0 0.45rem 0.45rem; opacity: 0.85; margin: 0; }
+
+/* informe del modelo */
+.kin-informe { margin-bottom: 1rem; }
+.kin-informe ul { margin: 0.4rem 0 0; padding-left: 1.2rem; font-size: 0.88rem; line-height: 1.5; }
+.kin-informe__ok { color: #2e9e5b; font-weight: 700; }
+.kin-barra { height: 10px; border-radius: 5px; background: #e5e5e0; overflow: hidden; margin: 0.4rem 0; }
+.kin-barra span { display: block; height: 100%; background: linear-gradient(90deg, #2e9e5b, #8bd17c); }

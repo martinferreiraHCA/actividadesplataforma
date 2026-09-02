@@ -32,6 +32,8 @@ const estado = {
   malla: null,
   puntos: null,
   ajuste: null,          // resultado de ajustarEje
+  reemplazar: null,      // índice de la toma que se está repitiendo
+  ultimoChequeo: 0,
   dibujoPendiente: false
 };
 
@@ -226,6 +228,33 @@ function recibirCuadro(cuadro) {
     estado.dibujoPendiente = true;
     requestAnimationFrame(() => { estado.dibujoPendiente = false; dibujarVista(); });
   }
+  if (ahora - estado.ultimoChequeo > 1200 && !estado.capturando) { estado.ultimoChequeo = ahora; chequearEscena(); }
+}
+
+// ============================================================
+// Asistente: chequeo de la escena en vivo
+// ============================================================
+
+function chequearEscena() {
+  const z = estado.ultimoMm;
+  if (!z) return;
+  const { zmin, zmax } = leerRango();
+  const ev = N.evaluarEscena(z, estado.plano, estado.marco, leerCaja(), { corte: leerCorte(), zmin, zmax });
+  const lista = $('listaChequeo');
+  lista.innerHTML = '';
+  const avisos = new Set(['huecos', 'centrado', 'inclinacion', 'mesa']);
+  let malos = 0;
+  for (const it of ev.items) {
+    const li = document.createElement('li');
+    let clase = 'kin-chequeo__item';
+    if (it.ok === true) clase += ' kin-chequeo__item--ok';
+    else if (it.ok === false) { clase += avisos.has(it.clave) && it.clave !== 'mesa' ? ' kin-chequeo__item--aviso' : ' kin-chequeo__item--mal'; malos++; }
+    li.className = clase;
+    li.innerHTML = `${it.texto}${it.consejo && it.ok === false ? `<span class="kin-chequeo__consejo">${it.consejo}</span>` : ''}`;
+    lista.appendChild(li);
+  }
+  $('chequeoEstado').textContent = ev.listo ? (malos ? '· listo, con mejoras posibles' : '· todo en orden') : '· revisá lo marcado antes de capturar';
+  $('chequeoEstado').style.color = ev.listo ? '#2e9e5b' : '#d9534f';
 }
 
 // ============================================================
@@ -369,6 +398,7 @@ function actualizarModo() {
   const relieve = $('optModo').value === 'relieve';
   $('notaModo').style.display = relieve ? 'none' : '';
   $('notaRelieve').style.display = relieve ? '' : 'none';
+  actualizarPlan();
 }
 $('optModo').addEventListener('change', actualizarModo);
 
@@ -389,17 +419,94 @@ async function capturar() {
   $('estadoCaptura').textContent = 'capturando…';
 }
 
+function evaluarTomaUI(toma, cuadros) {
+  const { zmin, zmax } = leerRango();
+  toma.calidad = N.evaluarToma(toma.z, estado.marco, leerCaja(), { corte: leerCorte(), zmin, zmax, cuadros });
+}
+
 function terminarCaptura(c) {
   const z = N.medianaDeCuadros(c.cuadros);
   const toma = { z, angulo: c.angulo };
-  estado.tomas.push(toma);
-  $('estadoCaptura').textContent = `toma ${estado.tomas.length} lista (${c.angulo}°)`;
-  const paso = +$('optPaso').value || 45;
-  $('optAngulo').value = c.angulo + paso;
+  evaluarTomaUI(toma, c.cuadros);
+  let numero;
+  if (estado.reemplazar !== null && estado.tomas[estado.reemplazar]) {
+    estado.tomas[estado.reemplazar] = toma;
+    numero = estado.reemplazar + 1;
+    estado.reemplazar = null;
+  } else {
+    estado.tomas.push(toma);
+    numero = estado.tomas.length;
+  }
+  estado.ajuste = null;
+  $('estadoCaptura').textContent = `toma ${numero} lista (${c.angulo}°): ${toma.calidad.nivel}`;
   dibujarCapturas();
   $('seccionModelo').style.display = '';
-  toast(`Toma ${estado.tomas.length} guardada. Girá la pieza ${paso}° y capturá la siguiente.`);
+  const plan = actualizarPlan();
+  if (toma.calidad.nivel === 'mala') toast(`Toma ${numero} floja: ${toma.calidad.consejos[0]}`);
+  else if ($('optModo').value === 'volumen' && plan && plan.siguiente !== null) toast(`Toma ${numero} guardada. Girá la pieza hasta ${plan.siguiente}° y capturá la siguiente.`);
+  else if ($('optModo').value === 'volumen') toast(`Toma ${numero} guardada. Ya están todas las del plan: podés generar el modelo.`);
+  else toast(`Toma ${numero} guardada.`);
 }
+
+function repetirToma(i) {
+  const t = estado.tomas[i];
+  if (!t) return;
+  if (!estado.fuente) { toast('Conectá el Kinect para repetir la toma'); return; }
+  estado.reemplazar = i;
+  $('optAngulo').value = t.angulo;
+  toast(`Girá la pieza hasta ${t.angulo}° y quedate quieto: se repite la toma ${i + 1}`);
+  $('lienzoVista').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  capturar();
+}
+
+// ============================================================
+// Asistente: plan de tomas (rosa de ángulos)
+// ============================================================
+
+function actualizarPlan() {
+  const relieve = $('optModo').value === 'relieve';
+  $('planTomas').style.display = relieve ? 'none' : '';
+  if (relieve) return null;
+  const paso = +$('optPaso').value || 45;
+  const plan = N.planDeTomas(estado.tomas, paso);
+  const angulo = +$('optAngulo').value || 0;
+  const svg = $('rosaAngulos');
+  const R = 78;
+  const puntos = plan.plan.map(e => {
+    const a = (e.angulo - 90) * Math.PI / 180; // 0° abajo (mirando al Kinect) → lo dibujamos con 0° hacia el ojo
+    const x = R * Math.sin(e.angulo * Math.PI / 180), y = R * Math.cos(e.angulo * Math.PI / 180);
+    const t = e.toma !== null ? estado.tomas[e.toma] : null;
+    const color = !t ? '#c9c9c4' : t.calidad ? ({ buena: '#2e9e5b', regular: '#e6a700', mala: '#d9534f' })[t.calidad.nivel] : '#2e9e5b';
+    const actual = ((angulo % 360) + 360) % 360 === e.angulo;
+    return `<g class="kin-rosa__punto" data-angulo="${e.angulo}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${actual ? 11 : 8}" fill="${color}" stroke="${actual ? '#ffdd55' : 'rgba(0,0,0,0.25)'}" stroke-width="${actual ? 3 : 1.5}"/><text x="${(x * 1.3).toFixed(1)}" y="${(y * 1.3 + 4).toFixed(1)}" text-anchor="middle" font-size="11" fill="currentColor">${e.angulo}°</text></g>`;
+  });
+  svg.innerHTML = `
+    <circle cx="0" cy="0" r="${R}" fill="none" stroke="rgba(0,0,0,0.2)" stroke-dasharray="4 4"/>
+    <rect x="-22" y="-16" width="44" height="26" rx="6" fill="rgba(198,90,53,0.18)" stroke="rgba(0,0,0,0.3)"/>
+    <text x="0" y="3" text-anchor="middle" font-size="9" fill="currentColor">PIEZA</text>
+    <text x="0" y="16" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.7">vista desde arriba</text>
+    <text x="0" y="122" text-anchor="middle" font-size="16">👁</text>
+    <text x="0" y="-114" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6">atrás</text>
+    ${puntos.join('')}`;
+  svg.querySelectorAll('.kin-rosa__punto').forEach(g => g.addEventListener('click', () => {
+    $('optAngulo').value = g.dataset.angulo;
+    actualizarPlan();
+  }));
+  const paso_ = plan.completas + 1;
+  if (plan.siguiente === null) {
+    $('planPaso').textContent = `${plan.total} de ${plan.total} tomas listas`;
+    const flojas = estado.tomas.filter(t => t.calidad && t.calidad.nivel === 'mala').length;
+    $('planInstruccion').textContent = flojas ? `Hay ${flojas} toma${flojas > 1 ? 's' : ''} floja${flojas > 1 ? 's' : ''}: repetila${flojas > 1 ? 's' : ''} desde su tarjeta o generá el modelo igual y mirá el informe.` : 'Están todas las tomas del plan. Generá el modelo 3D, y si el informe marca un lado poco visto, sumá una toma ahí.';
+  } else {
+    $('planPaso').textContent = `Toma ${Math.min(paso_, plan.total)} de ${plan.total} · a ${plan.siguiente}°`;
+    if (plan.completas === 0) $('planInstruccion').textContent = 'Apoyá la pieza centrada en la base, con la marca de 0° mirando al Kinect, y capturá. No muevas el Kinect en todo el escaneo.';
+    else $('planInstruccion').textContent = `Girá la base hasta la marca de ${plan.siguiente}° (${plan.siguiente / paso} marca${plan.siguiente / paso > 1 ? 's' : ''} de ${paso}° desde el inicio, siempre para el mismo lado), esperá a que la pieza quede quieta y capturá.`;
+    if (((angulo % 360) + 360) % 360 !== plan.siguiente && estado.reemplazar === null) $('optAngulo').value = plan.siguiente;
+  }
+  return plan;
+}
+$('optPaso').addEventListener('change', actualizarPlan);
+$('optAngulo').addEventListener('input', actualizarPlan);
 $('btnCapturar').addEventListener('click', capturar);
 
 function miniatura(z, lienzo) {
@@ -435,9 +542,24 @@ function dibujarCapturas() {
     const pie = document.createElement('div');
     pie.className = 'kin-captura__pie';
     pie.innerHTML = `<span>#${i + 1}</span><input type="number" step="1" value="${t.angulo}" aria-label="Ángulo de la toma ${i + 1}"><span>°</span><button class="kin-captura__borrar" type="button" title="Borrar esta toma">✕</button>`;
-    pie.querySelector('input').addEventListener('change', (e) => { t.angulo = +e.target.value || 0; estado.ajuste = null; });
-    pie.querySelector('button').addEventListener('click', () => { estado.tomas.splice(i, 1); estado.ajuste = null; dibujarCapturas(); });
+    pie.querySelector('input').addEventListener('change', (e) => { t.angulo = +e.target.value || 0; estado.ajuste = null; actualizarPlan(); });
+    pie.querySelector('button').addEventListener('click', () => { estado.tomas.splice(i, 1); estado.ajuste = null; dibujarCapturas(); actualizarPlan(); });
     card.appendChild(pie);
+    if (!t.calidad && estado.marco) evaluarTomaUI(t);
+    if (t.calidad) {
+      card.classList.add('kin-captura--' + t.calidad.nivel);
+      const cal = document.createElement('div');
+      cal.className = 'kin-captura__calidad';
+      cal.innerHTML = `<span class="kin-captura__sello"></span><span>${t.calidad.nivel} · ${t.calidad.puntaje}/100</span><button class="kin-captura__repetir" type="button">↻ repetir</button>`;
+      cal.querySelector('button').addEventListener('click', () => repetirToma(i));
+      card.appendChild(cal);
+      if (t.calidad.nivel !== 'buena') {
+        const p = document.createElement('p');
+        p.className = 'kin-captura__consejos';
+        p.textContent = t.calidad.consejos[0];
+        card.appendChild(p);
+      }
+    }
     lista.appendChild(card);
   });
 }
@@ -446,7 +568,7 @@ dibujarCapturas();
 $('btnBorrarTomas').addEventListener('click', () => {
   if (!estado.tomas.length) return;
   if (!confirm('¿Borrar todas las tomas?')) return;
-  estado.tomas = []; estado.ajuste = null; dibujarCapturas();
+  estado.tomas = []; estado.ajuste = null; dibujarCapturas(); actualizarPlan();
 });
 
 // Guardar / cargar tomas (mm en enteros de 16 bits, base64)
@@ -496,6 +618,7 @@ $('inputTomas').addEventListener('change', async (e) => {
     $('seccionCapturas').style.display = '';
     $('seccionModelo').style.display = '';
     dibujarCapturas();
+    actualizarPlan();
     toast(`${estado.tomas.length} tomas cargadas`);
   } catch (err) {
     toast('No pude leer el archivo: ' + err.message);
@@ -580,6 +703,7 @@ async function generar() {
       `${tomas.length} toma${tomas.length > 1 ? 's' : ''} · vóxel ${res.vol.voxel.toFixed(1)} mm`
     ].map(s => `<span class="inf-stat">${s}</span>`).join('');
     progreso(`Listo en ${((performance.now() - t0) / 1000).toFixed(1)} s.`);
+    armarInforme(res, tomas, med, cierre, modo);
     $('zonaResultado').style.display = '';
     if (!vista3d) vista3d = iniciarVista3D();
     vista3d.mostrar(res.malla, corte * opciones.escala);
@@ -593,6 +717,33 @@ async function generar() {
   }
 }
 $('btnGenerar').addEventListener('click', generar);
+
+// ============================================================
+// Asistente: informe del escaneo
+// ============================================================
+
+function armarInforme(res, tomas, med, cierre, modo) {
+  const consejos = [];
+  let cobertura = null;
+  if (modo === 'volumen') {
+    cobertura = N.analizarCobertura(res.vol, res.campo, { altoPieza: med.max[1] });
+    consejos.push(...cobertura.consejos);
+  }
+  const flojas = estado.tomas.map((t, i) => ({ t, i })).filter(x => x.t.calidad && x.t.calidad.nivel !== 'buena');
+  for (const { t, i } of flojas) consejos.push(`Toma ${i + 1} (${t.angulo}°) salió ${t.calidad.nivel}: ${t.calidad.consejos[0]} Podés repetirla desde su tarjeta.`);
+  if (estado.ajuste && estado.ajuste.enElBorde) consejos.push('El afinado del eje llegó al límite de la búsqueda: el eje inicial estaba muy corrido. Centrá la pieza en la base y ajustá el eje con las flechas antes de volver a capturar.');
+  if (res.info.componentes > 3) consejos.push(`Se descartaron ${res.info.componentes - 1} pedazos sueltos: suele ser ruido o la base giratoria asomando por encima del corte. Subí el «corte» unos milímetros o activá «Quitar puntos voladores».`);
+  if (!cierre.cerrada) consejos.push(`La malla tiene ${cierre.aristasAbiertas} aristas abiertas: la pieza toca el borde de la caja. Agrandá la caja y volvé a generar.`);
+  if (modo === 'volumen' && tomas.length < 6) consejos.push(`Con ${tomas.length} toma${tomas.length > 1 ? 's' : ''} el modelo se rellena a ciegas por los lados que no se vieron: para una pieza completa hacé 8 tomas cada 45° (o 12 cada 30°).`);
+  if (modo === 'relieve' && tomas.length === 1) consejos.push('En modo relieve todo lo que quedó detrás de la superficie vista se rellenó hasta la mesa. Si la pieza tiene partes que sobresalen hacia los lados, pasá al modo «Girando la pieza».');
+  if (res.vol.voxel > 3.5 && med.ancho < 120) consejos.push('La pieza es chica para esta resolución: probá «Fina (2 mm)» para recuperar detalle.');
+  const vista = cobertura ? Math.round((1 - cobertura.fraccionNoVista) * 100) : null;
+  let html = `<p class="kin-bloque__titulo">📋 Informe del escaneo</p>`;
+  if (vista !== null) html += `<p style="margin:0;font-size:0.88rem">Superficie vista por el sensor: <strong>${vista}%</strong>${vista < 100 ? ' (el resto se rellenó a ciegas)' : ''}.</p><div class="kin-barra"><span style="width:${vista}%"></span></div>`;
+  if (consejos.length) html += `<p style="margin:0.4rem 0 0;font-size:0.88rem"><strong>Para mejorar el modelo:</strong></p><ul>${consejos.map(c => `<li>${c}</li>`).join('')}</ul>`;
+  else html += `<p class="kin-informe__ok" style="margin:0.4rem 0 0">Buen escaneo: todas las tomas en verde y la pieza cubierta desde todos los lados.</p>`;
+  $('informeEscaneo').innerHTML = html;
+}
 
 // ============================================================
 // Vista 3D
