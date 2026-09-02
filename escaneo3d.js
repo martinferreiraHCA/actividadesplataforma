@@ -131,7 +131,12 @@ async function usarFuente(fuente, tipo) {
   if (tipo === 'demo') {
     mostrarEstado('demo', 'Pieza de demostración', 'Una caja con una esfera y una manija, dibujada con el mismo ruido que el sensor real. Sirve para probar todo el flujo sin el Kinect.');
   } else {
-    mostrarEstado('conectado', 'Kinect conectado: ' + fuente.modelo, 'Esperando el primer cuadro de profundidad…');
+    mostrarEstado('conectado', 'Kinect conectado: ' + fuente.modelo, 'Esperando el primer cuadro de profundidad… (' + (fuente.descripcion || '') + ')');
+    setTimeout(() => {
+      if (estado.fuente !== fuente || estado.ultimoMm) return;
+      const est = fuente.estadisticas || {};
+      $('estadoDetalle').textContent = `Todavía no llegó ningún cuadro (${est.paquetes || 0} paquetes, ${est.errores || 0} errores de transferencia; ${fuente.descripcion}). Si sigue así: desenchufá y volvé a enchufar el Kinect, probá un puerto USB 2.0 directo sin hub, y en Windows confirmá que el driver elegido en Zadig sea WinUSB.`;
+    }, 6000);
   }
   $('seccionEncuadre').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -186,7 +191,8 @@ $('btnDemo').addEventListener('click', async () => {
   navigator.usb.addEventListener('connect', async (ev) => {
     if (estado.fuente || ev.device.vendorId !== 0x045e || !MODELOS[ev.device.productId]) return;
     toast('Kinect detectado: conectando…');
-    await conectarKinect(ev.device);
+    await new Promise(r => setTimeout(r, 2000)); // recién enchufado: darle tiempo a que arranque
+    if (!estado.fuente) await conectarKinect(ev.device);
   });
   navigator.usb.addEventListener('disconnect', async (ev) => {
     if (estado.tipo === 'kinect' && estado.fuente && estado.fuente.dispositivo === ev.device) {
@@ -214,7 +220,7 @@ function recibirCuadro(cuadro) {
     cuadrosRecibidos = 0; tiempoFps = ahora;
     if (estado.tipo === 'kinect') {
       const est = estado.fuente.estadisticas || {};
-      $('estadoDetalle').textContent = `${fps.toFixed(0)} cuadros/s · ${est.cuadros || 0} recibidos · ${est.incompletos || 0} incompletos · ${est.perdidos || 0} con paquetes perdidos`;
+      $('estadoDetalle').textContent = `${fps.toFixed(0)} cuadros/s · ${est.cuadros || 0} recibidos · ${est.incompletos || 0} incompletos · ${est.perdidos || 0} con paquetes perdidos · ${est.errores || 0} errores de transferencia`;
     }
   }
   if (!estado.plano) detectarMesa(true);
