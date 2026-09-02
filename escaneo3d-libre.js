@@ -12,7 +12,6 @@
 
 import * as N from './escaneo3d-nucleo.js';
 
-const RED_W = 160, RED_H = 120, ESC = 4;
 
 function normalizar3(v) { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; }
 
@@ -58,22 +57,53 @@ function resolver6(A, b) {
   return x;
 }
 
+// Filtro bilateral 5×5 sobre el mapa de profundidad: baja el ruido del sensor (2–3 mm) sin
+// borrar los bordes ni los rasgos, porque sólo promedia vecinos de profundidad parecida.
+export function filtroBilateral(z, W = N.INTR.ancho, H = N.INTR.alto, sigmaR = 12) {
+  const salida = new Float32Array(z.length);
+  const pesoE = [0.36, 0.6, 1, 0.6, 0.36];
+  const invR2 = 1 / (2 * sigmaR * sigmaR);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    const c = z[i];
+    if (!(c > 0)) continue;
+    let s = 0, w = 0;
+    for (let dy = -2; dy <= 2; dy++) {
+      const yy = y + dy; if (yy < 0 || yy >= H) continue;
+      const fila = yy * W, pe = pesoE[dy + 2];
+      for (let dx = -2; dx <= 2; dx++) {
+        const xx = x + dx; if (xx < 0 || xx >= W) continue;
+        const v = z[fila + xx]; if (!(v > 0)) continue;
+        const d = v - c;
+        const ww = pe * pesoE[dx + 2] * Math.exp(-d * d * invR2);
+        s += v * ww; w += ww;
+      }
+    }
+    salida[i] = w > 0 ? s / w : c;
+  }
+  return salida;
+}
+
 export class EscanerLibre {
-  // opciones: { lado (mm), voxel (mm), distancia (mm), intr }
+  // opciones: { lado (mm), voxel (mm), distancia (mm), esc (4 = seguimiento a 160×120, 2 = 320×240),
+  //             bilateral (true = filtrar el ruido del sensor), intr }
   constructor(opciones = {}) {
     this.intr = opciones.intr || N.INTR;
     this.lado = opciones.lado || 500;
     this.distancia = opciones.distancia || 800;
+    this.esc = opciones.esc === 2 ? 2 : 4;
+    this.W = this.intr.ancho / this.esc; this.H = this.intr.alto / this.esc;
+    this.bilateral = !!opciones.bilateral;
     const lado = this.lado;
-    this.vol = N.crearVolumen({ ancho: lado, alto: lado / 2, profundo: lado }, opciones.voxel || 5, -lado / 2, opciones.maxNodos || 2.5e6);
-    this.mu = Math.max(2.5 * this.vol.voxel, 10);
+    this.vol = N.crearVolumen({ ancho: lado, alto: lado / 2, profundo: lado }, opciones.voxel || 5, -lado / 2, opciones.maxNodos || 4.5e6);
+    this.mu = Math.max(3 * this.vol.voxel, 8);
     // primera cámara: mundo = cámara girada 180° alrededor de Z (así Y queda hacia arriba),
     // corrida para que el centro del volumen quede «distancia» adelante
     this.R = [-1, 0, 0, 0, -1, 0, 0, 0, 1];
     this.t = [0, 0, -this.distancia];
     this.Rprev = this.R.slice(); this.tprev = this.t.slice();
     this.Rant = null; this.tant = null; // pose anterior a la anterior (para predecir)
-    const n = RED_W * RED_H;
+    const n = this.W * this.H;
     this.Vm = new Float32Array(n * 3); this.Nm = new Float32Array(n * 3); this.Mm = new Uint8Array(n);
     this.Vf = new Float32Array(n * 3); this.Nf = new Float32Array(n * 3); this.Mf = new Uint8Array(n);
     this.imagen = new Uint8ClampedArray(n * 4);
@@ -86,19 +116,19 @@ export class EscanerLibre {
   _mapaCuadro(z) {
     const { ancho: W, fx, fy, cx, cy } = this.intr;
     const Vf = this.Vf, Mf = this.Mf, Nf = this.Nf;
-    for (let j = 0; j < RED_H; j++) for (let i = 0; i < RED_W; i++) {
+    for (let j = 0; j < this.H; j++) for (let i = 0; i < this.W; i++) {
       let s = 0, c = 0;
-      const u0 = i * ESC, v0 = j * ESC;
-      for (let dv = 0; dv < ESC; dv++) { const fila = (v0 + dv) * W + u0; for (let du = 0; du < ESC; du++) { const d = z[fila + du]; if (d > 0) { s += d; c++; } } }
-      const k = j * RED_W + i;
-      if (c < 6) { Mf[k] = 0; continue; }
+      const u0 = i * this.esc, v0 = j * this.esc;
+      for (let dv = 0; dv < this.esc; dv++) { const fila = (v0 + dv) * W + u0; for (let du = 0; du < this.esc; du++) { const d = z[fila + du]; if (d > 0) { s += d; c++; } } }
+      const k = j * this.W + i;
+      if (c < (this.esc === 4 ? 6 : 2)) { Mf[k] = 0; continue; }
       const d = s / c;
-      const u = u0 + (ESC - 1) / 2, v = v0 + (ESC - 1) / 2;
+      const u = u0 + (this.esc - 1) / 2, v = v0 + (this.esc - 1) / 2;
       Vf[k * 3] = (u - cx) * d / fx; Vf[k * 3 + 1] = (v - cy) * d / fy; Vf[k * 3 + 2] = d;
       Mf[k] = 1;
     }
-    for (let j = 0; j < RED_H - 1; j++) for (let i = 0; i < RED_W - 1; i++) {
-      const k = j * RED_W + i, kr = k + 1, kd = k + RED_W;
+    for (let j = 0; j < this.H - 1; j++) for (let i = 0; i < this.W - 1; i++) {
+      const k = j * this.W + i, kr = k + 1, kd = k + this.W;
       if (!Mf[k] || !Mf[kr] || !Mf[kd]) { if (Mf[k]) Mf[k] = 0; continue; }
       const ax = Vf[kr * 3] - Vf[k * 3], ay = Vf[kr * 3 + 1] - Vf[k * 3 + 1], az = Vf[kr * 3 + 2] - Vf[k * 3 + 2];
       const bx = Vf[kd * 3] - Vf[k * 3], by = Vf[kd * 3 + 1] - Vf[k * 3 + 1], bz = Vf[kd * 3 + 2] - Vf[k * 3 + 2];
@@ -109,8 +139,8 @@ export class EscanerLibre {
       if (nx * Vf[k * 3] + ny * Vf[k * 3 + 1] + nz * Vf[k * 3 + 2] > 0) { nx = -nx; ny = -ny; nz = -nz; } // mirando a la cámara
       Nf[k * 3] = nx; Nf[k * 3 + 1] = ny; Nf[k * 3 + 2] = nz;
     }
-    for (let i = 0; i < RED_W; i++) Mf[(RED_H - 1) * RED_W + i] = 0;
-    for (let j = 0; j < RED_H; j++) Mf[j * RED_W + RED_W - 1] = 0;
+    for (let i = 0; i < this.W; i++) Mf[(this.H - 1) * this.W + i] = 0;
+    for (let j = 0; j < this.H; j++) Mf[j * this.W + this.W - 1] = 0;
   }
 
   // ---------- raycast del volumen desde la pose (R, t) ----------
@@ -142,11 +172,11 @@ export class EscanerLibre {
       return acc;
     };
     let visibles = 0;
-    for (let j = 0; j < RED_H; j++) for (let i = 0; i < RED_W; i++) {
-      const k = j * RED_W + i;
+    for (let j = 0; j < this.H; j++) for (let i = 0; i < this.W; i++) {
+      const k = j * this.W + i;
       Mm[k] = 0;
       img[k * 4] = 28; img[k * 4 + 1] = 28; img[k * 4 + 2] = 32; img[k * 4 + 3] = 255;
-      const u = i * ESC + (ESC - 1) / 2, v = j * ESC + (ESC - 1) / 2;
+      const u = i * this.esc + (this.esc - 1) / 2, v = j * this.esc + (this.esc - 1) / 2;
       const ddx = (u - cx) / fx, ddy = (v - cy) / fy, dl = Math.hypot(ddx, ddy, 1);
       const cx0 = ddx / dl, cy0 = ddy / dl, cz0 = 1 / dl;
       const d = [R[0] * cx0 + R[1] * cy0 + R[2] * cz0, R[3] * cx0 + R[4] * cy0 + R[5] * cz0, R[6] * cx0 + R[7] * cy0 + R[8] * cz0];
@@ -205,7 +235,7 @@ export class EscanerLibre {
   // ---------- ICP punto-a-plano contra el mapa del modelo (raycast en Rprev, tprev) ----------
   _icp() {
     const { fx, fy, cx, cy } = this.intr;
-    const fxr = fx / ESC, fyr = fy / ESC, cxr = (cx + 0.5) / ESC - 0.5, cyr = (cy + 0.5) / ESC - 0.5;
+    const fxr = fx / this.esc, fyr = fy / this.esc, cxr = (cx + 0.5) / this.esc - 0.5, cyr = (cy + 0.5) / this.esc - 0.5;
     const Vf = this.Vf, Nf = this.Nf, Mf = this.Mf, Vm = this.Vm, Nm = this.Nm, Mm = this.Mm;
     let R = this.R.slice(), t = this.t.slice();
     const Rp = this.Rprev, tp = this.tprev;
@@ -213,7 +243,7 @@ export class EscanerLibre {
     const J = new Float64Array(6);
     let inliers = 0, validos = 0, residuo = 0;
     const distMax = Math.max(40, this.vol.voxel * 8), distMax2 = distMax * distMax, cosMin = Math.cos(35 * Math.PI / 180);
-    const n = RED_W * RED_H;
+    const n = this.W * this.H;
     for (let it = 0; it < 10; it++) {
       A.fill(0); b.fill(0); inliers = 0; validos = 0; residuo = 0;
       const r0 = R[0], r1 = R[1], r2 = R[2], r3 = R[3], r4 = R[4], r5 = R[5], r6 = R[6], r7 = R[7], r8 = R[8];
@@ -231,8 +261,8 @@ export class EscanerLibre {
         if (pz < 100) continue;
         const px = p0 * qx + p3 * qy + p6 * qz, py = p1 * qx + p4 * qy + p7 * qz;
         const u = Math.round(fxr * px / pz + cxr), v = Math.round(fyr * py / pz + cyr);
-        if (u < 0 || v < 0 || u >= RED_W || v >= RED_H) continue;
-        const m = v * RED_W + u;
+        if (u < 0 || v < 0 || u >= this.W || v >= this.H) continue;
+        const m = v * this.W + u;
         if (!Mm[m]) continue;
         const m3 = m * 3;
         const dx = Vm[m3] - wx, dy = Vm[m3 + 1] - wy, dz = Vm[m3 + 2] - wz;
@@ -247,7 +277,7 @@ export class EscanerLibre {
         for (let a = 0; a < 6; a++) { const ja = w * J[a]; b[a] += ja * r; for (let c = a; c < 6; c++) A[a * 6 + c] += ja * J[c]; }
         inliers++; residuo += ar;
       }
-      if (inliers < 200) break;
+      if (inliers < 200 * (this.esc === 2 ? 4 : 1)) break;
       for (let a = 0; a < 6; a++) for (let c = 0; c < a; c++) A[a * 6 + c] = A[c * 6 + a];
       for (let a = 0; a < 6; a++) A[a * 6 + a] += 1e-6;
       const x = resolver6(A, b);
@@ -290,7 +320,7 @@ export class EscanerLibre {
           const val = Math.min(sdf, mu) / mu;
           const w = peso[idx];
           tsdf[idx] = (tsdf[idx] * w + val) / (w + 1);
-          peso[idx] = w < 40 ? w + 1 : 40;
+          peso[idx] = w < 64 ? w + 1 : 64;
         }
       }
     }
@@ -299,6 +329,7 @@ export class EscanerLibre {
   // ---------- un cuadro nuevo ----------
   procesar(z) {
     this.cuadros++;
+    if (this.bilateral) z = filtroBilateral(z, this.intr.ancho, this.intr.alto, Math.max(8, this.vol.voxel * 3));
     this._mapaCuadro(z);
     if (!this.hayModelo) {
       this._integrar(z, this.R, this.t);
@@ -324,7 +355,8 @@ export class EscanerLibre {
       } else { this.R = this.Rprev.slice(); this.t = this.tprev.slice(); }
     } else { this.R = this.Rprev.slice(); this.t = this.tprev.slice(); }
     const res = this._icp();
-    const ok = visibles > 300 && res.inliers >= 400 && res.inliers >= 0.4 * visibles && res.residuo < Math.max(6, this.vol.voxel * 1.5);
+    const f = this.esc === 2 ? 4 : 1;
+    const ok = visibles > 300 * f && res.inliers >= 400 * f && res.inliers >= 0.4 * visibles && res.residuo < Math.max(6, this.vol.voxel * 1.5);
     this.calidad = { inliers: res.inliers, validos: res.validos, residuo: res.residuo, visibles, ok };
     if (ok) {
       this.Rant = this.Rprev; this.tant = this.tprev;
@@ -342,7 +374,7 @@ export class EscanerLibre {
   }
 
   estado() {
-    return { cuadros: this.cuadros, integrados: this.integrados, perdidos: this.perdidos, seguidos: this.seguidos, calidad: this.calidad, R: this.R.slice(), t: this.t.slice(), imagen: this.imagen, ancho: RED_W, alto: RED_H };
+    return { cuadros: this.cuadros, integrados: this.integrados, perdidos: this.perdidos, seguidos: this.seguidos, calidad: this.calidad, R: this.R.slice(), t: this.t.slice(), imagen: this.imagen, ancho: this.W, alto: this.H };
   }
 
   // Esquinas del volumen proyectadas en la imagen completa con la pose actual (para dibujarlo encima).

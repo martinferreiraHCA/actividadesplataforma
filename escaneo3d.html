@@ -167,7 +167,8 @@
     <div class="section__eyebrow" style="margin-bottom:0.8rem">// Paso 2 — Escanear</div>
 
     <div class="kin-presets" id="presets" role="radiogroup" aria-label="Qué vas a escanear">
-      <label class="kin-preset"><input type="radio" name="preset" value="cabeza"><span class="kin-preset__icono">🗿</span><span class="kin-preset__nombre">Cabeza o busto</span><span class="kin-preset__desc">A mano alrededor de la persona · 50 cm · 5 mm</span></label>
+      <label class="kin-preset"><input type="radio" name="preset" value="cara"><span class="kin-preset__icono">🙂</span><span class="kin-preset__nombre">Cara y gestos</span><span class="kin-preset__desc">Máximo detalle · 30 cm · 2 mm · a 55–65 cm</span></label>
+      <label class="kin-preset"><input type="radio" name="preset" value="cabeza"><span class="kin-preset__icono">🗿</span><span class="kin-preset__nombre">Cabeza o busto</span><span class="kin-preset__desc">A mano alrededor de la persona · 40 cm · 3 mm</span></label>
       <label class="kin-preset"><input type="radio" name="preset" value="cuerpo"><span class="kin-preset__icono">🧍</span><span class="kin-preset__nombre">Medio cuerpo</span><span class="kin-preset__desc">A mano · 80 cm · 6 mm</span></label>
       <label class="kin-preset"><input type="radio" name="preset" value="grande"><span class="kin-preset__icono">🏺</span><span class="kin-preset__nombre">Objeto grande a mano</span><span class="kin-preset__desc">Silla, escultura, maqueta · 1 m · 8 mm</span></label>
       <label class="kin-preset"><input type="radio" name="preset" value="chica"><span class="kin-preset__icono">🧸</span><span class="kin-preset__nombre">Pieza chica en base giratoria</span><span class="kin-preset__desc">5 a 15 cm · cada 30° · 2 mm · 20 cuadros</span></label>
@@ -242,11 +243,21 @@
               </select>
               <label for="libVoxel">Detalle</label>
               <select class="campo__input" id="libVoxel" style="max-width:120px">
+                <option value="2">2 mm (máximo)</option>
+                <option value="3">3 mm</option>
                 <option value="4">4 mm</option>
                 <option value="5" selected>5 mm</option>
                 <option value="6">6 mm</option>
                 <option value="8">8 mm</option>
               </select>
+            </div>
+            <div class="kin-fila">
+              <label for="libEsc">Seguimiento</label>
+              <select class="campo__input" id="libEsc" style="max-width:190px">
+                <option value="4" selected>normal (160×120, rápido)</option>
+                <option value="2">nítido (320×240, más lento)</option>
+              </select>
+              <label class="scratch-check" title="Filtro bilateral: baja el ruido del sensor sin borrar los rasgos"><input type="checkbox" id="libBilateral"> Filtrar ruido del sensor</label>
             </div>
             <div class="kin-fila">
               <label for="libDistancia">Centro</label>
@@ -388,6 +399,7 @@
       <span class="scratch-opciones__label">Suavizado:</span>
       <select class="campo__input" id="optSuavizado" style="max-width:140px">
         <option value="0">Ninguno</option>
+        <option value="1">Mínimo (caras, detalles finos)</option>
         <option value="2">Leve</option>
         <option value="5" selected>Medio</option>
         <option value="10">Fuerte</option>

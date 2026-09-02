@@ -292,6 +292,8 @@ purgado listo para la impresora 3D.
   anterior se raycastea el volumen TSDF (mapa de puntos y normales, que además es la vista previa en vivo), el
   cuadro nuevo se alinea por ICP punto-a-plano con asociación proyectiva a 160×120, y se integra con la pose
   obtenida. Semáforo de seguimiento, pausa, reinicio y cierre con el mismo purgado y las mismas descargas.
+  Resolución de seguimiento y vista previa a elección (160×120 o 320×240), vóxeles de 2 a 8 mm y filtro
+  bilateral del mapa de profundidad para caras y detalles finos.
 - **Asistente guiado**: chequeo en vivo de la escena (inclinación, mesa, distancia, tamaño, encaje en la
   caja, centrado, huecos) con el consejo para cada problema; rosa de ángulos con el plan de tomas y la
   instrucción de a qué marca girar; puntaje y consejo por toma con repetición individual; e informe del

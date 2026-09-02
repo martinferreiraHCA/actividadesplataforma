@@ -387,7 +387,7 @@ async function libreIniciar() {
     if (m.tipo === 'malla') { libreMostrarMalla(m); return; }
     if (m.tipo === 'error') { L.ocupado = false; toast('Error en el escaneo libre: ' + m.mensaje); libreSemaforo('perdido', m.mensaje); }
   };
-  worker.postMessage({ tipo: 'iniciar', opciones: { lado: +$('libLado').value || 500, voxel: +$('libVoxel').value || 5, distancia } });
+  worker.postMessage({ tipo: 'iniciar', opciones: { lado: +$('libLado').value || 500, voxel: +$('libVoxel').value || 5, distancia, esc: +$('libEsc').value === 2 ? 2 : 4, bilateral: $('libBilateral').checked } });
   estado.libre.voxel = +$('libVoxel').value || 5;
   libreSemaforo('aviso', 'Preparando el volumen…');
   libreBotones();
@@ -697,11 +697,13 @@ function actualizarModo() {
 // ============================================================
 
 const PRESETS = {
-  cabeza: { modo: 'libre', libLado: 500, libVoxel: 5, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 0,
-    nota: 'Cabeza o busto a mano: la persona quieta, vos girás alrededor a 70–90 cm. Volumen de 50 cm y detalle de 5 mm; si sólo querés la cabeza, bajá el volumen a 40 cm.' },
-  cuerpo: { modo: 'libre', libLado: 800, libVoxel: 6, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2,
+  cara: { modo: 'libre', libLado: 300, libVoxel: 2, libEsc: 2, libBilateral: true, libDistancia: 0, optSuavizado: 1, optRelleno: 'solido', optReducir: 0,
+    nota: 'Cara y gestos, máximo detalle: vóxeles de 2 mm, seguimiento nítido y filtro de ruido. El Kinect mide más fino cuanto más cerca: trabajá a 55–65 cm (no menos de 50). La persona sostiene la expresión sin moverse; recorré despacio de oreja a oreja pasando por arriba y por debajo del mentón. Va a unos 3–5 cuadros por segundo: movete lento.' },
+  cabeza: { modo: 'libre', libLado: 400, libVoxel: 3, libEsc: 4, libBilateral: true, libDistancia: 0, optSuavizado: 2, optRelleno: 'solido', optReducir: 0,
+    nota: 'Cabeza o busto a mano: la persona quieta, vos girás alrededor a 60–80 cm. Volumen de 40 cm, detalle de 3 mm y filtro de ruido; suavizado leve para no perder la nariz y los labios. Para cabeza y hombros subí el volumen a 50 cm.' },
+  cuerpo: { modo: 'libre', libLado: 800, libVoxel: 6, libEsc: 4, libBilateral: false, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2,
     nota: 'Medio cuerpo a mano: la persona sentada y quieta, vos a 1 m dando la vuelta. Volumen de 80 cm y 6 mm de detalle para que el seguimiento sea ágil.' },
-  grande: { modo: 'libre', libLado: 1000, libVoxel: 8, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2,
+  grande: { modo: 'libre', libLado: 1000, libVoxel: 8, libEsc: 4, libBilateral: false, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2,
     nota: 'Objeto grande a mano (silla, escultura, maqueta): volumen de 1 m y 8 mm de detalle. Dá la vuelta completa a 1–1,2 m, despacio.' },
   chica: { modo: 'volumen', optAncho: 160, optProfundo: 160, optAlto: 160, optCorte: 4, optZmin: 450, optZmax: 1000, optPaso: 30, optCuadros: 20, optVoxel: 2, optSuavizado: 5, optRelleno: 'solido', optReducir: 0,
     nota: 'Pieza chica (5–15 cm) sobre base giratoria: acercá el Kinect al mínimo (60 cm), caja de 16 cm, una toma cada 30° con 20 cuadros para bajar el ruido, y detalle de 2 mm.' },
@@ -717,7 +719,7 @@ function aplicarPreset(nombre) {
   for (const [id, valor] of Object.entries(p)) {
     if (id === 'modo' || id === 'nota') continue;
     const el = $(id); if (!el) continue;
-    el.value = String(valor);
+    if (el.type === 'checkbox') el.checked = !!valor; else el.value = String(valor);
     if (id === 'optZmin') $('valZmin').textContent = valor + ' mm';
     if (id === 'optZmax') $('valZmax').textContent = valor + ' mm';
   }
