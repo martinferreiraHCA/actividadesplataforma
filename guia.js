@@ -619,6 +619,9 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           <li>La cámara <strong>no se mueve</strong> durante el escaneo: lo que gira es la pieza.</li>
           <li>Podés <strong>guardar las tomas</strong> en un .json y generar el modelo después en otra computadora, o probar
           otras opciones sin volver a escanear.</li>
+          <li>Si el Kinect se conecta pero no llega la imagen (pasa en Windows con Chrome), usá el <strong>puente
+          local</strong>: un programita en Python (<code>kinect-puente.py</code>, con los pasos en la misma página)
+          que lee el sensor y le pasa los cuadros a la página. El resto del escaneo es igual.</li>
           <li>Sin Kinect a mano, el botón «Probar sin Kinect» carga una pieza de demostración para practicar todo el flujo.</li>
         </ul>
       `

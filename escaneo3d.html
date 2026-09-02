@@ -117,9 +117,24 @@
         <button class="btn btn--primary" id="btnConectar" type="button">🔌 Conectar Kinect</button>
         <button class="btn" id="btnDesconectar" type="button" style="display:none">Desconectar</button>
         <button class="btn" id="btnDemo" type="button">🧪 Probar sin Kinect (pieza de demostración)</button>
+        <button class="btn" id="btnPuente" type="button" title="Recibe los cuadros desde el programa kinect-puente.py corriendo en esta computadora">🔗 Conectar por el puente local</button>
         <button class="btn" id="btnDiagnostico" type="button" title="Prueba el Kinect con distintas configuraciones y arma un informe para pedir ayuda">🩺 Diagnóstico</button>
       </div>
     </div>
+    <details class="kin-guia" id="guiaPuente" style="margin-bottom:1rem">
+      <summary>¿El Kinect se conecta pero no llega la imagen? Usá el puente local (Windows, sobre todo)</summary>
+      <div class="kin-guia__cuerpo">
+        <p class="kin-nota" style="margin:0 0 0.6rem">En Windows, Chrome puede abrir el Kinect y darle órdenes pero no logra leer el flujo de profundidad (las lecturas isócronas fallan). El <strong>puente local</strong> es un programita en Python que lee el Kinect con el mismo driver WinUSB que ya instalaste con Zadig y le pasa los cuadros a esta página. Todo queda en tu computadora.</p>
+        <ol class="kin-guia__pasos">
+          <li>Instalá <strong>Python 3</strong> desde <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org</a>. En Windows, en la primera pantalla del instalador tildá <em>Add python.exe to PATH</em>.</li>
+          <li>Descargá el puente: <a href="kinect-puente.py" download>kinect-puente.py</a> (guardalo, por ejemplo, en Documentos).</li>
+          <li>Abrí una terminal (en Windows: buscá «cmd» o «PowerShell») e instalá las dos librerías que usa, una sola vez:<pre class="kin-guia__pre">pip install libusb websockets</pre></li>
+          <li>Con el Kinect enchufado a su fuente, arrancá el puente desde la carpeta donde lo guardaste:<pre class="kin-guia__pre">python kinect-puente.py</pre>Tiene que decir «Kinect abierto» y «Puente listo». Dejá esa ventana abierta.</li>
+          <li>Acá apretá <strong>«Conectar por el puente local»</strong>: la imagen de profundidad aparece igual que con la conexión directa, y el resto del escaneo es idéntico.</li>
+        </ol>
+        <p class="kin-nota">Si dice que no encuentra el Kinect: falta la fuente de 12 V, o el driver WinUSB (Zadig), o en Linux los permisos udev. Si dice que no puede encolar la lectura isócrona: el driver elegido en Zadig no fue WinUSB, o es Windows 7. Para probar el puente sin Kinect: <code>python kinect-puente.py --demo</code>.</p>
+      </div>
+    </details>
     <div class="kin-bloque" id="zonaDiagnostico" style="display:none;margin-bottom:1rem">
       <p class="kin-bloque__titulo">🩺 Informe de diagnóstico</p>
       <p class="kin-nota" id="diagnosticoEstado" style="margin:0 0 0.5rem"></p>

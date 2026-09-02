@@ -293,6 +293,10 @@ purgado listo para la impresora 3D.
   instrucción de a qué marca girar; puntaje y consejo por toma con repetición individual; e informe del
   modelo con el porcentaje de superficie vista, el lado que quedó rellenado a ciegas y qué mejorar.
 - **Salidas**: STL binario, OBJ y nube de puntos PLY, con Z hacia arriba y en milímetros.
+- **Puente local** (`kinect-puente.py`): cuando el navegador puede abrir el Kinect pero no leer el
+  flujo isócrono (Chrome en Windows), un programa en Python lee el sensor con libusb, sobre el mismo
+  driver WinUSB, y le manda los cuadros a la página por WebSocket en localhost. `pip install libusb
+  websockets` y `python kinect-puente.py`; `--demo` para probar sin Kinect.
 - **Modo de demostración** con una pieza sintética (con el ruido del sensor) para practicar sin Kinect.
 
 ## Tecnología
@@ -329,4 +333,5 @@ Sección Diseño:
 /escaneo3d.js             ← Página: conexión, vista en vivo, tomas, modelo
 /escaneo3d-nucleo.js      ← Fusión volumétrica, malla, purgado y exportación (sin DOM)
 /kinect-usb.js            ← Driver WebUSB del Kinect v1 y guías de instalación
+/kinect-puente.py         ← Puente local Kinect → navegador (libusb + WebSocket)
 ```

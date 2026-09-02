@@ -60,6 +60,42 @@ class SimuladorKinect {
 }
 
 // ============================================================
+// Puente local (kinect-puente.py): los cuadros llegan por WebSocket desde un programa
+// que lee el Kinect con libusb en esta misma computadora.
+// ============================================================
+
+class PuenteKinect {
+  constructor(url = 'ws://127.0.0.1:9876') { this.url = url; this.ws = null; this.corriendo = false; this.modelo = 'Kinect por el puente local'; this.estadisticas = { cuadros: 0, incompletos: 0, perdidos: 0, errores: 0 }; this.descripcion = url; }
+  iniciarProfundidad(onCuadro) {
+    return new Promise((resolver, rechazar) => {
+      let abierto = false;
+      let ws;
+      try { ws = new WebSocket(this.url); } catch (e) { rechazar(Object.assign(new Error(e.message), { fase: 'puente' })); return; }
+      ws.binaryType = 'arraybuffer';
+      this.ws = ws;
+      ws.onopen = () => { abierto = true; this.corriendo = true; resolver(); };
+      ws.onmessage = (ev) => {
+        if (typeof ev.data === 'string') {
+          try { const est = JSON.parse(ev.data); if (est.modelo) this.modelo = est.modelo + ' (puente local)'; } catch (e) { /* nada */ }
+          return;
+        }
+        const bytes = new Uint8Array(ev.data);
+        if (bytes.length !== 422400) { this.estadisticas.incompletos++; return; }
+        this.estadisticas.cuadros++;
+        onCuadro({ crudo11: bytes, tiempo: performance.now() });
+      };
+      ws.onerror = () => { if (!abierto) rechazar(Object.assign(new Error('no responde nadie en ' + this.url), { fase: 'puente' })); };
+      ws.onclose = () => {
+        if (!abierto) { rechazar(Object.assign(new Error('no responde nadie en ' + this.url), { fase: 'puente' })); return; }
+        if (this.corriendo) { this.corriendo = false; if (this.onError) this.onError(Object.assign(new Error('se cerró la conexión con el puente'), { fase: 'puente' })); }
+      };
+    });
+  }
+  async detener() { this.corriendo = false; }
+  async cerrar() { this.corriendo = false; if (this.ws) { try { this.ws.close(); } catch (e) { /* nada */ } this.ws = null; } }
+}
+
+// ============================================================
 // Estado de conexión y guía de drivers
 // ============================================================
 
@@ -103,6 +139,12 @@ function armarGuia(preferido) {
 
 function informarError(err, fase) {
   console.error(err);
+  if ((err.fase || fase) === 'puente') {
+    mostrarEstado('error', 'No se pudo conectar con el puente local', err.message + '. Fijate que kinect-puente.py esté corriendo en esta computadora y diga «Puente listo». Los pasos están en la guía de abajo.');
+    $('guiaPuente').open = true;
+    toast('El puente local no responde');
+    return;
+  }
   const ex = explicarError(err.original || err, err.fase || fase);
   mostrarEstado('error', ex.titulo, ex.detalle);
   if (ex.guia === 'drivers' || ex.guia === 'fuente') {
@@ -125,11 +167,14 @@ async function usarFuente(fuente, tipo) {
   $('btnConectar').style.display = tipo === 'kinect' ? 'none' : '';
   $('btnDesconectar').style.display = '';
   $('btnDemo').style.display = tipo === 'demo' ? 'none' : '';
+  $('btnPuente').style.display = tipo === 'puente' ? 'none' : '';
   $('seccionEncuadre').style.display = '';
   $('seccionCapturas').style.display = '';
   actualizarModo();
   if (tipo === 'demo') {
     mostrarEstado('demo', 'Pieza de demostración', 'Una caja con una esfera y una manija, dibujada con el mismo ruido que el sensor real. Sirve para probar todo el flujo sin el Kinect.');
+  } else if (tipo === 'puente') {
+    mostrarEstado('conectado', 'Puente local conectado', 'Esperando los cuadros de kinect-puente.py…');
   } else {
     mostrarEstado('conectado', 'Kinect conectado: ' + fuente.modelo, 'Esperando el primer cuadro de profundidad… (' + (fuente.descripcion || '') + ')');
     setTimeout(() => {
@@ -161,6 +206,7 @@ async function desconectar() {
   $('btnConectar').style.display = '';
   $('btnDesconectar').style.display = 'none';
   $('btnDemo').style.display = '';
+  $('btnPuente').style.display = '';
   mostrarEstado(null, 'Sin Kinect conectado', 'Enchufalo y apretá «Conectar Kinect».');
 }
 
@@ -173,6 +219,11 @@ $('btnConectar').addEventListener('click', async () => {
   await conectarKinect(dispositivo);
 });
 $('btnDesconectar').addEventListener('click', desconectar);
+$('btnPuente').addEventListener('click', async () => {
+  const puente = new PuenteKinect();
+  try { await usarFuente(puente, 'puente'); }
+  catch (e) { estado.fuente = null; informarError(e, 'puente'); }
+});
 
 $('btnDiagnostico').addEventListener('click', async () => {
   const w = estadoWebUSB();
@@ -247,7 +298,7 @@ function recibirCuadro(cuadro) {
   if (ahora - tiempoFps > 1000) {
     fps = cuadrosRecibidos * 1000 / (ahora - tiempoFps);
     cuadrosRecibidos = 0; tiempoFps = ahora;
-    if (estado.tipo === 'kinect') {
+    if (estado.tipo === 'kinect' || estado.tipo === 'puente') {
       const est = estado.fuente.estadisticas || {};
       $('estadoDetalle').textContent = `${fps.toFixed(0)} cuadros/s · ${est.cuadros || 0} recibidos · ${est.incompletos || 0} incompletos · ${est.perdidos || 0} con paquetes perdidos · ${est.errores || 0} errores de transferencia`;
     }
