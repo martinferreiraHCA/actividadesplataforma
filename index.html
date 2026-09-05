@@ -39,6 +39,7 @@
           <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
           <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
           <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
+          <a href="ia3d.html">🤖 Pieza 3D con IA</a>
         </span>
       </span>
       <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
@@ -197,6 +198,7 @@
         <a href="sello3d.html">Sello 3D desde una imagen</a>
         <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
         <a href="arenero.html">Arenero de realidad aumentada</a>
+        <a href="ia3d.html">Pieza 3D con IA</a>
         <a href="#" data-abrir-guia>Guía</a>
       </div>
     </div>
@@ -325,6 +327,20 @@
   `;
   grid.appendChild(cardArenero);
   nuevasCards.push(cardArenero);
+  idx++;
+
+  // Ficha especial: pieza 3D con IA (página propia)
+  const cardIA3D = document.createElement('a');
+  cardIA3D.href = 'ia3d.html';
+  cardIA3D.className = 'actividad-card reveal';
+  cardIA3D.setAttribute('role', 'listitem');
+  cardIA3D.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Pieza 3D con IA</h3>
+    <p class="actividad-card__desc">Narrá la pieza escribiendo o por voz, la página arma un prompt técnico sin ambigüedades y lo pegás en Claude, ChatGPT o Gemini. Volvés con un OpenSCAD paramétrico que editás acá mismo: medidas, posiciones y textos con controles, vista previa 3D y STL para imprimir.</p>
+  `;
+  grid.appendChild(cardIA3D);
+  nuevasCards.push(cardIA3D);
   idx++;
 
   // Ficha especial: protocolos de práctico de laboratorio (página propia)

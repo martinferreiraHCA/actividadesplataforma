@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pieza 3D con IA — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Diseño 3D mediado por IA: narrá la pieza (escrito o por voz), la página arma un prompt técnico sin ambigüedades, lo pegás en Claude, ChatGPT o Gemini y volvés con un OpenSCAD paramétrico que editás acá mismo: variables, posiciones y textos, con vista previa 3D y descarga de STL.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css">
+<link rel="stylesheet" href="escaneo3d.css"><!-- bloques, filas y notas compartidas -->
+<link rel="stylesheet" href="ia3d.css">
+<script type="importmap">
+{ "imports": { "three": "./lego/vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+          <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
+          <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
+          <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
+          <a href="ia3d.html">🤖 Pieza 3D con IA</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia="ia3d">Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Diseño mediado por IA</div>
+      <h2 class="section__title">Pieza 3D<br>con IA<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Contá la pieza con tus palabras, <strong>escribiendo o hablando</strong>: qué es, para qué sirve, sus medidas, qué tiene
+      cada cara, qué textos lleva. La página revisa que no falte nada, arma un <strong>prompt técnico, extenso y sin
+      ambigüedades</strong> y lo copia para que lo pegues en <strong>Claude, ChatGPT o Gemini</strong>. La IA devuelve un
+      archivo <strong>OpenSCAD paramétrico</strong>; lo pegás acá y queda todo <strong>editable</strong>: cada medida, la
+      posición de cada elemento y cada texto se cambian con controles, con la vista previa en 3D al lado y el
+      <strong>STL listo para imprimir</strong>. Si hace falta más, se le pide un ajuste a la IA con el código actual.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 01</span><span class="paso-rapido__titulo">Narrá</span><span class="paso-rapido__texto">Dictá o escribí la pieza con todo detalle y completá la ficha técnica (medidas, proceso, textos). La lista de chequeo avisa qué quedó ambiguo.</span></div>
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 02</span><span class="paso-rapido__titulo">Pedí el SCAD</span><span class="paso-rapido__texto">Copiá el prompt generado y abrí tu IA. Le exige formato Customizer, variables con rango, posiciones como vectores, textos editables y geometría imprimible.</span></div>
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 03</span><span class="paso-rapido__titulo">Editá</span><span class="paso-rapido__texto">Pegá el código: aparecen los controles de cada variable, posición y texto, y la pieza se renderiza en 3D en el navegador.</span></div>
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 04</span><span class="paso-rapido__titulo">Ajustá e imprimí</span><span class="paso-rapido__texto">Descargá el .scad y el .stl. Si algo no quedó, pedile a la IA un ajuste con el código actual y los errores del render.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== PASO 1: NARRACIÓN ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — Narrá la pieza</div>
+    <div class="ia3-panel">
+      <div>
+        <div class="ia3-voz">
+          <button class="btn btn--primary" id="btnVoz" type="button" title="Dictar con el micrófono">🎙 Dictar</button>
+          <select class="campo__input" id="optIdioma" style="max-width:190px" title="Idioma del reconocimiento de voz">
+            <option value="es-UY" selected>español (Uruguay)</option>
+            <option value="es-AR">español (Argentina)</option>
+            <option value="es-419">español (Latinoamérica)</option>
+            <option value="es-ES">español (España)</option>
+            <option value="es-MX">español (México)</option>
+          </select>
+          <span class="kin-valor" id="estadoVoz">micrófono listo</span>
+        </div>
+        <p class="ia3-parcial" id="vozParcial" aria-live="polite"></p>
+        <textarea class="campo__input ia3-narracion" id="narracion" rows="14" placeholder="Ejemplo: Quiero un portacelular de escritorio para un teléfono de 75 × 160 × 9 mm. Es una base rectangular de 90 mm de ancho por 70 mm de profundidad y 8 mm de alto, con las esquinas verticales redondeadas con radio 6 mm. Sobre la base, hacia atrás, sube un respaldo inclinado 70° respecto de la mesa, de 90 mm de ancho, 100 mm de alto y 6 mm de espesor. Adelante hay un tope de 12 mm de alto y 8 mm de espesor que forma una ranura de 11 mm para el teléfono, con un canal de 12 mm de ancho en el centro del tope para pasar el cable del cargador. En el frente del respaldo va el texto “6º A” en relieve de 0,8 mm, letras de 12 mm, centrado. Se imprime en PLA, apoyado sobre la base, sin soportes…"></textarea>
+        <div class="kin-fila ia3-narracion-pie">
+          <span class="kin-valor" id="contadorNarracion">0 palabras</span>
+          <button class="btn" id="btnEjemploNarracion" type="button">Cargar un ejemplo</button>
+          <button class="btn" id="btnLimpiarNarracion" type="button">Borrar</button>
+        </div>
+        <p class="kin-nota">Al dictar podés decir «punto», «coma» y «nueva línea». Contá qué es, para qué sirve, la forma general, cada cara y cada detalle con sus medidas en milímetros y su ubicación. Cuanto más preciso, menos inventa la IA.</p>
+
+        <div class="kin-bloque ia3-chequeo">
+          <p class="kin-bloque__titulo">Lista de chequeo de ambigüedades</p>
+          <ul class="ia3-avisos" id="listaAvisos"><li class="ia3-aviso ia3-aviso--ok">Escribí o dictá la narración para revisarla.</li></ul>
+        </div>
+      </div>
+
+      <div class="kin-controles">
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Ficha técnica</p>
+          <div class="kin-fila"><label for="fNombre">Nombre</label><input class="campo__input" id="fNombre" type="text" placeholder="portacelular de escritorio"></div>
+          <div class="kin-fila"><label for="fFuncion">Función</label><input class="campo__input" id="fFuncion" type="text" placeholder="sostener un celular inclinado sobre la mesa"></div>
+          <div class="kin-fila ia3-dims"><label>Medidas (mm)</label>
+            <input class="campo__input" id="fLargo" type="number" min="0" step="0.5" placeholder="largo X">
+            <input class="campo__input" id="fAncho" type="number" min="0" step="0.5" placeholder="ancho Y">
+            <input class="campo__input" id="fAlto" type="number" min="0" step="0.5" placeholder="alto Z">
+          </div>
+          <div class="kin-fila"><label class="scratch-check"><input type="checkbox" id="fExactas" checked> Las medidas exteriores son exactas</label></div>
+          <div class="kin-fila"><label for="fProceso">Proceso</label>
+            <select class="campo__input" id="fProceso">
+              <option value="fdm_pla" selected>Impresión 3D FDM · PLA</option>
+              <option value="fdm_petg">Impresión 3D FDM · PETG</option>
+              <option value="resina">Impresión 3D · resina</option>
+              <option value="laser">Corte láser 2D (MDF / acrílico)</option>
+              <option value="cnc">CNC de 3 ejes</option>
+              <option value="generico">No definido</option>
+            </select>
+          </div>
+          <div class="kin-fila"><label for="fHolgura">Holgura</label><input class="campo__input ia3-corto" id="fHolgura" type="number" min="0" step="0.05" value="0.2"><span class="kin-valor">mm por lado</span>
+            <label for="fPared">Pared</label><input class="campo__input ia3-corto" id="fPared" type="number" min="0.4" step="0.1" value="1.6"><span class="kin-valor">mm</span></div>
+          <div class="kin-fila"><label for="fCalidad">Curvas</label>
+            <select class="campo__input" id="fCalidad" style="max-width:220px"><option value="32">borrador ($fn 32)</option><option value="64" selected>normal ($fn 64)</option><option value="96">alta ($fn 96)</option><option value="128">máxima ($fn 128)</option></select></div>
+        </div>
+
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Textos que lleva la pieza</p>
+          <div id="listaTextos"></div>
+          <div class="kin-fila"><button class="btn" id="btnAgregarTexto" type="button">+ Agregar texto</button></div>
+        </div>
+
+        <div class="kin-bloque">
+          <p class="kin-bloque__titulo">Detalles y ajustes</p>
+          <label class="campo__etiqueta" for="fElementos">Elementos (uno por línea, con medida y ubicación)</label>
+          <textarea class="campo__input" id="fElementos" rows="4" placeholder="agujero pasante Ø4,5 mm centrado en la base, a 10 mm del borde trasero&#10;ranura de 12 × 3 mm en el tope frontal, centrada&#10;chaflán de 1 mm en todas las aristas de la base"></textarea>
+          <label class="campo__etiqueta" for="fAjustables">Qué quiero poder ajustar después</label>
+          <textarea class="campo__input" id="fAjustables" rows="3" placeholder="el ángulo del respaldo&#10;el ancho de la ranura del teléfono&#10;el texto del frente y su tamaño"></textarea>
+          <label class="campo__etiqueta" for="fRestricciones">Otras restricciones</label>
+          <textarea class="campo__input" id="fRestricciones" rows="2" placeholder="tiene que entrar en una cama de 220 × 220 mm; peso mínimo; que se apile"></textarea>
+          <div class="ia3-checks">
+            <label class="scratch-check"><input type="checkbox" id="fSinSoportes" checked> Imprimible sin soportes</label>
+            <label class="scratch-check"><input type="checkbox" id="fAristas" checked> Aristas redondeadas / chaflán en la base</label>
+            <label class="scratch-check"><input type="checkbox" id="fHueca"> Hueca / aliviada por dentro</label>
+            <label class="scratch-check"><input type="checkbox" id="fSimetrica"> Simétrica (izquierda = derecha)</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== PASO 2: PROMPT ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — El prompt para la IA</div>
+    <div class="ia3-comandos">
+      <button class="btn btn--primary" id="btnGenerarPrompt" type="button">✨ Generar el prompt</button>
+      <button class="btn" id="btnCopiarPrompt" type="button" disabled>📋 Copiar</button>
+      <span class="ia-accesos">
+        <span class="ia-accesos__label">Abrí tu IA aquí:</span>
+        <button class="ia-acceso ia-btn" data-ia-abrir="claude">Claude</button>
+        <button class="ia-acceso ia-btn" data-ia-abrir="chatgpt">ChatGPT</button>
+        <button class="ia-acceso ia-btn" data-ia-abrir="gemini">Gemini</button>
+      </span>
+      <span class="ia3-comandos__derecha">
+        <a class="btn" id="lnkClaudeQ" href="#" target="_blank" rel="noopener" style="display:none" title="Abre Claude con el prompt ya escrito">Claude con el prompt cargado ↗</a>
+        <a class="btn" id="lnkChatGPTQ" href="#" target="_blank" rel="noopener" style="display:none" title="Abre ChatGPT con el prompt ya escrito">ChatGPT con el prompt cargado ↗</a>
+      </span>
+    </div>
+    <p class="kin-comandos__estado"><span class="kin-valor" id="estadoPrompt">Completá la narración y la ficha, y generá el prompt.</span></p>
+    <pre class="ia3-prompt" id="cajaPrompt" tabindex="0"></pre>
+    <p class="kin-nota">Al abrir la IA el prompt se copia solo: pegalo con Ctrl+V y esperá la respuesta completa. Los enlaces «con el prompt cargado» lo escriben directamente en la conversación (funcionan si el prompt no es demasiado largo para la dirección web).</p>
+  </div>
+</section>
+
+<!-- ====== PASO 3: CÓDIGO Y EDITOR ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 3 — Pegá el OpenSCAD y editalo</div>
+    <div class="ia3-comandos">
+      <button class="btn btn--primary" id="btnPegarCodigo" type="button" title="Pega lo que tengas copiado (la respuesta entera de la IA sirve: se extrae el bloque de código)">📥 Pegar la respuesta de la IA</button>
+      <label class="btn" for="inputScad">📂 Abrir .scad</label>
+      <input type="file" id="inputScad" accept=".scad,.txt" style="display:none">
+      <button class="btn" id="btnEjemploScad" type="button">Cargar un ejemplo</button>
+      <span class="ia3-comandos__derecha">
+        <button class="btn" id="btnCopiarCodigo" type="button">📋 Copiar código</button>
+        <button class="btn" id="btnDescargarScad" type="button">💾 .scad</button>
+        <button class="btn btn--primary" id="btnDescargarStl" type="button" disabled>💾 .stl</button>
+      </span>
+    </div>
+
+    <div class="ia3-editor" id="zonaEditor">
+      <div class="ia3-editor__vista">
+        <div class="ia3-vista3d">
+          <canvas id="lienzo3d"></canvas>
+          <div class="ia3-vista3d__medidas" id="medidas3d"></div>
+          <div class="ia3-vista3d__estado" id="estadoRender">Pegá un código para ver la pieza.</div>
+        </div>
+        <div class="ia3-comandos ia3-comandos--vista">
+          <button class="btn btn--primary" id="btnRenderizar" type="button">▶ Renderizar</button>
+          <label class="scratch-check"><input type="checkbox" id="optAutoRender" checked> Automático al cambiar</label>
+          <label class="scratch-check"><input type="checkbox" id="optAristas3d"> Aristas</label>
+          <label class="scratch-check"><input type="checkbox" id="optGrilla3d" checked> Grilla 10 mm</label>
+          <button class="btn" id="btnEncuadrar" type="button" title="Vuelve a centrar la cámara en la pieza">⌖ Encuadrar</button>
+        </div>
+        <details class="kin-guia" id="detConsola">
+          <summary>Salida de OpenSCAD <span class="kin-valor" id="resumenConsola"></span></summary>
+          <div class="kin-guia__cuerpo"><ul class="ia3-consola" id="consolaScad"></ul></div>
+        </details>
+        <details class="kin-guia" open>
+          <summary>Código OpenSCAD</summary>
+          <div class="kin-guia__cuerpo">
+            <textarea class="campo__input ia3-codigo" id="codigo" rows="18" spellcheck="false" placeholder="// Pegá acá el archivo .scad que devolvió la IA (o la respuesta entera: se toma el bloque de código)"></textarea>
+            <p class="kin-nota">Podés editar el código directamente: los controles de la derecha se rearman solos. Los controles cambian solo el valor de cada variable, así el código sigue siendo el que escribió la IA.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="ia3-editor__controles">
+        <div class="ia3-comandos ia3-comandos--filtros">
+          <input class="campo__input" id="filtroVariables" type="search" placeholder="buscar variable…" style="max-width:220px">
+          <label class="scratch-check"><input type="checkbox" id="optVerOcultas"> Ver derivadas ([Hidden])</label>
+          <button class="btn" id="btnRestaurar" type="button" title="Vuelve a los valores que tenía el código cuando lo pegaste">↺ Valores originales</button>
+        </div>
+        <div id="panelVariables" class="ia3-variables"><p class="kin-nota">Cuando haya código, acá aparecen sus variables agrupadas: medidas, detalles, posiciones, textos, fabricación y calidad.</p></div>
+      </div>
+    </div>
+
+    <div class="kin-bloque ia3-ajuste">
+      <p class="kin-bloque__titulo">Pedirle un ajuste a la IA</p>
+      <p class="kin-nota" style="margin-top:0">Si la pieza necesita algo que no se resuelve moviendo variables (otra forma, un elemento nuevo, un error de render), describilo acá. El prompt incluye el código actual con tus valores y los errores de OpenSCAD, y le exige devolver el archivo completo manteniendo las variables.</p>
+      <textarea class="campo__input" id="pedidoAjuste" rows="3" placeholder="Agregá dos agujeros pasantes Ø4,5 mm en la base, a 8 mm de los bordes laterales, para atornillarlo a la mesa. El canal del cable tiene que ser redondeado."></textarea>
+      <div class="ia3-comandos">
+        <button class="btn btn--primary" id="btnPromptAjuste" type="button">✨ Generar el prompt de ajuste</button>
+        <button class="btn" id="btnCopiarAjuste" type="button" disabled>📋 Copiar</button>
+        <span class="ia-accesos">
+          <span class="ia-accesos__label">Abrí tu IA aquí:</span>
+          <button class="ia-acceso ia-btn" data-ia-abrir="claude">Claude</button>
+          <button class="ia-acceso ia-btn" data-ia-abrir="chatgpt">ChatGPT</button>
+          <button class="ia-acceso ia-btn" data-ia-abrir="gemini">Gemini</button>
+        </span>
+      </div>
+      <pre class="ia3-prompt ia3-prompt--chica" id="cajaPromptAjuste" style="display:none"></pre>
+    </div>
+
+    <div class="ia3-comandos" style="margin-top:1rem">
+      <span class="kin-valor">Proyecto (narración, ficha, prompt y código):</span>
+      <button class="btn" id="btnGuardarProyecto" type="button">💾 Guardar .json</button>
+      <label class="btn" for="inputProyecto">📂 Abrir .json</label>
+      <input type="file" id="inputProyecto" accept=".json" style="display:none">
+      <button class="btn" id="btnNuevoProyecto" type="button">🗑 Empezar de cero</button>
+      <span class="kin-valor" id="estadoProyecto"></span>
+    </div>
+  </div>
+</section>
+
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+        <a href="sello3d.html">Sello 3D desde una imagen</a>
+        <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
+        <a href="arenero.html">Arenero de realidad aumentada</a>
+        <a href="ia3d.html">Pieza 3D con IA</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Render con <a href="https://openscad.org" target="_blank" rel="noopener">OpenSCAD</a> compilado a WebAssembly (GPL) y <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT). Tipografías Liberation (SIL OFL).</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script src="ia-panel.js"></script>
+<script type="module" src="ia3d.js"></script>
+</body>
+</html>
