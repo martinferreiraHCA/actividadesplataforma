@@ -662,6 +662,47 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
       `
     },
     {
+      id: "ia3d",
+      titulo: "Pieza 3D con IA",
+      html: `
+        <p class="guia-p"><strong>ia3d.html</strong> es una herramienta de <strong>diseño mediado por IA</strong>: en vez de
+        modelar a mano, se narra la pieza con todo detalle, la página arma un prompt técnico y la IA (Claude, ChatGPT o
+        Gemini) devuelve un archivo <strong>OpenSCAD paramétrico</strong>. Ese archivo se pega en la misma página y queda
+        editable con controles: cada medida, la posición de cada elemento y cada texto, con la vista previa 3D al lado.</p>
+        <h4 class="guia-h">1 · Narrar la pieza</h4>
+        <ul class="guia-lista">
+          <li>Escribí o <strong>dictá</strong> (botón «Dictar», Chrome o Edge): qué es, para qué sirve, la forma general,
+          qué tiene cada cara y cada detalle con su medida en milímetros y su ubicación. Al dictar sirven «punto»,
+          «coma» y «nueva línea».</li>
+          <li>Completá la <strong>ficha técnica</strong>: medidas exteriores, proceso (PLA, PETG, resina, láser, CNC),
+          holgura, espesor de pared, calidad de las curvas, los textos que lleva (qué dice, tamaño, relieve o grabado,
+          dónde va), los elementos y qué querés poder ajustar después.</li>
+          <li>La <strong>lista de chequeo</strong> avisa lo que quedó ambiguo (agujeros sin diámetro, textos sin
+          tamaño, caras sin nombrar…). Cuanto menos ambigua la narración, menos inventa la IA.</li>
+        </ul>
+        <h4 class="guia-h">2 · Pedir el SCAD</h4>
+        <ul class="guia-lista">
+          <li>«Generar el prompt» arma un texto largo y preciso: la narración, la ficha, las reglas de fabricación del
+          proceso, cómo resolver lo no especificado (sin preguntar, dejando variables marcadas SUPUESTO) y el formato
+          exacto del código: variables Customizer con rango, posiciones como vectores, textos con sus variables,
+          epsilon en las operaciones booleanas, assert() y echo().</li>
+          <li>Al abrir la IA el prompt se copia solo: pegalo, esperá la respuesta completa y copiá la respuesta.</li>
+        </ul>
+        <h4 class="guia-h">3 · Editar y descargar</h4>
+        <ul class="guia-lista">
+          <li>«Pegar la respuesta de la IA» toma el bloque de código y arma los controles agrupados (dimensiones,
+          detalles, posiciones, textos, fabricación, calidad). Deslizadores para medidas, x/y/z con botones ± para
+          posiciones y rotaciones, cuadros de texto para los textos y selector de fuente.</li>
+          <li>La pieza se renderiza en el navegador con OpenSCAD compilado a WebAssembly (la primera vez baja ≈11 MB).
+          Los errores de OpenSCAD aparecen con su línea; «Valores originales» vuelve a lo que devolvió la IA.</li>
+          <li>Descargá el <strong>.scad</strong> (para seguir en OpenSCAD de escritorio) y el <strong>.stl</strong>
+          (para la impresora). El proyecto queda guardado en el navegador y se puede exportar como .json.</li>
+          <li>Si hace falta otra forma o un elemento nuevo, «Pedirle un ajuste a la IA» arma un prompt con el código
+          actual (con tus valores) y los errores del render, exigiendo el archivo completo con las mismas variables.</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `
