@@ -674,7 +674,10 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           <li>Escribí o <strong>dictá</strong> (botón «Dictar», Chrome o Edge): qué es, para qué sirve, la forma general,
           qué tiene cada cara y cada detalle con su medida en milímetros y su ubicación. Al dictar sirven «punto»,
           «coma» y «nueva línea».</li>
-          <li>Completá la <strong>ficha técnica</strong>: medidas exteriores, proceso (PLA, PETG, resina, láser, CNC),
+          <li>La forma puede ser la que sea: regular, irregular, orgánica, de revolución, un perfil extruido o varias
+          partes. No hace falta una caja de largo × ancho × alto: el tamaño de la ficha es opcional y solo de
+          referencia; las medidas reales van en la narración y quedan como variables.</li>
+          <li>Completá la <strong>ficha técnica</strong>: forma general, proceso (PLA, PETG, resina, láser, CNC),
           holgura, espesor de pared, calidad de las curvas, los textos que lleva (qué dice, tamaño, relieve o grabado,
           dónde va), los elementos y qué querés poder ajustar después.</li>
           <li>La <strong>lista de chequeo</strong> avisa lo que quedó ambiguo (agujeros sin diámetro, textos sin
@@ -692,7 +695,8 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
         <ul class="guia-lista">
           <li>«Pegar la respuesta de la IA» toma el bloque de código y arma los controles agrupados (dimensiones,
           detalles, posiciones, textos, fabricación, calidad). Deslizadores para medidas, x/y/z con botones ± para
-          posiciones y rotaciones, cuadros de texto para los textos y selector de fuente.</li>
+          posiciones y rotaciones, tablas de puntos para los contornos irregulares (mover, agregar o quitar puntos),
+          cuadros de texto para los textos y selector de fuente.</li>
           <li>La pieza se renderiza en el navegador con OpenSCAD compilado a WebAssembly (la primera vez baja ≈11 MB).
           Los errores de OpenSCAD aparecen con su línea; «Valores originales» vuelve a lo que devolvió la IA.</li>
           <li>Descargá el <strong>.scad</strong> (para seguir en OpenSCAD de escritorio) y el <strong>.stl</strong>

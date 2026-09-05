@@ -75,6 +75,16 @@ export const CALIDADES = {
 
 const FUENTES = 'Liberation Sans, Liberation Sans:style=Bold, Liberation Mono';
 
+export const FORMAS = {
+  narrada: 'la que describe la narración: reproducila fielmente, sea regular o irregular; no la simplifiques a una caja.',
+  irregular: 'IRREGULAR / ORGÁNICA: contornos curvos y asimétricos. Construila con polygon() a partir de listas de puntos declaradas como variables (perfil_xxx = [[x, y], ...]), suavizadas con offset(r = ...) o con hull() de círculos; no la aproximes con cubos.',
+  perfil: 'PERFIL 2D EXTRUIDO: un contorno (lista de puntos editable, perfil_principal = [[x, y], ...]) extruido con linear_extrude(); los agujeros son polígonos restados en 2D antes de extruir.',
+  revolucion: 'DE REVOLUCIÓN: un perfil 2D (lista de puntos [radio, altura] editable, perfil_revolucion = [[r, z], ...]) girado con rotate_extrude(); el eje de revolución es Z y pasa por el origen.',
+  prisma: 'PRISMÁTICA: caja con o sin redondeos (cilindros en las esquinas + hull()), con las medidas indicadas.',
+  cilindrica: 'CILÍNDRICA / TUBULAR: cilindros y tubos concéntricos con diámetros, espesores y alturas como variables.',
+  ensamble: 'VARIAS PARTES QUE ENCAJAN: cada parte es un módulo propio con variable mostrar_parte_N; las medidas compartidas (encastres) se derivan de las mismas variables más holgura; incluí una vista de impresión (partes separadas sobre z = 0) y una de ensamble (variable vista = "impresion" o "ensamble").'
+};
+
 function limpiar(t) {
   return String(t || '').replace(/\r/g, '').trim();
 }
@@ -85,12 +95,14 @@ function coma(n) {
 
 function dimensionesTexto(f) {
   const partes = [];
-  if (f.largo) partes.push(`largo (eje X) = ${coma(f.largo)} mm`);
-  if (f.ancho) partes.push(`ancho (eje Y) = ${coma(f.ancho)} mm`);
-  if (f.alto) partes.push(`alto (eje Z) = ${coma(f.alto)} mm`);
-  if (!partes.length) return null;
-  const tipo = f.dimensionesExactas ? 'EXACTAS (no cambiarlas)' : 'de referencia (la IA puede ajustarlas hasta ±10 % si la geometría lo pide, declarándolo)';
-  return `Dimensiones exteriores ${tipo}: ${partes.join(', ')}.`;
+  if (f.largo) partes.push(`en X ≈ ${coma(f.largo)} mm`);
+  if (f.ancho) partes.push(`en Y ≈ ${coma(f.ancho)} mm`);
+  if (f.alto) partes.push(`en Z ≈ ${coma(f.alto)} mm`);
+  if (!partes.length) return 'Tamaño: NO se fija una caja de largo × ancho × alto; las medidas salen de la narración (cada una como variable). La forma no tiene por qué ser rectangular.';
+  const tipo = f.dimensionesExactas
+    ? 'EXACTO en los ejes indicados (la pieza tiene que medir eso en su punto más ancho)'
+    : 'APROXIMADO y solo de referencia: es el espacio que ocupa la pieza, NO su forma; si la geometría narrada pide otra cosa, priorizá la narración y declaralo';
+  return `Tamaño total que ocupa la pieza, ${tipo}: ${partes.join(', ')}. Esto no significa que sea una caja: la forma es la narrada.`;
 }
 
 function textosTexto(textos) {
@@ -115,9 +127,9 @@ export function analizarNarracion(narracion, ficha = {}) {
   const hayDimsFicha = ficha.largo || ficha.ancho || ficha.alto;
 
   if (t.length < 120) avisos.push({ nivel: 'falta', texto: 'La narración es muy breve: contá qué es, para qué sirve, cómo se usa, qué forma general tiene y qué tiene cada cara.' });
-  if (!tieneNumeros && !hayDimsFicha) avisos.push({ nivel: 'falta', texto: 'No hay ninguna medida. Sin números la IA inventa el tamaño: indicá al menos largo, ancho y alto.' });
+  if (!tieneNumeros && !hayDimsFicha) avisos.push({ nivel: 'falta', texto: 'No hay ninguna medida. Sin números la IA inventa el tamaño: dale al menos una medida de referencia (la mayor de la pieza) o el tamaño aproximado en la ficha.' });
   else if (tieneNumeros && !tieneUnidades && !hayDimsFicha) avisos.push({ nivel: 'ojo', texto: 'Hay números pero no unidades: aclará que son milímetros (o completá las dimensiones en la ficha).' });
-  if (!hayDimsFicha) avisos.push({ nivel: 'ojo', texto: 'Completá largo, ancho y alto en la ficha: se pasan a la IA como dimensiones exteriores y quedan como variables.' });
+  if (!hayDimsFicha && tieneNumeros && !/\b(total|máxim|maxim|en total|de punta a punta|de alto|de largo|de ancho|de diámetro|de diametro)\b/.test(bajo)) avisos.push({ nivel: 'ojo', texto: 'No queda claro cuánto ocupa la pieza en total: mencioná su medida mayor (o el tamaño aproximado en la ficha) para que la escala no dependa de la IA.' });
   const agujeroSinMedida = [...bajo.matchAll(/(agujeros?|orificios?|perforaci[oó]n(?:es)?|taladros?)([^.\n]{0,90})/g)].some(m => !/di[aá]metro|ø|\bm\d|\d[\d,.]*\s*(mm|×|x\b|milímetros|milimetros)/.test(m[2]));
   if (agujeroSinMedida && !/di[aá]metro|ø|\bM\d/.test(t)) avisos.push({ nivel: 'falta', texto: 'Mencionás agujeros pero no su diámetro. Decí el diámetro (o el tornillo: M3, M4…) y dónde van.' });
   if (/encastr|encaj|ajust|calc[ea]|inserto|tapa|acopl/.test(bajo) && !ficha.holgura && !/holgura|tolerancia|juego/.test(bajo)) avisos.push({ nivel: 'ojo', texto: 'Hay encastres o piezas que encajan: indicá la holgura (por ejemplo 0,2 mm por lado) o completala en la ficha.' });
@@ -150,6 +162,7 @@ export function generarPromptPieza(datos) {
   const ficha = [
     `Nombre de la pieza: ${nombre}.`,
     limpiar(f.funcion) ? `Función y contexto de uso: ${limpiar(f.funcion)}` : null,
+    `Forma general: ${FORMAS[f.forma] || FORMAS.narrada}`,
     dimensionesTexto(f),
     `Proceso de fabricación: ${proceso.nombre}.`,
     `Holgura para encastres y agujeros: ${holgura} mm por lado (variable holgura).`,
@@ -211,6 +224,8 @@ ${proceso.reglas.map(r => '- ' + r).join('\n')}
     - El resultado tiene que ser un único sólido manifold (una sola pieza conectada, salvo que la narración pida varias, en cuyo caso cada una es un módulo y una variable "mostrar" con opción para imprimir juntas o separadas).
     - Definí epsilon = 0.01; y usalo en toda difference()/union() para evitar caras coplanares y paredes de espesor cero (los cortes atraviesan epsilon de más; los agregados se hunden epsilon).
     - Sin cavidades internas cerradas accidentales; sin sólidos flotantes; sin geometría degenerada (radios 0, alturas 0).
+    - La forma manda: si la narración describe curvas, asimetrías, contornos irregulares u orgánicos, modelalos así (polygon() con listas de puntos, hull() de círculos o esferas, rotate_extrude(), offset(r = ...) para suavizar). Está PROHIBIDO reducir una forma irregular a cajas o cilindros "aproximados".
+    - Los contornos libres se declaran como variables editables con listas de puntos: perfil_xxx = [[x1, y1], [x2, y2], ...]; // puntos en mm, en sentido antihorario. Una sola línea por lista. Así el editor permite mover cada punto.
     - Usá hull(), minkowski() y offset() con criterio (minkowski solo con esferas pequeñas y $fn bajo si hace falta redondear; preferí cilindros en las esquinas + hull() para cajas redondeadas: es mucho más rápido).
     - assert() al principio para las restricciones geométricas (ej.: assert(diametro_agujero + 2*espesor_pared < ancho_total, "el agujero no cabe en el ancho")), con mensajes en español.
     - echo() al final con las medidas exteriores reales (largo, ancho, alto) y el volumen aproximado si es fácil, para verificar contra la ficha.
@@ -229,8 +244,11 @@ ${proceso.reglas.map(r => '- ' + r).join('\n')}
 // Módulos: cuerpo(), detalles(), textos(), pieza()
 
 /* [Dimensiones generales] */
-// Largo total de la pieza (eje X), en mm
-largo_total = ${f.largo ? coma(f.largo).replace(',', '.') : 60}; // [10:0.5:300]
+// (las medidas que ESTA forma necesite: alturas, radios, ángulos, espesores… una variable por cada una, en mm)
+// Ejemplo de medida
+alto_total = 40; // [5:0.5:300]
+// Ejemplo de contorno libre editable (solo si la forma lo necesita): puntos [x, y] en mm, antihorario
+perfil_principal = [[0, 0], [30, 0], [34, 12], [22, 28], [4, 20]];
 // ...
 
 /* [Detalles] */
@@ -282,7 +300,8 @@ echo(str("Medidas exteriores: ", largo_total, " x ", ..., " mm"));
 7 · VERIFICÁ ANTES DE RESPONDER (recorré esta lista y corregí lo que falle)
 ════════════════════════════════════════
 [ ] Cada detalle de la narración aparece en el código y en la posición indicada.
-[ ] Cada medida de la ficha es el valor inicial de una variable con ese nombre reconocible.
+[ ] La forma es la narrada (irregular, curva u orgánica si así se describió), no una caja simplificada; los contornos libres son listas de puntos editables.
+[ ] Cada medida mencionada es el valor inicial de una variable con nombre reconocible.
 [ ] Ningún número literal dentro de los módulos que no sea 0, 1, 2, 90, 180, 360 o epsilon.
 [ ] Cada variable tiene su comentario de descripción en la línea anterior y su rango o lista.
 [ ] Las posiciones y rotaciones de todos los elementos y textos son vectores editables.

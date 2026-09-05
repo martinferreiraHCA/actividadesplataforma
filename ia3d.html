@@ -78,7 +78,7 @@
       <strong>STL listo para imprimir</strong>. Si hace falta más, se le pide un ajuste a la IA con el código actual.
     </p>
     <div class="primeros-pasos">
-      <div class="paso-rapido"><span class="paso-rapido__num">PASO 01</span><span class="paso-rapido__titulo">Narrá</span><span class="paso-rapido__texto">Dictá o escribí la pieza con todo detalle y completá la ficha técnica (medidas, proceso, textos). La lista de chequeo avisa qué quedó ambiguo.</span></div>
+      <div class="paso-rapido"><span class="paso-rapido__num">PASO 01</span><span class="paso-rapido__titulo">Narrá</span><span class="paso-rapido__texto">Dictá o escribí la pieza con todo detalle, con la forma que tenga (regular, irregular, orgánica), y completá la ficha técnica (proceso, textos, qué debe ser ajustable). La lista de chequeo avisa qué quedó ambiguo.</span></div>
       <div class="paso-rapido"><span class="paso-rapido__num">PASO 02</span><span class="paso-rapido__titulo">Pedí el SCAD</span><span class="paso-rapido__texto">Copiá el prompt generado y abrí tu IA. Le exige formato Customizer, variables con rango, posiciones como vectores, textos editables y geometría imprimible.</span></div>
       <div class="paso-rapido"><span class="paso-rapido__num">PASO 03</span><span class="paso-rapido__titulo">Editá</span><span class="paso-rapido__texto">Pegá el código: aparecen los controles de cada variable, posición y texto, y la pieza se renderiza en 3D en el navegador.</span></div>
       <div class="paso-rapido"><span class="paso-rapido__num">PASO 04</span><span class="paso-rapido__titulo">Ajustá e imprimí</span><span class="paso-rapido__texto">Descargá el .scad y el .stl. Si algo no quedó, pedile a la IA un ajuste con el código actual y los errores del render.</span></div>
@@ -123,12 +123,24 @@
           <p class="kin-bloque__titulo">Ficha técnica</p>
           <div class="kin-fila"><label for="fNombre">Nombre</label><input class="campo__input" id="fNombre" type="text" placeholder="portacelular de escritorio"></div>
           <div class="kin-fila"><label for="fFuncion">Función</label><input class="campo__input" id="fFuncion" type="text" placeholder="sostener un celular inclinado sobre la mesa"></div>
-          <div class="kin-fila ia3-dims"><label>Medidas (mm)</label>
-            <input class="campo__input" id="fLargo" type="number" min="0" step="0.5" placeholder="largo X">
-            <input class="campo__input" id="fAncho" type="number" min="0" step="0.5" placeholder="ancho Y">
-            <input class="campo__input" id="fAlto" type="number" min="0" step="0.5" placeholder="alto Z">
+          <div class="kin-fila"><label for="fForma">Forma general</label>
+            <select class="campo__input" id="fForma">
+              <option value="narrada" selected>la que describe la narración</option>
+              <option value="irregular">irregular / orgánica (curvas libres)</option>
+              <option value="perfil">perfil 2D extruido (contorno con puntos)</option>
+              <option value="revolucion">de revolución (torneada, simétrica en un eje)</option>
+              <option value="prisma">prismática (caja, con o sin redondeos)</option>
+              <option value="cilindrica">cilíndrica / tubular</option>
+              <option value="ensamble">varias partes que encajan</option>
+            </select>
           </div>
-          <div class="kin-fila"><label class="scratch-check"><input type="checkbox" id="fExactas" checked> Las medidas exteriores son exactas</label></div>
+          <div class="kin-fila ia3-dims"><label>Tamaño aprox. (mm)</label>
+            <input class="campo__input" id="fLargo" type="number" min="0" step="0.5" placeholder="en X" title="Opcional: cuánto ocupa la pieza en X, aproximado">
+            <input class="campo__input" id="fAncho" type="number" min="0" step="0.5" placeholder="en Y" title="Opcional: cuánto ocupa la pieza en Y, aproximado">
+            <input class="campo__input" id="fAlto" type="number" min="0" step="0.5" placeholder="en Z" title="Opcional: cuánto ocupa la pieza en Z, aproximado">
+          </div>
+          <p class="kin-nota" style="margin-top:0">Opcional: es solo el espacio que ocupa la pieza, no su forma. Para formas irregulares podés dejarlo vacío o poner una sola medida de referencia; las medidas de verdad van en la narración.</p>
+          <div class="kin-fila"><label class="scratch-check"><input type="checkbox" id="fExactas"> Estas medidas son exactas (si no, son de referencia)</label></div>
           <div class="kin-fila"><label for="fProceso">Proceso</label>
             <select class="campo__input" id="fProceso">
               <option value="fdm_pla" selected>Impresión 3D FDM · PLA</option>
