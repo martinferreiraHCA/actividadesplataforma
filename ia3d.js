@@ -255,6 +255,7 @@ function leerFicha() {
   return {
     nombre: $('fNombre').value,
     funcion: $('fFuncion').value,
+    forma: $('fForma').value,
     largo: num('fLargo'), ancho: num('fAncho'), alto: num('fAlto'),
     dimensionesExactas: $('fExactas').checked,
     proceso: $('fProceso').value,
@@ -274,9 +275,9 @@ function leerFicha() {
 function escribirFicha(f) {
   if (!f) return;
   const set = (id, v) => { if (v !== undefined && v !== null) $(id).value = v; };
-  set('fNombre', f.nombre); set('fFuncion', f.funcion);
+  set('fNombre', f.nombre); set('fFuncion', f.funcion); set('fForma', f.forma || 'narrada');
   set('fLargo', f.largo || ''); set('fAncho', f.ancho || ''); set('fAlto', f.alto || '');
-  $('fExactas').checked = f.dimensionesExactas !== false;
+  $('fExactas').checked = !!f.dimensionesExactas;
   set('fProceso', f.proceso || 'fdm_pla'); set('fHolgura', f.holgura ?? 0.2); set('fPared', f.pared ?? 1.6); set('fCalidad', f.calidad || '64');
   set('fElementos', f.elementos); set('fAjustables', f.ajustables); set('fRestricciones', f.restricciones);
   $('fSinSoportes').checked = f.sinSoportes !== false; $('fAristas').checked = f.aristas !== false;
@@ -454,7 +455,7 @@ function cambiarVariable(v, tipo, valor) {
   if ($('optAutoRender').checked) renderizarDiferido();
 }
 
-const ROLES = { numero: 'medida', vector: 'vector', posicion: 'posición', rotacion: 'rotación', texto: 'texto', fuente: 'fuente', cadena: 'texto', bool: 'sí / no', calidad: 'calidad', expresion: 'expresión' };
+const ROLES = { numero: 'medida', vector: 'vector', puntos: 'contorno (puntos)', posicion: 'posición', rotacion: 'rotación', texto: 'texto', fuente: 'fuente', cadena: 'texto', bool: 'sí / no', calidad: 'calidad', expresion: 'expresión' };
 
 function controlNumero(v) {
   const wrap = document.createElement('div');
@@ -526,6 +527,53 @@ function controlVector(v) {
     wrap.append(et, inp, nudge);
   });
   wrap.appendChild(paso);
+  return wrap;
+}
+
+function controlPuntos(v) {
+  const wrap = document.createElement('div');
+  wrap.className = 'ia3-var__ctrl ia3-puntos';
+  const puntos = v.valor.map(p => p.slice());
+  const dim = puntos[0] ? puntos[0].length : 2;
+  const paso = document.createElement('select');
+  paso.className = 'campo__input ia3-paso';
+  for (const p of [0.1, 0.5, 1, 5]) { const op = document.createElement('option'); op.value = p; op.textContent = 'paso ' + p; paso.appendChild(op); }
+  paso.value = 1;
+  const tabla = document.createElement('div');
+  tabla.className = 'ia3-puntos__tabla';
+  const aplicar = () => { cambiarVariable(v, 'puntos', puntos.map(p => p.slice())); marcar(wrap); };
+  const dibujar = () => {
+    tabla.innerHTML = '';
+    puntos.forEach((p, i) => {
+      const fila = document.createElement('div');
+      fila.className = 'ia3-puntos__fila';
+      const num = document.createElement('span'); num.className = 'ia3-eje'; num.textContent = String(i + 1); fila.appendChild(num);
+      p.forEach((val, k) => {
+        const inp = document.createElement('input'); inp.type = 'number'; inp.className = 'campo__input'; inp.step = 0.1; inp.value = formatearNumero(val); inp.title = ['x', 'y', 'z'][k];
+        inp.addEventListener('input', () => { const nv = parseFloat(inp.value); if (Number.isFinite(nv)) { p[k] = nv; aplicar(); } });
+        const nudge = document.createElement('span'); nudge.className = 'ia3-nudge';
+        for (const d of [-1, 1]) {
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = d < 0 ? '−' : '+';
+          b.addEventListener('click', () => { p[k] = Math.round((p[k] + d * parseFloat(paso.value)) * 10000) / 10000; inp.value = formatearNumero(p[k]); aplicar(); });
+          nudge.appendChild(b);
+        }
+        fila.append(inp, nudge);
+      });
+      const acciones = document.createElement('span'); acciones.className = 'ia3-nudge';
+      const mas = document.createElement('button'); mas.type = 'button'; mas.textContent = '＋'; mas.title = 'insertar un punto después de este (en el medio hacia el siguiente)';
+      mas.addEventListener('click', () => { const q = puntos[(i + 1) % puntos.length]; puntos.splice(i + 1, 0, p.map((x, k) => Math.round((x + q[k]) / 2 * 100) / 100)); dibujar(); aplicar(); });
+      const menos = document.createElement('button'); menos.type = 'button'; menos.textContent = '✕'; menos.title = 'quitar este punto';
+      menos.addEventListener('click', () => { if (puntos.length <= 3) { toast('Un contorno necesita al menos 3 puntos.'); return; } puntos.splice(i, 1); dibujar(); aplicar(); });
+      acciones.append(mas, menos);
+      fila.appendChild(acciones);
+      tabla.appendChild(fila);
+    });
+  };
+  dibujar();
+  const pie = document.createElement('div'); pie.className = 'ia3-puntos__pie';
+  const info = document.createElement('span'); info.className = 'kin-valor'; info.textContent = `${puntos.length} puntos · ${dim === 2 ? 'x, y' : 'x, y, z'} en mm`;
+  pie.append(info, paso);
+  wrap.append(tabla, pie);
   return wrap;
 }
 
@@ -618,6 +666,7 @@ function dibujarVariables() {
       if (v.lista && (v.tipo === 'numero' || v.tipo === 'cadena' || v.tipo === 'expresion')) ctrl = controlLista(v);
       else if (v.tipo === 'numero') ctrl = controlNumero(v);
       else if (v.tipo === 'vector') ctrl = controlVector(v);
+      else if (v.tipo === 'puntos') ctrl = controlPuntos(v);
       else if (v.tipo === 'cadena') ctrl = controlCadena(v);
       else if (v.tipo === 'bool') ctrl = controlBool(v);
       else ctrl = controlExpresion(v);
@@ -861,7 +910,7 @@ function nuevoProyecto() {
   if (!confirm('¿Borrar la narración, la ficha, el prompt y el código para empezar de cero?')) return;
   localStorage.removeItem(CLAVE);
   $('narracion').value = '';
-  escribirFicha({ textos: [], holgura: 0.2, pared: 1.6, calidad: '64', proceso: 'fdm_pla' });
+  escribirFicha({ textos: [], holgura: 0.2, pared: 1.6, calidad: '64', proceso: 'fdm_pla', forma: 'narrada' });
   estado.prompt = ''; estado.promptAjuste = ''; estado.codigoOriginal = ''; estado.salida = [];
   $('cajaPrompt').textContent = ''; $('btnCopiarPrompt').disabled = true; $('estadoPrompt').textContent = 'Completá la narración y la ficha, y generá el prompt.';
   $('cajaPromptAjuste').textContent = ''; $('cajaPromptAjuste').style.display = 'none'; $('btnCopiarAjuste').disabled = true; $('pedidoAjuste').value = '';
@@ -882,13 +931,13 @@ function iniciar() {
   dibujarTextos();
 
   $('narracion').addEventListener('input', () => { analizarDiferido(); guardarDiferido(); });
-  for (const id of ['fNombre', 'fFuncion', 'fLargo', 'fAncho', 'fAlto', 'fExactas', 'fProceso', 'fHolgura', 'fPared', 'fCalidad', 'fElementos', 'fAjustables', 'fRestricciones', 'fSinSoportes', 'fAristas', 'fHueca', 'fSimetrica']) {
+  for (const id of ['fNombre', 'fFuncion', 'fForma', 'fLargo', 'fAncho', 'fAlto', 'fExactas', 'fProceso', 'fHolgura', 'fPared', 'fCalidad', 'fElementos', 'fAjustables', 'fRestricciones', 'fSinSoportes', 'fAristas', 'fHueca', 'fSimetrica']) {
     $(id).addEventListener('input', () => { analizarDiferido(); guardarDiferido(); });
   }
   $('btnAgregarTexto').addEventListener('click', () => { estado.textos.push({ contenido: '', modo: 'relieve', tamano: '', profundidad: '', ubicacion: '', fuente: 'Liberation Sans:style=Bold' }); dibujarTextos(); const ult = $('listaTextos').lastElementChild; if (ult) ult.querySelector('input').focus(); });
   $('btnEjemploNarracion').addEventListener('click', () => {
     $('narracion').value = EJEMPLO_NARRACION;
-    escribirFicha({ nombre: 'portacelular de escritorio', funcion: 'sostener un celular inclinado sobre la mesa mientras se carga', largo: 90, ancho: 70, alto: 102, dimensionesExactas: false, proceso: 'fdm_pla', holgura: 0.2, pared: 1.6, calidad: '64',
+    escribirFicha({ nombre: 'portacelular de escritorio', funcion: 'sostener un celular inclinado sobre la mesa mientras se carga', forma: 'narrada', largo: 90, ancho: 70, alto: 102, dimensionesExactas: false, proceso: 'fdm_pla', holgura: 0.2, pared: 1.6, calidad: '64',
       textos: [{ contenido: '6º A', modo: 'relieve', tamano: 12, profundidad: 0.8, ubicacion: 'frente del respaldo, centrado, a 30 mm del borde superior', fuente: 'Liberation Sans:style=Bold' }, { contenido: 'HCA', modo: 'grabado', tamano: 6, profundidad: 0.6, ubicacion: 'cara superior de la base, adelante del tope, centrado', fuente: 'Liberation Sans:style=Bold' }],
       elementos: 'respaldo inclinado 70°, 100 mm de largo, 6 mm de espesor, desde el borde trasero\ntope frontal de 12 mm de alto y 8 mm de espesor a 30 mm del borde frontal, ranura de 12 mm\ncanal pasante de 12 mm en el centro del tope y agujero de 12 × 8 mm en la base para el cable', ajustables: 'ángulo del respaldo\nancho de la ranura\ntextos y su tamaño', restricciones: '', sinSoportes: true, aristas: true, hueca: false, simetrica: true });
     analizar(); guardarDiferido();

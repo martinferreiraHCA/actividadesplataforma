@@ -40,8 +40,17 @@ function parsearValor(texto) {
   if (/^\[.*\]$/.test(t)) {
     const interior = t.slice(1, -1).trim();
     if (interior === '') return { tipo: 'expresion', valor: t };
+    // lista de puntos [[x, y], [x, y, z], ...] (contornos, perfiles)
+    if (/^\[/.test(interior)) {
+      const puntos = [...interior.matchAll(/\[([^\[\]]*)\]/g)].map(m => m[1].split(',').map(s => s.trim()));
+      const soloPuntos = interior.replace(/\[[^\[\]]*\]/g, '').replace(/[\s,]/g, '') === '';
+      if (puntos.length && soloPuntos && puntos.every(p => (p.length === 2 || p.length === 3) && p.every(x => RE_NUMERO.test(x)))) {
+        return { tipo: 'puntos', valor: puntos.map(p => p.map(parseFloat)) };
+      }
+      return { tipo: 'expresion', valor: t };
+    }
     const partes = interior.split(',').map(s => s.trim());
-    if (partes.length <= 4 && partes.every(p => RE_NUMERO.test(p))) return { tipo: 'vector', valor: partes.map(parseFloat) };
+    if (partes.length <= 6 && partes.every(p => RE_NUMERO.test(p))) return { tipo: 'vector', valor: partes.map(parseFloat) };
   }
   return { tipo: 'expresion', valor: t };
 }
@@ -161,6 +170,7 @@ export function clasificarVariables(codigo, variables) {
     else if (v.tipo === 'cadena' && (usoTexto || /texto|text|leyenda|label|inscripcion|frase|palabra/.test(nombre))) rol = 'texto';
     else if (v.tipo === 'vector' && (usoRotate || /^rot|rotacion|giro|angulos?_/.test(nombre))) rol = 'rotacion';
     else if (v.tipo === 'vector' && (usoTranslate || /^pos|posicion|ubicacion|centro|offset|desplaz/.test(nombre))) rol = 'posicion';
+    else if (v.tipo === 'puntos') rol = 'puntos';
     else if (v.tipo === 'bool') rol = 'bool';
     v.rol = rol;
   }
@@ -180,6 +190,7 @@ export function valorATexto(tipo, valor) {
   if (tipo === 'numero') return formatearNumero(valor);
   if (tipo === 'cadena') return JSON.stringify(String(valor));
   if (tipo === 'vector') return '[' + valor.map(formatearNumero).join(', ') + ']';
+  if (tipo === 'puntos') return '[' + valor.map(p => '[' + p.map(formatearNumero).join(', ') + ']').join(', ') + ']';
   return String(valor);
 }
 

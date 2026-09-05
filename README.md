@@ -332,14 +332,18 @@ de nivel, sombreado) con **agua** que corre por los valles y llueve cuando se po
 `ia3d.html` es una herramienta de **diseño mediado por IA**: el docente narra la pieza (escribiendo o **por voz**,
 con la Web Speech API), completa una ficha técnica y la página arma un **prompt técnico, extenso y sin
 ambigüedades** que se copia y se pega en Claude, ChatGPT o Gemini. La IA devuelve un archivo **OpenSCAD paramétrico**
-con formato Customizer, que se pega en la misma página y queda **totalmente editable**.
+con formato Customizer, que se pega en la misma página y queda **totalmente editable**. La forma puede ser
+cualquiera (irregular, orgánica, de revolución, perfil extruido, varias partes): el tamaño de la ficha es opcional
+y de referencia, y el prompt prohíbe reducir formas irregulares a cajas, pidiendo contornos como listas de puntos
+editables.
 
 - `ia3d-prompt.js`: generador del prompt (reglas de fabricación por proceso: PLA, PETG, resina, láser, CNC;
   formato Customizer exigido; posiciones como vectores; textos con variables de contenido, tamaño, relieve,
   fuente, posición y rotación; epsilon, assert, echo; esqueleto obligatorio y lista de verificación) y analizador
   de ambigüedades de la narración; prompt de ajuste con el código actual y los errores del render.
 - `ia3d-scad.js`: lector de variables OpenSCAD (grupos `/* [Grupo] */`, descripción, rangos `[min:paso:max]`,
-  listas), clasificación por rol (medida, posición, rotación, texto, fuente, calidad), reemplazo de valores sin
+  listas, vectores y listas de puntos para contornos irregulares), clasificación por rol (medida, posición,
+  rotación, contorno, texto, fuente, calidad), reemplazo de valores sin
   tocar el resto del código, extracción del bloque de código de la respuesta, STL ASCII → binario.
 - `ia3d-render-worker.js`: render en un worker con **OpenSCAD compilado a WebAssembly** (paquete
   `openscad-wasm-prebuilt` desde jsDelivr, ≈11 MB la primera vez) con las tipografías Liberation en `ia3d/fuentes/`.
