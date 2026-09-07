@@ -32,6 +32,14 @@ function mulR(a, b) {
   for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) r[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j];
   return r;
 }
+// gira una pose de cámara alrededor del centro del volumen (origen): cabeceo (eje X) y guiñada (eje Y), en grados
+function girarAlrededorDelCentro(R, t, cabeceo, guinada) {
+  const a = cabeceo * Math.PI / 180, b = guinada * Math.PI / 180;
+  const Rx = [1, 0, 0, 0, Math.cos(a), -Math.sin(a), 0, Math.sin(a), Math.cos(a)];
+  const Ry = [Math.cos(b), 0, Math.sin(b), 0, 1, 0, -Math.sin(b), 0, Math.cos(b)];
+  const G = mulR(Ry, Rx);
+  return { R: mulR(G, R), t: apR(G, t) };
+}
 // ángulo (grados) entre dos rotaciones
 function anguloEntre(A, B) {
   // traza de A·Bᵀ
@@ -175,18 +183,34 @@ export class EscanerLibre {
     this.intentos++;
     const validosFirma = this._firmaDe(z, this.firma);
     if (validosFirma < 60 || !this.claves.length) return false;
+    const t0 = performance.now();
+    const presupuesto = this.esc === 2 ? 220 : 140; // ms por cuadro dedicados a buscar
+    // 1) las 3 vistas clave más parecidas por firma (recuperación rápida al volver cerca)
     const puntuadas = this.claves.map((k, i) => ({ i, d: this._compararFirmas(this.firma, k.firma) })).filter(x => Number.isFinite(x.d)).sort((a, b) => a.d - b.d);
-    if (!puntuadas.length) return false;
-    // candidatos: la última pose buena y las 6 claves más parecidas; se prueban 2 por cuadro, rotando
-    const candidatos = [];
-    if (this.Rbuena) candidatos.push({ R: this.Rbuena, t: this.tbuena, d: -1 });
-    for (const p of puntuadas.slice(0, 6)) candidatos.push({ R: this.claves[p.i].R, t: this.claves[p.i].t, d: p.d });
-    const porCuadro = 2;
-    for (let n = 0; n < porCuadro && n < candidatos.length; n++) {
-      const c = candidatos[(this.candIdx + n) % candidatos.length];
-      if (this._probarPose(c.R, c.t)) { this.candIdx = 0; return true; }
+    const probadas = new Set();
+    const probar = (R, t, i) => { if (i !== undefined) probadas.add(i); return this._probarPose(R, t); };
+    if (this.Rbuena && this.intentos % 4 === 1 && probar(this.Rbuena, this.tbuena)) return true;
+    for (const p of puntuadas.slice(0, 3)) {
+      if (performance.now() - t0 > presupuesto) return false;
+      if (probar(this.claves[p.i].R, this.claves[p.i].t, p.i)) return true;
     }
-    this.candIdx = (this.candIdx + porCuadro) % Math.max(1, candidatos.length);
+    // 2) barrido continuo de TODAS las vistas clave (ronda tras ronda) para recuperarse en cualquier parte
+    //    ya escaneada, aunque se llegue desde otro lado; en rondas sucesivas se prueban además las poses
+    //    giradas ±22° alrededor del centro (amplía la zona donde el ICP engancha)
+    const variantes = [null, [0, 22], [0, -22], [22, 0], [-22, 0], [0, 45], [0, -45]];
+    let n = 0;
+    while (performance.now() - t0 < presupuesto && n < this.claves.length * variantes.length) {
+      const i = this.candIdx % this.claves.length;
+      const pasada = Math.floor(this.candIdx / this.claves.length) % variantes.length;
+      this.candIdx = (this.candIdx + 1) % (this.claves.length * variantes.length);
+      n++;
+      if (pasada === 0 && probadas.has(i)) continue;
+      const k = this.claves[i];
+      let R = k.R, t = k.t;
+      const v = variantes[pasada];
+      if (v) { const g = girarAlrededorDelCentro(R, t, v[0], v[1]); R = g.R; t = g.t; }
+      if (probar(R, t, pasada === 0 ? i : undefined)) return true;
+    }
     return false;
   }
 
@@ -494,8 +518,8 @@ export class EscanerLibre {
     // un salto imposible entre dos cuadros seguidos (la mano no gira 30° ni se corre 25 cm en 1/30 s)
     // es una falsa alineación: se descarta aunque el ICP diga que encaja
     const plausible = (res) => anguloEntre(res.R, this.Rprev) < 30 && Math.hypot(res.t[0] - this.tprev[0], res.t[1] - this.tprev[1], res.t[2] - this.tprev[2]) < 250;
-    const evaluar = (res, estricto) => visibles > 300 * f && res.inliers >= 400 * f && res.inliers >= (estricto ? 0.55 : 0.4) * visibles
-      && res.residuo < (estricto ? this.vol.voxel : Math.max(6, this.vol.voxel * 1.5)) && plausible(res);
+    const evaluar = (res, estricto) => visibles > 300 * f && res.inliers >= 400 * f && res.inliers >= (estricto ? 0.6 : 0.5) * visibles
+      && res.residuo < (estricto ? this.vol.voxel * 0.8 : Math.max(4, this.vol.voxel)) && plausible(res);
     let res = this._icp();
     let ok = evaluar(res, false);
     if (!ok && visibles > 300 * f) {
@@ -519,7 +543,7 @@ export class EscanerLibre {
         else return this.estado(); // todavía no se integra: primero confirmar que la posición es la correcta
       } else this.modo = 'seguimiento';
       // integrar solo con seguimiento firme (evita ensuciar el modelo con poses dudosas)
-      const firme = res.inliers >= 0.5 * visibles || res.residuo < this.vol.voxel;
+      const firme = res.inliers >= 0.6 * visibles || res.residuo < this.vol.voxel * 0.75;
       if (firme) {
         this._integrar(z, this.R, this.t);
         this.integrados++;

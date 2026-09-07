@@ -344,14 +344,14 @@ async function libreIniciar() {
       const c = m.calidad;
       const modoAnterior = L.modo; L.modo = m.modo;
       if (c.primero) libreSemaforo('ok', 'Primera vista tomada: empezá a moverte despacio');
-      else if (m.modo === 'perdido') libreSemaforo('perdido', `Perdí el seguimiento: lo busco solo (${m.intentos} intentos). Apuntá a una parte ya escaneada, como la que se ve acá, y quedate quieto un segundo`);
+      else if (m.modo === 'perdido') libreSemaforo('perdido', `Perdí el seguimiento: seguí escaneando normalmente, lo recupero solo en cuanto vea cualquier parte ya escaneada (buscando, ${m.intentos} cuadros)`);
       else if (m.modo === 'verificando') libreSemaforo('aviso', 'Posición reencontrada: confirmando… no te muevas');
       else if (m.modo === 'inestable') libreSemaforo('aviso', 'Se movió muy rápido: frená un momento (recuperando)');
       else if (c.ok && m.giro > 6) libreSemaforo('aviso', 'Vas rápido: más despacio para no perder el seguimiento');
       else if (c.ok) libreSemaforo(c.inliers < 1000 ? 'aviso' : 'ok', c.inliers < 1000 ? 'Siguiendo, pero con pocos puntos: acercate o apuntá mejor' : 'Siguiendo · ' + m.integrados + ' vistas fundidas');
       else libreSemaforo('perdido', 'Se movió muy rápido: frená un momento');
       if (modoAnterior === 'verificando' && m.modo === 'seguimiento') toast('✔ Seguimiento recuperado solo: seguí escaneando');
-      else if (modoAnterior !== 'perdido' && m.modo === 'perdido') toast('Perdí el seguimiento: no hace falta tocar nada, volvé despacio a una zona ya escaneada');
+      else if (modoAnterior !== 'perdido' && m.modo === 'perdido') toast('Perdí el seguimiento: no hace falta tocar nada, seguí escaneando y se recupera solo');
       $('libreContadores').textContent = `${m.integrados} vistas fundidas · ${m.perdidos} descartados · ${m.reencontrados || 0} recuperaciones automáticas · ${m.claves || 0} vistas clave · alrededor cubierto: ${L.gradosCubiertos || 0}° de 360° · vóxel ${L.voxel || ''} mm`;
       libreBotones();
       return;

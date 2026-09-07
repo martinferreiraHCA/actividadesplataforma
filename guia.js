@@ -609,9 +609,11 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           <li><strong>A mano alzada</strong>: el Kinect se mueve alrededor de la persona o el objeto, que se quedan
           quietos. La página sigue la posición de la cámara cuadro a cuadro y va fundiendo todo en un volumen; en la
           vista previa ves el modelo formándose desde donde estás, y un semáforo avisa si te moviste muy rápido. Si el
-          seguimiento se pierde, <strong>se recupera solo</strong>: la página guarda vistas clave mientras escanea,
-          las compara con lo que ve el Kinect y vuelve a encontrar la posición cuando apuntás a una zona ya escaneada
-          (no integra nada hasta confirmarla en dos cuadros seguidos). No hay que tocar ningún botón. Para
+          seguimiento se pierde, <strong>se recupera solo</strong>: seguís escaneando como si nada; la página guarda
+          vistas clave mientras escanea y, cuadro a cuadro, compara lo que ve el Kinect con todas ellas (y con
+          versiones giradas) hasta que cualquier parte ya escaneada encaja, desde el lado que sea. Recién entonces,
+          tras confirmarlo en dos cuadros seguidos, vuelve a fundir vistas. No hay que volver a ninguna posición ni
+          tocar ningún botón. Para
           cabezas, bustos y objetos grandes, sin base giratoria ni mesa. Para <strong>caras y gestos</strong> usá el
           preset «Cara y gestos»: vóxeles de 2 mm, seguimiento nítido (320×240) y filtro de ruido, con el Kinect a
           55–65 cm, que es donde mide más fino. Va más lento (3–5 cuadros por segundo): movete despacio.</li>
