@@ -316,6 +316,11 @@ purgado listo para la impresora 3D.
   alrededor de la pieza (caja de la malla gruesa más margen; 1,5, 1 o 0,75 mm) y se vuelven a fundir todas
   las vistas con ponderación; con 2 rondas la segunda reajusta las poses contra el propio modelo fino. El
   seguimiento en vivo sigue siendo grueso y ágil; el detalle se gana al final. ICP multiescala (paso 4, 2, 1).
+- **Velocidad y recuperación inmediata**: raycast con paso adaptativo (salta casi mu lejos de la superficie y
+  tres pasos en zona nunca vista: la mitad del tiempo por cuadro), relocalización desde el primer cuadro
+  fallido probando primero giros de ±20–60° alrededor de la última pose buena («me moví rápido cerca de donde
+  estaba») y verificación de un solo cuadro cuando la pose reencontrada está cerca. Un salto de 25° se recupera
+  en 2 cuadros y uno de 60° en 3; el seguimiento aguanta 9° (126 mm) por cuadro en la escena sintética.
 - **Medición sobre el modelo**: distancia entre dos puntos (con Δ por eje), ángulo entre tres puntos, círculo
   por tres puntos (radio, diámetro, circunferencia: agujeros y curvaturas), perímetro del contorno horizontal a
   la altura del clic (corte de la malla con un plano, encadenado en lazos: contorno de una cabeza), planitud

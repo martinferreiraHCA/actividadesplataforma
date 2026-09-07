@@ -291,6 +291,16 @@ export class EscanerLibre {
     const puntuadas = this.claves.map((k, i) => ({ i, d: this._compararFirmas(this.firma, k.firma) })).filter(x => Number.isFinite(x.d)).sort((a, b) => a.d - b.d);
     const probadas = new Set();
     const probar = (R, t, i) => { if (i !== undefined) probadas.add(i); return this._probarPose(R, t); };
+    // 0) pérdida reciente: lo más probable es un tirón cerca de la última pose buena → giros alrededor del centro
+    if (this.Rbuena && this.seguidos <= 12) {
+      const cerca = this.intentos <= 1 ? [[0, 20], [0, -20], [20, 0], [-20, 0], [0, 40], [0, -40]] : [[0, 30], [0, -30], [30, 0], [-30, 0], [0, 60], [0, -60], [45, 0], [-45, 0]];
+      const desde = (this.intentos * 3) % cerca.length;
+      for (let n = 0; n < cerca.length && performance.now() - t0 < presupuesto * 0.6; n++) {
+        const v = cerca[(desde + n) % cerca.length];
+        const g = girarAlrededorDelCentro(this.Rbuena, this.tbuena, v[0], v[1]);
+        if (probar(g.R, g.t)) return true;
+      }
+    }
     if (this.Rbuena && this.intentos % 4 === 1 && probar(this.Rbuena, this.tbuena)) return true;
     for (const p of puntuadas.slice(0, 3)) {
       if (performance.now() - t0 > presupuesto) return false;
@@ -435,7 +445,10 @@ export class EscanerLibre {
       if (t1 <= t0) continue;
       let prev = NaN, tp = t0;
       let hit = -1;
-      for (let s = t0 + paso * 0.5; s < t1; s += paso) {
+      // paso adaptativo: lejos de la superficie (tsdf > 0,6) se salta casi mu; en zona nunca vista, 3 pasos
+      // (la banda positiva conocida tiene ≥ mu de espesor, así que no se saltea ningún cruce)
+      let salto = paso;
+      for (let s = t0 + paso * 0.5; s < t1; s += salto) {
         const val = muestra(o[0] + d[0] * s, o[1] + d[1] * s, o[2] + d[2] * s);
         if (!isNaN(val)) {
           if (!isNaN(prev) && prev > 0 && val <= 0) {
@@ -446,8 +459,8 @@ export class EscanerLibre {
             else hit = tp + (s - tp) * prev / (prev - val);
             break;
           }
-          if (val < -0.99) { prev = NaN; } else { prev = val; tp = s; }
-        } else prev = NaN;
+          if (val < -0.99) { prev = NaN; salto = paso; } else { prev = val; tp = s; salto = val > 0.6 ? Math.max(paso, val * mu * 0.6) : paso; }
+        } else { prev = NaN; salto = paso * 3; }
       }
       if (hit < 0) continue;
       const px = o[0] + d[0] * hit, py = o[1] + d[1] * hit, pz = o[2] + d[2] * hit;
@@ -629,6 +642,7 @@ export class EscanerLibre {
       // buscar la posición sola, sin tocar el modelo principal
       if (this._relocalizar(z)) {
         this.modo = 'verificando'; this.verificados = 0;
+        this.necesarios = anguloEntre(this.R, this.Rbuena) < 40 ? 1 : 2;
         this._anotarPar();
       } else {
         this.perdidos++; this.seguidos++;
@@ -682,7 +696,7 @@ export class EscanerLibre {
       if (this.modo === 'verificando') {
         this.verificados++;
         this._anotarPar();
-        if (this.verificados >= 2) {
+        if (this.verificados >= (this.necesarios || 2)) {
           this.modo = 'seguimiento'; this.reencontrados++;
           if (this.sub) {
             const T = this._transformacionSub();
@@ -706,8 +720,16 @@ export class EscanerLibre {
       this.R = this.Rprev.slice(); this.t = this.tprev.slice();
       this.Rant = null; this.tant = null;
       if (this.modo === 'verificando') { this.modo = 'perdido'; this.candIdx = 0; this.pares = []; }
-      else if (this.seguidos >= 3) { this.modo = 'perdido'; this.candIdx = 0; this.intentos = 0; }
-      else this.modo = 'inestable';
+      else {
+        // sin esperar: buscar ya la posición (primero cerca de la última buena, después en todas las vistas clave)
+        if (this.seguidos === 1) this.intentos = 0;
+        if (!this.esSubmapa && this.Rbuena && this._relocalizar(z)) {
+          this.modo = 'verificando'; this.verificados = 0;
+          this.necesarios = anguloEntre(this.R, this.Rbuena) < 40 ? 1 : 2;
+          this._anotarPar();
+        } else if (this.seguidos >= 3) { this.modo = 'perdido'; this.candIdx = 0; }
+        else this.modo = 'inestable';
+      }
     }
     return this.estado();
   }
