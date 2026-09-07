@@ -291,7 +291,12 @@ purgado listo para la impresora 3D.
 - **Escaneo a mano alzada** (`escaneo3d-libre.js`, en un Web Worker): KinectFusion simplificado. Con la pose
   anterior se raycastea el volumen TSDF (mapa de puntos y normales, que además es la vista previa en vivo), el
   cuadro nuevo se alinea por ICP punto-a-plano con asociación proyectiva a 160×120, y se integra con la pose
-  obtenida. Semáforo de seguimiento, pausa, reinicio y cierre con el mismo purgado y las mismas descargas.
+  obtenida. **Pérdida y recuperación automática del seguimiento**: máquina de estados (seguimiento, inestable,
+  perdido, verificando), descarte de alineaciones físicamente imposibles entre cuadros, segundo intento de ICP
+  con búsqueda amplia, vistas clave (pose + firma de profundidad 32×24) guardadas mientras se escanea y
+  relocalización por comparación de firmas + corrección por centroide + ICP amplio desde las mejores candidatas,
+  con verificación en dos cuadros antes de volver a integrar. Semáforo de seguimiento, pausa, reinicio y cierre
+  con el mismo purgado y las mismas descargas.
   Resolución de seguimiento y vista previa a elección (160×120 o 320×240), vóxeles de 2 a 8 mm y filtro
   bilateral del mapa de profundidad para caras y detalles finos.
 - **Asistente guiado**: chequeo en vivo de la escena (inclinación, mesa, distancia, tamaño, encaje en la

@@ -32,6 +32,12 @@ function mulR(a, b) {
   for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) r[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j];
   return r;
 }
+// ángulo (grados) entre dos rotaciones
+function anguloEntre(A, B) {
+  // traza de A·Bᵀ
+  const tr = A[0] * B[0] + A[1] * B[1] + A[2] * B[2] + A[3] * B[3] + A[4] * B[4] + A[5] * B[5] + A[6] * B[6] + A[7] * B[7] + A[8] * B[8];
+  return Math.acos(Math.max(-1, Math.min(1, (tr - 1) / 2))) * 180 / Math.PI;
+}
 function apR(R, p) { return [R[0] * p[0] + R[1] * p[1] + R[2] * p[2], R[3] * p[0] + R[4] * p[1] + R[5] * p[2], R[6] * p[0] + R[7] * p[1] + R[8] * p[2]]; }
 function apRt(R, p) { return [R[0] * p[0] + R[3] * p[1] + R[6] * p[2], R[1] * p[0] + R[4] * p[1] + R[7] * p[2], R[2] * p[0] + R[5] * p[1] + R[8] * p[2]]; }
 
@@ -112,6 +118,104 @@ export class EscanerLibre {
     this.hayModelo = false;
     // desde qué lados ya se miró el centro del volumen: 36 sectores de acimut × 3 franjas de altura
     this.cobertura = new Uint8Array(36 * 3);
+    // seguimiento: 'inicio' | 'seguimiento' | 'inestable' | 'perdido' | 'verificando'
+    this.modo = 'inicio';
+    this.claves = [];          // vistas clave para reencontrar la posición sola: { R, t, firma, validos }
+    this.firmaW = 32; this.firmaH = 24;
+    this.firma = new Float32Array(this.firmaW * this.firmaH);
+    this.candIdx = 0; this.intentos = 0; this.reencontrados = 0; this.verificados = 0;
+    this.Rbuena = null; this.tbuena = null; // última pose confiable (para la vista mientras está perdido)
+    this.giro = 0; this.desplazamiento = 0; // movimiento entre cuadros seguidos (grados, mm)
+  }
+
+  // ---------- firma de un cuadro: profundidad promediada a 32×24 (para comparar vistas) ----------
+  _firmaDe(z, salida) {
+    const { ancho: W, alto: H } = this.intr;
+    const fw = this.firmaW, fh = this.firmaH;
+    const bx = W / fw, by = H / fh;
+    let validos = 0;
+    for (let j = 0; j < fh; j++) for (let i = 0; i < fw; i++) {
+      let s = 0, c = 0;
+      const u0 = Math.floor(i * bx), v0 = Math.floor(j * by), u1 = Math.floor((i + 1) * bx), v1 = Math.floor((j + 1) * by);
+      for (let v = v0; v < v1; v += 2) { const fila = v * W; for (let u = u0; u < u1; u += 2) { const d = z[fila + u]; if (d > 0) { s += d; c++; } } }
+      salida[j * fw + i] = c >= 4 ? s / c : 0;
+      if (c >= 4) validos++;
+    }
+    return validos;
+  }
+
+  // distancia entre firmas: diferencia media de profundidad (mm) penalizada por poco solapamiento
+  _compararFirmas(a, b) {
+    let s = 0, c = 0, va = 0;
+    for (let k = 0; k < a.length; k++) {
+      if (a[k] > 0) va++;
+      if (a[k] > 0 && b[k] > 0) { s += Math.abs(a[k] - b[k]); c++; }
+    }
+    if (c < 40 || !va) return Infinity;
+    const solape = c / va;
+    return (s / c) / Math.max(0.15, solape);
+  }
+
+  _guardarClave(z) {
+    // solo si la pose se alejó de todas las claves guardadas (≥ 12° o ≥ 60 mm)
+    for (const k of this.claves) {
+      if (anguloEntre(k.R, this.R) < 12 && Math.hypot(k.t[0] - this.t[0], k.t[1] - this.t[1], k.t[2] - this.t[2]) < 60) return;
+    }
+    if (this.claves.length >= 240) this.claves.splice(1, 1); // conservar la primera, tirar la más vieja después
+    const firma = new Float32Array(this.firmaW * this.firmaH);
+    const validos = this._firmaDe(z, firma);
+    if (validos < 60) return;
+    this.claves.push({ R: this.R.slice(), t: this.t.slice(), firma, validos });
+  }
+
+  // ---------- relocalización automática ----------
+  // Compara el cuadro con las vistas clave, prueba las mejores (raycast desde su pose + corrección
+  // por centroide + ICP amplio) y, si alguna encaja, pasa a 'verificando'.
+  _relocalizar(z) {
+    this.intentos++;
+    const validosFirma = this._firmaDe(z, this.firma);
+    if (validosFirma < 60 || !this.claves.length) return false;
+    const puntuadas = this.claves.map((k, i) => ({ i, d: this._compararFirmas(this.firma, k.firma) })).filter(x => Number.isFinite(x.d)).sort((a, b) => a.d - b.d);
+    if (!puntuadas.length) return false;
+    // candidatos: la última pose buena y las 6 claves más parecidas; se prueban 2 por cuadro, rotando
+    const candidatos = [];
+    if (this.Rbuena) candidatos.push({ R: this.Rbuena, t: this.tbuena, d: -1 });
+    for (const p of puntuadas.slice(0, 6)) candidatos.push({ R: this.claves[p.i].R, t: this.claves[p.i].t, d: p.d });
+    const porCuadro = 2;
+    for (let n = 0; n < porCuadro && n < candidatos.length; n++) {
+      const c = candidatos[(this.candIdx + n) % candidatos.length];
+      if (this._probarPose(c.R, c.t)) { this.candIdx = 0; return true; }
+    }
+    this.candIdx = (this.candIdx + porCuadro) % Math.max(1, candidatos.length);
+    return false;
+  }
+
+  _probarPose(Rc, tc) {
+    this.Rprev = Rc.slice(); this.tprev = tc.slice();
+    const visibles = this._raycast(this.Rprev, this.tprev);
+    const f = this.esc === 2 ? 4 : 1;
+    if (visibles < 300 * f) return false;
+    // corrección por centroide: llevar el centro de los puntos del cuadro sobre el del modelo visible
+    let cmx = 0, cmy = 0, cmz = 0, nm = 0, cfx = 0, cfy = 0, cfz = 0, nf = 0;
+    const n = this.W * this.H;
+    for (let k = 0; k < n; k++) {
+      if (this.Mm[k]) { cmx += this.Vm[k * 3]; cmy += this.Vm[k * 3 + 1]; cmz += this.Vm[k * 3 + 2]; nm++; }
+      if (this.Mf[k]) { const p = apR(Rc, [this.Vf[k * 3], this.Vf[k * 3 + 1], this.Vf[k * 3 + 2]]); cfx += p[0] + tc[0]; cfy += p[1] + tc[1]; cfz += p[2] + tc[2]; nf++; }
+    }
+    this.R = Rc.slice(); this.t = tc.slice();
+    if (nm > 50 && nf > 50) {
+      const dx = cmx / nm - cfx / nf, dy = cmy / nm - cfy / nf, dz = cmz / nm - cfz / nf;
+      const l = Math.hypot(dx, dy, dz);
+      if (l < 250) this.t = [tc[0] + dx, tc[1] + dy, tc[2] + dz];
+    }
+    const res = this._icp({ distMax: Math.max(90, this.vol.voxel * 18), iteraciones: 18 });
+    const ok = res.inliers >= 500 * f && res.inliers >= 0.5 * visibles && res.residuo < Math.max(4, this.vol.voxel);
+    if (!ok) return false;
+    this.R = res.R; this.t = res.t;
+    this.Rprev = this.R.slice(); this.tprev = this.t.slice();
+    this.Rant = null; this.tant = null;
+    this.calidad = { inliers: res.inliers, validos: res.validos, residuo: res.residuo, visibles, ok: true };
+    return true;
   }
 
   _anotarCobertura() {
@@ -245,7 +349,7 @@ export class EscanerLibre {
   }
 
   // ---------- ICP punto-a-plano contra el mapa del modelo (raycast en Rprev, tprev) ----------
-  _icp() {
+  _icp(opciones = {}) {
     const { fx, fy, cx, cy } = this.intr;
     const fxr = fx / this.esc, fyr = fy / this.esc, cxr = (cx + 0.5) / this.esc - 0.5, cyr = (cy + 0.5) / this.esc - 0.5;
     const Vf = this.Vf, Nf = this.Nf, Mf = this.Mf, Vm = this.Vm, Nm = this.Nm, Mm = this.Mm;
@@ -254,9 +358,10 @@ export class EscanerLibre {
     const A = new Float64Array(36), b = new Float64Array(6);
     const J = new Float64Array(6);
     let inliers = 0, validos = 0, residuo = 0;
-    const distMax = Math.max(40, this.vol.voxel * 8), distMax2 = distMax * distMax, cosMin = Math.cos(35 * Math.PI / 180);
+    const distMax = opciones.distMax || Math.max(40, this.vol.voxel * 8), distMax2 = distMax * distMax, cosMin = Math.cos(35 * Math.PI / 180);
     const n = this.W * this.H;
-    for (let it = 0; it < 10; it++) {
+    const iteraciones = opciones.iteraciones || 10;
+    for (let it = 0; it < iteraciones; it++) {
       A.fill(0); b.fill(0); inliers = 0; validos = 0; residuo = 0;
       const r0 = R[0], r1 = R[1], r2 = R[2], r3 = R[3], r4 = R[4], r5 = R[5], r6 = R[6], r7 = R[7], r8 = R[8];
       const tx = t[0], ty = t[1], tz = t[2];
@@ -349,13 +454,31 @@ export class EscanerLibre {
       this.integrados = 1;
       this._anotarCobertura();
       this.Rprev = this.R.slice(); this.tprev = this.t.slice();
+      this.Rbuena = this.R.slice(); this.tbuena = this.t.slice();
+      this._guardarClave(z);
       this._raycast(this.R, this.t);
       this.calidad = { inliers: 0, validos: 0, residuo: 0, ok: true, primero: true };
+      this.modo = 'seguimiento';
       return this.estado();
     }
+
+    if (this.modo === 'perdido') {
+      // buscar la posición sola, sin tocar el modelo
+      if (this._relocalizar(z)) {
+        this.modo = 'verificando'; this.verificados = 0;
+      } else {
+        this.perdidos++; this.seguidos++;
+        // la vista previa muestra el modelo desde la última pose buena, para que el usuario vuelva ahí
+        this.R = this.Rbuena.slice(); this.t = this.tbuena.slice();
+        this._raycast(this.R, this.t);
+        this.calidad = { inliers: 0, validos: 0, residuo: 0, visibles: 0, ok: false };
+      }
+      return this.estado();
+    }
+
     // el raycast se hace desde la pose anterior; predicción de velocidad constante (amortiguada)
     const visibles = this._raycast(this.Rprev, this.tprev);
-    if (this.Rant) {
+    if (this.Rant && this.modo === 'seguimiento') {
       const dR = mulR(this.Rprev, [this.Rant[0], this.Rant[3], this.Rant[6], this.Rant[1], this.Rant[4], this.Rant[7], this.Rant[2], this.Rant[5], this.Rant[8]]);
       // media vuelta del giro anterior: interpolación burda por Rodrigues del ángulo
       const ang = Math.acos(Math.max(-1, Math.min(1, (dR[0] + dR[4] + dR[8] - 1) / 2)));
@@ -367,29 +490,58 @@ export class EscanerLibre {
         this.t = [this.tprev[0] + dt[0] * 0.5, this.tprev[1] + dt[1] * 0.5, this.tprev[2] + dt[2] * 0.5];
       } else { this.R = this.Rprev.slice(); this.t = this.tprev.slice(); }
     } else { this.R = this.Rprev.slice(); this.t = this.tprev.slice(); }
-    const res = this._icp();
     const f = this.esc === 2 ? 4 : 1;
-    const ok = visibles > 300 * f && res.inliers >= 400 * f && res.inliers >= 0.4 * visibles && res.residuo < Math.max(6, this.vol.voxel * 1.5);
+    // un salto imposible entre dos cuadros seguidos (la mano no gira 30° ni se corre 25 cm en 1/30 s)
+    // es una falsa alineación: se descarta aunque el ICP diga que encaja
+    const plausible = (res) => anguloEntre(res.R, this.Rprev) < 30 && Math.hypot(res.t[0] - this.tprev[0], res.t[1] - this.tprev[1], res.t[2] - this.tprev[2]) < 250;
+    const evaluar = (res, estricto) => visibles > 300 * f && res.inliers >= 400 * f && res.inliers >= (estricto ? 0.55 : 0.4) * visibles
+      && res.residuo < (estricto ? this.vol.voxel : Math.max(6, this.vol.voxel * 1.5)) && plausible(res);
+    let res = this._icp();
+    let ok = evaluar(res, false);
+    if (!ok && visibles > 300 * f) {
+      // segundo intento desde la pose anterior sin predicción y con búsqueda más amplia (movimiento brusco);
+      // al buscar más lejos se exige un encaje mejor para no aceptar una alineación falsa
+      this.R = this.Rprev.slice(); this.t = this.tprev.slice();
+      res = this._icp({ distMax: Math.max(80, this.vol.voxel * 16), iteraciones: 14 });
+      ok = evaluar(res, true);
+    }
     this.calidad = { inliers: res.inliers, validos: res.validos, residuo: res.residuo, visibles, ok };
     if (ok) {
+      this.giro = anguloEntre(res.R, this.Rprev);
+      this.desplazamiento = Math.hypot(res.t[0] - this.tprev[0], res.t[1] - this.tprev[1], res.t[2] - this.tprev[2]);
       this.Rant = this.Rprev; this.tant = this.tprev;
       this.R = res.R; this.t = res.t;
-      this._integrar(z, this.R, this.t);
-      this.integrados++;
-      this._anotarCobertura();
-      this.seguidos = 0;
       this.Rprev = this.R.slice(); this.tprev = this.t.slice();
+      this.seguidos = 0;
+      if (this.modo === 'verificando') {
+        this.verificados++;
+        if (this.verificados >= 2) { this.modo = 'seguimiento'; this.reencontrados++; }
+        else return this.estado(); // todavía no se integra: primero confirmar que la posición es la correcta
+      } else this.modo = 'seguimiento';
+      // integrar solo con seguimiento firme (evita ensuciar el modelo con poses dudosas)
+      const firme = res.inliers >= 0.5 * visibles || res.residuo < this.vol.voxel;
+      if (firme) {
+        this._integrar(z, this.R, this.t);
+        this.integrados++;
+        this._anotarCobertura();
+        this.Rbuena = this.R.slice(); this.tbuena = this.t.slice();
+        if (this.integrados % 3 === 0) this._guardarClave(z);
+      }
     } else {
       this.perdidos++; this.seguidos++;
       this.R = this.Rprev.slice(); this.t = this.tprev.slice();
       this.Rant = null; this.tant = null;
+      if (this.modo === 'verificando') { this.modo = 'perdido'; this.candIdx = 0; }
+      else if (this.seguidos >= 3) { this.modo = 'perdido'; this.candIdx = 0; this.intentos = 0; }
+      else this.modo = 'inestable';
     }
     return this.estado();
   }
 
   estado() {
     return { cuadros: this.cuadros, integrados: this.integrados, perdidos: this.perdidos, seguidos: this.seguidos, calidad: this.calidad, R: this.R.slice(), t: this.t.slice(), imagen: this.imagen, ancho: this.W, alto: this.H,
-      cobertura: Array.from(this.cobertura), acimut: this.acimut || 0, elevacion: this.elevacion || 0, distanciaCentro: Math.hypot(this.t[0], this.t[1], this.t[2]) };
+      cobertura: Array.from(this.cobertura), acimut: this.acimut || 0, elevacion: this.elevacion || 0, distanciaCentro: Math.hypot(this.t[0], this.t[1], this.t[2]),
+      modo: this.modo, claves: this.claves.length, intentos: this.intentos, reencontrados: this.reencontrados, verificados: this.verificados, giro: this.giro, desplazamiento: this.desplazamiento };
   }
 
   // Esquinas del volumen proyectadas en la imagen completa con la pose actual (para dibujarlo encima).
@@ -429,6 +581,8 @@ export class EscanerLibre {
     this.R = [-1, 0, 0, 0, -1, 0, 0, 0, 1]; this.t = [0, 0, -this.distancia];
     this.Rprev = this.R.slice(); this.tprev = this.t.slice(); this.Rant = null; this.tant = null;
     this.cuadros = 0; this.integrados = 0; this.perdidos = 0; this.seguidos = 0; this.hayModelo = false;
+    this.modo = 'inicio'; this.claves = []; this.candIdx = 0; this.intentos = 0; this.reencontrados = 0; this.verificados = 0;
+    this.Rbuena = null; this.tbuena = null; this.giro = 0; this.desplazamiento = 0;
   }
 }
 
