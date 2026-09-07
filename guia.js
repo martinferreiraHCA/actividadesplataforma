@@ -613,8 +613,10 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           vistas clave mientras escanea y, cuadro a cuadro, compara lo que ve el Kinect con todas ellas (y con
           versiones giradas) hasta que cualquier parte ya escaneada encaja, desde el lado que sea. Mientras tanto
           <strong>no se pierde nada</strong>: lo que ves se guarda en un tramo aparte (lo ves formándose en la vista)
-          y, al confirmar la posición en dos cuadros seguidos, ese tramo se une al modelo con la transformación
-          calculada. No hay que volver a ninguna posición ni tocar ningún botón. Para
+          y, al confirmar la posición, ese tramo se une al modelo con la transformación calculada. La búsqueda
+          empieza en el primer cuadro fallido probando primero «cerca de donde estaba», así un tirón se recupera en
+          dos o tres cuadros. No hay que volver a ninguna posición ni tocar ningún botón. Podés moverte rápido: el
+          seguimiento aguanta giros de varios grados por cuadro y, si se pierde, se reengancha solo. Para
           cabezas, bustos y objetos grandes, sin base giratoria ni mesa. Para <strong>caras y gestos</strong> usá el
           preset «Cara y gestos»: vóxeles de 2 mm, seguimiento nítido (320×240) y filtro de ruido, con el Kinect a
           55–65 cm, que es donde mide más fino. Va más lento (3–5 cuadros por segundo): movete despacio.</li>
