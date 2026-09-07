@@ -473,6 +473,24 @@
         <button class="btn" id="btnPLY" type="button">⬇ Nube de puntos (PLY)</button>
       </div>
       <div id="statsModelo" class="inf-stats" style="margin-bottom:0.6rem"></div>
+      <details class="kin-guia" id="bloqueBusto" style="margin-bottom:0.8rem">
+        <summary>🗿 Busto o placa de cara para imprimir</summary>
+        <div class="kin-guia__cuerpo">
+          <div class="kin-fila"><label for="bustoTipo">Tipo</label>
+            <select class="campo__input" id="bustoTipo" style="max-width:260px"><option value="busto" selected>busto (corte horizontal con base plana)</option><option value="placa">placa de cara (fondo plano, para colgar)</option></select>
+            <label for="bustoGiro">Giro</label><input type="range" id="bustoGiro" min="-180" max="180" step="1" value="0"><span class="kin-valor" id="valBustoGiro">0°</span></div>
+          <div class="kin-fila"><label for="bustoCorte">Corte abajo</label><input type="range" id="bustoCorte" min="0" max="60" step="1" value="15"><span class="kin-valor" id="valBustoCorte">15 % de la altura</span>
+            <span id="zonaFondo"><label for="bustoFondo">Fondo</label><input type="range" id="bustoFondo" min="20" max="90" step="1" value="55"><span class="kin-valor" id="valBustoFondo">55 % de la profundidad</span></span></div>
+          <div class="kin-fila"><label for="bustoPedestal">Pedestal</label>
+            <select class="campo__input" id="bustoPedestal" style="max-width:150px"><option value="no">ninguno</option><option value="cilindro" selected>cilindro</option><option value="cubo">cubo</option></select>
+            <input class="campo__input" type="number" id="bustoPedestalAlto" min="3" max="100" step="1" value="12" style="max-width:80px"><span class="kin-valor">mm de alto</span>
+            <label for="bustoAltura">Altura final</label><input class="campo__input" type="number" id="bustoAltura" min="0" max="400" step="1" value="120" style="max-width:80px"><span class="kin-valor">mm (0 = tamaño real)</span></div>
+          <div class="kin-fila"><label class="scratch-check" title="Deja una cáscara con ese espesor de pared; la base queda abierta. Ahorra material e imprime más rápido"><input type="checkbox" id="bustoAhuecar"> Ahuecar, pared de</label><input class="campo__input" type="number" id="bustoPared" min="1.5" max="15" step="0.5" value="3" style="max-width:70px"><span class="kin-valor">mm</span>
+            <label for="bustoAdaptativo">Pelo y ruido</label><select class="campo__input" id="bustoAdaptativo" style="max-width:220px"><option value="0">sin suavizado adaptativo</option><option value="2" selected>suavizado adaptativo leve</option><option value="4">suavizado adaptativo fuerte</option></select></div>
+          <div class="kin-fila"><button class="btn btn--primary" id="btnBusto" type="button">🗿 Armar el busto</button><button class="btn" id="btnBustoDeshacer" type="button" disabled>↺ Volver al modelo completo</button><span class="kin-valor" id="infoBusto"></span></div>
+          <p class="kin-nota" style="margin:0.4rem 0 0">El frente es hacia donde miraba el Kinect en la primera vista (girá si hace falta). El corte cierra la base plana y la apoya en Z = 0; con «ahuecar» la base queda abierta. Para la placa, el fondo corta detrás de la cara y deja la parte de adelante con respaldo plano.</p>
+        </div>
+      </details>
       <div class="scratch-opciones" style="margin-bottom:0.8rem">
         <button class="btn" id="btnMedir" type="button" title="Hacé clic en el modelo para medir">📏 Medir en el modelo</button>
         <select class="campo__input" id="optMedida" style="max-width:260px" title="Qué medir con los clics">

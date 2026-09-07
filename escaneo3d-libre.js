@@ -767,7 +767,8 @@ export class EscanerLibre {
 
   // ---------- malla final ----------
   malla(opciones = {}) {
-    const F = N.campoFinal(this.vol, { relleno: opciones.relleno || 'solido' });
+    let F = N.campoFinal(this.vol, { relleno: opciones.relleno || 'solido' });
+    if (opciones.ahuecar > 0) F = N.ahuecarCampo(F, this.vol, opciones.ahuecar);
     let m = N.extraerMalla(F, this.vol);
     const info = { componentes: 1 };
     if (m.idx.length) {
@@ -844,7 +845,8 @@ export class EscanerLibre {
     }
     // 3) malla
     avisar('Extrayendo la superficie fina');
-    const F = N.campoFinal(vol, { relleno: opciones.relleno || 'solido' });
+    let F = N.campoFinal(vol, { relleno: opciones.relleno || 'solido' });
+    if (opciones.ahuecar > 0) { avisar(`Ahuecando con pared de ${opciones.ahuecar} mm`); F = N.ahuecarCampo(F, vol, opciones.ahuecar); }
     let m = N.extraerMalla(F, vol);
     const info = { componentes: 1, refinado: true, vistas: poses.length, ajustadas, voxelFino: voxel, rondas };
     if (m.idx.length) {

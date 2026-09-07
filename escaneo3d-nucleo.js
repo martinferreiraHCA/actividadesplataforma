@@ -1098,6 +1098,277 @@ export function planoLocal(m, centro, radio) {
   return { punto: [mx, my, mz], normal, rms: Math.sqrt(rms / n), puntos: n };
 }
 
+// ============================================================
+// Bustos y placas de cara
+// ============================================================
+
+// Triangulación por recorte de orejas de un polígono simple 2D (puede ser cóncavo). Devuelve índices.
+export function triangularPoligono(pts) {
+  const n = pts.length; if (n < 3) return [];
+  let area = 0; for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+  const orden = []; for (let i = 0; i < n; i++) orden.push(area >= 0 ? i : n - 1 - i);
+  const tris = [];
+  const cruz2 = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const dentro = (p, a, b, c) => cruz2(a, b, p) >= -1e-9 && cruz2(b, c, p) >= -1e-9 && cruz2(c, a, p) >= -1e-9;
+  let guardia = 0;
+  while (orden.length > 3 && guardia < 20000) {
+    guardia++;
+    let cortado = false;
+    for (let i = 0; i < orden.length; i++) {
+      const ia = orden[(i + orden.length - 1) % orden.length], ib = orden[i], ic = orden[(i + 1) % orden.length];
+      const a = pts[ia], b = pts[ib], c = pts[ic];
+      if (cruz2(a, b, c) <= 1e-9) continue; // reflejo
+      let ok = true;
+      for (const j of orden) { if (j === ia || j === ib || j === ic) continue; if (dentro(pts[j], a, b, c)) { ok = false; break; } }
+      if (!ok) continue;
+      tris.push(ia, ib, ic); orden.splice(i, 1); cortado = true; break;
+    }
+    if (!cortado) { // polígono degenerado: cerrar con abanico
+      for (let i = 1; i < orden.length - 1; i++) tris.push(orden[0], orden[i], orden[i + 1]);
+      return tris;
+    }
+  }
+  if (orden.length === 3) tris.push(orden[0], orden[1], orden[2]);
+  return tris;
+}
+
+// Corta la malla con un plano (punto p, normal n) y conserva el lado hacia donde apunta n; cierra el corte
+// con una tapa plana triangulada. Devuelve { malla, tapas }.
+export function cortarMalla(m, p, n) {
+  const { pos, idx } = m;
+  const l = Math.hypot(n[0], n[1], n[2]) || 1; const nx = n[0] / l, ny = n[1] / l, nz = n[2] / l;
+  const d0 = nx * p[0] + ny * p[1] + nz * p[2];
+  const nV = pos.length / 3;
+  const dist = new Float32Array(nV);
+  for (let v = 0; v < nV; v++) dist[v] = nx * pos[v * 3] + ny * pos[v * 3 + 1] + nz * pos[v * 3 + 2] - d0;
+  const nuevaPos = Array.from(pos), nuevoIdx = [];
+  const cortes = new Map(); // arista → vértice nuevo sobre el plano
+  const claveA = (a, b) => a < b ? a * 4294967296 + b : b * 4294967296 + a;
+  const corte = (a, b) => {
+    const k = claveA(a, b); let v = cortes.get(k); if (v !== undefined) return v;
+    const t = dist[a] / (dist[a] - dist[b]);
+    v = nuevaPos.length / 3;
+    nuevaPos.push(pos[a * 3] + t * (pos[b * 3] - pos[a * 3]), pos[a * 3 + 1] + t * (pos[b * 3 + 1] - pos[a * 3 + 1]), pos[a * 3 + 2] + t * (pos[b * 3 + 2] - pos[a * 3 + 2]));
+    cortes.set(k, v); return v;
+  };
+  const bordes = []; // segmentos [va, vb] del corte, orientados como el borde del lado conservado
+  for (let t = 0; t < idx.length; t += 3) {
+    const v = [idx[t], idx[t + 1], idx[t + 2]]; const s = v.map(i => dist[i] >= 0);
+    const cuantos = s.filter(Boolean).length;
+    if (cuantos === 3) { nuevoIdx.push(v[0], v[1], v[2]); continue; }
+    if (cuantos === 0) continue;
+    // rotar para que el primer vértice sea el "distinto"
+    let r = 0; if (cuantos === 1) { r = s.indexOf(true); } else { r = s.indexOf(false); }
+    const a = v[r], b = v[(r + 1) % 3], c = v[(r + 2) % 3];
+    if (cuantos === 1) { const ab = corte(a, b), ac = corte(a, c); nuevoIdx.push(a, ab, ac); bordes.push([ac, ab]); }
+    else { const ab = corte(a, b), ac = corte(a, c); nuevoIdx.push(ab, b, c, ab, c, ac); bordes.push([ab, ac]); }
+  }
+  // encadenar los segmentos del corte en lazos y taparlos
+  const sig = new Map(); for (const [a, b] of bordes) sig.set(a, b);
+  const usados = new Set(); let tapas = 0;
+  // base del plano
+  let u = Math.abs(nx) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+  u = normalizar(cruz(u, [nx, ny, nz])); const w = cruz([nx, ny, nz], u);
+  const lazos = [];
+  for (const ini of sig.keys()) {
+    if (usados.has(ini)) continue;
+    const lazo = []; let v = ini;
+    while (v !== undefined && !usados.has(v)) { usados.add(v); lazo.push(v); v = sig.get(v); }
+    if (lazo.length < 3 || v !== ini) continue;
+    const pts2 = lazo.map(i => { const x = nuevaPos[i * 3] - p[0], y = nuevaPos[i * 3 + 1] - p[1], z = nuevaPos[i * 3 + 2] - p[2]; return [x * u[0] + y * u[1] + z * u[2], x * w[0] + y * w[1] + z * w[2]]; });
+    lazos.push({ lazo, pts2 });
+  }
+  // lazos anidados (una pieza hueca): el corte es un anillo y se deja abierto (base abierta para imprimir)
+  const dentroDe = (q, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > q[1]) !== (b[1] > q[1]) && q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+  const anidado = new Set();
+  for (let a = 0; a < lazos.length; a++) for (let b = 0; b < lazos.length; b++) { if (a === b) continue; if (dentroDe(lazos[a].pts2[0], lazos[b].pts2)) { anidado.add(a); anidado.add(b); } }
+  for (let q = 0; q < lazos.length; q++) {
+    if (anidado.has(q)) continue;
+    const { lazo, pts2 } = lazos[q];
+    const tris = triangularPoligono(pts2);
+    // la tapa mira hacia −n (hacia afuera del lado conservado)
+    for (let k = 0; k < tris.length; k += 3) {
+      const A = lazo[tris[k]], B = lazo[tris[k + 1]], C = lazo[tris[k + 2]];
+      const ax = nuevaPos[A * 3], ay = nuevaPos[A * 3 + 1], az = nuevaPos[A * 3 + 2];
+      const e1 = [nuevaPos[B * 3] - ax, nuevaPos[B * 3 + 1] - ay, nuevaPos[B * 3 + 2] - az], e2 = [nuevaPos[C * 3] - ax, nuevaPos[C * 3 + 1] - ay, nuevaPos[C * 3 + 2] - az];
+      const nn = cruz(e1, e2);
+      if (nn[0] * nx + nn[1] * ny + nn[2] * nz > 0) nuevoIdx.push(A, C, B); else nuevoIdx.push(A, B, C);
+    }
+    tapas++;
+  }
+  return { malla: compactar(Float32Array.from(nuevaPos), Uint32Array.from(nuevoIdx)), tapas, abiertos: anidado.size };
+}
+
+// Pedestal (cilindro o prisma) debajo del plano y = yBase, centrado en (cx, cz). Se devuelve como malla aparte.
+export function pedestal(tipo, cx, cz, yBase, radio, alto, lados = 64) {
+  const pos = [], idx = [];
+  const n = tipo === 'cubo' ? 4 : lados;
+  const desfase = tipo === 'cubo' ? Math.PI / 4 : 0;
+  const r = tipo === 'cubo' ? radio * Math.SQRT2 : radio;
+  const yTop = yBase + 0.6, yBot = yBase - alto; // 0,6 mm de solape con el busto para que el slicer una las dos piezas
+  for (let i = 0; i < n; i++) { const a = desfase + i / n * Math.PI * 2; pos.push(cx + r * Math.cos(a), yBot, cz + r * Math.sin(a)); }
+  for (let i = 0; i < n; i++) { const a = desfase + i / n * Math.PI * 2; pos.push(cx + r * Math.cos(a), yTop, cz + r * Math.sin(a)); }
+  const cb = pos.length / 3; pos.push(cx, yBot, cz); const ct = cb + 1; pos.push(cx, yTop, cz);
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    idx.push(i, j, n + i, j, n + j, n + i);        // lateral
+    idx.push(cb, j, i);                             // base (hacia abajo)
+    idx.push(ct, n + i, n + j);                     // tapa (hacia arriba)
+  }
+  const m = { pos: Float32Array.from(pos), idx: Uint32Array.from(idx) };
+  if (volumenMalla(m) < 0) invertirCaras(m);
+  return m;
+}
+
+export function unirMallas(a, b) {
+  const pos = new Float32Array(a.pos.length + b.pos.length); pos.set(a.pos); pos.set(b.pos, a.pos.length);
+  const idx = new Uint32Array(a.idx.length + b.idx.length); idx.set(a.idx);
+  const off = a.pos.length / 3; for (let i = 0; i < b.idx.length; i++) idx[a.idx.length + i] = b.idx[i] + off;
+  return { pos, idx };
+}
+
+// Rota la malla alrededor del eje Y (grados) respecto de un centro, y la traslada.
+export function transformarMalla(m, { giroY = 0, centro = [0, 0, 0], traslacion = [0, 0, 0], escala = 1 } = {}) {
+  const a = giroY * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  const pos = new Float32Array(m.pos.length);
+  for (let i = 0; i < pos.length; i += 3) {
+    const x = m.pos[i] - centro[0], y = m.pos[i + 1] - centro[1], z = m.pos[i + 2] - centro[2];
+    pos[i] = (x * c + z * s) * escala + centro[0] + traslacion[0];
+    pos[i + 1] = y * escala + centro[1] + traslacion[1];
+    pos[i + 2] = (-x * s + z * c) * escala + centro[2] + traslacion[2];
+  }
+  return { pos, idx: m.idx };
+}
+
+// Transformada de distancia euclídea 3D (Meijster) del conjunto «adentro» (F < 0): distancia en vóxeles
+// desde cada nodo interior hasta el exterior más cercano. Sirve para ahuecar con espesor de pared real.
+export function distanciaInterior(F, nx, ny, nz) {
+  const INF = 1e9;
+  const g = new Float32Array(F.length);
+  // 1) a lo largo de X
+  for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) {
+    const base = k * nx * ny + j * nx;
+    let d = INF;
+    for (let i = 0; i < nx; i++) { d = F[base + i] < 0 ? Math.min(d + 1, nx * 4) : 0; g[base + i] = d; }
+    d = g[base + nx - 1];
+    for (let i = nx - 1; i >= 0; i--) { d = F[base + i] < 0 ? Math.min(d + 1, g[base + i]) : 0; g[base + i] = d; }
+  }
+  // 2) y 3) en Y y en Z: mínimo de g² + desplazamiento² (búsqueda directa acotada)
+  const pasada = (paso, largo, indice) => {
+    const f = new Float32Array(largo), res = new Float32Array(largo);
+    const total = F.length / largo;
+    for (let c = 0; c < total; c++) {
+      const idx0 = indice(c);
+      let hayInterior = false;
+      for (let q = 0; q < largo; q++) { f[q] = g[idx0 + q * paso]; if (f[q] > 0 && f[q] < INF) hayInterior = true; }
+      if (!hayInterior) continue;
+      for (let q = 0; q < largo; q++) {
+        if (f[q] === 0) { res[q] = 0; continue; }
+        // el valor «infinito» (fila entera interior) se acota al largo del eje para no desbordar la búsqueda
+        let mejor = Math.min(f[q] * f[q], largo * largo * 4);
+        const lim = Math.min(largo, Math.ceil(Math.sqrt(mejor)));
+        for (let r = 1; r <= lim; r++) {
+          if (q - r >= 0) { const v = f[q - r] * f[q - r] + r * r; if (v < mejor) mejor = v; }
+          if (q + r < largo) { const v = f[q + r] * f[q + r] + r * r; if (v < mejor) mejor = v; }
+        }
+        res[q] = Math.sqrt(mejor);
+      }
+      for (let q = 0; q < largo; q++) g[idx0 + q * paso] = res[q];
+    }
+  };
+  pasada(nx, ny, (c) => { const k = Math.floor(c / nx), i = c % nx; return k * nx * ny + i; });
+  pasada(nx * ny, nz, (c) => c);
+  return g;
+}
+
+// Ahueca el campo: deja una cáscara de «espesor» mm (el interior más profundo pasa a ser exterior).
+export function ahuecarCampo(F, vol, espesor) {
+  const { nx, ny, nz, voxel } = vol;
+  const d = distanciaInterior(F, nx, ny, nz);
+  const lim = espesor / voxel;
+  const G = Float32Array.from(F);
+  for (let i = 0; i < F.length; i++) if (F[i] < 0 && d[i] > lim) G[i] = Math.min(1, (d[i] - lim) / 2);
+  return G;
+}
+
+// Suavizado adaptativo al ruido: donde las normales vecinas están desordenadas (pelo, bordes ruidosos)
+// suaviza fuerte; donde la superficie es limpia (piel, rasgos) casi no toca. Devuelve la malla suavizada.
+export function suavizarAdaptativo(m, iteraciones = 3) {
+  if (!iteraciones) return m;
+  const nV = m.pos.length / 3; const { inicio, vecinos } = adyacencia(nV, m.idx);
+  let pos = Float32Array.from(m.pos);
+  const nrm = new Float32Array(nV * 3);
+  const normales = () => {
+    nrm.fill(0);
+    const idx = m.idx;
+    for (let t = 0; t < idx.length; t += 3) {
+      const a = idx[t] * 3, b = idx[t + 1] * 3, c = idx[t + 2] * 3;
+      const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2], vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      for (const o of [a, b, c]) { nrm[o] += nx; nrm[o + 1] += ny; nrm[o + 2] += nz; }
+    }
+    for (let v = 0; v < nV; v++) { const l = Math.hypot(nrm[v * 3], nrm[v * 3 + 1], nrm[v * 3 + 2]) || 1; nrm[v * 3] /= l; nrm[v * 3 + 1] /= l; nrm[v * 3 + 2] /= l; }
+  };
+  const tmp = new Float32Array(pos.length);
+  for (let it = 0; it < iteraciones; it++) {
+    normales();
+    for (let v = 0; v < nV; v++) {
+      const a = inicio[v], b = inicio[v + 1];
+      if (b === a) { tmp[v * 3] = pos[v * 3]; tmp[v * 3 + 1] = pos[v * 3 + 1]; tmp[v * 3 + 2] = pos[v * 3 + 2]; continue; }
+      let sx = 0, sy = 0, sz = 0, coh = 0;
+      for (let k = a; k < b; k++) { const w = vecinos[k]; sx += pos[w * 3]; sy += pos[w * 3 + 1]; sz += pos[w * 3 + 2]; coh += nrm[v * 3] * nrm[w * 3] + nrm[v * 3 + 1] * nrm[w * 3 + 1] + nrm[v * 3 + 2] * nrm[w * 3 + 2]; }
+      const n = b - a; coh /= n; // 1 = normales alineadas (superficie limpia), <0,8 = ruido
+      const factor = coh > 0.95 ? 0.08 : coh > 0.85 ? 0.3 : 0.65;
+      // movimiento sólo a lo largo de la normal (conserva la forma, no «desliza» los rasgos)
+      const dx = sx / n - pos[v * 3], dy = sy / n - pos[v * 3 + 1], dz = sz / n - pos[v * 3 + 2];
+      const dn = dx * nrm[v * 3] + dy * nrm[v * 3 + 1] + dz * nrm[v * 3 + 2];
+      tmp[v * 3] = pos[v * 3] + factor * dn * nrm[v * 3]; tmp[v * 3 + 1] = pos[v * 3 + 1] + factor * dn * nrm[v * 3 + 1]; tmp[v * 3 + 2] = pos[v * 3 + 2] + factor * dn * nrm[v * 3 + 2];
+    }
+    pos.set(tmp);
+  }
+  return { pos, idx: m.idx };
+}
+
+// Arma un busto o una placa de cara a partir de la malla (Y hacia arriba, el frente mira a −Z en el marco
+// del escaneo libre / +Z-cámara en el de la mesa). opciones: { tipo: 'busto'|'placa', giroY, corte (0–1 de la
+// altura, o mm absolutos con corteMm), fondo (placa: 0–1 de la profundidad), pedestal: 'no'|'cilindro'|'cubo',
+// pedestalAlto, alturaObjetivo (mm), suavizadoAdaptativo }
+export function armarBusto(m, opciones = {}) {
+  let malla = m;
+  const info = {};
+  if (opciones.suavizadoAdaptativo) malla = suavizarAdaptativo(malla, opciones.suavizadoAdaptativo);
+  let med = medidasMalla(malla);
+  const centro = [(med.min[0] + med.max[0]) / 2, (med.min[1] + med.max[1]) / 2, (med.min[2] + med.max[2]) / 2];
+  if (opciones.giroY) { malla = transformarMalla(malla, { giroY: opciones.giroY, centro }); med = medidasMalla(malla); }
+  if (opciones.tipo === 'placa') {
+    // fondo plano: se conserva lo que está por delante del plano z = zf (el frente mira a −Z)
+    const f = opciones.fondo ?? 0.55;
+    const zf = med.min[2] + (med.max[2] - med.min[2]) * f;
+    const r = cortarMalla(malla, [0, 0, zf], [0, 0, -1]); malla = r.malla; info.tapas = r.tapas;
+  }
+  // corte inferior horizontal
+  const c = opciones.corteMm !== undefined ? opciones.corteMm : med.min[1] + (med.max[1] - med.min[1]) * (opciones.corte ?? 0.12);
+  if (opciones.corte !== null) { const r = cortarMalla(malla, [0, c, 0], [0, 1, 0]); malla = r.malla; info.tapas = (info.tapas || 0) + r.tapas; }
+  med = medidasMalla(malla);
+  if (!malla.idx.length) return { malla, info };
+  // pedestal
+  if (opciones.pedestal && opciones.pedestal !== 'no') {
+    const radio = Math.max(med.ancho, med.profundo) * 0.42;
+    const cx = (med.min[0] + med.max[0]) / 2, cz = (med.min[2] + med.max[2]) / 2;
+    const ped = pedestal(opciones.pedestal, cx, cz, med.min[1], radio, opciones.pedestalAlto || Math.max(10, med.alto * 0.12));
+    malla = unirMallas(malla, ped); med = medidasMalla(malla); info.pedestal = true;
+  }
+  // escala a la altura objetivo y apoyo en y = 0, centrado en x/z
+  let escala = 1;
+  if (opciones.alturaObjetivo > 0) escala = opciones.alturaObjetivo / med.alto;
+  malla = transformarMalla(malla, { escala, centro: [0, 0, 0], traslacion: [0, 0, 0] });
+  med = medidasMalla(malla);
+  malla = transformarMalla(malla, { traslacion: [-(med.min[0] + med.max[0]) / 2, -med.min[1], -(med.min[2] + med.max[2]) / 2] });
+  info.escala = escala;
+  info.medidas = medidasMalla(malla);
+  return { malla, info };
+}
+
 export function escalar(m, factor) {
   if (factor === 1) return m;
   const pos = Float32Array.from(m.pos);

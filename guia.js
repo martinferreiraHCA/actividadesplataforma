@@ -629,6 +629,11 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           generar el modelo, el suavizado <strong>bilateral</strong> baja el ruido conservando aristas y rasgos, la
           malla se puede <strong>optimizar por QEM</strong> a la cantidad de triángulos que quieras sin perder la
           forma, y los agujeros chicos se cierran solos.</li>
+          <li><strong>Busto o placa de cara</strong>: debajo de las estadísticas del modelo, «Busto o placa de cara
+          para imprimir» corta el modelo a la altura que elijas y cierra la base plana (o deja un fondo plano detrás
+          de la cara, para colgar), le pone un pedestal, lo ahueca con la pared que indiques (la base queda abierta),
+          lo escala a la altura final y lo apoya en Z = 0. El «suavizado adaptativo» aplaca el ruido del pelo sin
+          tocar los rasgos de la cara. «Volver al modelo completo» deshace.</li>
           <li><strong>Medir</strong>: en el visor, «Medir en el modelo» con distancia entre dos puntos, ángulo entre
           tres, círculo por tres puntos (radio y diámetro de agujeros o curvas), perímetro del contorno a la altura
           del clic (por ejemplo el contorno de una cabeza) y planitud local. Las estadísticas muestran medidas,

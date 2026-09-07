@@ -321,6 +321,12 @@ purgado listo para la impresora 3D.
   fallido probando primero giros de ±20–60° alrededor de la última pose buena («me moví rápido cerca de donde
   estaba») y verificación de un solo cuadro cuando la pose reencontrada está cerca. Un salto de 25° se recupera
   en 2 cuadros y uno de 60° en 3; el seguimiento aguanta 9° (126 mm) por cuadro en la escena sintética.
+- **Bustos y placas de cara** (`armarBusto`): giro del frente, corte horizontal con base plana (tapa
+  triangulada por recorte de orejas, cóncava incluida), placa de cara con fondo plano, pedestal cilíndrico o
+  cúbico, **ahuecado** con espesor de pared real (transformada de distancia euclídea 3D sobre el campo; la base
+  queda abierta al cortar), escala a la altura final, apoyo en Z = 0, y **suavizado adaptativo al ruido**
+  (fuerte donde las normales están desordenadas como en el pelo, casi nulo en piel y rasgos; movimiento sólo a lo
+  largo de la normal).
 - **Medición sobre el modelo**: distancia entre dos puntos (con Δ por eje), ángulo entre tres puntos, círculo
   por tres puntos (radio, diámetro, circunferencia: agujeros y curvaturas), perímetro del contorno horizontal a
   la altura del clic (corte de la malla con un plano, encadenado en lazos: contorno de una cabeza), planitud
