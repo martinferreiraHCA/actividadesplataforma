@@ -298,7 +298,10 @@ purgado listo para la impresora 3D.
   prueban las vistas clave más parecidas por firma y luego todas las demás en rondas (también giradas ±22° y
   ±45° alrededor del centro), cada una con raycast desde su pose + corrección por centroide + ICP amplio, con
   verificación en dos cuadros antes de volver a integrar; el usuario sigue escaneando y se recupera en cuanto
-  cualquier parte ya escaneada vuelve a verse. Semáforo de seguimiento, pausa, reinicio y cierre
+  cualquier parte ya escaneada vuelve a verse. **Submodelos**: mientras está perdido, un segundo volumen (con su
+  propio seguimiento y sus vistas clave) sigue integrando lo que se escanea; al confirmar la posición se calcula
+  la transformación submodelo → principal con las poses del mismo cuadro en ambos y el TSDF se remuestrea
+  (trilineal) dentro del principal, junto con sus vistas clave y su cobertura. Semáforo de seguimiento, pausa, reinicio y cierre
   con el mismo purgado y las mismas descargas.
   Resolución de seguimiento y vista previa a elección (160×120 o 320×240), vóxeles de 2 a 8 mm y filtro
   bilateral del mapa de profundidad para caras y detalles finos.

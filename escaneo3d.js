@@ -344,15 +344,16 @@ async function libreIniciar() {
       const c = m.calidad;
       const modoAnterior = L.modo; L.modo = m.modo;
       if (c.primero) libreSemaforo('ok', 'Primera vista tomada: empezá a moverte despacio');
-      else if (m.modo === 'perdido') libreSemaforo('perdido', `Perdí el seguimiento: seguí escaneando normalmente, lo recupero solo en cuanto vea cualquier parte ya escaneada (buscando, ${m.intentos} cuadros)`);
-      else if (m.modo === 'verificando') libreSemaforo('aviso', 'Posición reencontrada: confirmando… no te muevas');
+      else if (m.modo === 'perdido') libreSemaforo('perdido', `Perdí la posición: seguí escaneando igual, lo que ves se guarda aparte (${m.sub ? m.sub.integrados : 0} vistas del tramo) y se une al modelo en cuanto encuentre cualquier parte ya escaneada (buscando, ${m.intentos} cuadros)`);
+      else if (m.modo === 'verificando') libreSemaforo('aviso', 'Posición reencontrada: confirmando y uniendo el tramo… no te muevas');
       else if (m.modo === 'inestable') libreSemaforo('aviso', 'Se movió muy rápido: frená un momento (recuperando)');
       else if (c.ok && m.giro > 6) libreSemaforo('aviso', 'Vas rápido: más despacio para no perder el seguimiento');
       else if (c.ok) libreSemaforo(c.inliers < 1000 ? 'aviso' : 'ok', c.inliers < 1000 ? 'Siguiendo, pero con pocos puntos: acercate o apuntá mejor' : 'Siguiendo · ' + m.integrados + ' vistas fundidas');
       else libreSemaforo('perdido', 'Se movió muy rápido: frená un momento');
-      if (modoAnterior === 'verificando' && m.modo === 'seguimiento') toast('✔ Seguimiento recuperado solo: seguí escaneando');
-      else if (modoAnterior !== 'perdido' && m.modo === 'perdido') toast('Perdí el seguimiento: no hace falta tocar nada, seguí escaneando y se recupera solo');
-      $('libreContadores').textContent = `${m.integrados} vistas fundidas · ${m.perdidos} descartados · ${m.reencontrados || 0} recuperaciones automáticas · ${m.claves || 0} vistas clave · alrededor cubierto: ${L.gradosCubiertos || 0}° de 360° · vóxel ${L.voxel || ''} mm`;
+      if (modoAnterior === 'verificando' && m.modo === 'seguimiento') toast(m.fundidos > (L.fundidos || 0) ? '✔ Posición recuperada y tramo unido al modelo: seguí escaneando' : '✔ Posición recuperada: seguí escaneando');
+      L.fundidos = m.fundidos || 0; L.descartados = m.descartados || 0;
+      else if (modoAnterior !== 'perdido' && m.modo === 'perdido') toast('Perdí la posición: no hace falta tocar nada, seguí escaneando; lo que veas se guarda y se une solo al recuperarla');
+      $('libreContadores').textContent = `${m.integrados} vistas fundidas · ${m.perdidos} sin posición · ${m.reencontrados || 0} recuperaciones automáticas (${m.fundidos || 0} tramos unidos${m.descartados ? ', ' + m.descartados + ' descartados' : ''}) · ${m.claves || 0} vistas clave · alrededor cubierto: ${L.gradosCubiertos || 0}° de 360° · vóxel ${L.voxel || ''} mm`;
       libreBotones();
       return;
     }
@@ -433,7 +434,8 @@ function libreMostrarMalla(m) {
   if (L.gradosCubiertos !== undefined && L.gradosCubiertos < 300) consejos.push(`Recorriste ${L.gradosCubiertos}° de los 360° alrededor: lo que no se miró se rellenó a ciegas. Para la próxima, seguí el anillo de la vista previa hasta que quede verde entero, incluida la franja de arriba (mirando un poco desde arriba de la cabeza).`);
   if (!cierre.cerrada) consejos.push('La malla quedó abierta donde el modelo toca el borde del volumen (por ejemplo, el cuello o los hombros): es normal en una cabeza. Si querés una base plana, dejá que el cuello salga por abajo del volumen.');
   if (L.perdidos > L.integrados * 0.5) consejos.push('Se descartaron muchos cuadros por movimiento rápido: la próxima vez movete más despacio y en un arco continuo.');
-  if (L.reencontrados) consejos.push(`El seguimiento se perdió y se recuperó solo ${L.reencontrados} vez/veces: revisá que no haya quedado un «escalón» en la unión; si lo hay, reiniciá y movete más despacio en esa zona.`);
+  if (L.reencontrados) consejos.push(`El seguimiento se perdió y se recuperó solo ${L.reencontrados} vez/veces${L.fundidos ? ` (${L.fundidos} tramo(s) escaneados mientras tanto se unieron al modelo)` : ''}: revisá que no haya quedado un «escalón» en la unión; si lo hay, reiniciá y movete más despacio en esa zona.`);
+  if (L.descartados) consejos.push(`${L.descartados} tramo(s) escaneados sin posición no se pudieron unir (el tramo también perdió el seguimiento): esa zona hay que volver a pasarla.`);
   if (m.info.componentes > 3) consejos.push('Quedaron pedazos sueltos (fondo, hombros, pelo): probá con un volumen más chico o «Empezar de nuevo» más cerca de la cabeza.');
   consejos.push('Zonas huecas o rugosas: volvé a escanear pasando dos veces por ahí, o subí el suavizado.');
   $('informeEscaneo').innerHTML = `<p class="kin-bloque__titulo">📋 Informe del escaneo libre</p><ul>${consejos.map(c => `<li>${c}</li>`).join('')}</ul>`;

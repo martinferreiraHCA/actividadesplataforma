@@ -134,6 +134,87 @@ export class EscanerLibre {
     this.candIdx = 0; this.intentos = 0; this.reencontrados = 0; this.verificados = 0;
     this.Rbuena = null; this.tbuena = null; // última pose confiable (para la vista mientras está perdido)
     this.giro = 0; this.desplazamiento = 0; // movimiento entre cuadros seguidos (grados, mm)
+    // submodelo: mientras el principal está perdido, un segundo volumen sigue guardando lo que se escanea;
+    // al reencontrar la posición se funde en el principal con la transformación calculada
+    this.esSubmapa = !!opciones.esSubmapa;
+    this.opciones = opciones;
+    this.sub = null;
+    this.pares = [];       // poses del mismo cuadro en el principal y en el submodelo (para calcular la transformación)
+    this.tramos = 0; this.fundidos = 0; this.descartados = 0;
+  }
+
+  // ---------- submodelos ----------
+  _abrirSubmapa() {
+    this.sub = new EscanerLibre({ ...this.opciones, esSubmapa: true, intr: this.intr });
+    // arranca en la última pose buena: si la pérdida fue por un tirón y no por deriva, la transformación queda casi identidad
+    const R = (this.Rbuena || this.R).slice(), t = (this.tbuena || this.t).slice();
+    this.sub.R = R; this.sub.t = t; this.sub.Rprev = R.slice(); this.sub.tprev = t.slice();
+    this.pares = [];
+    this.tramos++;
+  }
+
+  // Transformación submodelo → principal a partir del último par de poses del mismo cuadro:
+  // p_principal = T.R · p_sub + T.t, con T.R = Rm·Rsᵀ y T.t = tm − T.R·ts
+  _transformacionSub() {
+    const par = this.pares[this.pares.length - 1];
+    if (!par) return null;
+    const RsT = [par.Rs[0], par.Rs[3], par.Rs[6], par.Rs[1], par.Rs[4], par.Rs[7], par.Rs[2], par.Rs[5], par.Rs[8]];
+    const R = mulR(par.Rm, RsT);
+    const Rts = apR(R, par.ts);
+    return { R, t: [par.tm[0] - Rts[0], par.tm[1] - Rts[1], par.tm[2] - Rts[2]] };
+  }
+
+  // Vuelca el TSDF del submodelo en el principal (remuestreo trilineal) y pasa sus vistas clave
+  _fundirSubmapa(T) {
+    const sub = this.sub;
+    const A = this.vol, B = sub.vol;
+    const { nx, ny, nz, voxel, origen } = A;
+    const { nx: bx, ny: by, nz: bz, voxel: bv, origen: bo } = B;
+    const capaB = bx * by;
+    // p_sub = T.Rᵀ (p − T.t)
+    const r = T.R, tt = T.t;
+    let idx = 0, copiados = 0;
+    for (let k = 0; k < nz; k++) {
+      const pz = origen[2] + k * voxel - tt[2];
+      for (let j = 0; j < ny; j++) {
+        const py = origen[1] + j * voxel - tt[1];
+        for (let i = 0; i < nx; i++, idx++) {
+          const px = origen[0] + i * voxel - tt[0];
+          const sx = r[0] * px + r[3] * py + r[6] * pz, sy = r[1] * px + r[4] * py + r[7] * pz, sz = r[2] * px + r[5] * py + r[8] * pz;
+          const fx_ = (sx - bo[0]) / bv, fy_ = (sy - bo[1]) / bv, fz_ = (sz - bo[2]) / bv;
+          const i0 = Math.floor(fx_), j0 = Math.floor(fy_), k0 = Math.floor(fz_);
+          if (i0 < 0 || j0 < 0 || k0 < 0 || i0 >= bx - 1 || j0 >= by - 1 || k0 >= bz - 1) continue;
+          const a = fx_ - i0, b = fy_ - j0, c = fz_ - k0;
+          let acc = 0, wacc = 0, completo = true, vistoB = 0, ocultoB = 0;
+          for (let dk = 0; dk < 2; dk++) for (let dj = 0; dj < 2; dj++) for (let di = 0; di < 2; di++) {
+            const q = (k0 + dk) * capaB + (j0 + dj) * bx + i0 + di;
+            const w = (di ? a : 1 - a) * (dj ? b : 1 - b) * (dk ? c : 1 - c);
+            if (B.peso[q] === 0) { completo = false; continue; }
+            acc += B.tsdf[q] * w; wacc += B.peso[q] * w;
+            if (B.visto[q]) vistoB = 1; if (B.oculto[q]) ocultoB = 1;
+          }
+          if (!completo || wacc <= 0) { if (vistoB && !A.visto[idx]) A.visto[idx] = 1; continue; }
+          const ws = Math.min(64, Math.round(wacc));
+          const w0 = A.peso[idx];
+          A.tsdf[idx] = (A.tsdf[idx] * w0 + acc * ws) / (w0 + ws);
+          A.peso[idx] = Math.min(64, w0 + ws);
+          if (vistoB) A.visto[idx] = 1;
+          if (ocultoB) A.oculto[idx] = 1;
+          copiados++;
+        }
+      }
+    }
+    // vistas clave del submodelo, llevadas al marco principal
+    for (const k of sub.claves) {
+      const Rk = mulR(T.R, k.R), tk = apR(T.R, k.t);
+      this.claves.push({ R: Rk, t: [tk[0] + tt[0], tk[1] + tt[1], tk[2] + tt[2]], firma: k.firma, validos: k.validos });
+      const Rg = this.R, tg = this.t; this.R = Rk; this.t = this.claves[this.claves.length - 1].t; this._anotarCobertura(); this.R = Rg; this.t = tg;
+    }
+    while (this.claves.length > 240) this.claves.splice(1, 1);
+    this.integrados += sub.integrados;
+    this.fundidos++;
+    this.sub = null; this.pares = [];
+    return copiados;
   }
 
   // ---------- firma de un cuadro: profundidad promediada a 32×24 (para comparar vistas) ----------
@@ -184,7 +265,7 @@ export class EscanerLibre {
     const validosFirma = this._firmaDe(z, this.firma);
     if (validosFirma < 60 || !this.claves.length) return false;
     const t0 = performance.now();
-    const presupuesto = this.esc === 2 ? 220 : 140; // ms por cuadro dedicados a buscar
+    const presupuesto = (this.esc === 2 ? 220 : 140) * (this.sub ? 0.75 : 1); // ms por cuadro dedicados a buscar
     // 1) las 3 vistas clave más parecidas por firma (recuperación rápida al volver cerca)
     const puntuadas = this.claves.map((k, i) => ({ i, d: this._compararFirmas(this.firma, k.firma) })).filter(x => Number.isFinite(x.d)).sort((a, b) => a.d - b.d);
     const probadas = new Set();
@@ -487,18 +568,26 @@ export class EscanerLibre {
     }
 
     if (this.modo === 'perdido') {
-      // buscar la posición sola, sin tocar el modelo
+      // mientras se busca la posición, el submodelo sigue guardando lo que se escanea
+      if (!this.esSubmapa) {
+        if (!this.sub) this._abrirSubmapa();
+        this.sub.procesar(z);
+      }
+      // buscar la posición sola, sin tocar el modelo principal
       if (this._relocalizar(z)) {
         this.modo = 'verificando'; this.verificados = 0;
+        this._anotarPar();
       } else {
         this.perdidos++; this.seguidos++;
-        // la vista previa muestra el modelo desde la última pose buena, para que el usuario vuelva ahí
         this.R = this.Rbuena.slice(); this.t = this.tbuena.slice();
-        this._raycast(this.R, this.t);
+        // la vista previa muestra el submodelo formándose (o el principal desde la última pose buena)
+        if (this.sub && this.sub.hayModelo) this.imagen.set(this.sub.imagen);
+        else this._raycast(this.R, this.t);
         this.calidad = { inliers: 0, validos: 0, residuo: 0, visibles: 0, ok: false };
       }
       return this.estado();
     }
+    if (this.modo === 'verificando' && this.sub) this.sub.procesar(z);
 
     // el raycast se hace desde la pose anterior; predicción de velocidad constante (amortiguada)
     const visibles = this._raycast(this.Rprev, this.tprev);
@@ -539,8 +628,15 @@ export class EscanerLibre {
       this.seguidos = 0;
       if (this.modo === 'verificando') {
         this.verificados++;
-        if (this.verificados >= 2) { this.modo = 'seguimiento'; this.reencontrados++; }
-        else return this.estado(); // todavía no se integra: primero confirmar que la posición es la correcta
+        this._anotarPar();
+        if (this.verificados >= 2) {
+          this.modo = 'seguimiento'; this.reencontrados++;
+          if (this.sub) {
+            const T = this._transformacionSub();
+            if (T && this.sub.integrados >= 2) this._fundirSubmapa(T);
+            else { this.descartados++; this.sub = null; this.pares = []; }
+          }
+        } else return this.estado(); // todavía no se integra: primero confirmar que la posición es la correcta
       } else this.modo = 'seguimiento';
       // integrar solo con seguimiento firme (evita ensuciar el modelo con poses dudosas)
       const firme = res.inliers >= 0.6 * visibles || res.residuo < this.vol.voxel * 0.75;
@@ -555,17 +651,26 @@ export class EscanerLibre {
       this.perdidos++; this.seguidos++;
       this.R = this.Rprev.slice(); this.t = this.tprev.slice();
       this.Rant = null; this.tant = null;
-      if (this.modo === 'verificando') { this.modo = 'perdido'; this.candIdx = 0; }
+      if (this.modo === 'verificando') { this.modo = 'perdido'; this.candIdx = 0; this.pares = []; }
       else if (this.seguidos >= 3) { this.modo = 'perdido'; this.candIdx = 0; this.intentos = 0; }
       else this.modo = 'inestable';
     }
     return this.estado();
   }
 
+  // guarda la pose del mismo cuadro en el principal y en el submodelo (si el submodelo lo siguió bien)
+  _anotarPar() {
+    if (!this.sub || !this.sub.calidad || !this.sub.calidad.ok || this.sub.modo === 'perdido') return;
+    this.pares.push({ Rm: this.R.slice(), tm: this.t.slice(), Rs: this.sub.R.slice(), ts: this.sub.t.slice() });
+    if (this.pares.length > 4) this.pares.shift();
+  }
+
   estado() {
     return { cuadros: this.cuadros, integrados: this.integrados, perdidos: this.perdidos, seguidos: this.seguidos, calidad: this.calidad, R: this.R.slice(), t: this.t.slice(), imagen: this.imagen, ancho: this.W, alto: this.H,
       cobertura: Array.from(this.cobertura), acimut: this.acimut || 0, elevacion: this.elevacion || 0, distanciaCentro: Math.hypot(this.t[0], this.t[1], this.t[2]),
-      modo: this.modo, claves: this.claves.length, intentos: this.intentos, reencontrados: this.reencontrados, verificados: this.verificados, giro: this.giro, desplazamiento: this.desplazamiento };
+      modo: this.modo, claves: this.claves.length, intentos: this.intentos, reencontrados: this.reencontrados, verificados: this.verificados, giro: this.giro, desplazamiento: this.desplazamiento,
+      tramos: this.tramos, fundidos: this.fundidos, descartados: this.descartados,
+      sub: this.sub ? { integrados: this.sub.integrados, modo: this.sub.modo, ok: !!(this.sub.calidad && this.sub.calidad.ok) } : null };
   }
 
   // Esquinas del volumen proyectadas en la imagen completa con la pose actual (para dibujarlo encima).
@@ -607,6 +712,7 @@ export class EscanerLibre {
     this.cuadros = 0; this.integrados = 0; this.perdidos = 0; this.seguidos = 0; this.hayModelo = false;
     this.modo = 'inicio'; this.claves = []; this.candIdx = 0; this.intentos = 0; this.reencontrados = 0; this.verificados = 0;
     this.Rbuena = null; this.tbuena = null; this.giro = 0; this.desplazamiento = 0;
+    this.sub = null; this.pares = []; this.tramos = 0; this.fundidos = 0; this.descartados = 0;
   }
 }
 
