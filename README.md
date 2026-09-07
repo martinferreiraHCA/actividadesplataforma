@@ -305,6 +305,15 @@ purgado listo para la impresora 3D.
   con el mismo purgado y las mismas descargas.
   Resolución de seguimiento y vista previa a elección (160×120 o 320×240), vóxeles de 2 a 8 mm y filtro
   bilateral del mapa de profundidad para caras y detalles finos.
+- **Calidad de reconstrucción**: fusión TSDF **ponderada** por ángulo de visión y distancia (`pesosDeMapa`),
+  integración acotada al cono de visión del cuadro (permite vóxeles de 1,5 mm), filtro bilateral **adaptativo**
+  a la distancia (el ruido del Kinect crece con z²), **suavizado bilateral de normales** (Zheng et al.) que
+  conserva aristas y rasgos, **decimación por error cuadrático (QEM, Garland-Heckbert)** con conservación del
+  borde y rechazo de vueltas de cara, relleno de agujeros chicos, y preset «Ultra fino».
+- **Medición sobre el modelo**: distancia entre dos puntos (con Δ por eje), ángulo entre tres puntos, círculo
+  por tres puntos (radio, diámetro, circunferencia: agujeros y curvaturas), perímetro del contorno horizontal a
+  la altura del clic (corte de la malla con un plano, encadenado en lazos: contorno de una cabeza), planitud
+  local (plano por mínimos cuadrados en 15 mm: desvío RMS e inclinación); área y volumen en las estadísticas.
 - **Asistente guiado**: chequeo en vivo de la escena (inclinación, mesa, distancia, tamaño, encaje en la
   caja, centrado, huecos) con el consejo para cada problema; rosa de ángulos con el plan de tomas y la
   instrucción de a qué marca girar; puntaje y consejo por toma con repetición individual; e informe del

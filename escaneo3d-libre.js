@@ -76,11 +76,13 @@ function resolver6(A, b) {
 export function filtroBilateral(z, W = N.INTR.ancho, H = N.INTR.alto, sigmaR = 12) {
   const salida = new Float32Array(z.length);
   const pesoE = [0.36, 0.6, 1, 0.6, 0.36];
-  const invR2 = 1 / (2 * sigmaR * sigmaR);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     const c = z[i];
     if (!(c > 0)) continue;
+    // el ruido del Kinect crece con el cuadrado de la distancia (≈1,4·10⁻⁶·z² mm): el filtro se adapta
+    const sr = Math.max(sigmaR * 0.35, Math.min(sigmaR, 3 * 1.4e-6 * c * c + 1.5));
+    const invR2 = 1 / (2 * sr * sr);
     let s = 0, w = 0;
     for (let dy = -2; dy <= 2; dy++) {
       const yy = y + dy; if (yy < 0 || yy >= H) continue;
@@ -109,7 +111,7 @@ export class EscanerLibre {
     this.W = this.intr.ancho / this.esc; this.H = this.intr.alto / this.esc;
     this.bilateral = !!opciones.bilateral;
     const lado = this.lado;
-    this.vol = N.crearVolumen({ ancho: lado, alto: lado / 2, profundo: lado }, opciones.voxel || 5, -lado / 2, opciones.maxNodos || 4.5e6);
+    this.vol = N.crearVolumen({ ancho: lado, alto: lado / 2, profundo: lado }, opciones.voxel || 5, -lado / 2, opciones.maxNodos || 14e6);
     this.mu = Math.max(3 * this.vol.voxel, 8);
     // primera cámara: mundo = cámara girada 180° alrededor de Z (así Y queda hacia arriba),
     // corrida para que el centro del volumen quede «distancia» adelante
@@ -194,10 +196,10 @@ export class EscanerLibre {
             if (B.visto[q]) vistoB = 1; if (B.oculto[q]) ocultoB = 1;
           }
           if (!completo || wacc <= 0) { if (vistoB && !A.visto[idx]) A.visto[idx] = 1; continue; }
-          const ws = Math.min(64, Math.round(wacc));
+          const ws = Math.min(1024, Math.round(wacc));
           const w0 = A.peso[idx];
           A.tsdf[idx] = (A.tsdf[idx] * w0 + acc * ws) / (w0 + ws);
-          A.peso[idx] = Math.min(64, w0 + ws);
+          A.peso[idx] = Math.min(1024, w0 + ws);
           if (vistoB) A.visto[idx] = 1;
           if (ocultoB) A.oculto[idx] = 1;
           copiados++;
@@ -515,18 +517,38 @@ export class EscanerLibre {
   }
 
   // ---------- integración del cuadro en el volumen ----------
+  // Ponderada (ángulo de visión y distancia, ×16 en peso[]) y acotada a la caja que ocupan los puntos del
+  // cuadro (más el margen mu): con vóxeles finos el volumen es enorme y recorrerlo entero cuesta demasiado.
   _integrar(z, R, t) {
     const { vol, mu, intr } = this;
     const { nx, ny, nz, voxel, origen, tsdf, peso, visto, oculto } = vol;
     const { ancho: W, alto: H, fx, fy, cx, cy } = intr;
+    const pesos = N.pesosDeMapa(z, intr);
+    const PMAX = 64 * 16;
+    // caja de los puntos del cuadro en el mundo (con el mapa a resolución de seguimiento)
+    let mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity], hay = false;
+    for (let k = 0; k < this.W * this.H; k += 3) {
+      if (!this.Mf[k]) continue;
+      const p = apR(R, [this.Vf[k * 3], this.Vf[k * 3 + 1], this.Vf[k * 3 + 2]]);
+      for (let a = 0; a < 3; a++) { const v = p[a] + t[a]; if (v < mn[a]) mn[a] = v; if (v > mx[a]) mx[a] = v; }
+      hay = true;
+    }
+    let i0 = 0, i1 = nx - 1, j0 = 0, j1 = ny - 1, k0 = 0, k1 = nz - 1;
+    if (hay) {
+      const m = mu * 2 + voxel;
+      i0 = Math.max(0, Math.floor((mn[0] - m - origen[0]) / voxel)); i1 = Math.min(nx - 1, Math.ceil((mx[0] + m - origen[0]) / voxel));
+      j0 = Math.max(0, Math.floor((mn[1] - m - origen[1]) / voxel)); j1 = Math.min(ny - 1, Math.ceil((mx[1] + m - origen[1]) / voxel));
+      k0 = Math.max(0, Math.floor((mn[2] - m - origen[2]) / voxel)); k1 = Math.min(nz - 1, Math.ceil((mx[2] + m - origen[2]) / voxel));
+    }
     // p_cam = Rᵀ (p_w − t)
     const r0 = R[0], r1 = R[3], r2 = R[6], r3 = R[1], r4 = R[4], r5 = R[7], r6 = R[2], r7 = R[5], r8 = R[8];
-    let idx = 0;
-    for (let k = 0; k < nz; k++) {
+    const capa = nx * ny;
+    for (let k = k0; k <= k1; k++) {
       const pz = origen[2] + k * voxel - t[2];
-      for (let j = 0; j < ny; j++) {
+      for (let j = j0; j <= j1; j++) {
         const py = origen[1] + j * voxel - t[1];
-        for (let i = 0; i < nx; i++, idx++) {
+        let idx = k * capa + j * nx + i0;
+        for (let i = i0; i <= i1; i++, idx++) {
           const px = origen[0] + i * voxel - t[0];
           const cz = r6 * px + r7 * py + r8 * pz;
           if (cz < 300) continue;
@@ -535,14 +557,16 @@ export class EscanerLibre {
           const u = Math.round(fx * cxx / cz + cx), v = Math.round(fy * cyy / cz + cy);
           if (u < 0 || v < 0 || u >= W || v >= H) continue;
           visto[idx] = 1;
-          const d = z[v * W + u];
+          const pix = v * W + u;
+          const d = z[pix];
           if (!(d > 0)) continue;
           const sdf = d - cz;
           if (sdf < -mu) { oculto[idx] = 1; continue; }
           const val = Math.min(sdf, mu) / mu;
+          const wf = Math.max(1, Math.round(16 * pesos[pix]));
           const w = peso[idx];
-          tsdf[idx] = (tsdf[idx] * w + val) / (w + 1);
-          peso[idx] = w < 64 ? w + 1 : 64;
+          tsdf[idx] = (tsdf[idx] * w + val * wf) / (w + wf);
+          peso[idx] = w + wf < PMAX ? w + wf : PMAX;
         }
       }
     }
@@ -696,9 +720,7 @@ export class EscanerLibre {
     const info = { componentes: 1 };
     if (m.idx.length) {
       if (opciones.mayorComponente !== false) { m = N.mayorComponente(m); info.componentes = m.componentes; }
-      if (opciones.suavizado) m = N.suavizar(m, opciones.suavizado);
-      if (opciones.reducir) m = N.reducir(m, opciones.reducir * this.vol.voxel);
-      if (opciones.escala && opciones.escala !== 1) m = N.escalar(m, opciones.escala);
+      m = N.posprocesarMalla(m, opciones, this.vol.voxel, info, (txt) => { if (typeof self !== 'undefined' && self.postMessage) try { self.postMessage({ tipo: 'progreso', texto: txt }); } catch (e) { /* fuera del worker */ } });
     }
     return { malla: m, info, voxel: this.vol.voxel };
   }

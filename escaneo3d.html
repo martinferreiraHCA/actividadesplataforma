@@ -169,6 +169,7 @@
     <div class="section__eyebrow" style="margin-bottom:0.8rem">// Paso 2 — Escanear</div>
 
     <div class="kin-presets" id="presets" role="radiogroup" aria-label="Qué vas a escanear">
+      <label class="kin-preset"><input type="radio" name="preset" value="ultra"><span class="kin-preset__icono">💎</span><span class="kin-preset__nombre">Ultra fino</span><span class="kin-preset__desc">Máxima precisión · 30 cm · 1,5 mm · malla optimizada</span></label>
       <label class="kin-preset"><input type="radio" name="preset" value="cara"><span class="kin-preset__icono">🙂</span><span class="kin-preset__nombre">Cara y gestos</span><span class="kin-preset__desc">Máximo detalle · 30 cm · 2 mm · a 55–65 cm</span></label>
       <label class="kin-preset"><input type="radio" name="preset" value="cabeza"><span class="kin-preset__icono">🗿</span><span class="kin-preset__nombre">Cabeza o busto</span><span class="kin-preset__desc">A mano alrededor de la persona · 40 cm · 3 mm</span></label>
       <label class="kin-preset"><input type="radio" name="preset" value="cuerpo"><span class="kin-preset__icono">🧍</span><span class="kin-preset__nombre">Medio cuerpo</span><span class="kin-preset__desc">A mano · 80 cm · 6 mm</span></label>
@@ -251,6 +252,7 @@
               </select>
               <label for="libVoxel">Detalle</label>
               <select class="campo__input" id="libVoxel" style="max-width:120px">
+                <option value="1.5">1,5 mm (ultra, lento)</option>
                 <option value="2">2 mm (máximo)</option>
                 <option value="3">3 mm</option>
                 <option value="4">4 mm</option>
@@ -399,6 +401,7 @@
     <div class="scratch-opciones">
       <span class="scratch-opciones__label">Resolución:</span>
       <select class="campo__input" id="optVoxel" style="max-width:190px">
+        <option value="1.5">Ultra (1,5 mm, lenta)</option>
         <option value="2">Fina (2 mm, más lenta)</option>
         <option value="3" selected>Media (3 mm)</option>
         <option value="4">Gruesa (4 mm)</option>
@@ -412,12 +415,22 @@
         <option value="5" selected>Medio</option>
         <option value="10">Fuerte</option>
       </select>
-      <span class="scratch-opciones__label">Triángulos:</span>
-      <select class="campo__input" id="optReducir" style="max-width:190px">
-        <option value="0" selected>Todos</option>
-        <option value="2">Reducir (mitad de detalle)</option>
-        <option value="3">Reducir mucho</option>
+      <select class="campo__input" id="optSuavizadoTipo" style="max-width:220px" title="Bilateral: filtra las normales conservando aristas y rasgos (nariz, labios, bordes). Taubin: suavizado clásico">
+        <option value="bilateral" selected>bilateral (conserva rasgos)</option>
+        <option value="taubin">Taubin (clásico)</option>
       </select>
+      <span class="scratch-opciones__label">Triángulos:</span>
+      <select class="campo__input" id="optReducir" style="max-width:240px" title="Optimizar: colapso de aristas por error cuadrático (QEM), conserva la forma con menos triángulos">
+        <option value="0" selected>Todos</option>
+        <option value="q200000">Optimizar (QEM) a 200 mil</option>
+        <option value="q100000">Optimizar (QEM) a 100 mil</option>
+        <option value="q50000">Optimizar (QEM) a 50 mil</option>
+        <option value="q20000">Optimizar (QEM) a 20 mil</option>
+        <option value="q5000">Optimizar (QEM) a 5 mil (papel)</option>
+        <option value="2">Agrupar (mitad de detalle)</option>
+        <option value="3">Agrupar mucho</option>
+      </select>
+      <label class="scratch-check" title="Cierra los agujeros chicos de la malla (hasta 60 aristas) con un abanico de triángulos"><input type="checkbox" id="optAgujeros" checked> Rellenar agujeros chicos</label>
       <span class="scratch-opciones__label">Escala:</span>
       <input class="campo__input" type="number" id="optEscala" min="1" max="1000" step="1" value="100" style="max-width:80px"> <span class="scratch-opciones__label">%</span>
     </div>
@@ -452,7 +465,14 @@
       </div>
       <div id="statsModelo" class="inf-stats" style="margin-bottom:0.6rem"></div>
       <div class="scratch-opciones" style="margin-bottom:0.8rem">
-        <button class="btn" id="btnMedir" type="button" title="Hacé clic en dos puntos del modelo para medir la distancia entre ellos">📏 Medir en el modelo</button>
+        <button class="btn" id="btnMedir" type="button" title="Hacé clic en el modelo para medir">📏 Medir en el modelo</button>
+        <select class="campo__input" id="optMedida" style="max-width:260px" title="Qué medir con los clics">
+          <option value="distancia" selected>distancia entre 2 puntos</option>
+          <option value="angulo">ángulo entre 3 puntos (vértice en el 2º)</option>
+          <option value="circulo">círculo por 3 puntos (radio, diámetro)</option>
+          <option value="perimetro">perímetro a la altura del clic (contorno horizontal)</option>
+          <option value="plano">planitud alrededor del clic (radio 15 mm)</option>
+        </select>
         <button class="btn" id="btnMedirBorrar" type="button">Borrar medidas</button>
         <span class="kin-valor" id="medidaTexto"></span>
       </div>
