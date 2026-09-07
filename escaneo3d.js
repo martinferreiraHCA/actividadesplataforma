@@ -351,8 +351,8 @@ async function libreIniciar() {
       else if (c.ok) libreSemaforo(c.inliers < 1000 ? 'aviso' : 'ok', c.inliers < 1000 ? 'Siguiendo, pero con pocos puntos: acercate o apuntá mejor' : 'Siguiendo · ' + m.integrados + ' vistas fundidas');
       else libreSemaforo('perdido', 'Se movió muy rápido: frená un momento');
       if (modoAnterior === 'verificando' && m.modo === 'seguimiento') toast(m.fundidos > (L.fundidos || 0) ? '✔ Posición recuperada y tramo unido al modelo: seguí escaneando' : '✔ Posición recuperada: seguí escaneando');
-      L.fundidos = m.fundidos || 0; L.descartados = m.descartados || 0;
       else if (modoAnterior !== 'perdido' && m.modo === 'perdido') toast('Perdí la posición: no hace falta tocar nada, seguí escaneando; lo que veas se guarda y se une solo al recuperarla');
+      L.fundidos = m.fundidos || 0; L.descartados = m.descartados || 0;
       $('libreContadores').textContent = `${m.integrados} vistas fundidas · ${m.perdidos} sin posición · ${m.reencontrados || 0} recuperaciones automáticas (${m.fundidos || 0} tramos unidos${m.descartados ? ', ' + m.descartados + ' descartados' : ''}) · ${m.claves || 0} vistas clave · alrededor cubierto: ${L.gradosCubiertos || 0}° de 360° · vóxel ${L.voxel || ''} mm`;
       libreBotones();
       return;
