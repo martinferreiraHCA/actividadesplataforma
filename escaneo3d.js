@@ -422,12 +422,91 @@ function libreTerminar() {
   libreSemaforo('pausa', 'Armando el modelo…');
   progreso('Extrayendo la superficie del escaneo libre…');
   $('seccionModelo').style.display = '';
-  L.worker.postMessage({ tipo: 'malla', opciones: {
+  L.worker.postMessage({ tipo: 'malla', opciones: opcionesMallaLibre() });
+}
+
+function opcionesMallaLibre(extra = {}) {
+  return {
     relleno: $('optRelleno').value, mayorComponente: $('optMayor').checked,
     refinar: +$('libRefinar').value || 0, rondas: (+$('libRefinar').value || 0) <= 1 ? 2 : 1,
-    ...opcionesPosprocesado()
-  } });
+    ...opcionesPosprocesado(), ...extra
+  };
 }
+
+// ============================================================
+// Busto / placa de cara
+// ============================================================
+function opcionesBusto() {
+  const tipo = $('bustoTipo').value;
+  return {
+    tipo, giroY: +$('bustoGiro').value || 0, corte: (+$('bustoCorte').value || 0) / 100, fondo: (+$('bustoFondo').value || 55) / 100,
+    pedestal: tipo === 'placa' ? 'no' : $('bustoPedestal').value, pedestalAlto: +$('bustoPedestalAlto').value || 12,
+    alturaObjetivo: +$('bustoAltura').value || 0, suavizadoAdaptativo: +$('bustoAdaptativo').value || 0
+  };
+}
+
+function aplicarBusto(malla) {
+  const op = opcionesBusto();
+  const r = N.armarBusto(malla, op);
+  if (!r.malla.idx.length) { toast('El corte dejó el modelo vacío: bajá el corte o el fondo'); return; }
+  estado.malla = r.malla; estado.puntos = null;
+  if (!vista3d) vista3d = iniciarVista3D();
+  vista3d.mostrar(r.malla, 0);
+  const med = r.info.medidas, cierre = N.esCerrada(r.malla);
+  $('statsModelo').innerHTML = [
+    `${med.triangulos.toLocaleString('es')} triángulos`,
+    `${med.ancho.toFixed(0)} × ${med.profundo.toFixed(0)} × ${med.alto.toFixed(0)} mm (ancho × fondo × alto)`,
+    `${med.volumenCm3.toFixed(1)} cm³ · ${med.areaCm2.toFixed(0)} cm² de superficie`,
+    cierre.cerrada ? 'malla cerrada ✔' : (r.info.abiertos ? 'base abierta (hueco) ✔' : `${cierre.aristasAbiertas} aristas abiertas`),
+    op.tipo === 'placa' ? 'placa de cara con fondo plano' : `busto${r.info.pedestal ? ' con pedestal' : ''}, base plana en Z = 0`,
+    r.info.escala !== 1 ? `escalado al ${(r.info.escala * 100).toFixed(0)} %` : 'tamaño real'
+  ].map(t => `<span class="inf-stat">${t}</span>`).join('');
+  $('infoBusto').textContent = `Listo: ${op.tipo === 'placa' ? 'placa' : 'busto'} de ${med.alto.toFixed(0)} mm de alto. Descargá el STL.`;
+  $('btnBustoDeshacer').disabled = false;
+  progreso('Listo: ' + (op.tipo === 'placa' ? 'placa de cara' : 'busto') + ' para imprimir.');
+}
+
+function generarBusto() {
+  if (!estado.mallaOriginal) { toast('Primero generá el modelo'); return; }
+  const ahuecar = $('bustoAhuecar').checked ? +$('bustoPared').value || 0 : 0;
+  if (ahuecar > 0) {
+    const L = estado.libre;
+    if (L && L.worker && L.integrados > 0) {
+      estado.bustoPendiente = true;
+      progreso('Ahuecando el modelo y armando el busto…');
+      L.worker.postMessage({ tipo: 'malla', opciones: opcionesMallaLibre({ ahuecar }) });
+      return;
+    }
+    if (estado.campo && estado.vol) {
+      progreso('Ahuecando el modelo…');
+      const F = N.ahuecarCampo(estado.campo, estado.vol, ahuecar);
+      let m = N.extraerMalla(F, estado.vol);
+      if (m.idx.length && $('optMayor').checked) m = N.mayorComponente(m);
+      m = N.posprocesarMalla(m, estado.opcionesMesa || opcionesPosprocesado(), estado.vol.voxel, {});
+      aplicarBusto(m);
+      return;
+    }
+    toast('Para ahuecar hace falta el volumen del escaneo: generá el modelo de nuevo en esta sesión');
+  }
+  aplicarBusto(estado.mallaOriginal);
+}
+
+function deshacerBusto() {
+  if (!estado.mallaOriginal) return;
+  estado.malla = estado.mallaOriginal;
+  const med = N.medidasMalla(estado.malla);
+  if (!vista3d) vista3d = iniciarVista3D();
+  vista3d.mostrar(estado.malla, med.min[1]);
+  $('btnBustoDeshacer').disabled = true; $('infoBusto').textContent = 'Modelo completo restaurado.';
+}
+
+$('btnBusto').addEventListener('click', generarBusto);
+$('btnBustoDeshacer').addEventListener('click', deshacerBusto);
+$('bustoTipo').addEventListener('change', () => { $('zonaFondo').style.display = $('bustoTipo').value === 'placa' ? '' : 'none'; });
+$('zonaFondo').style.display = 'none';
+$('bustoGiro').addEventListener('input', () => { $('valBustoGiro').textContent = $('bustoGiro').value + '°'; });
+$('bustoCorte').addEventListener('input', () => { $('valBustoCorte').textContent = $('bustoCorte').value + ' % de la altura'; });
+$('bustoFondo').addEventListener('input', () => { $('valBustoFondo').textContent = $('bustoFondo').value + ' % de la profundidad'; });
 
 function libreMostrarMalla(m) {
   const L = estado.libre;
@@ -435,6 +514,8 @@ function libreMostrarMalla(m) {
   if (!malla.idx.length) { progreso('No se formó ninguna superficie: el volumen quedó vacío. Empezá de nuevo apuntando a la cabeza a 70–90 cm.'); L.pausa = false; libreBotones(); return; }
   estado.malla = malla;
   estado.puntos = null;
+  if (estado.bustoPendiente) { estado.bustoPendiente = false; estado.mallaOriginal = malla; aplicarBusto(malla); return; }
+  estado.mallaOriginal = malla; $('btnBustoDeshacer').disabled = true; $('infoBusto').textContent = '';
   const med = N.medidasMalla(malla);
   const cierre = N.esCerrada(malla);
   $('statsModelo').innerHTML = [
@@ -1099,6 +1180,8 @@ async function generar() {
       return;
     }
     estado.malla = res.malla;
+    estado.mallaOriginal = res.malla; estado.vol = res.vol; estado.campo = res.campo; estado.opcionesMesa = opciones;
+    $('btnBustoDeshacer').disabled = true; $('infoBusto').textContent = '';
     // nube de puntos de todas las tomas, ya en el marco de la pieza (para el PLY)
     const partes = tomas.map(t => N.aMarcoPieza(N.puntosDeMapa(t.z, { paso: 2, zmin, zmax }), marco, t.angulo, sentido));
     let total = 0; for (const p of partes) total += p.length;
