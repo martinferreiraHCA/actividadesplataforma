@@ -411,6 +411,33 @@ export function crearVolumen(caja, voxel, corte = 0, maxNodos = 6e6) {
 }
 
 // Integra una toma (mapa de profundidad en mm) hecha con la pieza girada «angulo» grados.
+// Peso de cada píxel de un mapa de profundidad para la fusión ponderada (KinectFusion mejorado):
+// las superficies vistas de frente y de cerca pesan más que las vistas de refilón o de lejos.
+// Devuelve un Float32Array W×H con valores en [0, 1] (0 = sin dato).
+export function pesosDeMapa(z, intr = INTR, zRef = 600) {
+  const { ancho: W, alto: H, fx, fy, cx, cy } = intr;
+  const w = new Float32Array(W * H);
+  for (let v = 1; v < H - 1; v++) for (let u = 1; u < W - 1; u++) {
+    const i = v * W + u;
+    const d = z[i]; if (!(d > 0)) continue;
+    const dl = z[i - 1], dr = z[i + 1], du = z[i - W], dd = z[i + W];
+    if (!(dl > 0 && dr > 0 && du > 0 && dd > 0)) { w[i] = 0.3; continue; }
+    // puntos 3D de los vecinos → normal por producto cruz
+    const px = (u - cx) / fx, py = (v - cy) / fy;
+    const ax = ((u + 1 - cx) / fx) * dr - ((u - 1 - cx) / fx) * dl, ay = py * (dr - dl), az = dr - dl;
+    const bx = px * (dd - du), by = ((v + 1 - cy) / fy) * dd - ((v - 1 - cy) / fy) * du, bz = dd - du;
+    let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+    const l = Math.hypot(nx, ny, nz); if (!(l > 0)) { w[i] = 0.3; continue; }
+    nx /= l; ny /= l; nz /= l;
+    // coseno entre la normal y el rayo de visión
+    const rl = Math.hypot(px, py, 1);
+    const cos = Math.abs((nx * px + ny * py + nz) / rl);
+    const dist = Math.min(1, (zRef / d) * (zRef / d));
+    w[i] = Math.max(0.05, Math.min(1, cos * cos * Math.max(0.15, dist)));
+  }
+  return w;
+}
+
 export function integrarToma(vol, z, marco, anguloGrados = 0, opciones = {}) {
   const intr = opciones.intr || INTR;
   const sentido = opciones.sentido ?? 1;
@@ -422,6 +449,9 @@ export function integrarToma(vol, z, marco, anguloGrados = 0, opciones = {}) {
   const { nx, ny, nz, voxel, origen, tsdf, peso, visto, oculto, superficie } = vol;
   const banda = opciones.banda || null; // Uint8Array opcional: marca los nodos cerca de la superficie de ESTA toma
   const W = intr.ancho, H = intr.alto;
+  // fusión ponderada: peso por píxel (ángulo y distancia), en enteros ×16 dentro de peso[]
+  const pesos = opciones.ponderar === false ? null : pesosDeMapa(z, intr);
+  const PMAX = 30 * 16;
   let idx = 0;
   for (let k = 0; k < nz; k++) {
     const pz = origen[2] + k * voxel;
@@ -450,8 +480,9 @@ export function integrarToma(vol, z, marco, anguloGrados = 0, opciones = {}) {
         if (sdf < mu) { if (superficie[idx] < 255) superficie[idx]++; if (banda) banda[idx] = 1; }
         const val = Math.min(sdf, mu) / mu;
         const w = peso[idx];
-        tsdf[idx] = (tsdf[idx] * w + val) / (w + 1);
-        peso[idx] = w < 30 ? w + 1 : 30;
+        const wf = pesos && d > 0 ? Math.max(1, Math.round(16 * pesos[v * W + u])) : 16;
+        tsdf[idx] = (tsdf[idx] * w + val * wf) / (w + wf);
+        peso[idx] = w + wf < PMAX ? w + wf : PMAX;
       }
     }
   }
@@ -774,6 +805,299 @@ export function reducir(m, celda) {
   return compactar(nuevaPos, Uint32Array.from(nuevoIdx));
 }
 
+// Suavizado bilateral de normales (Zheng et al. 2011): conserva aristas y rasgos finos (nariz, labios,
+// bordes de una pieza) mientras baja el ruido. Filtra las normales de las caras con pesos por distancia
+// y por parecido de normales, y después mueve los vértices hacia los planos de sus caras.
+export function suavizarBilateral(m, iteraciones = 3, sigmaNormal = 0.35) {
+  if (!iteraciones) return m;
+  const idx = m.idx; const nT = idx.length / 3; const nV = m.pos.length / 3;
+  let pos = Float32Array.from(m.pos);
+  // caras por vértice
+  const gradoV = new Uint32Array(nV + 1);
+  for (let t = 0; t < idx.length; t++) gradoV[idx[t]]++;
+  const iniV = new Uint32Array(nV + 1);
+  for (let v = 0; v < nV; v++) iniV[v + 1] = iniV[v] + gradoV[v];
+  const carasV = new Uint32Array(iniV[nV]); const rel = new Uint32Array(nV);
+  for (let t = 0; t < nT; t++) for (let e = 0; e < 3; e++) { const v = idx[t * 3 + e]; carasV[iniV[v] + rel[v]++] = t; }
+  const nrm = new Float32Array(nT * 3), cen = new Float32Array(nT * 3), area = new Float32Array(nT), nrm2 = new Float32Array(nT * 3);
+  const calcular = () => {
+    let sumaArista = 0;
+    for (let t = 0; t < nT; t++) {
+      const a = idx[t * 3] * 3, b = idx[t * 3 + 1] * 3, c = idx[t * 3 + 2] * 3;
+      const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+      const vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const l = Math.hypot(nx, ny, nz); area[t] = l / 2;
+      if (l > 0) { nx /= l; ny /= l; nz /= l; }
+      nrm[t * 3] = nx; nrm[t * 3 + 1] = ny; nrm[t * 3 + 2] = nz;
+      cen[t * 3] = (pos[a] + pos[b] + pos[c]) / 3; cen[t * 3 + 1] = (pos[a + 1] + pos[b + 1] + pos[c + 1]) / 3; cen[t * 3 + 2] = (pos[a + 2] + pos[b + 2] + pos[c + 2]) / 3;
+      sumaArista += Math.hypot(ux, uy, uz);
+    }
+    return sumaArista / Math.max(1, nT);
+  };
+  const invSn2 = 1 / (2 * sigmaNormal * sigmaNormal);
+  for (let it = 0; it < iteraciones; it++) {
+    const arista = calcular();
+    const invSs2 = 1 / (2 * arista * arista);
+    // 1) normales filtradas: vecinas = caras que comparten un vértice
+    for (let t = 0; t < nT; t++) {
+      let sx = 0, sy = 0, sz = 0;
+      const nx = nrm[t * 3], ny = nrm[t * 3 + 1], nz = nrm[t * 3 + 2];
+      for (let e = 0; e < 3; e++) {
+        const v = idx[t * 3 + e];
+        for (let q = iniV[v]; q < iniV[v + 1]; q++) {
+          const g = carasV[q];
+          const dx = cen[g * 3] - cen[t * 3], dy = cen[g * 3 + 1] - cen[t * 3 + 1], dz = cen[g * 3 + 2] - cen[t * 3 + 2];
+          const dn = 1 - (nx * nrm[g * 3] + ny * nrm[g * 3 + 1] + nz * nrm[g * 3 + 2]);
+          const w = area[g] * Math.exp(-(dx * dx + dy * dy + dz * dz) * invSs2) * Math.exp(-dn * dn * invSn2);
+          sx += w * nrm[g * 3]; sy += w * nrm[g * 3 + 1]; sz += w * nrm[g * 3 + 2];
+        }
+      }
+      const l = Math.hypot(sx, sy, sz) || 1;
+      nrm2[t * 3] = sx / l; nrm2[t * 3 + 1] = sy / l; nrm2[t * 3 + 2] = sz / l;
+    }
+    // 2) vértices hacia los planos de sus caras (varias pasadas chicas)
+    const nuevo = Float32Array.from(pos);
+    for (let pasada = 0; pasada < 3; pasada++) {
+      for (let v = 0; v < nV; v++) {
+        const a = iniV[v], b = iniV[v + 1]; if (b === a) continue;
+        let dx = 0, dy = 0, dz = 0;
+        const x = nuevo[v * 3], y = nuevo[v * 3 + 1], zz = nuevo[v * 3 + 2];
+        for (let q = a; q < b; q++) {
+          const t = carasV[q];
+          const nx = nrm2[t * 3], ny = nrm2[t * 3 + 1], nz = nrm2[t * 3 + 2];
+          const d = nx * (cen[t * 3] - x) + ny * (cen[t * 3 + 1] - y) + nz * (cen[t * 3 + 2] - zz);
+          dx += nx * d; dy += ny * d; dz += nz * d;
+        }
+        const n = b - a;
+        nuevo[v * 3] = x + dx / n; nuevo[v * 3 + 1] = y + dy / n; nuevo[v * 3 + 2] = zz + dz / n;
+      }
+    }
+    pos = nuevo;
+  }
+  return { pos, idx: m.idx };
+}
+
+// Reducción de triángulos por colapso de aristas con métrica de error cuadrático (Garland-Heckbert),
+// con conservación del borde y rechazo de vueltas de cara. objetivo: cantidad de triángulos final.
+export function reducirQEM(m, objetivo) {
+  const idx0 = m.idx; const nT0 = idx0.length / 3; const nV = m.pos.length / 3;
+  if (!(objetivo > 0) || nT0 <= objetivo) return m;
+  const pos = Float32Array.from(m.pos);
+  const Q = new Float64Array(nV * 10); // cuádrica simétrica 4×4: 10 coeficientes
+  const tris = []; for (let t = 0; t < nT0; t++) tris.push([idx0[t * 3], idx0[t * 3 + 1], idx0[t * 3 + 2]]);
+  const vivo = new Uint8Array(nT0).fill(1);
+  const carasV = Array.from({ length: nV }, () => []);
+  tris.forEach((tr, t) => { for (const v of tr) carasV[v].push(t); });
+  const sumarPlano = (v, a, b, c, d, peso = 1) => {
+    const o = v * 10;
+    Q[o] += a * a * peso; Q[o + 1] += a * b * peso; Q[o + 2] += a * c * peso; Q[o + 3] += a * d * peso;
+    Q[o + 4] += b * b * peso; Q[o + 5] += b * c * peso; Q[o + 6] += b * d * peso;
+    Q[o + 7] += c * c * peso; Q[o + 8] += c * d * peso; Q[o + 9] += d * d * peso;
+  };
+  const planoDe = (t) => {
+    const [a, b, c] = tris[t];
+    const ax = pos[a * 3], ay = pos[a * 3 + 1], az = pos[a * 3 + 2];
+    const ux = pos[b * 3] - ax, uy = pos[b * 3 + 1] - ay, uz = pos[b * 3 + 2] - az;
+    const vx = pos[c * 3] - ax, vy = pos[c * 3 + 1] - ay, vz = pos[c * 3 + 2] - az;
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const l = Math.hypot(nx, ny, nz); if (!(l > 0)) return null;
+    nx /= l; ny /= l; nz /= l;
+    return [nx, ny, nz, -(nx * ax + ny * ay + nz * az), l / 2];
+  };
+  // aristas y su cantidad de caras (para detectar el borde)
+  const claveA = (a, b) => a < b ? a * 4294967296 + b : b * 4294967296 + a;
+  const cuentaA = new Map();
+  for (let t = 0; t < nT0; t++) { const tr = tris[t]; for (let e = 0; e < 3; e++) { const k = claveA(tr[e], tr[(e + 1) % 3]); cuentaA.set(k, (cuentaA.get(k) || 0) + 1); } }
+  for (let t = 0; t < nT0; t++) {
+    const p = planoDe(t); if (!p) continue;
+    const tr = tris[t];
+    for (const v of tr) sumarPlano(v, p[0], p[1], p[2], p[3], p[4]);
+    // borde: plano perpendicular a la cara que pasa por la arista, con peso alto (no mover el contorno)
+    for (let e = 0; e < 3; e++) {
+      const a = tr[e], b = tr[(e + 1) % 3];
+      if (cuentaA.get(claveA(a, b)) !== 1) continue;
+      const ex = pos[b * 3] - pos[a * 3], ey = pos[b * 3 + 1] - pos[a * 3 + 1], ez = pos[b * 3 + 2] - pos[a * 3 + 2];
+      let nx = ey * p[2] - ez * p[1], ny = ez * p[0] - ex * p[2], nz = ex * p[1] - ey * p[0];
+      const l = Math.hypot(nx, ny, nz); if (!(l > 0)) continue;
+      nx /= l; ny /= l; nz /= l;
+      const d = -(nx * pos[a * 3] + ny * pos[a * 3 + 1] + nz * pos[a * 3 + 2]);
+      sumarPlano(a, nx, ny, nz, d, 1000 * p[4]); sumarPlano(b, nx, ny, nz, d, 1000 * p[4]);
+    }
+  }
+  const errorEn = (v, x, y, z) => {
+    const o = v * 10;
+    return Q[o] * x * x + 2 * Q[o + 1] * x * y + 2 * Q[o + 2] * x * z + 2 * Q[o + 3] * x + Q[o + 4] * y * y + 2 * Q[o + 5] * y * z + 2 * Q[o + 6] * y + Q[o + 7] * z * z + 2 * Q[o + 8] * z + Q[o + 9];
+  };
+  const errorPar = (a, b, x, y, z) => errorEn(a, x, y, z) + errorEn(b, x, y, z);
+  // mejor punto para el colapso: el punto medio o uno de los extremos (evita resolver la 3×3: más robusto)
+  const mejorPunto = (a, b) => {
+    const cand = [[(pos[a * 3] + pos[b * 3]) / 2, (pos[a * 3 + 1] + pos[b * 3 + 1]) / 2, (pos[a * 3 + 2] + pos[b * 3 + 2]) / 2], [pos[a * 3], pos[a * 3 + 1], pos[a * 3 + 2]], [pos[b * 3], pos[b * 3 + 1], pos[b * 3 + 2]]];
+    let mejor = null, me = Infinity;
+    for (const c of cand) { const e = errorPar(a, b, c[0], c[1], c[2]); if (e < me) { me = e; mejor = c; } }
+    return { p: mejor, e: me };
+  };
+  // cola de prioridad (montículo binario) de aristas con marca de versión para invalidar entradas viejas
+  const version = new Uint32Array(nV);
+  const heap = [];
+  const subir = (i) => { const x = heap[i]; while (i > 0) { const p = (i - 1) >> 1; if (heap[p].e <= x.e) break; heap[i] = heap[p]; i = p; } heap[i] = x; };
+  const bajar = (i) => { const n = heap.length, x = heap[i]; for (;;) { let c = 2 * i + 1; if (c >= n) break; if (c + 1 < n && heap[c + 1].e < heap[c].e) c++; if (heap[c].e >= x.e) break; heap[i] = heap[c]; i = c; } heap[i] = x; };
+  const meter = (a, b) => { if (a === b) return; const { p, e } = mejorPunto(a, b); heap.push({ a, b, p, e, va: version[a], vb: version[b] }); subir(heap.length - 1); };
+  for (const k of cuentaA.keys()) { const a = Math.floor(k / 4294967296), b = k % 4294967296; meter(a, b); }
+  let nT = nT0;
+  const padre = new Int32Array(nV); for (let v = 0; v < nV; v++) padre[v] = v;
+  const raiz = (v) => { while (padre[v] !== v) { padre[v] = padre[padre[v]]; v = padre[v]; } return v; };
+  while (nT > objetivo && heap.length) {
+    const top = heap[0]; const ult = heap.pop(); if (heap.length) { heap[0] = ult; bajar(0); }
+    let { a, b, p, va, vb } = top;
+    if (version[a] !== va || version[b] !== vb) continue;
+    a = raiz(a); b = raiz(b); if (a === b) continue;
+    // validez: sin vuelta de cara en las caras que sobreviven
+    let valido = true;
+    const afectadas = new Set([...carasV[a], ...carasV[b]].filter(t => vivo[t]));
+    for (const t of afectadas) {
+      const tr = tris[t].map(raiz);
+      const tieneA = tr.includes(a), tieneB = tr.includes(b);
+      if (tieneA && tieneB) continue; // desaparece
+      const antes = planoDe(t); if (!antes) continue;
+      const orig = [pos[a * 3], pos[a * 3 + 1], pos[a * 3 + 2], pos[b * 3], pos[b * 3 + 1], pos[b * 3 + 2]];
+      pos[a * 3] = p[0]; pos[a * 3 + 1] = p[1]; pos[a * 3 + 2] = p[2]; pos[b * 3] = p[0]; pos[b * 3 + 1] = p[1]; pos[b * 3 + 2] = p[2];
+      const despues = planoDe(t);
+      pos[a * 3] = orig[0]; pos[a * 3 + 1] = orig[1]; pos[a * 3 + 2] = orig[2]; pos[b * 3] = orig[3]; pos[b * 3 + 1] = orig[4]; pos[b * 3 + 2] = orig[5];
+      if (!despues || antes[0] * despues[0] + antes[1] * despues[1] + antes[2] * despues[2] < 0.2) { valido = false; break; }
+    }
+    if (!valido) continue;
+    // colapsar b en a
+    pos[a * 3] = p[0]; pos[a * 3 + 1] = p[1]; pos[a * 3 + 2] = p[2];
+    for (let k = 0; k < 10; k++) Q[a * 10 + k] += Q[b * 10 + k];
+    padre[b] = a;
+    for (const t of carasV[b]) if (vivo[t]) { if (!carasV[a].includes(t)) carasV[a].push(t); }
+    for (const t of afectadas) {
+      const tr = tris[t].map(raiz);
+      if (tr[0] === tr[1] || tr[1] === tr[2] || tr[0] === tr[2]) { if (vivo[t]) { vivo[t] = 0; nT--; } }
+      else tris[t] = tr;
+    }
+    carasV[a] = carasV[a].filter(t => vivo[t]);
+    carasV[b] = [];
+    version[a]++; version[b]++;
+    const vecinos = new Set();
+    for (const t of carasV[a]) for (const v of tris[t]) if (v !== a) vecinos.add(v);
+    for (const v of vecinos) meter(a, v);
+  }
+  const nuevoIdx = [];
+  for (let t = 0; t < nT0; t++) if (vivo[t]) { const tr = tris[t].map(raiz); if (tr[0] !== tr[1] && tr[1] !== tr[2] && tr[0] !== tr[2]) nuevoIdx.push(tr[0], tr[1], tr[2]); }
+  return compactar(pos, Uint32Array.from(nuevoIdx));
+}
+
+// Lazos del borde (aristas con una sola cara), como listas de vértices en orden.
+export function lazosDelBorde(m) {
+  const { idx } = m;
+  const cuenta = new Map(), dirigida = new Map();
+  for (let t = 0; t < idx.length; t += 3) for (let e = 0; e < 3; e++) {
+    const a = idx[t + e], b = idx[t + (e + 1) % 3];
+    const k = a < b ? a * 4294967296 + b : b * 4294967296 + a;
+    cuenta.set(k, (cuenta.get(k) || 0) + 1); dirigida.set(k, [a, b]);
+  }
+  const siguiente = new Map();
+  for (const [k, c] of cuenta) if (c === 1) { const [a, b] = dirigida.get(k); siguiente.set(b, a); } // el borde se recorre al revés de la cara
+  const lazos = []; const usado = new Set();
+  for (const ini of siguiente.keys()) {
+    if (usado.has(ini)) continue;
+    const lazo = []; let v = ini;
+    while (v !== undefined && !usado.has(v)) { usado.add(v); lazo.push(v); v = siguiente.get(v); }
+    if (lazo.length >= 3 && v === ini) lazos.push(lazo);
+  }
+  return lazos;
+}
+
+// Rellena los agujeros con hasta «maxAristas» aristas: un vértice nuevo en el centro y un abanico de triángulos.
+export function rellenarAgujeros(m, maxAristas = 40) {
+  const lazos = lazosDelBorde(m).filter(l => l.length <= maxAristas);
+  if (!lazos.length) return { malla: m, rellenados: 0 };
+  const pos = Array.from(m.pos), idx = Array.from(m.idx);
+  for (const lazo of lazos) {
+    let cx = 0, cy = 0, cz = 0;
+    for (const v of lazo) { cx += pos[v * 3]; cy += pos[v * 3 + 1]; cz += pos[v * 3 + 2]; }
+    const c = pos.length / 3; pos.push(cx / lazo.length, cy / lazo.length, cz / lazo.length);
+    for (let i = 0; i < lazo.length; i++) idx.push(lazo[i], lazo[(i + 1) % lazo.length], c);
+  }
+  return { malla: { pos: Float32Array.from(pos), idx: Uint32Array.from(idx) }, rellenados: lazos.length };
+}
+
+// Área de la malla en mm².
+export function areaMalla(m) {
+  const { pos, idx } = m; let a = 0;
+  for (let t = 0; t < idx.length; t += 3) {
+    const i = idx[t] * 3, j = idx[t + 1] * 3, k = idx[t + 2] * 3;
+    const ux = pos[j] - pos[i], uy = pos[j + 1] - pos[i + 1], uz = pos[j + 2] - pos[i + 2];
+    const vx = pos[k] - pos[i], vy = pos[k + 1] - pos[i + 1], vz = pos[k + 2] - pos[i + 2];
+    a += Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2;
+  }
+  return a;
+}
+
+// Corte de la malla con un plano (punto p y normal n): lazos de puntos en orden. Devuelve
+// { lazos: [[[x,y,z],...]], perimetros: [mm], mayor: índice del lazo más largo }.
+export function cortarConPlano(m, p, n) {
+  const { pos, idx } = m;
+  const l = Math.hypot(n[0], n[1], n[2]) || 1; const nx = n[0] / l, ny = n[1] / l, nz = n[2] / l;
+  const d0 = nx * p[0] + ny * p[1] + nz * p[2];
+  const dist = (v) => nx * pos[v * 3] + ny * pos[v * 3 + 1] + nz * pos[v * 3 + 2] - d0;
+  const corte = (a, b) => { const da = dist(a), db = dist(b), t = da / (da - db); return [pos[a * 3] + t * (pos[b * 3] - pos[a * 3]), pos[a * 3 + 1] + t * (pos[b * 3 + 1] - pos[a * 3 + 1]), pos[a * 3 + 2] + t * (pos[b * 3 + 2] - pos[a * 3 + 2])]; };
+  const claveA = (a, b) => a < b ? a * 4294967296 + b : b * 4294967296 + a;
+  const segs = []; // [claveArista1, claveArista2, punto1, punto2]
+  for (let t = 0; t < idx.length; t += 3) {
+    const v = [idx[t], idx[t + 1], idx[t + 2]]; const s = v.map(dist);
+    const cruces = [];
+    for (let e = 0; e < 3; e++) { const a = v[e], b = v[(e + 1) % 3]; if ((s[e] < 0) !== (s[(e + 1) % 3] < 0)) cruces.push([claveA(a, b), corte(a, b)]); }
+    if (cruces.length === 2) segs.push(cruces);
+  }
+  // encadenar por arista compartida
+  const porArista = new Map();
+  segs.forEach((sg, i) => { for (const [k] of sg) { if (!porArista.has(k)) porArista.set(k, []); porArista.get(k).push(i); } });
+  const usado = new Uint8Array(segs.length); const lazos = [];
+  for (let i = 0; i < segs.length; i++) {
+    if (usado[i]) continue;
+    const lazo = [segs[i][0][1]]; let actual = i, kSig = segs[i][1][0]; usado[i] = 1; lazo.push(segs[i][1][1]);
+    for (;;) {
+      const vec = (porArista.get(kSig) || []).find(j => !usado[j]); if (vec === undefined) break;
+      usado[vec] = 1; const sg = segs[vec];
+      const otro = sg[0][0] === kSig ? sg[1] : sg[0];
+      lazo.push(otro[1]); kSig = otro[0]; actual = vec;
+    }
+    lazos.push(lazo);
+  }
+  const perimetros = lazos.map(lz => { let per = 0; for (let i = 0; i < lz.length; i++) { const a = lz[i], b = lz[(i + 1) % lz.length]; per += Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); } return per; });
+  let mayor = -1, pm = -1; perimetros.forEach((pp, i) => { if (pp > pm) { pm = pp; mayor = i; } });
+  return { lazos, perimetros, mayor };
+}
+
+// Círculo por tres puntos (radio, centro y normal del plano): para medir agujeros y curvaturas.
+export function circuloPorTresPuntos(a, b, c) {
+  const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+  const n = cruz(ab, ac); const nn = punto(n, n); if (nn < 1e-12) return null;
+  const ab2 = punto(ab, ab), ac2 = punto(ac, ac);
+  const t1 = cruz(n, ab), t2 = cruz(ac, n);
+  const k = 1 / (2 * nn);
+  const cx = a[0] + (t2[0] * ab2 + t1[0] * ac2) * k, cy = a[1] + (t2[1] * ab2 + t1[1] * ac2) * k, cz = a[2] + (t2[2] * ab2 + t1[2] * ac2) * k;
+  const radio = Math.hypot(cx - a[0], cy - a[1], cz - a[2]);
+  return { centro: [cx, cy, cz], radio, normal: normalizar(n) };
+}
+
+// Ajuste de plano por mínimos cuadrados a puntos de la malla dentro de un radio de un punto (para medir
+// planitud y espesores): devuelve { punto, normal, rms }.
+export function planoLocal(m, centro, radio) {
+  const { pos } = m; const r2 = radio * radio; let n = 0, mx = 0, my = 0, mz = 0; const sel = [];
+  for (let v = 0; v < pos.length; v += 3) { const dx = pos[v] - centro[0], dy = pos[v + 1] - centro[1], dz = pos[v + 2] - centro[2]; if (dx * dx + dy * dy + dz * dz <= r2) { sel.push(v); mx += pos[v]; my += pos[v + 1]; mz += pos[v + 2]; n++; } }
+  if (n < 6) return null;
+  mx /= n; my /= n; mz /= n;
+  let xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
+  for (const v of sel) { const x = pos[v] - mx, y = pos[v + 1] - my, z = pos[v + 2] - mz; xx += x * x; xy += x * y; xz += x * z; yy += y * y; yz += y * z; zz += z * z; }
+  const normal = autovectorMenor([xx, xy, xz, xy, yy, yz, xz, yz, zz]);
+  let rms = 0; for (const v of sel) { const d = normal[0] * (pos[v] - mx) + normal[1] * (pos[v + 1] - my) + normal[2] * (pos[v + 2] - mz); rms += d * d; }
+  return { punto: [mx, my, mz], normal, rms: Math.sqrt(rms / n), puntos: n };
+}
+
 export function escalar(m, factor) {
   if (factor === 1) return m;
   const pos = Float32Array.from(m.pos);
@@ -791,7 +1115,7 @@ export function medidasMalla(m) {
   return {
     vertices: pos.length / 3, triangulos: idx.length / 3,
     ancho: max[0] - min[0], alto: max[1] - min[1], profundo: max[2] - min[2],
-    min, max, volumenCm3: Math.abs(volumenMalla(m)) / 1000
+    min, max, volumenCm3: Math.abs(volumenMalla(m)) / 1000, areaCm2: areaMalla(m) / 100
   };
 }
 
@@ -842,10 +1166,25 @@ export function reconstruir(tomas, marco, opciones = {}, avisar = () => {}) {
   const info = { componentes: 1 };
   if (!malla.idx.length) return { malla, info, vol, campo: F };
   if (opciones.mayorComponente !== false) { malla = mayorComponente(malla); info.componentes = malla.componentes; }
-  if (opciones.suavizado) { avisar('Suavizando'); malla = suavizar(malla, opciones.suavizado); }
-  if (opciones.reducir) { avisar('Reduciendo triángulos'); malla = reducir(malla, opciones.reducir * vol.voxel); }
-  if (opciones.escala && opciones.escala !== 1) malla = escalar(malla, opciones.escala);
+  malla = posprocesarMalla(malla, opciones, vol.voxel, info, avisar);
   return { malla, info, vol, campo: F };
+}
+
+// Posprocesado común (girando la pieza y a mano alzada): agujeros, suavizado, reducción y escala.
+//   suavizado: iteraciones; suavizadoTipo: 'bilateral' (conserva rasgos, por defecto) | 'taubin'
+//   agujeros: aristas máximas de los agujeros a rellenar (0 = no rellenar)
+//   reducir: factor de celda para el agrupamiento (viejo) · objetivoTriangulos: reducción QEM a esa cantidad
+export function posprocesarMalla(malla, opciones = {}, voxel = 3, info = {}, avisar = () => {}) {
+  if (!malla.idx.length) return malla;
+  if (opciones.agujeros) { avisar('Rellenando agujeros chicos'); const r = rellenarAgujeros(malla, opciones.agujeros); malla = r.malla; info.agujerosRellenados = r.rellenados; }
+  if (opciones.suavizado) {
+    avisar('Suavizando' + (opciones.suavizadoTipo === 'taubin' ? '' : ' (bilateral, conserva los rasgos)'));
+    malla = opciones.suavizadoTipo === 'taubin' ? suavizar(malla, opciones.suavizado) : suavizarBilateral(malla, opciones.suavizado);
+  }
+  if (opciones.objetivoTriangulos) { avisar('Optimizando la malla (QEM)'); malla = reducirQEM(malla, opciones.objetivoTriangulos); }
+  else if (opciones.reducir) { avisar('Reduciendo triángulos'); malla = reducir(malla, opciones.reducir * voxel); }
+  if (opciones.escala && opciones.escala !== 1) malla = escalar(malla, opciones.escala);
+  return malla;
 }
 
 // ============================================================

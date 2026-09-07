@@ -620,6 +620,15 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           55–65 cm, que es donde mide más fino. Va más lento (3–5 cuadros por segundo): movete despacio.</li>
           <li><strong>Girando la pieza</strong>: varias tomas alrededor; lo que ninguna toma vio se rellena macizo. Para
           piezas enteras.</li>
+          <li><strong>Máxima precisión</strong>: el preset «Ultra fino» usa vóxeles de 1,5 mm, seguimiento nítido,
+          filtro adaptativo del sensor y fusión ponderada (las superficies vistas de frente y de cerca pesan más). Al
+          generar el modelo, el suavizado <strong>bilateral</strong> baja el ruido conservando aristas y rasgos, la
+          malla se puede <strong>optimizar por QEM</strong> a la cantidad de triángulos que quieras sin perder la
+          forma, y los agujeros chicos se cierran solos.</li>
+          <li><strong>Medir</strong>: en el visor, «Medir en el modelo» con distancia entre dos puntos, ángulo entre
+          tres, círculo por tres puntos (radio y diámetro de agujeros o curvas), perímetro del contorno a la altura
+          del clic (por ejemplo el contorno de una cabeza) y planitud local. Las estadísticas muestran medidas,
+          volumen y área.</li>
           <li><strong>Relieve</strong>: una sola toma desde arriba; todo lo que queda debajo de la superficie vista se
           rellena hasta la mesa, como un sello o una placa. Para bajorrelieves, letras, siluetas apoyadas.</li>
         </ul>

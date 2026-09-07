@@ -358,6 +358,7 @@ async function libreIniciar() {
       return;
     }
     if (m.tipo === 'malla') { libreMostrarMalla(m); return; }
+    if (m.tipo === 'progreso') { progreso(m.texto + '…'); return; }
     if (m.tipo === 'error') { L.ocupado = false; toast('Error en el escaneo libre: ' + m.mensaje); libreSemaforo('perdido', m.mensaje); }
   };
   worker.postMessage({ tipo: 'iniciar', opciones: { lado: +$('libLado').value || 500, voxel: +$('libVoxel').value || 5, distancia, esc: +$('libEsc').value === 2 ? 2 : 4, bilateral: $('libBilateral').checked } });
@@ -402,6 +403,19 @@ function libreReiniciar() {
   libreBotones();
 }
 
+// Opciones de posprocesado de la malla (comunes a los dos modos)
+function opcionesPosprocesado() {
+  const red = $('optReducir').value;
+  return {
+    suavizado: +$('optSuavizado').value || 0,
+    suavizadoTipo: $('optSuavizadoTipo').value,
+    reducir: red.startsWith('q') ? 0 : (+red || 0),
+    objetivoTriangulos: red.startsWith('q') ? +red.slice(1) : 0,
+    agujeros: $('optAgujeros').checked ? 60 : 0,
+    escala: (+$('optEscala').value || 100) / 100
+  };
+}
+
 function libreTerminar() {
   const L = estado.libre; if (!L || !L.activo) return;
   L.pausa = true;
@@ -410,7 +424,7 @@ function libreTerminar() {
   $('seccionModelo').style.display = '';
   L.worker.postMessage({ tipo: 'malla', opciones: {
     relleno: $('optRelleno').value, mayorComponente: $('optMayor').checked,
-    suavizado: +$('optSuavizado').value || 0, reducir: +$('optReducir').value || 0, escala: (+$('optEscala').value || 100) / 100
+    ...opcionesPosprocesado()
   } });
 }
 
@@ -425,11 +439,12 @@ function libreMostrarMalla(m) {
   $('statsModelo').innerHTML = [
     `${med.triangulos.toLocaleString('es')} triángulos`,
     `${med.ancho.toFixed(0)} × ${med.profundo.toFixed(0)} × ${med.alto.toFixed(0)} mm (ancho × fondo × alto)`,
-    `${med.volumenCm3.toFixed(1)} cm³`,
+    `${med.volumenCm3.toFixed(1)} cm³ · ${med.areaCm2.toFixed(0)} cm² de superficie`,
     cierre.cerrada ? 'malla cerrada ✔' : `${cierre.aristasAbiertas} aristas abiertas`,
+    m.info.agujerosRellenados ? `${m.info.agujerosRellenados} agujero(s) chico(s) cerrados` : null,
     m.info.componentes > 1 ? `${m.info.componentes - 1} pedazos sueltos descartados` : 'una sola pieza',
     `${m.integrados} vistas fundidas · vóxel ${m.voxel.toFixed(1)} mm`
-  ].map(s => `<span class="inf-stat">${s}</span>`).join('');
+  ].filter(Boolean).map(s => `<span class="inf-stat">${s}</span>`).join('');
   const consejos = [];
   if (L.gradosCubiertos !== undefined && L.gradosCubiertos < 300) consejos.push(`Recorriste ${L.gradosCubiertos}° de los 360° alrededor: lo que no se miró se rellenó a ciegas. Para la próxima, seguí el anillo de la vista previa hasta que quede verde entero, incluida la franja de arriba (mirando un poco desde arriba de la cabeza).`);
   if (!cierre.cerrada) consejos.push('La malla quedó abierta donde el modelo toca el borde del volumen (por ejemplo, el cuello o los hombros): es normal en una cabeza. Si querés una base plana, dejá que el cuello salga por abajo del volumen.');
@@ -760,19 +775,21 @@ function actualizarModo() {
 // ============================================================
 
 const PRESETS = {
-  cara: { modo: 'libre', libLado: 300, libVoxel: 2, libEsc: 2, libBilateral: true, libDistancia: 0, optSuavizado: 1, optRelleno: 'solido', optReducir: 0,
+  ultra: { modo: 'libre', libLado: 300, libVoxel: 1.5, libEsc: 2, libBilateral: true, libDistancia: 0, optSuavizado: 2, optSuavizadoTipo: 'bilateral', optRelleno: 'solido', optReducir: 'q200000', optAgujeros: true,
+    nota: 'Ultra fino: vóxeles de 1,5 mm en un volumen de 30 cm, seguimiento nítido (320×240), filtro adaptativo del sensor, fusión ponderada por ángulo y distancia, suavizado bilateral que conserva los rasgos y malla optimizada por QEM a 200 mil triángulos. Kinect a 50–60 cm, movimientos muy lentos (2–4 cuadros por segundo). Pensado para caras, manos, piezas con detalle fino.' },
+  cara: { modo: 'libre', libLado: 300, libVoxel: 2, libEsc: 2, libBilateral: true, libDistancia: 0, optSuavizado: 1, optSuavizadoTipo: 'bilateral', optRelleno: 'solido', optReducir: 0, optAgujeros: true,
     nota: 'Cara y gestos, máximo detalle: vóxeles de 2 mm, seguimiento nítido y filtro de ruido. El Kinect mide más fino cuanto más cerca: trabajá a 55–65 cm (no menos de 50). La persona sostiene la expresión sin moverse; recorré despacio de oreja a oreja pasando por arriba y por debajo del mentón. Va a unos 3–5 cuadros por segundo: movete lento.' },
-  cabeza: { modo: 'libre', libLado: 400, libVoxel: 3, libEsc: 4, libBilateral: true, libDistancia: 0, optSuavizado: 2, optRelleno: 'solido', optReducir: 0,
+  cabeza: { modo: 'libre', libLado: 400, libVoxel: 3, libEsc: 4, libBilateral: true, libDistancia: 0, optSuavizado: 2, optRelleno: 'solido', optReducir: 0, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Cabeza o busto a mano: la persona quieta, vos girás alrededor a 60–80 cm. Volumen de 40 cm, detalle de 3 mm y filtro de ruido; suavizado leve para no perder la nariz y los labios. Para cabeza y hombros subí el volumen a 50 cm.' },
-  cuerpo: { modo: 'libre', libLado: 800, libVoxel: 6, libEsc: 4, libBilateral: false, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2,
+  cuerpo: { modo: 'libre', libLado: 800, libVoxel: 6, libEsc: 4, libBilateral: false, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Medio cuerpo a mano: la persona sentada y quieta, vos a 1 m dando la vuelta. Volumen de 80 cm y 6 mm de detalle para que el seguimiento sea ágil.' },
-  grande: { modo: 'libre', libLado: 1000, libVoxel: 8, libEsc: 4, libBilateral: false, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2,
+  grande: { modo: 'libre', libLado: 1000, libVoxel: 8, libEsc: 4, libBilateral: false, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Objeto grande a mano (silla, escultura, maqueta): volumen de 1 m y 8 mm de detalle. Dá la vuelta completa a 1–1,2 m, despacio.' },
-  chica: { modo: 'volumen', optAncho: 160, optProfundo: 160, optAlto: 160, optCorte: 4, optZmin: 450, optZmax: 1000, optPaso: 30, optCuadros: 20, optVoxel: 2, optSuavizado: 5, optRelleno: 'solido', optReducir: 0,
+  chica: { modo: 'volumen', optAncho: 160, optProfundo: 160, optAlto: 160, optCorte: 4, optZmin: 450, optZmax: 1000, optPaso: 30, optCuadros: 20, optVoxel: 2, optSuavizado: 5, optRelleno: 'solido', optReducir: 0, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Pieza chica (5–15 cm) sobre base giratoria: acercá el Kinect al mínimo (60 cm), caja de 16 cm, una toma cada 30° con 20 cuadros para bajar el ruido, y detalle de 2 mm.' },
-  mediana: { modo: 'volumen', optAncho: 400, optProfundo: 400, optAlto: 350, optCorte: 4, optZmin: 500, optZmax: 1300, optPaso: 45, optCuadros: 10, optVoxel: 3, optSuavizado: 5, optRelleno: 'solido', optReducir: 0,
+  mediana: { modo: 'volumen', optAncho: 400, optProfundo: 400, optAlto: 350, optCorte: 4, optZmin: 500, optZmax: 1300, optPaso: 45, optCuadros: 10, optVoxel: 3, optSuavizado: 5, optRelleno: 'solido', optReducir: 0, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Pieza mediana (15–40 cm) sobre base giratoria, a 70–100 cm: caja de 40 cm, una toma cada 45° con 10 cuadros, detalle de 3 mm.' },
-  relieve: { modo: 'relieve', optAncho: 300, optProfundo: 300, optAlto: 120, optCorte: 3, optZmin: 450, optZmax: 1000, optCuadros: 20, optVoxel: 2, optSuavizado: 2, optRelleno: 'solido', optReducir: 0,
+  relieve: { modo: 'relieve', optAncho: 300, optProfundo: 300, optAlto: 120, optCorte: 3, optZmin: 450, optZmax: 1000, optCuadros: 20, optVoxel: 2, optSuavizado: 2, optRelleno: 'solido', optReducir: 0, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Relieve o placa: el Kinect mirando desde arriba a 60–80 cm, una sola toma de 20 cuadros, detalle de 2 mm y suavizado leve para no perder los bordes.' },
   personalizado: { nota: 'Personalizado: los ajustes quedan como los dejaste (modo, caja, paso, cuadros y resolución).' }
 };
@@ -1071,9 +1088,7 @@ async function generar() {
       huecosVacios: $('optHuecosVacios').checked,
       relleno: $('optRelleno').value,
       mayorComponente: $('optMayor').checked,
-      suavizado: +$('optSuavizado').value || 0,
-      reducir: +$('optReducir').value || 0,
-      escala: (+$('optEscala').value || 100) / 100
+      ...opcionesPosprocesado()
     };
     const t0 = performance.now();
     const res = N.reconstruir(tomas, marco, opciones, progreso);
@@ -1096,11 +1111,12 @@ async function generar() {
     $('statsModelo').innerHTML = [
       `${med.triangulos.toLocaleString('es')} triángulos`,
       `${med.ancho.toFixed(0)} × ${med.profundo.toFixed(0)} × ${med.alto.toFixed(0)} mm (ancho × fondo × alto)`,
-      `${med.volumenCm3.toFixed(1)} cm³`,
+      `${med.volumenCm3.toFixed(1)} cm³ · ${med.areaCm2.toFixed(0)} cm² de superficie`,
       cierre.cerrada ? 'malla cerrada ✔' : `${cierre.aristasAbiertas} aristas abiertas`,
+      res.info.agujerosRellenados ? `${res.info.agujerosRellenados} agujero(s) chico(s) cerrados` : null,
       res.info.componentes > 1 ? `${res.info.componentes - 1} pedazos sueltos descartados` : 'una sola pieza',
       `${tomas.length} toma${tomas.length > 1 ? 's' : ''} · vóxel ${res.vol.voxel.toFixed(1)} mm`
-    ].map(s => `<span class="inf-stat">${s}</span>`).join('');
+    ].filter(Boolean).map(s => `<span class="inf-stat">${s}</span>`).join('');
     progreso(`Listo en ${((performance.now() - t0) / 1000).toFixed(1)} s.`);
     armarInforme(res, tomas, med, cierre, modo);
     $('zonaResultado').style.display = '';
@@ -1177,10 +1193,23 @@ function iniciarVista3D() {
   medir();
   window.addEventListener('resize', medir);
   (function animar() { requestAnimationFrame(animar); controles.update(); renderer.render(escena, camara); })();
-  // medición entre dos puntos del modelo
-  const medicion = { activa: false, puntos: [], objetos: [], malla: null };
+  // medición sobre el modelo: distancia, ángulo, círculo por 3 puntos, perímetro a una altura, planitud
+  const medicion = { activa: false, puntos: [], objetos: [], malla: null, datos: null };
   const rayo = new THREE.Raycaster();
   let bajada = null;
+  const rojo = 0xff3e00;
+  const marcar = (p) => {
+    const tam = medicion.malla.geometry.boundingBox.getSize(new THREE.Vector3()).length() / 140;
+    const esfera = new THREE.Mesh(new THREE.SphereGeometry(tam, 12, 12), new THREE.MeshBasicMaterial({ color: rojo }));
+    esfera.position.copy(p); grupo.add(esfera); medicion.objetos.push(esfera);
+  };
+  const linea = (pts, cerrar = false) => {
+    const geo = new THREE.BufferGeometry().setFromPoints(pts.map(q => q instanceof THREE.Vector3 ? q : new THREE.Vector3(q[0], q[1], q[2])));
+    const obj = cerrar ? new THREE.LineLoop(geo, new THREE.LineBasicMaterial({ color: rojo })) : new THREE.Line(geo, new THREE.LineBasicMaterial({ color: rojo }));
+    grupo.add(obj); medicion.objetos.push(obj);
+  };
+  const limpiar = () => { medicion.puntos = []; medicion.objetos.forEach(o => grupo.remove(o)); medicion.objetos = []; };
+  const mm = (v) => `${v.toFixed(1)} mm (${(v / 10).toFixed(2)} cm)`;
   lienzo.addEventListener('pointerdown', (e) => { bajada = [e.clientX, e.clientY]; });
   lienzo.addEventListener('pointerup', (e) => {
     if (!medicion.activa || !bajada || !medicion.malla) return;
@@ -1191,28 +1220,58 @@ function iniciarVista3D() {
     const hits = rayo.intersectObject(medicion.malla);
     if (!hits.length) return;
     const p = hits[0].point.clone();
-    if (medicion.puntos.length === 2) { medicion.puntos = []; medicion.objetos.forEach(o => grupo.remove(o)); medicion.objetos = []; }
+    const modo = $('optMedida').value;
+    const necesarios = { distancia: 2, angulo: 3, circulo: 3, perimetro: 1, plano: 1 }[modo] || 2;
+    if (medicion.puntos.length >= necesarios) limpiar();
     medicion.puntos.push(p);
-    const tam = medicion.malla.geometry.boundingBox.getSize(new THREE.Vector3()).length() / 120;
-    const esfera = new THREE.Mesh(new THREE.SphereGeometry(tam, 12, 12), new THREE.MeshBasicMaterial({ color: 0xff3e00 }));
-    esfera.position.copy(p); grupo.add(esfera); medicion.objetos.push(esfera);
-    if (medicion.puntos.length === 2) {
-      const [a, b] = medicion.puntos;
-      const linea = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), new THREE.LineBasicMaterial({ color: 0xff3e00 }));
-      grupo.add(linea); medicion.objetos.push(linea);
-      const d = a.distanceTo(b);
-      $('medidaTexto').textContent = `${d.toFixed(1)} mm (${(d / 10).toFixed(1)} cm) entre los dos puntos`;
-    } else {
-      $('medidaTexto').textContent = 'Ahora hacé clic en el segundo punto';
+    marcar(p);
+    const n = medicion.puntos.length;
+    if (n < necesarios) { $('medidaTexto').textContent = `Punto ${n} de ${necesarios}: hacé clic en el siguiente`; return; }
+    const P = medicion.puntos;
+    if (modo === 'distancia') {
+      linea([P[0], P[1]]);
+      const d = P[0].distanceTo(P[1]);
+      $('medidaTexto').textContent = `${mm(d)} entre los dos puntos · Δx ${Math.abs(P[1].x - P[0].x).toFixed(1)} · Δalto ${Math.abs(P[1].y - P[0].y).toFixed(1)} · Δfondo ${Math.abs(P[1].z - P[0].z).toFixed(1)} mm`;
+    } else if (modo === 'angulo') {
+      linea([P[0], P[1], P[2]]);
+      const a = P[0].clone().sub(P[1]).normalize(), b = P[2].clone().sub(P[1]).normalize();
+      const ang = Math.acos(Math.max(-1, Math.min(1, a.dot(b)))) * 180 / Math.PI;
+      $('medidaTexto').textContent = `Ángulo en el segundo punto: ${ang.toFixed(1)}° · lados ${mm(P[0].distanceTo(P[1]))} y ${mm(P[2].distanceTo(P[1]))}`;
+    } else if (modo === 'circulo') {
+      const c = N.circuloPorTresPuntos([P[0].x, P[0].y, P[0].z], [P[1].x, P[1].y, P[1].z], [P[2].x, P[2].y, P[2].z]);
+      if (!c) { $('medidaTexto').textContent = 'Los tres puntos están alineados: no definen un círculo'; return; }
+      // dibujar el círculo en su plano
+      const nrm = new THREE.Vector3(...c.normal), u = new THREE.Vector3().subVectors(P[0], new THREE.Vector3(...c.centro)).normalize(), v = new THREE.Vector3().crossVectors(nrm, u);
+      const pts = []; for (let i = 0; i < 72; i++) { const t = i / 72 * Math.PI * 2; pts.push(new THREE.Vector3(...c.centro).addScaledVector(u, c.radio * Math.cos(t)).addScaledVector(v, c.radio * Math.sin(t))); }
+      linea(pts, true); marcar(new THREE.Vector3(...c.centro));
+      $('medidaTexto').textContent = `Círculo por los 3 puntos: radio ${mm(c.radio)} · diámetro ${mm(2 * c.radio)} · circunferencia ${mm(2 * Math.PI * c.radio)}`;
+    } else if (modo === 'perimetro') {
+      const corte = N.cortarConPlano(medicion.datos, [p.x, p.y, p.z], [0, 1, 0]);
+      if (!corte.lazos.length) { $('medidaTexto').textContent = 'No hay contorno a esa altura'; return; }
+      // el lazo más cercano al clic (y el mayor, si es otro)
+      let mejor = -1, dm = Infinity;
+      corte.lazos.forEach((lz, i) => { for (const q of lz) { const d = Math.hypot(q[0] - p.x, q[1] - p.y, q[2] - p.z); if (d < dm) { dm = d; mejor = i; } } });
+      linea(corte.lazos[mejor], true);
+      let txt = `Perímetro a ${p.y.toFixed(1)} mm de alto: ${mm(corte.perimetros[mejor])}`;
+      if (corte.mayor !== mejor) txt += ` · el contorno mayor a esa altura mide ${mm(corte.perimetros[corte.mayor])}`;
+      $('medidaTexto').textContent = txt;
+    } else if (modo === 'plano') {
+      const pl = N.planoLocal(medicion.datos, [p.x, p.y, p.z], 15);
+      if (!pl) { $('medidaTexto').textContent = 'Pocos puntos alrededor: probá en otro lugar'; return; }
+      const nrm = new THREE.Vector3(...pl.normal); const u = new THREE.Vector3(1, 0, 0); if (Math.abs(u.dot(nrm)) > 0.9) u.set(0, 1, 0); u.cross(nrm).normalize(); const v = new THREE.Vector3().crossVectors(nrm, u);
+      const pts = []; for (let i = 0; i < 48; i++) { const t = i / 48 * Math.PI * 2; pts.push(new THREE.Vector3(...pl.punto).addScaledVector(u, 15 * Math.cos(t)).addScaledVector(v, 15 * Math.sin(t))); }
+      linea(pts, true); linea([new THREE.Vector3(...pl.punto), new THREE.Vector3(...pl.punto).addScaledVector(nrm, 20)]);
+      const inclinacion = Math.acos(Math.abs(nrm.y)) * 180 / Math.PI;
+      $('medidaTexto').textContent = `Planitud en 15 mm alrededor: desvío RMS ${pl.rms.toFixed(2)} mm (${pl.puntos} vértices) · la superficie está inclinada ${inclinacion.toFixed(1)}° respecto de la horizontal`;
     }
   });
   return {
     medir(activar) {
       medicion.activa = activar;
       lienzo.style.cursor = activar ? 'crosshair' : '';
-      if (activar) $('medidaTexto').textContent = 'Hacé clic en un punto del modelo';
+      if (activar) $('medidaTexto').textContent = 'Hacé clic en el modelo (elegí qué medir en la lista)';
     },
-    borrarMedidas() { medicion.puntos = []; medicion.objetos.forEach(o => grupo.remove(o)); medicion.objetos = []; $('medidaTexto').textContent = ''; },
+    borrarMedidas() { limpiar(); $('medidaTexto').textContent = ''; },
     mostrar(malla, base) {
       while (grupo.children.length) grupo.remove(grupo.children[0]);
       const geo = new THREE.BufferGeometry();
@@ -1222,7 +1281,7 @@ function iniciarVista3D() {
       const objeto = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xd8a24a, metalness: 0.05, roughness: 0.65, side: THREE.DoubleSide }));
       grupo.add(objeto);
       geo.computeBoundingBox();
-      medicion.malla = objeto; medicion.puntos = []; medicion.objetos = []; $('medidaTexto').textContent = '';
+      medicion.malla = objeto; medicion.datos = malla; medicion.puntos = []; medicion.objetos = []; $('medidaTexto').textContent = '';
       const caja = geo.boundingBox;
       const tam = caja.getSize(new THREE.Vector3());
       const r = tam.length() / 2 || 1;
@@ -1255,9 +1314,10 @@ $('btnMedir').addEventListener('click', () => {
   if (!vista3d) return;
   const activo = $('btnMedir').classList.toggle('btn--primary');
   vista3d.medir(activo);
-  toast(activo ? 'Modo medición: hacé clic en dos puntos del modelo (arrastrá para girar)' : 'Medición desactivada');
+  toast(activo ? 'Modo medición: hacé clic en el modelo (arrastrá para girar); elegí qué medir en la lista' : 'Medición desactivada');
 });
 $('btnMedirBorrar').addEventListener('click', () => { if (vista3d) vista3d.borrarMedidas(); });
+$('optMedida').addEventListener('change', () => { if (vista3d) vista3d.borrarMedidas(); if (!$('btnMedir').classList.contains('btn--primary')) $('btnMedir').click(); });
 $('btnSTL').addEventListener('click', () => {
   if (!estado.malla) return;
   descargar(new Blob([N.aSTL(estado.malla)], { type: 'model/stl' }), 'escaneo-kinect.stl');
