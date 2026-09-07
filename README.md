@@ -294,8 +294,11 @@ purgado listo para la impresora 3D.
   obtenida. **Pérdida y recuperación automática del seguimiento**: máquina de estados (seguimiento, inestable,
   perdido, verificando), descarte de alineaciones físicamente imposibles entre cuadros, segundo intento de ICP
   con búsqueda amplia, vistas clave (pose + firma de profundidad 32×24) guardadas mientras se escanea y
-  relocalización por comparación de firmas + corrección por centroide + ICP amplio desde las mejores candidatas,
-  con verificación en dos cuadros antes de volver a integrar. Semáforo de seguimiento, pausa, reinicio y cierre
+  relocalización continua sin intervención del usuario: por cuadro, dentro de un presupuesto de tiempo, se
+  prueban las vistas clave más parecidas por firma y luego todas las demás en rondas (también giradas ±22° y
+  ±45° alrededor del centro), cada una con raycast desde su pose + corrección por centroide + ICP amplio, con
+  verificación en dos cuadros antes de volver a integrar; el usuario sigue escaneando y se recupera en cuanto
+  cualquier parte ya escaneada vuelve a verse. Semáforo de seguimiento, pausa, reinicio y cierre
   con el mismo purgado y las mismas descargas.
   Resolución de seguimiento y vista previa a elección (160×120 o 320×240), vóxeles de 2 a 8 mm y filtro
   bilateral del mapa de profundidad para caras y detalles finos.
