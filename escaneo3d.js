@@ -424,6 +424,7 @@ function libreTerminar() {
   $('seccionModelo').style.display = '';
   L.worker.postMessage({ tipo: 'malla', opciones: {
     relleno: $('optRelleno').value, mayorComponente: $('optMayor').checked,
+    refinar: +$('libRefinar').value || 0, rondas: (+$('libRefinar').value || 0) <= 1 ? 2 : 1,
     ...opcionesPosprocesado()
   } });
 }
@@ -443,7 +444,8 @@ function libreMostrarMalla(m) {
     cierre.cerrada ? 'malla cerrada ✔' : `${cierre.aristasAbiertas} aristas abiertas`,
     m.info.agujerosRellenados ? `${m.info.agujerosRellenados} agujero(s) chico(s) cerrados` : null,
     m.info.componentes > 1 ? `${m.info.componentes - 1} pedazos sueltos descartados` : 'una sola pieza',
-    `${m.integrados} vistas fundidas · vóxel ${m.voxel.toFixed(1)} mm`
+    m.info.refinado ? `refinado en ${m.info.rondas} ronda(s): ${m.info.vistas} vistas a resolución completa, ${m.info.ajustadas} poses reajustadas, vóxel ${m.info.voxelFino.toFixed(2)} mm` : null,
+    `${m.integrados} vistas fundidas · vóxel ${m.voxel.toFixed(2)} mm`
   ].filter(Boolean).map(s => `<span class="inf-stat">${s}</span>`).join('');
   const consejos = [];
   if (L.gradosCubiertos !== undefined && L.gradosCubiertos < 300) consejos.push(`Recorriste ${L.gradosCubiertos}° de los 360° alrededor: lo que no se miró se rellenó a ciegas. Para la próxima, seguí el anillo de la vista previa hasta que quede verde entero, incluida la franja de arriba (mirando un poco desde arriba de la cabeza).`);
@@ -775,15 +777,15 @@ function actualizarModo() {
 // ============================================================
 
 const PRESETS = {
-  ultra: { modo: 'libre', libLado: 300, libVoxel: 1.5, libEsc: 2, libBilateral: true, libDistancia: 0, optSuavizado: 2, optSuavizadoTipo: 'bilateral', optRelleno: 'solido', optReducir: 'q200000', optAgujeros: true,
-    nota: 'Ultra fino: vóxeles de 1,5 mm en un volumen de 30 cm, seguimiento nítido (320×240), filtro adaptativo del sensor, fusión ponderada por ángulo y distancia, suavizado bilateral que conserva los rasgos y malla optimizada por QEM a 200 mil triángulos. Kinect a 50–60 cm, movimientos muy lentos (2–4 cuadros por segundo). Pensado para caras, manos, piezas con detalle fino.' },
-  cara: { modo: 'libre', libLado: 300, libVoxel: 2, libEsc: 2, libBilateral: true, libDistancia: 0, optSuavizado: 1, optSuavizadoTipo: 'bilateral', optRelleno: 'solido', optReducir: 0, optAgujeros: true,
+  ultra: { modo: 'libre', libLado: 300, libVoxel: 2, libEsc: 2, libBilateral: true, libDistancia: 0, libRefinar: 1, optSuavizado: 2, optSuavizadoTipo: 'bilateral', optRelleno: 'solido', optReducir: 'q200000', optAgujeros: true,
+    nota: 'Ultra fino: seguimiento nítido (320×240) con vóxeles de 2 mm y, al terminar, refinado final a 1 mm: las vistas guardadas a resolución completa se reajustan contra el modelo y se vuelven a fundir en un volumen fino sólo alrededor de la pieza. Filtro adaptativo del sensor, fusión ponderada por ángulo y distancia, suavizado bilateral que conserva los rasgos y malla optimizada por QEM a 200 mil triángulos. Kinect a 50–60 cm, movimientos muy lentos (2–4 cuadros por segundo). Pensado para caras, manos, piezas con detalle fino.' },
+  cara: { modo: 'libre', libLado: 300, libVoxel: 2, libEsc: 2, libBilateral: true, libDistancia: 0, libRefinar: 1.5, optSuavizado: 1, optSuavizadoTipo: 'bilateral', optRelleno: 'solido', optReducir: 0, optAgujeros: true,
     nota: 'Cara y gestos, máximo detalle: vóxeles de 2 mm, seguimiento nítido y filtro de ruido. El Kinect mide más fino cuanto más cerca: trabajá a 55–65 cm (no menos de 50). La persona sostiene la expresión sin moverse; recorré despacio de oreja a oreja pasando por arriba y por debajo del mentón. Va a unos 3–5 cuadros por segundo: movete lento.' },
-  cabeza: { modo: 'libre', libLado: 400, libVoxel: 3, libEsc: 4, libBilateral: true, libDistancia: 0, optSuavizado: 2, optRelleno: 'solido', optReducir: 0, optSuavizadoTipo: 'bilateral', optAgujeros: true,
+  cabeza: { modo: 'libre', libLado: 400, libVoxel: 3, libEsc: 4, libBilateral: true, libDistancia: 0, libRefinar: 1.5, optSuavizado: 2, optRelleno: 'solido', optReducir: 0, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Cabeza o busto a mano: la persona quieta, vos girás alrededor a 60–80 cm. Volumen de 40 cm, detalle de 3 mm y filtro de ruido; suavizado leve para no perder la nariz y los labios. Para cabeza y hombros subí el volumen a 50 cm.' },
-  cuerpo: { modo: 'libre', libLado: 800, libVoxel: 6, libEsc: 4, libBilateral: false, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2, optSuavizadoTipo: 'bilateral', optAgujeros: true,
+  cuerpo: { modo: 'libre', libLado: 800, libVoxel: 6, libEsc: 4, libBilateral: false, libDistancia: 0, libRefinar: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Medio cuerpo a mano: la persona sentada y quieta, vos a 1 m dando la vuelta. Volumen de 80 cm y 6 mm de detalle para que el seguimiento sea ágil.' },
-  grande: { modo: 'libre', libLado: 1000, libVoxel: 8, libEsc: 4, libBilateral: false, libDistancia: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2, optSuavizadoTipo: 'bilateral', optAgujeros: true,
+  grande: { modo: 'libre', libLado: 1000, libVoxel: 8, libEsc: 4, libBilateral: false, libDistancia: 0, libRefinar: 0, optSuavizado: 5, optRelleno: 'solido', optReducir: 2, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Objeto grande a mano (silla, escultura, maqueta): volumen de 1 m y 8 mm de detalle. Dá la vuelta completa a 1–1,2 m, despacio.' },
   chica: { modo: 'volumen', optAncho: 160, optProfundo: 160, optAlto: 160, optCorte: 4, optZmin: 450, optZmax: 1000, optPaso: 30, optCuadros: 20, optVoxel: 2, optSuavizado: 5, optRelleno: 'solido', optReducir: 0, optSuavizadoTipo: 'bilateral', optAgujeros: true,
     nota: 'Pieza chica (5–15 cm) sobre base giratoria: acercá el Kinect al mínimo (60 cm), caja de 16 cm, una toma cada 30° con 20 cuadros para bajar el ruido, y detalle de 2 mm.' },

@@ -310,6 +310,12 @@ purgado listo para la impresora 3D.
   a la distancia (el ruido del Kinect crece con z²), **suavizado bilateral de normales** (Zheng et al.) que
   conserva aristas y rasgos, **decimación por error cuadrático (QEM, Garland-Heckbert)** con conservación del
   borde y rechazo de vueltas de cara, relleno de agujeros chicos, y preset «Ultra fino».
+- **Refinamiento final** (escaneo a mano alzada): durante el escaneo se guardan los mapas de profundidad a
+  resolución completa (uno cada dos cuadros integrados, hasta 160, raleando la lista si se llena) con su
+  pose; al terminar, cada vista se reajusta por ICP contra el modelo grueso, se arma un volumen fino sólo
+  alrededor de la pieza (caja de la malla gruesa más margen; 1,5, 1 o 0,75 mm) y se vuelven a fundir todas
+  las vistas con ponderación; con 2 rondas la segunda reajusta las poses contra el propio modelo fino. El
+  seguimiento en vivo sigue siendo grueso y ágil; el detalle se gana al final. ICP multiescala (paso 4, 2, 1).
 - **Medición sobre el modelo**: distancia entre dos puntos (con Δ por eje), ángulo entre tres puntos, círculo
   por tres puntos (radio, diámetro, circunferencia: agujeros y curvaturas), perímetro del contorno horizontal a
   la altura del clic (corte de la malla con un plano, encadenado en lazos: contorno de una cabeza), planitud

@@ -139,6 +139,10 @@ export class EscanerLibre {
     // submodelo: mientras el principal está perdido, un segundo volumen sigue guardando lo que se escanea;
     // al reencontrar la posición se funde en el principal con la transformación calculada
     this.esSubmapa = !!opciones.esSubmapa;
+    this.guardarMapas = opciones.guardarMapas !== false;
+    this.maxMapas = opciones.maxMapas || 160;
+    this.pasoMapas = opciones.pasoMapas || 2;
+    this.mapas = []; // { R, t, mapa: Uint16Array } para el refinamiento final
     this.opciones = opciones;
     this.sub = null;
     this.pares = [];       // poses del mismo cuadro en el principal y en el submodelo (para calcular la transformación)
@@ -213,6 +217,11 @@ export class EscanerLibre {
       const Rg = this.R, tg = this.t; this.R = Rk; this.t = this.claves[this.claves.length - 1].t; this._anotarCobertura(); this.R = Rg; this.t = tg;
     }
     while (this.claves.length > 240) this.claves.splice(1, 1);
+    for (const mp of sub.mapas) {
+      const Rk = mulR(T.R, mp.R), tk = apR(T.R, mp.t);
+      this.mapas.push({ R: Rk, t: [tk[0] + tt[0], tk[1] + tt[1], tk[2] + tt[2]], mapa: mp.mapa });
+    }
+    while (this.mapas.length > this.maxMapas) this.mapas.splice(1, 2);
     this.integrados += sub.integrados;
     this.fundidos++;
     this.sub = null; this.pares = [];
@@ -257,6 +266,16 @@ export class EscanerLibre {
     const validos = this._firmaDe(z, firma);
     if (validos < 60) return;
     this.claves.push({ R: this.R.slice(), t: this.t.slice(), firma, validos });
+  }
+
+  // guarda el mapa entero (Uint16, 0,6 MB) con su pose para el refinamiento final, con tope de memoria;
+  // cuando se llena, se raléa la lista (se descarta uno de cada dos) para seguir cubriendo todo el recorrido
+  _guardarMapa(z) {
+    if (!this.guardarMapas) return;
+    if (this.mapas.length >= this.maxMapas) { this.mapas = this.mapas.filter((_, i) => i % 2 === 0); this.pasoMapas *= 2; }
+    const mapa = new Uint16Array(z.length);
+    for (let i = 0; i < z.length; i++) mapa[i] = z[i] > 0 ? Math.round(z[i]) : 0;
+    this.mapas.push({ R: this.R.slice(), t: this.t.slice(), mapa });
   }
 
   // ---------- relocalización automática ----------
@@ -468,12 +487,20 @@ export class EscanerLibre {
     const distMax = opciones.distMax || Math.max(40, this.vol.voxel * 8), distMax2 = distMax * distMax, cosMin = Math.cos(35 * Math.PI / 180);
     const n = this.W * this.H;
     const iteraciones = opciones.iteraciones || 10;
-    for (let it = 0; it < iteraciones; it++) {
+    // multiescala: primeras iteraciones con submuestreo (paso 4 y 2) y búsqueda más amplia, después a resolución
+    // completa. Amplía la cuenca de convergencia ante movimientos grandes sin encarecer el cuadro.
+    const niveles = opciones.niveles || [[4, 3, 2.5], [2, 3, 1.5], [1, iteraciones, 1]];
+    let nivel = 0, itNivel = 0;
+    const total = niveles.reduce((a, l) => a + l[1], 0);
+    for (let it = 0; it < total; it++) {
+      if (itNivel >= niveles[nivel][1]) { nivel++; itNivel = 0; }
+      itNivel++;
+      const paso = niveles[nivel][0], dm2 = distMax2 * niveles[nivel][2] * niveles[nivel][2];
       A.fill(0); b.fill(0); inliers = 0; validos = 0; residuo = 0;
       const r0 = R[0], r1 = R[1], r2 = R[2], r3 = R[3], r4 = R[4], r5 = R[5], r6 = R[6], r7 = R[7], r8 = R[8];
       const tx = t[0], ty = t[1], tz = t[2];
       const p0 = Rp[0], p1 = Rp[1], p2 = Rp[2], p3 = Rp[3], p4 = Rp[4], p5 = Rp[5], p6 = Rp[6], p7 = Rp[7], p8 = Rp[8];
-      for (let k = 0; k < n; k++) {
+      for (let k = 0; k < n; k += paso) {
         if (!Mf[k]) continue;
         validos++;
         const k3 = k * 3;
@@ -490,7 +517,7 @@ export class EscanerLibre {
         if (!Mm[m]) continue;
         const m3 = m * 3;
         const dx = Vm[m3] - wx, dy = Vm[m3 + 1] - wy, dz = Vm[m3 + 2] - wz;
-        if (dx * dx + dy * dy + dz * dz > distMax2) continue;
+        if (dx * dx + dy * dy + dz * dz > dm2) continue;
         const nmx = Nm[m3], nmy = Nm[m3 + 1], nmz = Nm[m3 + 2];
         const nfx = Nf[k3], nfy = Nf[k3 + 1], nfz = Nf[k3 + 2];
         const nwx = r0 * nfx + r1 * nfy + r2 * nfz, nwy = r3 * nfx + r4 * nfy + r5 * nfz, nwz = r6 * nfx + r7 * nfy + r8 * nfz;
@@ -501,7 +528,7 @@ export class EscanerLibre {
         for (let a = 0; a < 6; a++) { const ja = w * J[a]; b[a] += ja * r; for (let c = a; c < 6; c++) A[a * 6 + c] += ja * J[c]; }
         inliers++; residuo += ar;
       }
-      if (inliers < 200 * (this.esc === 2 ? 4 : 1)) break;
+      if (inliers < 200 * (this.esc === 2 ? 4 : 1) / paso) { if (paso === 1) break; else continue; }
       for (let a = 0; a < 6; a++) for (let c = 0; c < a; c++) A[a * 6 + c] = A[c * 6 + a];
       for (let a = 0; a < 6; a++) A[a * 6 + a] += 1e-6;
       const x = resolver6(A, b);
@@ -511,8 +538,9 @@ export class EscanerLibre {
       R = mulR(Rw, R);
       const tr = apR(Rw, t);
       t = [tr[0] + tau[0], tr[1] + tau[1], tr[2] + tau[2]];
-      if (Math.hypot(w[0], w[1], w[2]) < 1e-4 && Math.hypot(tau[0], tau[1], tau[2]) < 0.1) break;
+      if (paso === 1 && Math.hypot(w[0], w[1], w[2]) < 1e-4 && Math.hypot(tau[0], tau[1], tau[2]) < 0.1) break;
     }
+    // las cuentas de la última iteración fueron a paso 1 (resolución completa); si no llegó, escalar
     return { R, t, inliers, validos, residuo: inliers ? residuo / inliers : 0 };
   }
 
@@ -585,6 +613,7 @@ export class EscanerLibre {
       this.Rprev = this.R.slice(); this.tprev = this.t.slice();
       this.Rbuena = this.R.slice(); this.tbuena = this.t.slice();
       this._guardarClave(z);
+      this._guardarMapa(z);
       this._raycast(this.R, this.t);
       this.calidad = { inliers: 0, validos: 0, residuo: 0, ok: true, primero: true };
       this.modo = 'seguimiento';
@@ -670,6 +699,7 @@ export class EscanerLibre {
         this._anotarCobertura();
         this.Rbuena = this.R.slice(); this.tbuena = this.t.slice();
         if (this.integrados % 3 === 0) this._guardarClave(z);
+        if (this.integrados % this.pasoMapas === 0) this._guardarMapa(z);
       }
     } else {
       this.perdidos++; this.seguidos++;
@@ -725,6 +755,83 @@ export class EscanerLibre {
     return { malla: m, info, voxel: this.vol.voxel };
   }
 
+  // ---------- refinamiento final ----------
+  // 1) reajusta la pose de cada vista clave contra el modelo grueso (ICP a resolución completa),
+  // 2) arma un volumen fino sólo alrededor de la pieza (caja de la malla gruesa + margen),
+  // 3) vuelve a fundir en él todas las vistas clave con ponderación, y 4) extrae y posprocesa la malla.
+  refinar(opciones = {}, avisar = () => {}) {
+    const claves = this.mapas;
+    if (claves.length < 2) return null;
+    const rondas = Math.max(1, opciones.rondas || 1);
+    avisar(`Refinamiento: ${claves.length} vistas guardadas a resolución completa`);
+    // malla gruesa para conocer la caja de la pieza
+    const Fg = N.campoFinal(this.vol, { relleno: opciones.relleno || 'solido' });
+    let gruesa = N.extraerMalla(Fg, this.vol);
+    if (!gruesa.idx.length) return null;
+    if (opciones.mayorComponente !== false) gruesa = N.mayorComponente(gruesa);
+    const med = N.medidasMalla(gruesa);
+    const margen = Math.max(12, this.vol.voxel * 3);
+    const caja = { ancho: med.ancho + 2 * margen, alto: med.alto + 2 * margen, profundo: med.profundo + 2 * margen };
+    const centro = [(med.min[0] + med.max[0]) / 2, (med.min[1] + med.max[1]) / 2, (med.min[2] + med.max[2]) / 2];
+    // volumen fino centrado en la pieza
+    let voxel = opciones.voxel || 1;
+    const maxNodos = opciones.maxNodos || 16e6;
+    const vol = N.crearVolumen(caja, voxel, 0, maxNodos);
+    vol.origen = [centro[0] - caja.ancho / 2, centro[1] - caja.alto / 2 - 2 * vol.voxel, centro[2] - caja.profundo / 2];
+    vol.corte = vol.origen[1] - 1; // sin plano de corte: la pieza se centra en el volumen
+    voxel = vol.voxel;
+    avisar(`Volumen fino de ${vol.nx}×${vol.ny}×${vol.nz} nodos (vóxel ${voxel.toFixed(2)} mm)`);
+    const fino = new EscanerLibre({ ...this.opciones, esc: 2, esSubmapa: true, guardarMapas: false, intr: this.intr, lado: 10, voxel: 5, maxNodos: 1000 });
+    const integrador = new EscanerLibre({ ...this.opciones, esc: 4, esSubmapa: true, guardarMapas: false, intr: this.intr, lado: 10, voxel: 5, maxNodos: 1000 });
+    const mu = Math.max(3 * voxel, 4);
+    const filtrar = (k) => {
+      const z = new Float32Array(k.mapa.length);
+      for (let q = 0; q < z.length; q++) z[q] = k.mapa[q];
+      return this.bilateral ? filtroBilateral(z, this.intr.ancho, this.intr.alto, Math.max(6, voxel * 3)) : z;
+    };
+    const poses = claves.map(k => ({ R: k.R, t: k.t, mapa: k.mapa }));
+    let ajustadas = 0, giroMax = 0;
+    for (let ronda = 0; ronda < rondas; ronda++) {
+      // 1) reajuste de poses: ICP de cada vista contra el modelo (grueso en la primera ronda, fino después)
+      const contra = ronda === 0 ? this.vol : vol;
+      fino.vol = contra; fino.mu = ronda === 0 ? this.mu : mu;
+      ajustadas = 0; giroMax = 0;
+      poses.forEach((p, i) => {
+        if (i % 10 === 0) avisar(`Ronda ${ronda + 1}: reajustando la pose de la vista ${i + 1} de ${poses.length}`);
+        const zf = filtrar(p);
+        fino._mapaCuadro(zf);
+        fino.Rprev = p.R.slice(); fino.tprev = p.t.slice();
+        const visibles = fino._raycast(fino.Rprev, fino.tprev);
+        fino.R = p.R.slice(); fino.t = p.t.slice();
+        if (visibles > 1000) {
+          const res = fino._icp({ iteraciones: 12, niveles: [[2, 3, 1.5], [1, 12, 1]] });
+          const giro = anguloEntre(res.R, p.R), desp = Math.hypot(res.t[0] - p.t[0], res.t[1] - p.t[1], res.t[2] - p.t[2]);
+          if (res.inliers >= 0.5 * visibles && res.residuo < contra.voxel && giro < 5 && desp < 40) { p.R = res.R; p.t = res.t; ajustadas++; giroMax = Math.max(giroMax, giro); }
+        }
+      });
+      avisar(`Ronda ${ronda + 1}: ${ajustadas} de ${poses.length} poses reajustadas (giro máximo ${giroMax.toFixed(2)}°)`);
+      // 2) fusión fina ponderada (el volumen se vacía si es una ronda nueva)
+      if (ronda > 0) { vol.tsdf.fill(0); vol.peso.fill(0); vol.visto.fill(0); vol.oculto.fill(0); }
+      integrador.vol = vol; integrador.mu = mu;
+      poses.forEach((p, i) => {
+        if (i % 10 === 0) avisar(`Ronda ${ronda + 1}: fundiendo en fino la vista ${i + 1} de ${poses.length}`);
+        const zf = filtrar(p);
+        integrador._mapaCuadro(zf);
+        integrador._integrar(zf, p.R, p.t);
+      });
+    }
+    // 3) malla
+    avisar('Extrayendo la superficie fina');
+    const F = N.campoFinal(vol, { relleno: opciones.relleno || 'solido' });
+    let m = N.extraerMalla(F, vol);
+    const info = { componentes: 1, refinado: true, vistas: poses.length, ajustadas, voxelFino: voxel, rondas };
+    if (m.idx.length) {
+      if (opciones.mayorComponente !== false) { m = N.mayorComponente(m); info.componentes = m.componentes; }
+      m = N.posprocesarMalla(m, opciones, voxel, info, avisar);
+    }
+    return { malla: m, info, voxel };
+  }
+
   reiniciar() {
     const { tsdf, peso, visto, oculto, superficie } = this.vol;
     tsdf.fill(0); peso.fill(0); visto.fill(0); oculto.fill(0); superficie.fill(0);
@@ -735,6 +842,7 @@ export class EscanerLibre {
     this.modo = 'inicio'; this.claves = []; this.candIdx = 0; this.intentos = 0; this.reencontrados = 0; this.verificados = 0;
     this.Rbuena = null; this.tbuena = null; this.giro = 0; this.desplazamiento = 0;
     this.sub = null; this.pares = []; this.tramos = 0; this.fundidos = 0; this.descartados = 0;
+    this.mapas = []; this.pasoMapas = this.opciones.pasoMapas || 2;
   }
 }
 
@@ -756,7 +864,11 @@ if (typeof self !== 'undefined' && typeof window === 'undefined' && typeof self.
         const img = new Uint8ClampedArray(est.imagen);
         self.postMessage({ tipo: 'estado', ...est, imagen: img, segmentos: segs }, [img.buffer]);
       } else if (m.tipo === 'malla' && escaner) {
-        const r = escaner.malla(m.opciones || {});
+        const op = m.opciones || {};
+        const avisar = (texto) => self.postMessage({ tipo: 'progreso', texto });
+        let r = null;
+        if (op.refinar) { try { r = escaner.refinar({ ...op, voxel: op.refinar }, avisar); } catch (e) { avisar('El refinamiento falló (' + e.message + '); se usa el modelo del seguimiento'); r = null; } }
+        if (!r) r = escaner.malla(op);
         self.postMessage({ tipo: 'malla', pos: r.malla.pos, idx: r.malla.idx, info: r.info, voxel: r.voxel, integrados: escaner.integrados }, [r.malla.pos.buffer, r.malla.idx.buffer]);
       } else if (m.tipo === 'reiniciar' && escaner) {
         escaner.reiniciar();

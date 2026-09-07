@@ -620,8 +620,10 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           55–65 cm, que es donde mide más fino. Va más lento (3–5 cuadros por segundo): movete despacio.</li>
           <li><strong>Girando la pieza</strong>: varias tomas alrededor; lo que ninguna toma vio se rellena macizo. Para
           piezas enteras.</li>
-          <li><strong>Máxima precisión</strong>: el preset «Ultra fino» usa vóxeles de 1,5 mm, seguimiento nítido,
-          filtro adaptativo del sensor y fusión ponderada (las superficies vistas de frente y de cerca pesan más). Al
+          <li><strong>Máxima precisión</strong>: el preset «Ultra fino» usa seguimiento nítido, filtro adaptativo del
+          sensor, fusión ponderada (las superficies vistas de frente y de cerca pesan más) y, al terminar, un
+          <strong>refinado final</strong>: las vistas guardadas a resolución completa se reajustan contra el modelo
+          y se vuelven a fundir en un volumen de 1 mm sólo alrededor de la pieza (tarda un minuto o dos). Al
           generar el modelo, el suavizado <strong>bilateral</strong> baja el ruido conservando aristas y rasgos, la
           malla se puede <strong>optimizar por QEM</strong> a la cantidad de triángulos que quieras sin perder la
           forma, y los agujeros chicos se cierran solos.</li>
