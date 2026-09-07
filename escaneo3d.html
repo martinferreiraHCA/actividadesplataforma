@@ -270,6 +270,15 @@
               <label class="scratch-check" title="Filtro bilateral: baja el ruido del sensor sin borrar los rasgos"><input type="checkbox" id="libBilateral"> Filtrar ruido del sensor</label>
             </div>
             <div class="kin-fila">
+              <label for="libRefinar">Refinado final</label>
+              <select class="campo__input" id="libRefinar" style="max-width:260px" title="Al terminar, reajusta las poses de las vistas guardadas contra el modelo y las vuelve a fundir en un volumen fino sólo alrededor de la pieza">
+                <option value="0">no (modelo del seguimiento)</option>
+                <option value="1.5" selected>fino: vóxel de 1,5 mm</option>
+                <option value="1">ultra: vóxel de 1 mm (lento)</option>
+                <option value="0.75">extremo: 0,75 mm (muy lento)</option>
+              </select>
+            </div>
+            <div class="kin-fila">
               <label for="libDistancia">Centro</label>
               <select class="campo__input" id="libDistancia" style="max-width:230px">
                 <option value="0" selected>donde apunta el centro</option>
