@@ -633,7 +633,11 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           para imprimir» corta el modelo a la altura que elijas y cierra la base plana (o deja un fondo plano detrás
           de la cara, para colgar), le pone un pedestal, lo ahueca con la pared que indiques (la base queda abierta),
           lo escala a la altura final y lo apoya en Z = 0. El «suavizado adaptativo» aplaca el ruido del pelo sin
-          tocar los rasgos de la cara. «Volver al modelo completo» deshace.</li>
+          tocar los rasgos de la cara. El <strong>filtro de rasgos</strong> tiene dos partes: «Realce» amplifica el
+          detalle real (labios, párpados, nariz, pómulos) sin inflar el ruido, y «Simetrizar» mezcla la cara con su
+          espejo buscando solo el plano de simetría: al 20 % quita el ruido asimétrico del escaneo respetando la
+          cara real, al 50 % la deja perfectamente simétrica. Se pueden aplicar sin cortar («sólo aplicar los
+          filtros»). «Volver al modelo completo» deshace.</li>
           <li><strong>Medir</strong>: en el visor, «Medir en el modelo» con distancia entre dos puntos, ángulo entre
           tres, círculo por tres puntos (radio y diámetro de agujeros o curvas), perímetro del contorno a la altura
           del clic (por ejemplo el contorno de una cabeza) y planitud local. Las estadísticas muestran medidas,
