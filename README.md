@@ -327,6 +327,11 @@ purgado listo para la impresora 3D.
   queda abierta al cortar), escala a la altura final, apoyo en Z = 0, y **suavizado adaptativo al ruido**
   (fuerte donde las normales están desordenadas como en el pelo, casi nulo en piel y rasgos; movimiento sólo a lo
   largo de la normal).
+- **Filtro de rasgos para caras** (`realzarRasgos`, `simetrizar`): realce de detalle por máscara de desenfoque
+  en dos escalas sobre la malla (diferencia con el suavizado laplaciano de 1 y 8 pasadas, proyectada en la
+  normal), sólo donde las normales vecinas son coherentes y con «coring» (el detalle menor a 0,3 mm es ruido y
+  no se amplifica), tope de 1,5 mm; y simetrización con búsqueda automática del plano de simetría (mínima
+  distancia media al espejo) y mezcla ajustable con el punto más cercano de la malla reflejada (grilla espacial).
 - **Medición sobre el modelo**: distancia entre dos puntos (con Δ por eje), ángulo entre tres puntos, círculo
   por tres puntos (radio, diámetro, circunferencia: agujeros y curvaturas), perímetro del contorno horizontal a
   la altura del clic (corte de la malla con un plano, encadenado en lazos: contorno de una cabeza), planitud

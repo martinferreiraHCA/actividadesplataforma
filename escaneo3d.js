@@ -441,7 +441,8 @@ function opcionesBusto() {
   return {
     tipo, giroY: +$('bustoGiro').value || 0, corte: (+$('bustoCorte').value || 0) / 100, fondo: (+$('bustoFondo').value || 55) / 100,
     pedestal: tipo === 'placa' ? 'no' : $('bustoPedestal').value, pedestalAlto: +$('bustoPedestalAlto').value || 12,
-    alturaObjetivo: +$('bustoAltura').value || 0, suavizadoAdaptativo: +$('bustoAdaptativo').value || 0
+    alturaObjetivo: +$('bustoAltura').value || 0, suavizadoAdaptativo: +$('bustoAdaptativo').value || 0,
+    realce: +$('bustoRealce').value || 0, simetria: +$('bustoSimetria').value || 0
   };
 }
 
@@ -451,19 +452,21 @@ function aplicarBusto(malla) {
   if (!r.malla.idx.length) { toast('El corte dejó el modelo vacío: bajá el corte o el fondo'); return; }
   estado.malla = r.malla; estado.puntos = null;
   if (!vista3d) vista3d = iniciarVista3D();
-  vista3d.mostrar(r.malla, 0);
+  vista3d.mostrar(r.malla, op.tipo === 'filtros' ? r.info.medidas.min[1] : 0);
   const med = r.info.medidas, cierre = N.esCerrada(r.malla);
   $('statsModelo').innerHTML = [
     `${med.triangulos.toLocaleString('es')} triángulos`,
     `${med.ancho.toFixed(0)} × ${med.profundo.toFixed(0)} × ${med.alto.toFixed(0)} mm (ancho × fondo × alto)`,
     `${med.volumenCm3.toFixed(1)} cm³ · ${med.areaCm2.toFixed(0)} cm² de superficie`,
     cierre.cerrada ? 'malla cerrada ✔' : (r.info.abiertos ? 'base abierta (hueco) ✔' : `${cierre.aristasAbiertas} aristas abiertas`),
-    op.tipo === 'placa' ? 'placa de cara con fondo plano' : `busto${r.info.pedestal ? ' con pedestal' : ''}, base plana en Z = 0`,
+    op.tipo === 'filtros' ? 'modelo completo con filtros de rasgos' : op.tipo === 'placa' ? 'placa de cara con fondo plano' : `busto${r.info.pedestal ? ' con pedestal' : ''}, base plana en Z = 0`,
+    r.info.realce ? `realce de rasgos ×${r.info.realce}` : null,
+    r.info.planoSimetria !== undefined ? `simetrizado (asimetría media antes: ${r.info.asimetria.toFixed(1)} mm)` : null,
     r.info.escala !== 1 ? `escalado al ${(r.info.escala * 100).toFixed(0)} %` : 'tamaño real'
-  ].map(t => `<span class="inf-stat">${t}</span>`).join('');
-  $('infoBusto').textContent = `Listo: ${op.tipo === 'placa' ? 'placa' : 'busto'} de ${med.alto.toFixed(0)} mm de alto. Descargá el STL.`;
+  ].filter(Boolean).map(t => `<span class="inf-stat">${t}</span>`).join('');
+  $('infoBusto').textContent = op.tipo === 'filtros' ? 'Listo: filtros de rasgos aplicados al modelo completo.' : `Listo: ${op.tipo === 'placa' ? 'placa' : 'busto'} de ${med.alto.toFixed(0)} mm de alto. Descargá el STL.`;
   $('btnBustoDeshacer').disabled = false;
-  progreso('Listo: ' + (op.tipo === 'placa' ? 'placa de cara' : 'busto') + ' para imprimir.');
+  progreso('Listo: ' + (op.tipo === 'filtros' ? 'filtros de rasgos aplicados' : (op.tipo === 'placa' ? 'placa de cara' : 'busto') + ' para imprimir') + '.');
 }
 
 function generarBusto() {

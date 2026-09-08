@@ -1329,6 +1329,109 @@ export function suavizarAdaptativo(m, iteraciones = 3) {
   return { pos, idx: m.idx };
 }
 
+// Realce de rasgos (máscara de desenfoque sobre la malla, en dos escalas): separa la forma de baja
+// frecuencia (suavizado laplaciano de N pasadas) del detalle (diferencia a lo largo de la normal) y amplifica
+// el detalle sólo donde las normales vecinas son coherentes (rasgos reales), no donde hay ruido. El detalle
+// fino (1 pasada) realza labios, párpados y arrugas; el medio (8 pasadas) nariz, pómulos y mentón.
+export function realzarRasgos(m, { fino = 0.6, medio = 0.35, tope = 1.5, umbral = 0.3 } = {}) {
+  if (!fino && !medio) return m;
+  const nV = m.pos.length / 3; const { inicio, vecinos } = adyacencia(nV, m.idx);
+  const pos = Float32Array.from(m.pos);
+  const normalesDe = (P) => {
+    const nrm = new Float32Array(nV * 3); const idx = m.idx;
+    for (let t = 0; t < idx.length; t += 3) {
+      const a = idx[t] * 3, b = idx[t + 1] * 3, c = idx[t + 2] * 3;
+      const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      for (const o of [a, b, c]) { nrm[o] += nx; nrm[o + 1] += ny; nrm[o + 2] += nz; }
+    }
+    for (let v = 0; v < nV; v++) { const l = Math.hypot(nrm[v * 3], nrm[v * 3 + 1], nrm[v * 3 + 2]) || 1; nrm[v * 3] /= l; nrm[v * 3 + 1] /= l; nrm[v * 3 + 2] /= l; }
+    return nrm;
+  };
+  const suavizar = (P, pasadas) => {
+    let A = Float32Array.from(P); const B = new Float32Array(P.length);
+    for (let it = 0; it < pasadas; it++) {
+      for (let v = 0; v < nV; v++) {
+        const a = inicio[v], b = inicio[v + 1];
+        if (b === a) { B[v * 3] = A[v * 3]; B[v * 3 + 1] = A[v * 3 + 1]; B[v * 3 + 2] = A[v * 3 + 2]; continue; }
+        let sx = 0, sy = 0, sz = 0; for (let k = a; k < b; k++) { const w = vecinos[k] * 3; sx += A[w]; sy += A[w + 1]; sz += A[w + 2]; }
+        const n = b - a; B[v * 3] = sx / n; B[v * 3 + 1] = sy / n; B[v * 3 + 2] = sz / n;
+      }
+      const t = A; A = B.slice(); B.set(t);
+    }
+    return A;
+  };
+  const nrm = normalesDe(pos);
+  // coherencia de normales en el vecindario: 1 = superficie limpia, baja = ruido
+  const coherencia = new Float32Array(nV);
+  for (let v = 0; v < nV; v++) {
+    const a = inicio[v], b = inicio[v + 1]; if (b === a) { coherencia[v] = 0; continue; }
+    let c = 0; for (let k = a; k < b; k++) { const w = vecinos[k] * 3; c += nrm[v * 3] * nrm[w] + nrm[v * 3 + 1] * nrm[w + 1] + nrm[v * 3 + 2] * nrm[w + 2]; }
+    coherencia[v] = c / (b - a);
+  }
+  const escalas = [[1, fino], [8, medio]].filter(e => e[1] > 0);
+  const salida = Float32Array.from(pos);
+  for (const [pasadas, ganancia] of escalas) {
+    const S = suavizar(pos, pasadas);
+    for (let v = 0; v < nV; v++) {
+      const coh = coherencia[v];
+      const peso = coh > 0.97 ? 1 : coh > 0.9 ? (coh - 0.9) / 0.07 : 0; // sólo rasgos limpios
+      if (peso <= 0) continue;
+      const dx = pos[v * 3] - S[v * 3], dy = pos[v * 3 + 1] - S[v * 3 + 1], dz = pos[v * 3 + 2] - S[v * 3 + 2];
+      let d = dx * nrm[v * 3] + dy * nrm[v * 3 + 1] + dz * nrm[v * 3 + 2];
+      // «coring»: el detalle por debajo del umbral es ruido del sensor y no se amplifica
+      const ad = Math.abs(d); if (ad <= umbral) continue;
+      d = Math.sign(d) * (ad - umbral);
+      d = Math.max(-tope, Math.min(tope, d * ganancia * peso));
+      salida[v * 3] += d * nrm[v * 3]; salida[v * 3 + 1] += d * nrm[v * 3 + 1]; salida[v * 3 + 2] += d * nrm[v * 3 + 2];
+    }
+  }
+  return { pos: salida, idx: m.idx };
+}
+
+// Simetrización de una cara: mezcla cada vértice con el punto más cercano de la malla reflejada respecto del
+// plano vertical x = x0 (el plano se busca solo entre -25 y +25 mm del centro). fuerza 0–1 (0,5 = promedio
+// exacto con el espejo). Quita el ruido asimétrico del escaneo; con fuerza alta borra la asimetría real.
+export function simetrizar(m, { fuerza = 0.5, x0 = null, radioBusqueda = 6 } = {}) {
+  if (!(fuerza > 0)) return { malla: m, x0: null, asimetria: 0 };
+  const pos = m.pos; const nV = pos.length / 3;
+  const med = medidasMalla(m);
+  const celda = radioBusqueda;
+  // grilla espacial de los vértices
+  const grilla = new Map();
+  const clave = (x, y, z) => Math.floor(x / celda) + ',' + Math.floor(y / celda) + ',' + Math.floor(z / celda);
+  for (let v = 0; v < nV; v++) { const k = clave(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]); let l = grilla.get(k); if (!l) { l = []; grilla.set(k, l); } l.push(v); }
+  const masCercano = (x, y, z) => {
+    let mejor = -1, md = Infinity;
+    const cx = Math.floor(x / celda), cy = Math.floor(y / celda), cz = Math.floor(z / celda);
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+      const l = grilla.get((cx + dx) + ',' + (cy + dy) + ',' + (cz + dz)); if (!l) continue;
+      for (const w of l) { const d = (pos[w * 3] - x) ** 2 + (pos[w * 3 + 1] - y) ** 2 + (pos[w * 3 + 2] - z) ** 2; if (d < md) { md = d; mejor = w; } }
+    }
+    return mejor >= 0 && md < radioBusqueda * radioBusqueda ? mejor : -1;
+  };
+  // 1) buscar el plano de simetría: el desplazamiento x0 que minimiza la distancia media al espejo (muestra)
+  const centroX = (med.min[0] + med.max[0]) / 2;
+  const muestra = []; for (let v = 0; v < nV; v += Math.max(1, Math.floor(nV / 3000))) muestra.push(v);
+  const costo = (x) => { let s = 0, c = 0; for (const v of muestra) { const w = masCercano(2 * x - pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]); if (w >= 0) { s += Math.hypot(2 * x - pos[v * 3] - pos[w * 3], pos[v * 3 + 1] - pos[w * 3 + 1], pos[v * 3 + 2] - pos[w * 3 + 2]); c++; } else s += radioBusqueda; } return s / muestra.length + (c < muestra.length * 0.5 ? 100 : 0); };
+  let mejorX = x0 !== null ? x0 : centroX, mejorC = Infinity;
+  if (x0 === null) {
+    for (let d = -25; d <= 25; d += 2.5) { const c = costo(centroX + d); if (c < mejorC) { mejorC = c; mejorX = centroX + d; } }
+    for (let d = -2; d <= 2; d += 0.5) { const c = costo(mejorX + d); if (c < mejorC) { mejorC = c; mejorX = mejorX + d; } }
+  }
+  // 2) mezcla con el espejo
+  const salida = Float32Array.from(pos); let asim = 0, n = 0;
+  for (let v = 0; v < nV; v++) {
+    const mx = 2 * mejorX - pos[v * 3], my = pos[v * 3 + 1], mz = pos[v * 3 + 2];
+    const w = masCercano(mx, my, mz); if (w < 0) continue;
+    // punto espejado del vecino más cercano → objetivo para v
+    const ox = 2 * mejorX - pos[w * 3], oy = pos[w * 3 + 1], oz = pos[w * 3 + 2];
+    asim += Math.hypot(ox - pos[v * 3], oy - pos[v * 3 + 1], oz - pos[v * 3 + 2]); n++;
+    salida[v * 3] += fuerza * (ox - pos[v * 3]); salida[v * 3 + 1] += fuerza * (oy - pos[v * 3 + 1]); salida[v * 3 + 2] += fuerza * (oz - pos[v * 3 + 2]);
+  }
+  return { malla: { pos: salida, idx: m.idx }, x0: mejorX, asimetria: n ? asim / n : 0 };
+}
+
 // Arma un busto o una placa de cara a partir de la malla (Y hacia arriba, el frente mira a −Z en el marco
 // del escaneo libre / +Z-cámara en el de la mesa). opciones: { tipo: 'busto'|'placa', giroY, corte (0–1 de la
 // altura, o mm absolutos con corteMm), fondo (placa: 0–1 de la profundidad), pedestal: 'no'|'cilindro'|'cubo',
@@ -1340,6 +1443,13 @@ export function armarBusto(m, opciones = {}) {
   let med = medidasMalla(malla);
   const centro = [(med.min[0] + med.max[0]) / 2, (med.min[1] + med.max[1]) / 2, (med.min[2] + med.max[2]) / 2];
   if (opciones.giroY) { malla = transformarMalla(malla, { giroY: opciones.giroY, centro }); med = medidasMalla(malla); }
+  // filtro de rasgos: simetrización (con el frente ya orientado) y realce de detalle
+  if (opciones.simetria > 0) { const r = simetrizar(malla, { fuerza: opciones.simetria }); malla = r.malla; info.planoSimetria = r.x0; info.asimetria = r.asimetria; }
+  if (opciones.realce > 0) { malla = realzarRasgos(malla, { fino: 0.6 * opciones.realce, medio: 0.35 * opciones.realce }); info.realce = opciones.realce; }
+  if (opciones.tipo === 'filtros') {
+    info.medidas = medidasMalla(malla); info.escala = 1;
+    return { malla, info };
+  }
   if (opciones.tipo === 'placa') {
     // fondo plano: se conserva lo que está por delante del plano z = zf (el frente mira a −Z)
     const f = opciones.fondo ?? 0.55;
