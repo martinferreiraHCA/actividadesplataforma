@@ -735,6 +735,54 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
       `
     },
     {
+      id: "sombras",
+      titulo: "Sombras recortadas (aula)",
+      html: `
+        <p class="guia-p"><strong>sombras.html</strong> es un aula de <strong>Shadow Casters</strong> al estilo de micro:bit
+        classroom: el docente abre un aula con un código de 6 letras, los estudiantes entran con el código y su nombre, y
+        cada uno arma su <strong>silueta</strong> en un editor de imágenes pensado para recortar en vinilo. Los diseños
+        aparecen en vivo en el panel del docente, que los retoca si hace falta y descarga los <strong>SVG para la
+        Cricut</strong> (o la láser). Inspirado en <em>Shadow Scenes</em> del MIT K12 Maker.</p>
+        <h4 class="guia-h">1 · El aula</h4>
+        <ul class="guia-lista">
+          <li><strong>Docente</strong>: «Crear aula» → se muestra el código y el enlace (clic en el código lo copia). La pestaña
+          tiene que quedar abierta: el aula vive en el navegador del docente (no hay servidor). Otro día se vuelve a
+          abrir desde «Mis aulas» con el mismo código y los mismos diseños.</li>
+          <li><strong>Estudiante</strong>: código + nombre y apellido → editor. Su diseño se guarda en su navegador y, con cada
+          cambio, viaja al docente. Si vuelve a entrar con el mismo nombre desde otra computadora, el aula le devuelve
+          el diseño para seguir editándolo.</li>
+          <li>La conexión es directa entre navegadores (WebRTC, con PeerJS para presentarse). Si la red del colegio la
+          bloquea, el editor sigue funcionando: «Guardar .json» del lado del estudiante e «Importar .json» del lado del
+          docente hacen el mismo trabajo. «Diseñar sin aula» sirve para probar o para trabajar solo.</li>
+        </ul>
+        <h4 class="guia-h">2 · El editor</h4>
+        <ul class="guia-lista">
+          <li><strong>Imagen</strong> (subir, arrastrar o pegar): «Quitar el fondo» en automático desde los bordes, por un color
+          elegido con el gotero, o nada. «Pasar a silueta»: todo lo que quedó, sólo lo oscuro (un dibujo a lápiz o
+          marcador) o sólo lo claro; invertir, suavizar, engrosar/afinar y limpiar manchas, todo en milímetros.</li>
+          <li><strong>Texto</strong> con doce fuentes (gordas y cursivas, que salen bien en vinilo), tamaño en mm, espacio entre
+          letras y líneas. <strong>Formas</strong>: rectángulo, círculo, estrella, corazón, luna, anillo, flecha, nube, rayo,
+          gota y un «puente» (tira fina para unir piezas sueltas).</li>
+          <li>Cada capa <strong>suma</strong> (figura, en negro) o <strong>resta</strong> (agujero, en rojo). Se mueven, escalan y giran
+          con el mouse; flechas para ajustar, Supr para borrar, Ctrl+Z / Ctrl+Y, Ctrl+D duplica.</li>
+          <li><strong>Tipo de pieza</strong>: silueta suelta, con base (para pararla en una ranura), con marco (lo que toca
+          el marco queda unido) o placa calada (la luz pasa por el dibujo). Vistas «Pieza» (lo que se corta) y
+          «Sombra» (cómo se proyecta con una luz).</li>
+        </ul>
+        <h4 class="guia-h">3 · Cortar en la Cricut</h4>
+        <ul class="guia-lista">
+          <li>La sección «Para cortar» vectoriza la silueta (un path por pieza, con sus agujeros, en milímetros) y la
+          muestra sobre el tapete de 12 × 12". Avisa cuántas piezas sueltas hay y qué detalles son más finos que lo
+          que aguanta el vinilo (1,5 mm) o el termoadhesivo (2,5 mm).</li>
+          <li>Descargas: <strong>SVG</strong> (Design Space → Upload → Insert → Make It), PNG y, en el panel del docente, el
+          <strong>tapete</strong> con todos los diseños marcados acomodados en una sola hoja y el <strong>.zip</strong> con
+          un SVG por estudiante. «Espejar» para vinilo termoadhesivo.</li>
+          <li>La Cricut sólo recibe trabajos desde Design Space (protocolo cerrado): acá se hace todo el diseño y allá
+          sólo se carga el archivo y se corta. El mismo SVG sirve para la láser y la Silhouette.</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `

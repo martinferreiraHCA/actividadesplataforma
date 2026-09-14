@@ -392,6 +392,35 @@ editables.
 - Vista previa 3D con three.js, medidas de la pieza, aristas, grilla; descarga de `.scad` y `.stl`; proyecto
   guardado en el navegador y exportable a `.json`.
 
+## Diseño → Sombras recortadas (aula de Shadow Casters)
+
+`sombras.html` es un **aula con código**, al estilo de micro:bit classroom, para el proyecto de sombras recortadas
+([Shadow Scenes](https://k12maker.mit.edu/project/shadow-scenes), MIT K12 Maker): el docente abre el aula, los
+estudiantes entran con el código y su nombre, cada uno diseña su silueta y el docente descarga los **SVG listos para
+la Cricut** (o la láser), uno por uno o acomodados en un tapete de 12 × 12".
+
+- **El aula** (`sombras-aula.js`): el navegador del docente hospeda el aula; los estudiantes se conectan directo
+  por **WebRTC** (PeerJS vendorizado, `peerjs.min.js`, que usa el servidor público de señales de PeerJS sólo para
+  presentarse; los diseños no pasan por ningún servidor). El aula y los diseños quedan en **IndexedDB** del docente
+  y se reabren otro día con el mismo código; un estudiante que vuelve a entrar con el mismo nombre —desde cualquier
+  computadora— recibe su diseño para **seguir editándolo**. Si el docente retoca un diseño, el estudiante lo recibe.
+  Mensajes a todos. Sin conexión, el mismo flujo con archivos `.json` (guardar / importar), y exportación del aula
+  entera.
+- **El editor** (`sombras-editor.js`, `sombras-render.js`): capas de **imagen, texto y forma** sobre una pieza en
+  milímetros. Imagen: quitar el fondo en automático (inundación desde los bordes), por color elegido con gotero o
+  nada; silueta por alfa, por oscuridad (dibujos a lápiz o marcador) o por claridad; invertir, suavizar (cierre +
+  apertura morfológica), engrosar/afinar y limpiar manchas, todo en mm. Texto con doce fuentes, espacio entre letras
+  y líneas. Catorce formas, incluido un «puente» para unir piezas sueltas. Cada capa suma (figura) o resta (agujero).
+  Mover, escalar y girar con el mouse, teclado, deshacer/rehacer, duplicar, arrastrar o pegar imágenes. Tipos de
+  pieza: silueta suelta, con base, con marco o placa calada. Vistas «capas», «pieza» y «sombra» (proyección con luz).
+- **Para cortar** (`sombras-vector.js`): marching squares sobre la pieza compuesta, simplificación Douglas-Peucker,
+  suavizado de Chaikin y anidado de agujeros → SVG en mm con un `<path fill-rule="evenodd">` por pieza. Diagnóstico
+  de piezas sueltas y detalles más finos que el mínimo del material. Vista previa sobre el tapete de 12 × 12" y
+  **empaquetado** de varios diseños (estanterías, con giro) en un solo SVG. Descargas: SVG, PNG, tapete y `.zip`
+  con todos los SVG del aula; espejado para vinilo termoadhesivo.
+- **Cricut Explore Air 2**: la máquina sólo acepta trabajos desde Cricut Design Space (protocolo cerrado), así que la
+  página deja el SVG listo y en Design Space sólo se hace Upload → Insert → Make It (pasos en la misma página).
+
 ## Tecnología
 
 - HTML + CSS + Vanilla JS (ES modules)

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sombras recortadas — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Aula de Shadow Casters: los estudiantes entran con un código, diseñan su silueta (fotos sin fondo, texto y formas) y el docente descarga los SVG listos para la Cricut o la láser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&family=Bangers&family=Bebas+Neue&family=Fredoka:wght@600&family=Lobster&family=Pacifico&family=Righteous&family=Luckiest+Guy&family=Chewy&family=Abril+Fatface&family=Permanent+Marker&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css"><!-- zona de subida y chips compartidas -->
+<link rel="stylesheet" href="sombras.css">
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+          <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
+          <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
+          <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
+          <a href="ia3d.html">🤖 Pieza 3D con IA</a>
+          <a href="sombras.html">🔦 Sombras recortadas (aula)</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section" id="seccionIntro">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Shadow Casters: del dibujo a la sombra</div>
+      <h2 class="section__title">Sombras<br>Recortadas<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Un <strong>aula con código</strong>, como la de micro:bit classroom: el docente la abre, los estudiantes entran
+      con el código y su nombre, y cada uno diseña su <strong>silueta</strong> en un editor de imágenes pensado para
+      recortar: sube una foto o un dibujo y le <strong>quita el fondo</strong>, lo pasa a <strong>sombra</strong>,
+      le agrega <strong>texto y formas</strong>, y ve en vivo cómo se proyecta con una luz. El docente ve todos los
+      diseños en su panel, los abre para retocarlos, y descarga los <strong>SVG listos para la Cricut</strong>
+      (o la láser) —uno por uno o todos acomodados en un tapete—. Inspirado en el proyecto
+      <a href="https://k12maker.mit.edu/project/shadow-scenes" target="_blank" rel="noopener">Shadow Scenes</a> del MIT.
+      Todo pasa en el navegador: no hay servidor, el aula vive en la computadora del docente.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Abrir el aula</span>
+        <span class="paso-rapido__texto">El docente crea el aula y comparte el código de 6 letras (o el enlace). Con esa pestaña abierta, recibe los diseños.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Diseñar la sombra</span>
+        <span class="paso-rapido__texto">Cada estudiante sube fotos o dibujos, les quita el fondo, suma texto y formas. Negro = vinilo; rojo = agujero.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Cortar</span>
+        <span class="paso-rapido__texto">Descargá el SVG (o el tapete con todos) y cargalo en Cricut Design Space → Upload → Make It. Después: luz, sombra y a jugar.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== ENTRADA ====== -->
+<section class="editor-section editor-section--surface" id="seccionEntrada">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// ¿Quién sos?</div>
+    <div class="som-entrada">
+      <div class="som-tarjeta">
+        <h3 class="som-tarjeta__titulo">Soy docente</h3>
+        <p>Creá un aula nueva o volvé a abrir una de otro día. El aula queda guardada en este navegador con los diseños de todos.</p>
+        <div class="som-fila-botones">
+          <input class="campo__input" type="text" id="inputNombreAula" placeholder="Nombre del aula (ej.: 2°B — Sombras)" maxlength="60" style="flex:1;min-width:200px">
+          <button class="btn btn--primary" id="btnCrearAula">Crear aula</button>
+        </div>
+        <div id="misAulas" style="display:none">
+          <div class="som-campo__et" style="margin-bottom:0.4rem">Mis aulas</div>
+          <ul class="som-lista-aulas" id="listaAulas"></ul>
+        </div>
+      </div>
+      <div class="som-tarjeta">
+        <h3 class="som-tarjeta__titulo">Soy estudiante</h3>
+        <p>Pedile el código al docente. Si entrás con el mismo nombre otro día (o desde otra computadora), tu diseño vuelve tal cual lo dejaste.</p>
+        <input class="campo__input som-codigo-input" type="text" id="inputCodigo" placeholder="CÓDIGO" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <input class="campo__input" type="text" id="inputNombre" placeholder="Tu nombre y apellido" maxlength="40" autocomplete="name">
+        <div class="som-fila-botones">
+          <button class="btn btn--primary" id="btnEntrar">Entrar al aula</button>
+          <button class="btn btn--ghost" id="btnSolo" title="Diseñar sin aula: se guarda en este navegador">Diseñar sin aula</button>
+        </div>
+        <p id="entradaError" class="inf-estado inf-estado--error" style="display:none;margin-top:0"></p>
+      </div>
+    </div>
+    <div id="misDisenos" style="display:none;margin-top:1.4rem">
+      <div class="som-campo__et" style="margin-bottom:0.5rem">Mis diseños en este navegador</div>
+      <div class="som-disenos" id="listaDisenos"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== PANEL DEL DOCENTE ====== -->
+<section class="editor-section" id="seccionAula" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.8rem">// El aula</div>
+    <div class="som-aula-cab">
+      <div class="som-aula-codigo">
+        <span class="som-aula-codigo__et">Código del aula (clic para copiar)</span>
+        <span class="som-aula-codigo__valor" id="aulaCodigo" title="Copiar">——————</span>
+        <span class="som-aula-codigo__enlace" id="aulaEnlace"></span>
+      </div>
+      <input class="som-aula-nombre" id="aulaNombre" type="text" maxlength="60" title="Nombre del aula">
+      <div class="som-aula-estado">
+        <span class="som-pildora" id="aulaEstado">apagada</span>
+        <span class="som-aula-detalle" id="aulaDetalle"></span>
+      </div>
+    </div>
+    <div class="som-aula-acciones">
+      <button class="som-btn som-btn--primario" id="btnTapete" title="Acomoda los diseños marcados en un tapete de 12 × 12 pulgadas y arma un solo SVG">✂ Armar tapete para cortar</button>
+      <button class="som-btn" id="btnZip">⬇ Todos los SVG (.zip)</button>
+      <button class="som-btn" id="btnImportarProyecto">📥 Importar .json de un estudiante</button>
+      <button class="som-btn" id="btnExportarAula">💾 Exportar el aula (.json)</button>
+      <input type="file" id="inputImportar" accept=".json,application/json" multiple style="display:none">
+      <span class="som-aula-mensaje">
+        <input class="campo__input" type="text" id="inputMensaje" placeholder="Mensaje para todos (ej.: 5 minutos más)" maxlength="140">
+        <button class="som-btn" id="btnMensaje">📣 Enviar</button>
+      </span>
+      <button class="som-btn som-btn--peligro" id="btnCerrarAula" style="margin-left:auto">⏻ Cerrar el aula</button>
+    </div>
+    <div class="som-estudiantes" id="gridEstudiantes"></div>
+    <p class="som-vacio" id="aulaVacia">Todavía no entró nadie. Compartí el código (o el enlace) y dejá esta pestaña abierta: los diseños van apareciendo acá a medida que los estudiantes trabajan.</p>
+  </div>
+</section>
+
+
+<!-- ====== EDITOR ====== -->
+<section class="editor-section editor-section--surface" id="seccionEditor" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.8rem">// El editor</div>
+    <div class="som-estado-editor">
+      <strong id="editorQuien"></strong>
+      <span class="som-pildora" id="editorConexion" style="display:none">—</span>
+      <span id="editorGuardado" style="opacity:0.7;font-family:'JetBrains Mono',monospace;font-size:0.75rem"></span>
+      <span style="margin-left:auto;display:flex;gap:0.4rem;flex-wrap:wrap">
+        <button class="som-btn" id="btnGuardarJson" title="Descargar el proyecto para seguir en otra computadora o mandárselo al docente">💾 Guardar .json</button>
+        <button class="som-btn" id="btnAbrirJson">📂 Abrir .json</button>
+        <input type="file" id="inputAbrirJson" accept=".json,application/json" style="display:none">
+        <button class="som-btn" id="btnVolverAula" style="display:none">⇦ Volver al aula</button>
+        <button class="som-btn som-btn--peligro" id="btnSalir">✕ Salir</button>
+      </span>
+    </div>
+    <div id="editorContenedor"></div>
+  </div>
+</section>
+
+
+<!-- ====== PARA CORTAR ====== -->
+<section class="editor-section" id="seccionCorte" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.8rem">// Para cortar en la Cricut</div>
+    <p class="wiz-explica" id="corteExplica" style="margin-bottom:0.8rem">La silueta se convierte en <strong>contornos vectoriales</strong> (un path por pieza, con sus agujeros) y se acomoda sobre el tapete de 12 × 12 pulgadas tal como lo va a ver la cortadora. Revisá los avisos: piezas sueltas y detalles finos son lo que más falla al cortar vinilo.</p>
+    <div class="som-opciones-corte">
+      <label class="scratch-check"><input type="checkbox" id="corteEspejo"> Espejar (vinilo termoadhesivo)</label>
+      <label class="scratch-check"><input type="checkbox" id="corteRecortar" checked> Recortar el SVG al contorno (sin el borde de la hoja)</label>
+      <span class="scratch-opciones__label">Detalle mínimo:</span>
+      <select class="campo__input" id="corteDetalle" style="max-width:190px">
+        <option value="1">1 mm (láser, cartulina)</option>
+        <option value="1.5" selected>1,5 mm (vinilo)</option>
+        <option value="2.5">2,5 mm (vinilo termoadhesivo)</option>
+      </select>
+      <button class="som-btn" id="btnActualizarCorte">↻ Actualizar</button>
+    </div>
+    <div class="som-corte">
+      <div>
+        <div class="som-tapete" id="tapete"></div>
+        <p class="som-tapete__pie" id="tapetePie"></p>
+      </div>
+      <div>
+        <div class="som-medidas" id="corteMedidas"></div>
+        <div class="som-avisos" id="corteAvisos"></div>
+        <div class="som-fila-botones" style="margin-bottom:0.8rem">
+          <button class="btn btn--primary" id="btnSVG">⬇ Descargar SVG</button>
+          <button class="som-btn" id="btnPNG">⬇ PNG (para «Upload» como imagen)</button>
+          <button class="som-btn" id="btnCopiarSVG">📋 Copiar SVG</button>
+        </div>
+        <details class="som-pasos-ds" open>
+          <summary>Cómo mandarlo a la Cricut Explore Air 2 (Design Space)</summary>
+          <ol>
+            <li>Abrí <strong>Cricut Design Space</strong> (la app de escritorio o <a href="https://design.cricut.com" target="_blank" rel="noopener">design.cricut.com</a>) con la Cricut prendida y conectada por USB o Bluetooth.</li>
+            <li><strong>Nuevo proyecto → Upload → Upload Image</strong> y elegí el <code>.svg</code> descargado. Aparece como una sola capa de color negro: <strong>Insert</strong>.</li>
+            <li>Verificá el tamaño en el panel de arriba (Size): tiene que coincidir con las medidas de acá. Si no, escribilo a mano con el candado de proporción cerrado.</li>
+            <li>Si es vinilo termoadhesivo, en la pantalla de corte activá <strong>Mirror</strong> (o ya lo espejaste acá y lo dejás apagado; no las dos cosas).</li>
+            <li><strong>Make It</strong> → material (Vinyl / Iron-On / Cardstock) → cargar el tapete con el material → <strong>Go</strong>. Después: pelar (weeding) lo sobrante y pegar la silueta al acetato, al soporte o a la ventana.</li>
+          </ol>
+          <p class="som-nota">La Cricut sólo acepta trabajos desde Design Space (el protocolo de la máquina es cerrado), así que ese paso no se puede saltar. Lo que sí se evita es diseñar ahí: acá hacés todo el trabajo pesado y en Design Space sólo cargás el archivo y cortás. Para la láser o la Silhouette, el mismo SVG sirve tal cual.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+        <a href="sello3d.html">Sello 3D desde una imagen</a>
+        <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
+        <a href="arenero.html">Arenero de realidad aumentada</a>
+        <a href="ia3d.html">Pieza 3D con IA</a>
+        <a href="sombras.html">Sombras recortadas</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Inspirado en <a href="https://k12maker.mit.edu/project/shadow-scenes" target="_blank" rel="noopener">Shadow Scenes</a> (MIT K12 Maker). Conexión entre navegadores con <a href="https://peerjs.com" target="_blank" rel="noopener">PeerJS</a> (MIT); archivos .zip con JSZip (MIT).</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script src="peerjs.min.js"></script>
+<script src="jszip.min.js"></script>
+<script type="module" src="sombras.js"></script>
+
+</body>
+</html>
