@@ -405,7 +405,9 @@ la Cricut** (o la láser), uno por uno o acomodados en un tapete de 12 × 12".
   y se reabren otro día con el mismo código; un estudiante que vuelve a entrar con el mismo nombre —desde cualquier
   computadora— recibe su diseño para **seguir editándolo**. Si el docente retoca un diseño, el estudiante lo recibe.
   Mensajes a todos. Sin conexión, el mismo flujo con archivos `.json` (guardar / importar), y exportación del aula
-  entera.
+  entera. Si la red del colegio no llega al servidor público de señales, se puede levantar uno propio en cualquier
+  computadora de la red (`npx peer --port 9000 --path /peer`) y declararlo en la página con
+  `window.SOMBRAS_PEER = { host: 'IP-DE-ESA-COMPU', port: 9000, path: '/peer', secure: false }` antes de `sombras.js`.
 - **El editor** (`sombras-editor.js`, `sombras-render.js`): capas de **imagen, texto y forma** sobre una pieza en
   milímetros. Imagen: quitar el fondo en automático (inundación desde los bordes), por color elegido con gotero o
   nada; silueta por alfa, por oscuridad (dibujos a lápiz o marcador) o por claridad; invertir, suavizar (cierre +

@@ -90,11 +90,14 @@ export const almacen = {
 
 function tienePeer() { return typeof window !== 'undefined' && typeof window.Peer === 'function'; }
 
+// Servidor de señales: el público de PeerJS (0.peerjs.com) salvo que la
+// página defina window.SOMBRAS_PEER = { host, port, path, secure } para usar
+// uno propio (por ejemplo `npx peer --port 9000` en la red del colegio).
 function nuevoPeer(id) {
-  const opciones = {
+  const opciones = Object.assign({
     debug: 0,
     config: { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] }
-  };
+  }, (typeof window !== 'undefined' && window.SOMBRAS_PEER) || {});
   return id ? new window.Peer(id, opciones) : new window.Peer(opciones);
 }
 
@@ -148,7 +151,7 @@ export function hospedarAula(aula, alEvento) {
           emitir('estudiante', { clave, estudiante: e });
         } else if (msg.t === 'proyecto') {
           if (!clave) return;
-          const e = estudiante(clave, null, { proyecto: msg.proyecto, miniatura: msg.miniatura || null, actualizado: Date.now(), conectado: true });
+          const e = estudiante(clave, null, { proyecto: msg.proyecto, miniatura: msg.miniatura || null, actualizado: Date.now(), conectado: true, editadoPorDocente: 0 });
           await guardar();
           emitir('estudiante', { clave, estudiante: e });
         } else if (msg.t === 'pedirProyecto') {
@@ -263,7 +266,10 @@ export function entrarAula(codigo, nombre, alEvento) {
     estado = 'conectando'; emitir('estado', { estado });
     try { peer = nuevoPeer(null); } catch (e) { estado = 'error'; emitir('estado', { estado, detalle: e.message }); programar(); return; }
     peer.on('open', () => {
-      conn = peer.connect(PREFIJO_PEER + cod, { reliable: true, serialization: 'json' });
+      // serialización binaria (la de PeerJS por defecto): parte los mensajes
+      // grandes en trozos de 16 KB. En modo 'json' un proyecto con foto supera
+      // el tamaño máximo de un mensaje WebRTC y nunca llega.
+      conn = peer.connect(PREFIJO_PEER + cod, { reliable: true, serialization: 'binary' });
       conn.on('open', () => {
         estado = 'conectado'; emitir('estado', { estado });
         conn.send({ t: 'hola', nombre, clienteId: miId });
