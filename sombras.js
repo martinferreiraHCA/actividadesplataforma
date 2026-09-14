@@ -196,6 +196,11 @@ async function abrirAula(codigo) {
     }
     if (tipo === 'estudiante') {
       if (datos.estudiante && datos.estudiante.proyecto && !estado.seleccion.has(datos.clave) && !datos.estudiante._visto) { estado.seleccion.add(datos.clave); datos.estudiante._visto = true; }
+      if (estado.claveEditando === datos.clave && datos.estudiante && datos.estudiante.proyecto && !datos.estudiante.editadoPorDocente) {
+        // llegó una versión nueva del estudiante mientras el docente la retoca
+        mostrar('btnRecargarEstudiante', true);
+        toast(`${datos.estudiante.nombre} siguió editando: podés recargar su versión`);
+      }
       renderEstudiantes();
       if (!estado.claveEditando) programarCorte(); // el tapete se rearma solo a medida que llegan diseños
     }
@@ -304,6 +309,8 @@ async function editarEstudiante(clave) {
   const est = estado.host.aula.estudiantes[clave];
   if (!est || !est.proyecto) return;
   estado.claveEditando = clave;
+  mostrar('btnRecargarEstudiante', false);
+  delete est.editadoPorDocente;
   $('editorQuien').textContent = `Diseño de ${est.nombre} (retocando como docente)`;
   mostrar('editorConexion', false);
   $('editorGuardado').textContent = '';
@@ -311,6 +318,15 @@ async function editarEstudiante(clave) {
   await asegurarEditor().cargar(est.proyecto);
   programarCorte(true);
 }
+$('btnRecargarEstudiante').addEventListener('click', async () => {
+  if (!estado.host || !estado.claveEditando) return;
+  const est = estado.host.aula.estudiantes[estado.claveEditando];
+  if (!est || !est.proyecto) return;
+  mostrar('btnRecargarEstudiante', false);
+  await estado.editor.cargar(est.proyecto);
+  programarCorte(true);
+  toast('Cargada la última versión del estudiante');
+});
 $('btnVolverAula').addEventListener('click', async () => { await cerrarEdicion(); estado.claveEditando = null; irA('docente'); renderEstudiantes(); estado.corte = null; programarCorte(true); });
 
 // ---------------- estudiante ----------------
@@ -327,7 +343,9 @@ async function entrarComoEstudiante() {
   const clave = claveNombre(nombre);
   const idLocal = `a_${codigo}_${clave.replace(/[^a-z0-9]+/g, '_')}`;
   let proyecto = await almacen.obtenerProyecto(idLocal);
-  if (!proyecto) proyecto = nuevoProyecto({ id: idLocal, nombre: `Sombra de ${nombre.split(' ')[0]}`, autor: nombre, aula: codigo });
+  // un proyecto recién creado lleva modificado = 0: si el aula tiene una
+  // versión de este estudiante (otra computadora, otro día), esa gana
+  if (!proyecto) proyecto = nuevoProyecto({ id: idLocal, nombre: `Sombra de ${nombre.split(' ')[0]}`, autor: nombre, aula: codigo, modificado: 0 });
   proyecto = normalizarProyecto(proyecto);
   proyecto.autor = nombre; proyecto.aula = codigo; proyecto.id = idLocal;
 
@@ -351,7 +369,8 @@ async function entrarComoEstudiante() {
     if (tipo === 'bienvenido') {
       const remoto = datos.proyecto;
       const local = editor.obtener();
-      if (remoto && (remoto.modificado || 0) > (local.modificado || 0) + 1000) {
+      const localVacio = !local.capas.length && !(local.modificado > 0);
+      if (remoto && (localVacio || (remoto.modificado || 0) > (local.modificado || 0))) {
         const r = normalizarProyecto(remoto); r.id = idLocal; r.autor = nombre; r.aula = codigo;
         await editor.cargar(r);
         await almacen.guardarProyecto(Object.assign(clonar(r), { miniatura: miniaturaDeProyecto(r, 160) }));

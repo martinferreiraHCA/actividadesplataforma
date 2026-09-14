@@ -168,3 +168,8 @@ body.tema-nocturno .som-forma canvas { filter: invert(1); }
 
 body.tema-nocturno .som-lienzo { background: repeating-conic-gradient(rgba(255,255,255,0.07) 0 25%, transparent 0 50%) 0 0 / 22px 22px; }
 body.tema-nocturno .som-capa button { border-color: rgba(255,255,255,0.3); }
+
+/* aviso dentro del panel de una capa de imagen */
+.som-aviso-capa { font-size: 0.78rem; padding: 0.4rem 0.6rem; margin-bottom: 0.5rem; border-left: 3px solid #2e9e5b; background: rgba(46,158,91,0.1); line-height: 1.4; }
+.som-aviso-capa--mal { border-color: #d89a3c; background: rgba(216,154,60,0.14); }
+.som-check--barra { margin: 0 0 0 0.6rem; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; }

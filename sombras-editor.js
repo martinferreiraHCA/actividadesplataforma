@@ -6,7 +6,7 @@
 
 import {
   nuevoProyecto, nuevaCapa, clonar, normalizarProyecto, FUENTES, FORMAS, TIPOS_PIEZA,
-  cargarFuente, leerArchivoImagen, asegurarImagen, mascaraDeCapaImagen, colorEnImagen,
+  cargarFuente, leerArchivoImagen, asegurarImagen, mascaraDeCapaImagen, colorEnImagen, fraccionFigura,
   pathDeForma, cajaCapa, componerCapas, componerPieza, prepararProyecto
 } from './sombras-render.js';
 
@@ -40,6 +40,7 @@ const PLANTILLA = `
       <button type="button" class="som-btn som-btn--tab active" data-vista="capas" title="Cada capa con su color: negro suma, rojo resta">Capas</button>
       <button type="button" class="som-btn som-btn--tab" data-vista="pieza" title="Cómo queda la pieza cortada">Pieza</button>
       <button type="button" class="som-btn som-btn--tab" data-vista="sombra" title="La sombra que proyecta con una luz">Sombra</button>
+      <label class="som-check som-check--barra" title="En la vista de capas, mostrar las fotos como son (con el fondo quitado) o ya como silueta negra"><input type="checkbox" data-fotos checked> ver fotos</label>
     </div>
   </div>
   <div class="som-cuerpo">
@@ -77,6 +78,7 @@ export function crearEditor(contenedor, opciones) {
   let proyecto = nuevoProyecto();
   let sel = null;            // id de la capa seleccionada
   let vista = 'capas';
+  let mostrarFotos = true;   // vista de capas: las imágenes con su foto real (no la silueta negra)
   let pxPorMm = 3;
   let origen = { x: 0, y: 0 };  // esquina de la pieza en píxeles del canvas
   let dpr = 1;
@@ -226,7 +228,7 @@ export function crearEditor(contenedor, opciones) {
         ctx.fillRect(origen.x, origen.y, wPx, hPx);
       }
       ctx.restore();
-      const comp = componerCapas(proyecto, pxPorMm * dpr, { colores: true });
+      const comp = componerCapas(proyecto, pxPorMm * dpr, { colores: true, fotos: mostrarFotos });
       ctx.drawImage(comp, origen.x, origen.y, wPx, hPx);
     } else {
       // pieza: negro definitivo, con espejo si corresponde
@@ -398,7 +400,16 @@ export function crearEditor(contenedor, opciones) {
 
   function propsImagen(capa) {
     const p = capa.proc;
-    return `<details class="som-detalle" open><summary>Quitar el fondo</summary>
+    const frac = fraccionFigura(capa);
+    let estado = '';
+    if (frac != null) {
+      const pct = Math.round(frac * 100);
+      let nota = '';
+      if (frac < 0.01) nota = p.fondo === 'auto' ? 'No quedó casi nada: el fondo automático se comió la figura. Bajá la tolerancia o elegí «No quitar nada» y «Sólo lo oscuro».' : 'No quedó casi nada como figura: probá otro umbral o invertí.';
+      else if (frac > 0.97) nota = 'Quedó toda la imagen como un bloque: el fondo no se detectó. Subí la tolerancia, usá el gotero sobre el fondo, o elegí «Sólo lo oscuro» si es un dibujo.';
+      estado = `<div class="som-aviso-capa ${nota ? 'som-aviso-capa--mal' : ''}"><strong>${pct} %</strong> de la imagen queda como figura (negro).${nota ? ' ' + nota : ''}</div>`;
+    }
+    return `${estado}<details class="som-detalle" open><summary>Quitar el fondo</summary>
       <div class="som-fila">${campo('Fondo', select('proc.fondo', p.fondo, [{ id: 'auto', nombre: 'Automático (desde los bordes)' }, { id: 'color', nombre: 'Un color que elijo (gotero)' }, { id: 'ninguno', nombre: 'No quitar nada' }]))}</div>
       ${p.fondo !== 'ninguno' ? `<div class="som-fila">${campo('Tolerancia', rango('proc.tolerancia', p.tolerancia, 0, 160, 1), 'cuánto puede variar el color del fondo')}</div>` : ''}
       ${p.fondo === 'color' ? `<div class="som-fila som-botones"><button type="button" class="som-btn som-btn--chico ${gotero ? 'active' : ''}" data-accion="gotero">💧 Elegir color en la imagen</button><span class="som-muestra" style="background:${p.colorClave ? `rgb(${p.colorClave.join(',')})` : 'transparent'}"></span></div>` : ''}
@@ -572,8 +583,17 @@ export function crearEditor(contenedor, opciones) {
       const s = Math.min((pz.anchoMm * 0.7) / ancho, (pz.altoMm * 0.7) / alto);
       const n = proyecto.capas.filter(c => c.tipo === 'imagen').length + 1;
       const capa = nuevaCapa('imagen', { nombre: (archivo.name || `Imagen ${n}`).replace(/\.[a-z0-9]+$/i, '').slice(0, 30), src, ancho, alto, x: pz.anchoMm / 2, y: pz.altoMm / 2, w: ancho * s, h: alto * s });
+      // si el fondo automático se come todo (o no saca nada), probar con menos
+      // tolerancia y, si sigue igual, dejar la foto entera para que se vea
+      let frac = fraccionFigura(capa);
+      let aviso = 'Imagen agregada: ajustá «Quitar el fondo» a la derecha';
+      if (frac != null && frac < 0.01) { capa.proc.tolerancia = 18; frac = fraccionFigura(capa); }
+      if (frac != null && (frac < 0.01 || frac > 0.97)) {
+        capa.proc.fondo = 'ninguno';
+        aviso = frac < 0.01 ? 'El fondo automático borraba toda la foto: la dejé entera. Usá el gotero sobre el fondo o «Sólo lo oscuro».' : 'No detecté un fondo liso: la foto queda entera. Usá el gotero sobre el fondo o «Sólo lo oscuro».';
+      }
       agregarCapa(capa);
-      toast('Imagen agregada: ajustá «Quitar el fondo» a la derecha');
+      toast(aviso);
     } catch (e) { toast(e.message || 'No se pudo cargar la imagen'); }
   }
 
@@ -602,6 +622,7 @@ export function crearEditor(contenedor, opciones) {
   }));
   document.addEventListener('click', e => { if (!e.target.closest('.som-desplegable')) $('.som-desplegable').classList.remove('abierto'); });
   $$('[data-vista]').forEach(b => b.addEventListener('click', () => cambiarVista(b.dataset.vista)));
+  $('[data-fotos]').addEventListener('change', e => { mostrarFotos = e.target.checked; if (vista !== 'capas') cambiarVista('capas'); else redibujar(); });
   function cambiarVista(v) {
     vista = v;
     $$('[data-vista]').forEach(b => b.classList.toggle('active', b.dataset.vista === v));

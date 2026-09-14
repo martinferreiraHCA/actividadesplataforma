@@ -182,14 +182,20 @@ export function leerArchivoImagen(archivo, maxLado) {
     lector.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const esc = Math.min(1, (maxLado || 1400) / Math.max(img.naturalWidth, img.naturalHeight));
+        const esc = Math.min(1, (maxLado || 1200) / Math.max(img.naturalWidth, img.naturalHeight));
         const w = Math.max(1, Math.round(img.naturalWidth * esc)), h = Math.max(1, Math.round(img.naturalHeight * esc));
         const cv = document.createElement('canvas');
         cv.width = w; cv.height = h;
-        cv.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve({ src: cv.toDataURL('image/png'), ancho: w, alto: h });
+        const cx = cv.getContext('2d', { willReadFrequently: true });
+        cx.drawImage(img, 0, 0, w, h);
+        // PNG sólo si la imagen tiene transparencia; una foto opaca va en JPEG
+        // (pesa 5 a 10 veces menos: viaja más rápido al aula y ocupa menos)
+        const d = cx.getImageData(0, 0, w, h).data;
+        let conAlfa = false;
+        for (let i = 3; i < d.length; i += 4 * 7) if (d[i] < 250) { conAlfa = true; break; }
+        resolve({ src: conAlfa ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg', 0.86), ancho: w, alto: h });
       };
-      img.onerror = () => reject(new Error('El archivo no es una imagen que el navegador pueda abrir.'));
+      img.onerror = () => reject(new Error('El navegador no puede abrir ese archivo. Si es una foto .heic del iPhone, convertila a .jpg (o sacá la captura de pantalla) y volvé a subirla.'));
       img.src = lector.result;
     };
     lector.readAsDataURL(archivo);
@@ -295,6 +301,36 @@ export function mascaraDeCapaImagen(capa) {
   for (let i = 0, q = 0; i < n; i++, q += 4) { s[q] = 0; s[q + 1] = 0; s[q + 2] = 0; s[q + 3] = m[i] ? 255 : 0; }
   ctx.putImageData(salida, 0, 0);
   cacheMascaras.set(clave, cv);
+  return cv;
+}
+
+// Qué parte de la imagen quedó como figura (0..1) con el proceso actual.
+export function fraccionFigura(capa) {
+  const m = mascaraDeCapaImagen(capa);
+  if (!m) return null;
+  const d = m.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, m.width, m.height).data;
+  let n = 0, total = 0;
+  for (let i = 3; i < d.length; i += 4 * 3) { total++; if (d[i] > 128) n++; }
+  return total ? n / total : 0;
+}
+
+// La foto original recortada por la silueta (lo quitado queda transparente):
+// es lo que se muestra en la vista de capas para que se vea la imagen real.
+const cacheFotos = new Map(); // canvas de máscara → canvas con la foto
+export function fotoRecortadaDeCapa(capa) {
+  const m = mascaraDeCapaImagen(capa);
+  const img = imagenLista(capa.src);
+  if (!m || !img) return null;
+  const hit = cacheFotos.get(m);
+  if (hit) return hit;
+  if (cacheFotos.size > 20) cacheFotos.delete(cacheFotos.keys().next().value);
+  const cv = document.createElement('canvas');
+  cv.width = m.width; cv.height = m.height;
+  const c = cv.getContext('2d');
+  c.drawImage(m, 0, 0);
+  c.globalCompositeOperation = 'source-in';
+  c.drawImage(img, 0, 0, m.width, m.height);
+  cacheFotos.set(m, cv);
   return cv;
 }
 
@@ -429,9 +465,10 @@ function dibujarCapa(ctx, capa, pxPorMm, color) {
   ctx.fillStyle = color || '#000';
   const wPx = caja.w * pxPorMm, hPx = caja.h * pxPorMm;
   if (capa.tipo === 'imagen') {
-    const m = mascaraDeCapaImagen(capa);
+    const m = color === 'foto' ? fotoRecortadaDeCapa(capa) : mascaraDeCapaImagen(capa);
     if (m) {
-      if (color && color !== '#000') {
+      if (color === 'foto') ctx.drawImage(m, -wPx / 2, -hPx / 2, wPx, hPx);
+      else if (color && color !== '#000') {
         const t = document.createElement('canvas');
         t.width = m.width; t.height = m.height;
         const tc = t.getContext('2d');
@@ -454,6 +491,8 @@ function dibujarCapa(ctx, capa, pxPorMm, color) {
 // Compone todas las capas (sin la base ni el marco) en un canvas del tamaño
 // de la pieza. opciones.colores: true → sumar en negro, restar en rojo (vista
 // de capas); false → sólo negro con restar recortando de verdad.
+// opciones.fotos: en la vista de capas, las imágenes que suman se dibujan con
+// la foto real (recortada por la silueta) en vez de negro.
 export function componerCapas(proyecto, pxPorMm, opciones) {
   const op = opciones || {};
   const w = Math.max(1, Math.round(proyecto.pieza.anchoMm * pxPorMm));
@@ -470,7 +509,7 @@ export function componerCapas(proyecto, pxPorMm, opciones) {
       else { ctx.globalCompositeOperation = 'destination-out'; dibujarCapa(ctx, capa, pxPorMm, '#000'); }
     } else {
       ctx.globalCompositeOperation = 'source-over';
-      dibujarCapa(ctx, capa, pxPorMm, op.colorSumar || '#000');
+      dibujarCapa(ctx, capa, pxPorMm, (op.fotos && capa.tipo === 'imagen') ? 'foto' : (op.colorSumar || '#000'));
     }
   }
   ctx.globalCompositeOperation = 'source-over';
