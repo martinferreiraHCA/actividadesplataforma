@@ -1,0 +1,24 @@
+/* Moldes de galletitas desde un SVG — pantalla
+   (las tarjetas de forma, la grilla de dibujos y el panel 3D vienen de sello3d.css) */
+
+.gall-alternativa {
+  margin-top: 1.2rem;
+}
+
+/* pasos de uso del cortante */
+.gall-pasos {
+  margin: 0.4rem 0 0;
+  padding-left: 1.4rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-width: 760px;
+}
+.gall-pasos li { margin-bottom: 0.3rem; }
+
+/* grupos de controles que se muestran u ocultan según la forma / el marcador */
+#grupoEsquinas, #grupoLinea, #grupoEngrosar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}

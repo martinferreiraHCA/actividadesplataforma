@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moldes de galletitas desde un SVG — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Subí un SVG y armá el cortante de galletitas en 3D: redondo, cuadrado o con la forma del dibujo, con el dibujo como marcador que se estampa en la masa. Elegís las medidas en milímetros, lo ves en 3D y descargás el STL para la impresora 3D. Todo en el navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css"><!-- zona de subida y chips compartidas -->
+<link rel="stylesheet" href="sello3d.css"><!-- tarjetas, grilla de íconos y panel 3D compartidos -->
+<link rel="stylesheet" href="galletitas.css">
+<script type="importmap">
+{ "imports": { "three": "./lego/vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+          <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
+          <a href="galletitas.html">🍪 Moldes de galletitas</a>
+          <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
+          <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
+          <a href="ia3d.html">🤖 Pieza 3D con IA</a>
+          <a href="sombras.html">🔦 Sombras recortadas (aula)</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Del dibujo al horno</div>
+      <h2 class="section__title">Moldes de galletitas<br>desde un SVG<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Subí un <strong>dibujo vectorial</strong> (<code>.svg</code>, o una imagen <code>.png</code> / <code>.jpg</code>
+      de trazos nítidos) y la plataforma arma el <strong>cortante de galletitas en 3D</strong>: elegís si la galletita es
+      <strong>redonda</strong>, <strong>cuadrada</strong> o <strong>libre</strong> (el cortante sigue el contorno del dibujo),
+      y el dibujo queda como <strong>marcador</strong> que se estampa en la masa al apretar. Ajustás el tamaño, la altura
+      del filo, la pestaña de apoyo y la profundidad de la marca en milímetros, lo revisás en 3D y descargás el
+      <strong>.stl</strong> para la <strong>impresora 3D</strong>. Sirve para masa de galletitas, fondant, masa de sal,
+      plastilina y arcilla. Todo pasa en tu navegador, sin instalar nada ni subir el dibujo a ningún servidor.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Subí el SVG</span>
+        <span class="paso-rapido__texto">Un dibujo hecho en Inkscape o bajado de internet: siluetas, logos, personajes, letras. También sirve un .png de trazos gruesos.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Elegí la forma</span>
+        <span class="paso-rapido__texto">Redonda o cuadrada con el dibujo marcado adentro, o libre siguiendo el contorno. Ajustá las medidas en milímetros.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Descargá el STL</span>
+        <span class="paso-rapido__texto">Revisá el molde en 3D y bajá el .stl: se imprime apoyado sobre la pestaña, sin soportes. Estirá la masa, apretá y ¡al horno!</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== SUBIDA ====== -->
+<section class="editor-section editor-section--surface">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 — El dibujo</div>
+    <div class="inf-subida" id="zonaSubida" tabindex="0" role="button" aria-label="Subir un dibujo (.svg, .png o .jpg)">
+      <div class="inf-subida__icono">🍪</div>
+      <p class="inf-subida__texto"><strong>Arrastrá acá tu SVG</strong> o hacé clic para elegirlo</p>
+      <p class="inf-subida__nota">Acepta <code>.svg</code> (mejor resultado), <code>.png</code>, <code>.jpg</code> y <code>.webp</code></p>
+      <input type="file" id="inputArchivo" accept=".svg,.png,.jpg,.jpeg,.webp,.gif,.bmp" style="display:none">
+    </div>
+    <div class="gall-alternativa">
+      <span class="scratch-opciones__label">…o probá con un dibujo listo:</span>
+      <div id="gridIconos" class="sello-iconos"></div>
+    </div>
+    <div id="estadoSubida" class="inf-estado" style="display:none"></div>
+  </div>
+</section>
+
+
+<!-- ====== OPCIONES ====== -->
+<section class="editor-section" id="seccionOpciones" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 2 — La forma y las medidas</div>
+
+    <div class="sello-presets" role="radiogroup" aria-label="Forma de la galletita">
+      <label class="sello-preset"><input type="radio" name="forma" value="libre" checked>
+        <span class="sello-preset__icono">✨</span><span class="sello-preset__nombre">Libre (sigue el dibujo)</span>
+        <span class="sello-preset__desc">El filo recorre el contorno del dibujo; los detalles de adentro quedan como marcador.</span></label>
+      <label class="sello-preset"><input type="radio" name="forma" value="redonda">
+        <span class="sello-preset__icono">⚪</span><span class="sello-preset__nombre">Redonda</span>
+        <span class="sello-preset__desc">Galletita circular con el dibujo marcado en el medio.</span></label>
+      <label class="sello-preset"><input type="radio" name="forma" value="cuadrada">
+        <span class="sello-preset__icono">🟫</span><span class="sello-preset__nombre">Cuadrada</span>
+        <span class="sello-preset__desc">Galletita cuadrada (con esquinas redondeadas si querés) y el dibujo marcado en el medio.</span></label>
+    </div>
+
+    <div class="scratch-opciones" style="margin-top:1.2rem">
+      <span class="scratch-opciones__label">Tamaño de la galletita:</span>
+      <input class="campo__input" type="number" id="optTamano" min="20" max="200" step="1" value="70" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      <span class="scratch-opciones__label">Altura del cortante:</span>
+      <input class="campo__input" type="number" id="optAltura" min="6" max="40" step="0.5" value="15" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      <span class="scratch-opciones__label">Pared de corte:</span>
+      <input class="campo__input" type="number" id="optPared" min="0.6" max="3" step="0.1" value="1" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+    </div>
+    <div class="scratch-opciones" id="filaRedCuad" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Margen entre el dibujo y la pared:</span>
+      <input class="campo__input" type="number" id="optMargen" min="0" max="40" step="0.5" value="6" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      <span id="grupoEsquinas">
+        <span class="scratch-opciones__label">Esquinas redondeadas:</span>
+        <input class="campo__input" type="number" id="optEsquinas" min="0" max="60" step="0.5" value="6" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      </span>
+    </div>
+    <div class="scratch-opciones" id="filaLibre" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Suavizado del contorno:</span>
+      <select class="campo__input" id="optSuavizar" style="max-width:230px">
+        <option value="0">Sin suavizar (tal cual)</option>
+        <option value="1" selected>Leve (1 mm)</option>
+        <option value="2">Medio (2 mm)</option>
+        <option value="3">Fuerte (3 mm)</option>
+        <option value="5">Muy fuerte (5 mm)</option>
+      </select>
+      <span class="ia-catalogo__ayuda" style="margin:0">Une las partes cercanas y rellena las hendijas finas donde la masa se quedaría pegada. Los detalles más finos que esa medida se pierden del contorno (siguen en el marcador).</span>
+    </div>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Pestaña de apoyo:</span>
+      <input class="campo__input" type="number" id="optPestana" min="0" max="15" step="0.5" value="4" style="max-width:90px"> <span class="scratch-opciones__label">mm de ancho</span>
+      <input class="campo__input" type="number" id="optGrosorPestana" min="0.8" max="5" step="0.2" value="1.6" style="max-width:90px"> <span class="scratch-opciones__label">mm de grosor</span>
+      <label class="scratch-check"><input type="checkbox" id="optRefuerzo" checked> Refuerzo al pie de la pared</label>
+    </div>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Dibujo marcado en la masa:</span>
+      <select class="campo__input" id="optMarcador" style="max-width:260px">
+        <option value="lineas" selected>Por líneas (los contornos del dibujo)</option>
+        <option value="relleno">Por zonas rellenas (el dibujo tal cual)</option>
+        <option value="sin">Sin marcador (solo el cortante)</option>
+      </select>
+      <span id="grupoLinea">
+        <span class="scratch-opciones__label">Ancho de la línea:</span>
+        <input class="campo__input" type="number" id="optAnchoLinea" min="0.6" max="4" step="0.1" value="1.2" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      </span>
+      <span id="grupoEngrosar">
+        <span class="scratch-opciones__label">Engrosar el dibujo:</span>
+        <select class="campo__input" id="optEngrosar" style="max-width:150px">
+          <option value="0" selected>Nada</option>
+          <option value="0.4">+0,4 mm</option>
+          <option value="0.8">+0,8 mm</option>
+          <option value="1.2">+1,2 mm</option>
+        </select>
+      </span>
+    </div>
+    <div class="scratch-opciones" id="grupoMarca" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Grosor de la masa:</span>
+      <input class="campo__input" type="number" id="optMasa" min="1" max="20" step="0.5" value="5" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+      <span class="scratch-opciones__label">Profundidad de la marca:</span>
+      <input class="campo__input" type="number" id="optMarca" min="0.3" max="6" step="0.1" value="1.5" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+    </div>
+    <p class="ia-catalogo__ayuda" style="margin-top:0.5rem">«Por líneas» dibuja los contornos del dibujo como paredes finas que marcan la masa (ideal para siluetas y logos rellenos). «Por zonas rellenas» estampa el dibujo tal cual: para dibujos hechos de líneas (un contorno a lápiz, letras finas) o cuando querés hundir toda una zona. El marcador cuelga de una placa que tapa el cortante por arriba; con la masa estirada al grosor elegido, apretás hasta la mesa y la marca queda a la profundidad indicada. Se elige solo según el SVG, pero lo podés cambiar.</p>
+    <div class="scratch-opciones" style="margin-top:0.8rem">
+      <label class="scratch-check"><input type="checkbox" id="optEspejar" checked> Espejar el modelo (para que el dibujo se lea derecho en la galletita)</label>
+      <span class="scratch-opciones__label">Rotar:</span>
+      <select class="campo__input" id="optRotar" style="max-width:90px">
+        <option value="0" selected>0°</option>
+        <option value="90">90°</option>
+        <option value="180">180°</option>
+        <option value="270">270°</option>
+      </select>
+      <label class="scratch-check" id="grupoCalcar"><input type="checkbox" id="optCalcar"> Calcar desde los píxeles (si al SVG le faltan partes, por ejemplo textos o trazos)</label>
+    </div>
+    <div class="scratch-opciones" id="filaCalco" style="margin-top:0.8rem">
+      <span class="scratch-opciones__label">Umbral claro/oscuro:</span>
+      <input type="range" id="optUmbral" min="20" max="235" step="5" value="128" style="max-width:180px">
+      <span class="scratch-opciones__label" id="valUmbral">128</span>
+      <label class="scratch-check"><input type="checkbox" id="optInvertir"> Invertir (dibujo claro sobre fondo oscuro)</label>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== RESULTADO ====== -->
+<section class="editor-section editor-section--surface" id="seccionResultado" style="display:none">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 3 — El molde</div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem">
+      <button class="btn btn--primary" id="btnSTL">⬇ Descargar STL para imprimir</button>
+      <button class="btn btn--primary" id="btn3MF">⬇ Descargar 3MF (dos colores)</button>
+      <span class="ia-catalogo__ayuda" style="margin:0">STL: un color, sirve en cualquier slicer. 3MF: cuerpo y marcador como colores separados, para impresoras multicolor.</span>
+    </div>
+    <div id="statsModelo" class="inf-stats" style="margin-bottom:1rem"></div>
+
+    <div class="sello-panel">
+      <div class="sello-panel__vista3d">
+        <h3 class="sello-panel__titulo">El molde en 3D (giralo con el mouse; así se imprime, con el filo hacia arriba)</h3>
+        <canvas id="lienzo3d"></canvas>
+      </div>
+      <div class="sello-panel__planta">
+        <h3 class="sello-panel__titulo">La galletita (así va a quedar, vista desde arriba)</h3>
+        <canvas id="lienzoPlanta"></canvas>
+        <p class="sello-nota">Al imprimir: apoyalo como se ve, con la pestaña contra la cama, sin soportes, con 3 perímetros y capas de 0,2 mm. Para masa de galletitas usá PLA o PETG, lavalo a mano con agua fría (no al lavavajillas) y, si querés extremar la higiene, apoyá un film sobre la masa antes de cortar.</p>
+      </div>
+    </div>
+
+    <h3 class="sello-panel__titulo" style="margin-top:1.2rem">Cómo se usa</h3>
+    <ol class="gall-pasos">
+      <li>Estirá la masa al grosor elegido (5 mm es lo habitual; con palotes guía queda pareja).</li>
+      <li>Espolvoreá harina sobre el filo y el marcador para que no se pegue.</li>
+      <li>Apoyá el cortante y apretá parejo hasta tocar la mesa: el filo corta y el marcador estampa el dibujo.</li>
+      <li>Levantá el cortante; si la galletita queda adentro, empujala con suavidad por el borde o dale un golpecito.</li>
+      <li>Al horno. Un marcador de 1,5 mm sobre masa firme (sin polvo de hornear) se conserva bien al cocinar.</li>
+    </ol>
+  </div>
+</section>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+        <a href="sello3d.html">Sello 3D desde una imagen</a>
+        <a href="galletitas.html">Moldes de galletitas</a>
+        <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
+        <a href="arenero.html">Arenero de realidad aumentada</a>
+        <a href="ia3d.html">Pieza 3D con IA</a>
+        <a href="sombras.html">Sombras recortadas</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Vista 3D y extrusión con <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT).</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="jszip.min.js"></script>
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script type="module" src="galletitas.js"></script>
+
+</body>
+</html>

@@ -783,6 +783,54 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
       `
     },
     {
+      id: "galletitas",
+      titulo: "Moldes de galletitas",
+      html: `
+        <p class="guia-p"><strong>galletitas.html</strong> convierte un dibujo vectorial en un <strong>cortante de galletitas</strong>
+        listo para la impresora 3D. Se sube un <code>.svg</code> (o una imagen <code>.png</code> / <code>.jpg</code> de trazos
+        nítidos), se elige la forma de la galletita y la página arma el molde en 3D: la pared de corte, la pestaña de apoyo,
+        el refuerzo y el dibujo como <strong>marcador</strong> que se estampa en la masa. Se descarga el <strong>.stl</strong>
+        (o un .3mf de dos colores). Sirve para masa de galletitas, fondant, masa de sal, plastilina y arcilla.</p>
+        <h4 class="guia-h">1 · El dibujo</h4>
+        <ul class="guia-lista">
+          <li>Un SVG con <strong>rellenos</strong> (siluetas, logos, íconos) se usa con sus trazados exactos. Un SVG hecho
+          sólo de <strong>líneas</strong> (un contorno a lápiz, letras finas) o una imagen de píxeles se calca con un umbral de
+          claro/oscuro. Si al SVG le faltan partes (textos, trazos), «Calcar desde los píxeles» lo dibuja completo.</li>
+          <li>Sin un archivo a mano, la grilla de dibujos listos (jengibre, estrella, corazón, árbol…) sirve para probar.</li>
+        </ul>
+        <h4 class="guia-h">2 · La forma</h4>
+        <ul class="guia-lista">
+          <li><strong>Libre</strong>: el filo recorre el contorno del dibujo (los agujeros se tapan y las partes cercanas se unen
+          con el «suavizado del contorno», que además rellena las hendijas donde la masa se quedaría pegada). Los detalles de
+          adentro —ojos, botones, pliegues— quedan como marcador.</li>
+          <li><strong>Redonda</strong> o <strong>cuadrada</strong> (con esquinas redondeadas): la galletita tiene esa forma y el
+          dibujo entero va marcado en el medio, a un margen de la pared.</li>
+          <li>Medidas en milímetros: tamaño de la galletita (70 mm es un buen punto de partida), altura del cortante (15 mm),
+          pared de corte (1 mm, dos o tres perímetros de la impresora), pestaña de apoyo (4 mm de ancho, 1,6 mm de grosor) y
+          refuerzo al pie de la pared. Sin marcador, la pestaña lleva también un labio interior que la hace más rígida.</li>
+        </ul>
+        <h4 class="guia-h">3 · El marcador</h4>
+        <ul class="guia-lista">
+          <li><strong>Por líneas</strong>: los contornos del dibujo como paredes finas (1,2 mm) que marcan la masa; ideal para
+          siluetas y logos rellenos. <strong>Por zonas rellenas</strong>: el dibujo tal cual, para dibujos de líneas o cuando se
+          quiere hundir una zona entera (se puede engrosar para que las líneas finas se impriman). <strong>Sin marcador</strong>:
+          sólo el cortante. La página elige el modo según el SVG, y se puede cambiar.</li>
+          <li>El marcador cuelga de una placa que tapa el cortante por arriba. Con el <strong>grosor de la masa</strong> (5 mm) y la
+          <strong>profundidad de la marca</strong> (1,5 mm), la página calcula hasta dónde baja: se aprieta hasta tocar la mesa y
+          la marca queda a esa profundidad.</li>
+          <li>El modelo sale <strong>espejado</strong> para que el dibujo (y cualquier texto) se lea derecho en la galletita; la
+          vista «La galletita» muestra cómo va a quedar, y la vista 3D cómo se imprime.</li>
+        </ul>
+        <h4 class="guia-h">4 · Imprimir y usar</h4>
+        <ul class="guia-lista">
+          <li>Se imprime apoyado sobre la pestaña, con el filo hacia arriba, sin soportes, con 3 perímetros y capas de 0,2 mm.
+          PLA o PETG. Lavar a mano con agua fría; si se quiere extremar la higiene, apoyar un film sobre la masa antes de cortar.</li>
+          <li>Estirar la masa al grosor elegido, enharinar el filo y el marcador, apretar parejo hasta la mesa y levantar. Si
+          la galletita queda adentro, empujarla con suavidad por el borde.</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `
