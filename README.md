@@ -476,7 +476,7 @@ Sección Diseño:
 /instrumentos-ui.js       ← Catálogo, configurador y hojas de ejercicios
 /papel3d.html             ← Diseño 3D con papel (papercraft)
 /sello3d.html /.js /.css  ← Sello 3D desde una imagen
-/galletitas.html /.js /.css ← Moldes de galletitas desde un SVG (cortante + marcador)
+/galletitas.html /.js/.css ← Moldes de galletitas desde un SVG (cortante + marcador)
 /escaneo3d.html           ← Escaneo 3D con Kinect
 /escaneo3d.js             ← Página: conexión, vista en vivo, tomas, modelo
 /escaneo3d-nucleo.js      ← Fusión volumétrica, malla, purgado y exportación (sin DOM)
