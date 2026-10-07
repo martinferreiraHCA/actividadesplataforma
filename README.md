@@ -423,6 +423,28 @@ la Cricut** (o la láser), uno por uno o acomodados en un tapete de 12 × 12".
 - **Cricut Explore Air 2**: la máquina sólo acepta trabajos desde Cricut Design Space (protocolo cerrado), así que la
   página deja el SVG listo y en Design Space sólo se hace Upload → Insert → Make It (pasos en la misma página).
 
+## Diseño → Moldes de galletitas
+
+`galletitas.html` convierte un dibujo vectorial en un **cortante de galletitas** para la impresora 3D. Se sube un
+`.svg` (o un `.png` / `.jpg` de trazos nítidos), se elige la forma de la galletita y la página arma el molde en 3D y
+descarga el `.stl` (o un `.3mf` de dos colores). Sirve para masa de galletitas, fondant, masa de sal, plastilina y
+arcilla.
+
+- **El dibujo**: un SVG con rellenos se usa con sus trazados exactos (`SVGLoader` de three.js); uno hecho sólo de
+  líneas, o una imagen de píxeles, se calca (umbral claro/oscuro + marching squares de `sombras-vector.js`). Hay una
+  grilla de dibujos listos para probar y una opción para calcar el SVG completo cuando le faltan partes (textos, trazos).
+- **La forma**: **libre** (el filo recorre el contorno del dibujo; los agujeros se tapan y un cierre morfológico
+  «suavizado» une las partes cercanas y rellena las hendijas), **redonda** o **cuadrada** con esquinas redondeadas
+  (el dibujo entero va marcado en el medio, a un margen de la pared).
+- **El cortante**: pared de corte (1 mm), altura (15 mm), pestaña de apoyo (4 × 1,6 mm) con labio interior cuando no
+  hay marcador, y refuerzo al pie de la pared. Toda la geometría 2D (silueta, paredes, pestaña, marcador) se arma con
+  offsets sobre un lienzo en milímetros (relleno + trazo redondeado = engordar / adelgazar) y se vuelve a vectorizar;
+  cada región se extruye con three.js. Sale apoyado como se imprime: pestaña contra la cama, filo hacia arriba, sin soportes.
+- **El marcador**: los contornos del dibujo como paredes finas («por líneas»), el dibujo tal cual («por zonas
+  rellenas», con engrosado opcional para dibujos de líneas finas) o sin marcador. Cuelga de una placa que tapa el
+  cortante; con el grosor de la masa y la profundidad de la marca se calcula hasta dónde baja. El modelo sale espejado
+  para que el dibujo se lea derecho en la galletita; la vista 2D muestra la galletita como va a quedar.
+
 ## Tecnología
 
 - HTML + CSS + Vanilla JS (ES modules)
@@ -453,6 +475,8 @@ Sección Diseño:
 /instrumentos.js          ← Motor de dibujo SVG de los 33 instrumentos
 /instrumentos-ui.js       ← Catálogo, configurador y hojas de ejercicios
 /papel3d.html             ← Diseño 3D con papel (papercraft)
+/sello3d.html /.js /.css  ← Sello 3D desde una imagen
+/galletitas.html /.js /.css ← Moldes de galletitas desde un SVG (cortante + marcador)
 /escaneo3d.html           ← Escaneo 3D con Kinect
 /escaneo3d.js             ← Página: conexión, vista en vivo, tomas, modelo
 /escaneo3d-nucleo.js      ← Fusión volumétrica, malla, purgado y exportación (sin DOM)
