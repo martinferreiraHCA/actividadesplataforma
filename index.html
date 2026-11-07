@@ -38,6 +38,7 @@
           <a href="papel3d.html">📐 Diseño 3D con papel</a>
           <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
           <a href="galletitas.html">🍪 Moldes de galletitas</a>
+          <a href="moldes.html">🕯️ Moldes para colar (STL)</a>
           <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
           <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
           <a href="ia3d.html">🤖 Pieza 3D con IA</a>
@@ -199,6 +200,7 @@
         <a href="papel3d.html">Diseño 3D con papel</a>
         <a href="sello3d.html">Sello 3D desde una imagen</a>
         <a href="galletitas.html">Moldes de galletitas</a>
+        <a href="moldes.html">Moldes para colar</a>
         <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
         <a href="arenero.html">Arenero de realidad aumentada</a>
         <a href="ia3d.html">Pieza 3D con IA</a>
@@ -317,6 +319,20 @@
   `;
   grid.appendChild(cardGalletitas);
   nuevasCards.push(cardGalletitas);
+  idx++;
+
+  // Ficha especial: moldes para colar desde un modelo 3D (página propia)
+  const cardMoldes = document.createElement('a');
+  cardMoldes.href = 'moldes.html';
+  cardMoldes.className = 'actividad-card reveal';
+  cardMoldes.setAttribute('role', 'listitem');
+  cardMoldes.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Moldes para colar</h3>
+    <p class="actividad-card__desc">Subí un modelo .stl y armá el molde imprimible para reproducirlo: molde rígido de dos partes para velas, resina y yeso, molde abierto, caja para verter silicona o molde de prensa para jabón y arcilla. Medidas en milímetros, vista 3D y un .stl por parte.</p>
+  `;
+  grid.appendChild(cardMoldes);
+  nuevasCards.push(cardMoldes);
   idx++;
 
   // Ficha especial: escaneo 3D con Kinect (página propia)

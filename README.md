@@ -445,6 +445,25 @@ arcilla.
   cortante; con el grosor de la masa y la profundidad de la marca se calcula hasta dónde baja. El modelo sale espejado
   para que el dibujo se lea derecho en la galletita; la vista 2D muestra la galletita como va a quedar.
 
+## Diseño → Moldes para colar (desde un STL)
+
+`moldes.html` convierte un modelo 3D (`.stl`, `.obj`, `.dxf`) en un **molde imprimible** para reproducirlo en otro
+material, al estilo de [Meshcast](https://meshcast.app): **molde rígido de dos partes** (velas, resina, yeso) con plano
+de junta ajustable, pernos de alineación, embudo de colada, respiradero y ranuras para gomas; **molde abierto** de una
+pieza (bandejas, jabones con cara plana); **caja para silicona** (la caja impresa con el modelo adentro, para verter
+silicona y obtener un molde flexible; calcula los ml de silicona); y **molde de prensa** (matriz con la cavidad +
+pistón con el relieve) para arcilla, jabón en frío y bombas de baño. Un `.stl` por parte, apoyadas como se imprimen.
+
+- **Núcleo** (`moldes-nucleo.js`, sin DOM; corre en `moldes-worker.js`): el modelo se orienta y escala, se
+  **voxeliza** por paridad de cruces por columna y se le calcula una **distancia con signo** (exacta cerca de la
+  superficie con distancia punto-triángulo, transformada euclídea de Felzenszwalb lejos). Los moldes son operaciones
+  sobre campos de distancia: cajas, cilindros y planos como fórmulas; unir = mínimo, intersecar = máximo, restar =
+  máximo con el opuesto. Cada parte se vuelve malla con los **surface nets** y la reducción QEM de
+  `escaneo3d-nucleo.js`, y se posa en orientación de impresión (cara de junta abajo, pistón con la tapa abajo).
+- **Página** (`moldes.js`): lectura del modelo con `modelo3d-leer.js`, ejemplos generados con three.js (vela gota,
+  jabón corazón, estrella), opciones en milímetros, vista 3D de las partes una al lado de la otra con el modelo original,
+  estadísticas (volumen de la cavidad, silicona necesaria, pernos) y descargas STL / ZIP.
+
 ## Tecnología
 
 - HTML + CSS + Vanilla JS (ES modules)
@@ -477,6 +496,8 @@ Sección Diseño:
 /papel3d.html             ← Diseño 3D con papel (papercraft)
 /sello3d.html /.js /.css  ← Sello 3D desde una imagen
 /galletitas.html /.js/.css ← Moldes de galletitas desde un SVG (cortante + marcador)
+/moldes.html /.js /.css   ← Moldes para colar desde un STL (dos partes, abierto, silicona, prensa)
+/moldes-nucleo.js         ← Campos de distancia, armado de los moldes y mallas (Web Worker: moldes-worker.js)
 /escaneo3d.html           ← Escaneo 3D con Kinect
 /escaneo3d.js             ← Página: conexión, vista en vivo, tomas, modelo
 /escaneo3d-nucleo.js      ← Fusión volumétrica, malla, purgado y exportación (sin DOM)

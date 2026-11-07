@@ -831,6 +831,48 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
       `
     },
     {
+      id: "moldes",
+      titulo: "Moldes para colar",
+      html: `
+        <p class="guia-p"><strong>moldes.html</strong> convierte un <strong>modelo 3D</strong> (<code>.stl</code> de Tinkercad, de un
+        escaneo o bajado de internet; también <code>.obj</code> y <code>.dxf</code>) en un <strong>molde imprimible</strong> para
+        reproducirlo en otro material. Inspirado en Meshcast. El modelo tiene que ser una malla cerrada; la página avisa si no lo es.</p>
+        <h4 class="guia-h">1 · Los cuatro tipos de molde</h4>
+        <ul class="guia-lista">
+          <li><strong>Rígido de dos partes</strong> (velas, resina, yeso): dos mitades con el negativo del modelo, partidas por un
+          <strong>plano de junta</strong> (vertical adelante/atrás, izquierda/derecha u horizontal, y corrible con el deslizador),
+          con <strong>pernos</strong> de alineación en una mitad y bolsillos en la otra, <strong>embudo</strong> de colada en el punto
+          más alto, respiradero opcional y <strong>ranuras para gomas</strong> elásticas. La pared puede ser una caja o seguir la
+          forma del modelo. Cada mitad sale con la cara de junta apoyada, lista para imprimir sin soportes.</li>
+          <li><strong>Abierto de una pieza</strong>: la cavidad queda abierta por arriba. Para modelos con una cara plana
+          (posavasos, bandejas, jabones con relieve, placas de yeso), orientados con esa cara hacia arriba.</li>
+          <li><strong>Caja para silicona</strong>: la impresora no imprime silicona; imprime la caja con el modelo pegado a la
+          base (se puede hundir 1 mm para sellar la unión). Se vierte silicona de dos componentes, cura, se despega la caja y
+          queda el molde flexible, que tolera contrasalidas. La página calcula los mililitros de silicona.</li>
+          <li><strong>Molde de prensa</strong> (arcilla, jabón en frío, bombas de baño): una <strong>matriz</strong> con la cavidad de
+          la mitad de abajo del modelo y un <strong>pistón</strong> con la mitad de arriba en relieve, con boca que sigue la huella
+          del modelo, rectangular o redonda, margen, holgura de encastre y agujero eyector.</li>
+        </ul>
+        <h4 class="guia-h">2 · Medidas y opciones</h4>
+        <ul class="guia-lista">
+          <li>Escala en %, eje hacia arriba (Z en Tinkercad, Y en Blender) y «dar vuelta». La página muestra las medidas finales.</li>
+          <li>Grosor de pared (4 mm), espacio entre el modelo y la pared, holgura de la pieza (para impresoras con exceso) y
+          holgura de encastre entre pernos y bolsillos o entre pistón y matriz (0,2 mm; subirla si imprime apretado).</li>
+          <li>Detalle rápido / normal / fino: más fino es más fiel y tarda más (el cálculo corre aparte, en un Web Worker, y
+          va avisando el progreso).</li>
+        </ul>
+        <h4 class="guia-h">3 · Imprimir y colar</h4>
+        <ul class="guia-lista">
+          <li>Un <strong>.stl por parte</strong> (o todas en un .zip), apoyadas como se imprimen. Para velas, PETG antes que PLA (la
+          cera caliente ablanda el PLA), 4 perímetros, 20 % de relleno, capas de 0,16 mm.</li>
+          <li>Velas: cerrar con gomas o pinzas, pabilo por el embudo, cera tibia, rellenar el rechupe y media hora en la heladera
+          para desmoldar. Resina y yeso: desmoldante fino. Silicona: pegar el modelo, verter en hilo fino por una esquina.</li>
+          <li>Un molde rígido solo suelta piezas sin <strong>contrasalidas</strong> (partes que se ensanchan hacia adentro de cada
+          mitad): para esas formas, el camino es la caja para silicona.</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `
