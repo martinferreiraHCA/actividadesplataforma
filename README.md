@@ -464,6 +464,24 @@ pistón con el relieve) para arcilla, jabón en frío y bombas de baño. Un `.st
   jabón corazón, estrella), opciones en milímetros, vista 3D de las partes una al lado de la otra con el modelo original,
   estadísticas (volumen de la cavidad, silicona necesaria, pernos) y descargas STL / ZIP.
 
+## Diseño → Adornos de Navidad
+
+`navidad.html` trae dos diseñadores de adornos para la impresora 3D, al estilo de los de [Meshcast](https://meshcast.app).
+
+- **Globo redondo personalizado** (`navidad-nucleo.js`, en el Web Worker `navidad-worker.js`): cuerpo de revolución
+  (bola, gota, cebolla, cono) cuyo perfil se precalcula como campo de distancia 2D; textura (costillas, espiral,
+  facetas, hoyuelos) como modulación del campo; el nombre y el motivo se dibujan en un lienzo del frente «desenrollado»
+  (u = arco, v = altura), se pasan a distancia 2D con la transformada euclídea y se envuelven sobre el globo en relieve
+  o grabados; cuello para el capuchón metálico (tubo con taladro) o argolla (toro). Se parte en dos mitades por el plano
+  x = 0 con agujeros para pernos de filamento; cada mitad sale posada con la cara de corte abajo. El nombre en relieve
+  es una pieza aparte para el 3MF de dos colores. «Globo macizo entero» se exporta para la página de moldes.
+- **Adorno plano con nombre** (`navidad.js`, sin worker): siluetas dibujadas en canvas (doce formas, reutilizadas como
+  motivos del globo), vectorizadas con `sombras-vector.js`; borde = silueta menos silueta erosionada; nombre ajustado por
+  búsqueda binaria del tamaño de letra dentro del interior fila por fila; patrón de fondo recortado al interior y al
+  nombre; argolla, pie con ranura (pieza aparte) o bolsillo para imán (cuerpo en dos capas). Todo extruido con three.js.
+- Exportación STL (unión) y 3MF multicolor con una parte por color; vista 3D del adorno armado o de las mitades como se
+  imprimen.
+
 ## Tecnología
 
 - HTML + CSS + Vanilla JS (ES modules)
@@ -498,6 +516,8 @@ Sección Diseño:
 /galletitas.html /.js/.css ← Moldes de galletitas desde un SVG (cortante + marcador)
 /moldes.html /.js /.css   ← Moldes para colar desde un STL (dos partes, abierto, silicona, prensa)
 /moldes-nucleo.js         ← Campos de distancia, armado de los moldes y mallas (Web Worker: moldes-worker.js)
+/navidad.html /.js /.css  ← Adornos de Navidad (globo redondo en dos mitades y adorno plano con nombre)
+/navidad-nucleo.js        ← Globo redondo con campos de distancia (Web Worker: navidad-worker.js)
 /escaneo3d.html           ← Escaneo 3D con Kinect
 /escaneo3d.js             ← Página: conexión, vista en vivo, tomas, modelo
 /escaneo3d-nucleo.js      ← Fusión volumétrica, malla, purgado y exportación (sin DOM)

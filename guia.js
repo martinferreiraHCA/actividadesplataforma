@@ -873,6 +873,42 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
       `
     },
     {
+      id: "navidad",
+      titulo: "Adornos de Navidad",
+      html: `
+        <p class="guia-p"><strong>navidad.html</strong> trae dos diseñadores de adornos para la impresora 3D, inspirados en los de
+        Meshcast: el <strong>globo redondo personalizado</strong> y el <strong>adorno plano con nombre</strong>. Los dos salen en
+        <code>.stl</code> (un color) y <code>.3mf</code> (colores separados para impresoras multicolor o cambio de filamento).</p>
+        <h4 class="guia-h">1 · Globo redondo</h4>
+        <ul class="guia-lista">
+          <li>Forma bola, gota, cebolla o cono; diámetro de 40 a 120 mm; textura lisa, costillas, espiral, facetas u hoyuelos
+          (con cantidad y profundidad); un motivo (reno, árbol, estrella, copo, muñeco, jengibre, huella, corazón, campana) y el
+          nombre con ocho fuentes, en relieve o grabados. La vista «el frente desenrollado» muestra cómo se envuelve la
+          decoración sobre el globo.</li>
+          <li>Arriba: cuello para el capuchón metálico común (Ø 14 mm, ajustable) o argolla para colgar. Macizo (sin voladizos,
+          el slicer pone el relleno) o hueco con la pared elegida.</li>
+          <li>Sale en <strong>dos mitades</strong> (frente y dorso) partidas por un plano vertical, con agujeros para pernos de
+          filamento de 1,75 mm cortados a 5,5 mm (tres si es macizo, cuatro si es hueco). Se imprimen con la cara de corte
+          apoyada, se alinean con los pernos y se pegan con cianoacrilato en gel. «STL del globo macizo» exporta el globo entero
+          para hacerle un molde en «Moldes para colar» (vela de bola o silicona).</li>
+          <li>El cálculo corre en un Web Worker con campos de distancia (como los moldes); «Detalle fino» tarda más y deja las
+          letras más limpias.</li>
+        </ul>
+        <h4 class="guia-h">2 · Adorno plano con nombre</h4>
+        <ul class="guia-lista">
+          <li>Doce siluetas: globo, estrella, corazón, campana, árbol, copo de nieve, jengibre, muñeco de nieve, bota, reno, hueso y
+          huella. Altura en mm (80 por defecto; 50–60 para etiquetas de regalo).</li>
+          <li>El nombre, de hasta seis líneas (primera línea grande opcional), se achica solo hasta caber dentro de la silueta,
+          dejando el borde. Borde realzado, patrón de fondo (puntitos de nieve, estrellitas, rayas de caramelo) que no pisa el
+          nombre, y tres formas de colgarlo: argolla para cinta (agujero ajustable), pie para la mesa (base aparte con ranura) o
+          bolsillo para un imán de 10 × 2 mm por atrás.</li>
+          <li>Avanzado: grosor (2,4 mm), relieve (1 mm), ancho del borde. Colores del adorno, del nombre y del borde para el 3MF;
+          con una sola impresora de un color, cambio de filamento a la altura del grosor en el slicer.</li>
+          <li>Se imprime plano, con el nombre hacia arriba, sin soportes: capas de 0,2 mm, 3 perímetros, 15–20 % de relleno.</li>
+        </ul>
+      `
+    },
+    {
       id: "video",
       titulo: "Video tutorial",
       html: `

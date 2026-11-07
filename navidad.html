@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adornos de Navidad para imprimir — Generador de Actividades</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Diseñá globos de Navidad personalizados con nombre, motivo y textura (salen en dos mitades para la impresora 3D) y adornos planos con nombre: estrella, corazón, campana, árbol, copo, jengibre y más, con cinta, pie o imán. STL y 3MF de colores. Todo en el navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<!-- fuentes para los nombres -->
+<link href="https://fonts.googleapis.com/css2?family=Lobster&family=Pacifico&family=Oswald:wght@700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Bungee&family=Chewy&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="templatemo-axis-industrial.css">
+<link rel="stylesheet" href="generador.css">
+<link rel="stylesheet" href="scratch.css">
+<link rel="stylesheet" href="informe-proyecto.css"><!-- chips compartidas -->
+<link rel="stylesheet" href="sello3d.css"><!-- tarjetas, grilla de íconos y panel 3D compartidos -->
+<link rel="stylesheet" href="moldes.css"><!-- vista 3D, descargas y botón pendiente compartidos -->
+<link rel="stylesheet" href="navidad.css">
+<script type="importmap">
+{ "imports": { "three": "./lego/vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header__inner header__inner--centrado">
+    <span class="header__product">Generador de Actividades</span>
+    <nav class="header__nav" id="headerNav">
+      <a href="index.html">Inicio</a>
+      <a href="editor.html?tipo=cuestionario">Editor</a>
+      <span class="nav-desplegable">
+        <a href="scratch.html">Fichas Scratch · micro:bit ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="scratch.html">Editor de fichas</a>
+          <a href="informe-proyecto.html">📋 Informe de proyecto (.sb3 / .hex)</a>
+        </span>
+      </span>
+      <a href="lego.html">Ensamble con LEGO</a>
+      <span class="nav-desplegable">
+        <a href="protocolos.html" class="active">Diseño ▾</a>
+        <span class="nav-desplegable__panel">
+          <a href="protocolos.html">🧪 Protocolos de práctico</a>
+          <a href="instrumentos.html">📏 Banco de instrumentos</a>
+          <a href="papel3d.html">📐 Diseño 3D con papel</a>
+          <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
+          <a href="galletitas.html">🍪 Moldes de galletitas</a>
+          <a href="moldes.html">🕯️ Moldes para colar (STL)</a>
+          <a href="navidad.html">🎄 Adornos de Navidad</a>
+          <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
+          <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
+          <a href="ia3d.html">🤖 Pieza 3D con IA</a>
+          <a href="sombras.html">🔦 Sombras recortadas (aula)</a>
+        </span>
+      </span>
+      <a href="#" class="header__ayuda" data-abrir-guia>Guía</a>
+    </nav>
+    <div class="tema-switcher" id="temaSwitcher">
+      <span class="tema-switcher__label">¿No te gusta el color? Cambialo:</span>
+      <button class="tema-btn active" data-tema="sereno" title="Crema (recomendado)"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="" title="Claro"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="nocturno" title="Nocturno"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="amigable" title="Amigable"><span class="tema-btn__dot"></span></button>
+      <button class="tema-btn" data-tema="hca" title="Azul"><span class="tema-btn__dot"></span></button>
+    </div>
+    <button class="header__burger" id="headerBurger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+
+<!-- ====== INTRO ====== -->
+<section class="editor-section">
+  <div class="container">
+    <div class="section__header reveal">
+      <div class="section__eyebrow">// Para el arbolito, con nombre</div>
+      <h2 class="section__title">Adornos de Navidad<br>para imprimir<span class="accent">.</span></h2>
+    </div>
+    <p class="scratch-intro">
+      Dos diseñadores en una página. El <strong>globo redondo</strong>: bola, gota, cebolla o cono, con textura de costillas,
+      espiral, facetas u hoyuelos, un <strong>motivo</strong> (reno, árbol, copo, muñeco…) y el <strong>nombre</strong> en relieve
+      o grabado, con cuello para el capuchón metálico o argolla para colgar; sale en <strong>dos mitades</strong> que se
+      imprimen planas, se alinean con trocitos de filamento y se pegan. Y el <strong>adorno plano con nombre</strong>: estrella,
+      corazón, campana, árbol, copo, jengibre, muñeco, bota, reno, hueso o huella, con el nombre en relieve de hasta seis
+      líneas, borde realzado, patrón de fondo y cinta, pie para la mesa o imán. Todo en milímetros, con vista 3D y descarga
+      en <strong>.stl</strong> (un color) o <strong>.3mf</strong> (colores separados, para impresoras multicolor o cambio de
+      filamento). Pasa en tu navegador, sin instalar nada.
+    </p>
+    <div class="primeros-pasos">
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 01</span>
+        <span class="paso-rapido__titulo">Elegí el adorno</span>
+        <span class="paso-rapido__texto">Globo redondo en dos mitades, o adorno plano con nombre. Escribí el nombre y elegí la forma, la fuente y los colores.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 02</span>
+        <span class="paso-rapido__titulo">Ajustá las medidas</span>
+        <span class="paso-rapido__texto">Diámetro o altura en milímetros, grosor, relieve, cuello o argolla, cinta, pie o imán. Revisalo en 3D.</span>
+      </div>
+      <div class="paso-rapido">
+        <span class="paso-rapido__num">PASO 03</span>
+        <span class="paso-rapido__titulo">Imprimí y armá</span>
+        <span class="paso-rapido__texto">Sin soportes, en PLA. El globo se pega por las mitades con pernos de filamento; el adorno plano se imprime con el nombre hacia arriba.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== OPCIONES ====== -->
+<section class="editor-section editor-section--surface" id="seccionOpciones">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:1.2rem">// Paso 1 y 2 — El adorno y sus medidas</div>
+
+    <div class="sello-presets" role="radiogroup" aria-label="Tipo de adorno">
+      <label class="sello-preset"><input type="radio" name="modo" value="globo" checked>
+        <span class="sello-preset__icono">🔮</span><span class="sello-preset__nombre">Globo redondo personalizado</span>
+        <span class="sello-preset__desc">Bola, gota, cebolla o cono con textura, motivo y nombre. Dos mitades para imprimir y pegar.</span></label>
+      <label class="sello-preset"><input type="radio" name="modo" value="plano">
+        <span class="sello-preset__icono">⭐</span><span class="sello-preset__nombre">Adorno plano con nombre</span>
+        <span class="sello-preset__desc">Silueta con el nombre en relieve, borde, patrón y cinta, pie o imán. Se imprime plano, en uno o dos colores.</span></label>
+    </div>
+
+    <!-- ---- Globo ---- -->
+    <div id="panelGlobo" style="margin-top:1.2rem">
+      <div class="scratch-opciones">
+        <span class="scratch-opciones__label">Nombre:</span>
+        <input class="campo__input" type="text" id="gNombre" value="Noel" maxlength="40" placeholder="Ej: Martina" style="max-width:220px">
+        <span class="scratch-opciones__label">Fuente:</span>
+        <select class="campo__input" id="gFuente" style="max-width:190px">
+          <option value="lobster" selected>Lobster (retro)</option>
+          <option value="pacifico">Pacifico (pincel)</option>
+          <option value="chewy">Chewy (divertida)</option>
+          <option value="caveat">Caveat (manuscrita)</option>
+          <option value="playfair">Playfair (serif)</option>
+          <option value="oswald">Oswald (condensada)</option>
+          <option value="grotesk">Space Grotesk (sans)</option>
+          <option value="bungee">Bungee (bloque)</option>
+        </select>
+        <span class="scratch-opciones__label">Letra:</span>
+        <select class="campo__input" id="gLetraTam" style="max-width:110px">
+          <option value="chico">Chica</option><option value="medio" selected>Media</option><option value="grande">Grande</option>
+        </select>
+        <span class="scratch-opciones__label">Motivo:</span>
+        <select class="campo__input" id="gMotivo" style="max-width:170px"></select>
+        <select class="campo__input" id="gMotivoTam" style="max-width:110px">
+          <option value="chico">Chico</option><option value="medio" selected>Medio</option><option value="grande">Grande</option>
+        </select>
+      </div>
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Forma:</span>
+        <select class="campo__input" id="gForma" style="max-width:150px">
+          <option value="bola" selected>Bola</option><option value="gota">Gota</option><option value="cebolla">Cebolla</option><option value="cono">Cono</option>
+        </select>
+        <span class="scratch-opciones__label">Diámetro:</span>
+        <input class="campo__input" type="number" id="gDiametro" min="40" max="120" step="1" value="80" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+        <span class="scratch-opciones__label">Textura:</span>
+        <select class="campo__input" id="gTextura" style="max-width:150px">
+          <option value="lisa" selected>Lisa</option><option value="costillas">Costillas</option><option value="espiral">Espiral</option><option value="facetas">Facetas</option><option value="hoyuelos">Hoyuelos</option>
+        </select>
+        <span id="grupoTextura">
+          <span class="scratch-opciones__label">Cantidad:</span>
+          <input class="campo__input" type="number" id="gTexturaN" min="4" max="36" step="1" value="12" style="max-width:80px">
+        </span>
+        <span id="grupoTexturaProf">
+          <span class="scratch-opciones__label">Profundidad:</span>
+          <input class="campo__input" type="number" id="gTexturaProf" min="0.3" max="3" step="0.1" value="1" style="max-width:80px"> <span class="scratch-opciones__label">mm</span>
+        </span>
+      </div>
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Arriba:</span>
+        <select class="campo__input" id="gTope" style="max-width:230px">
+          <option value="cuello" selected>Cuello para el capuchón metálico</option><option value="argolla">Argolla para colgar</option><option value="nada">Nada</option>
+        </select>
+        <span id="grupoCuello">
+          <span class="scratch-opciones__label">Cuello Ø:</span>
+          <input class="campo__input" type="number" id="gCuello" min="10" max="20" step="0.5" value="14" style="max-width:80px"> <span class="scratch-opciones__label">mm</span>
+        </span>
+        <span class="scratch-opciones__label">Relleno:</span>
+        <select class="campo__input" id="gRelleno" style="max-width:220px">
+          <option value="macizo" selected>Macizo (sin voladizos)</option><option value="hueco">Hueco (más liviano)</option>
+        </select>
+        <span id="grupoPared">
+          <span class="scratch-opciones__label">Pared:</span>
+          <input class="campo__input" type="number" id="gPared" min="1.6" max="6" step="0.2" value="2.4" style="max-width:80px"> <span class="scratch-opciones__label">mm</span>
+        </span>
+      </div>
+      <div class="scratch-opciones" id="grupoDecor" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Nombre y motivo:</span>
+        <select class="campo__input" id="gEstilo" style="max-width:150px">
+          <option value="relieve" selected>En relieve</option><option value="grabado">Grabados</option>
+        </select>
+        <input class="campo__input" type="number" id="gRelieve" min="0.4" max="3" step="0.1" value="1" style="max-width:80px"> <span class="scratch-opciones__label">mm</span>
+      </div>
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Color del globo:</span> <input type="color" id="gColorCuerpo" value="#c0392b">
+        <span class="scratch-opciones__label">Color del nombre:</span> <input type="color" id="gColorNombre" value="#f1c40f">
+        <span class="scratch-opciones__label">Detalle:</span>
+        <select class="campo__input" id="gDetalle" style="max-width:190px">
+          <option value="rapido">Rápido (borrador)</option><option value="normal" selected>Normal</option><option value="fino">Fino (tarda más)</option>
+        </select>
+        <button class="btn btn--primary" id="btnGlobo" type="button">🎄 Generar el globo</button>
+        <span class="ia-catalogo__ayuda" id="progreso" style="margin:0;display:none"></span>
+      </div>
+      <div class="navidad-mascara">
+        <span class="scratch-opciones__label">El frente desenrollado (así se envuelve sobre el globo):</span>
+        <canvas id="vistaMascara"></canvas>
+      </div>
+      <p class="ia-catalogo__ayuda" style="margin-top:0.5rem">El globo se parte en dos mitades (frente y dorso) por un plano vertical, con tres pernos de filamento de 1,75 mm (cuatro si es hueco) para alinearlas. «Macizo» se imprime con el relleno del slicer, sin voladizos; «hueco» es más liviano pero el interior de cada cúpula tiene un voladizo cerca del polo. El cuello está pensado para el capuchón metálico de los globos comunes (Ø 14 mm): se aprieta el alambre y se mete en el cuello. El nombre se escribe sobre el frente y se envuelve alrededor del globo.</p>
+    </div>
+
+    <!-- ---- Adorno plano ---- -->
+    <div id="panelPlano" style="margin-top:1.2rem;display:none">
+      <div class="navidad-plano">
+        <div>
+          <span class="scratch-opciones__label">Forma:</span>
+          <div id="gridFormas" class="sello-iconos"></div>
+          <select class="campo__input" id="pForma" style="max-width:200px;margin-top:0.4rem"></select>
+        </div>
+        <div>
+          <span class="scratch-opciones__label">Nombre (una línea por renglón, hasta seis):</span><br>
+          <textarea class="campo__input" id="pNombre" rows="3" style="max-width:260px;width:100%">Noel</textarea>
+          <label class="scratch-check"><input type="checkbox" id="pNombreGrande" checked> Primera línea grande</label>
+        </div>
+      </div>
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Fuente:</span>
+        <select class="campo__input" id="pFuente" style="max-width:190px">
+          <option value="lobster" selected>Lobster (retro)</option>
+          <option value="pacifico">Pacifico (pincel)</option>
+          <option value="chewy">Chewy (divertida)</option>
+          <option value="caveat">Caveat (manuscrita)</option>
+          <option value="playfair">Playfair (serif)</option>
+          <option value="oswald">Oswald (condensada)</option>
+          <option value="grotesk">Space Grotesk (sans)</option>
+          <option value="bungee">Bungee (bloque)</option>
+        </select>
+        <span class="scratch-opciones__label">Patrón de fondo:</span>
+        <select class="campo__input" id="pPatron" style="max-width:170px">
+          <option value="ninguno" selected>Ninguno</option><option value="puntitos">Puntitos de nieve</option><option value="estrellitas">Estrellitas</option><option value="rayas">Rayas de caramelo</option>
+        </select>
+        <span class="scratch-opciones__label">Tamaño (lado mayor):</span>
+        <input class="campo__input" type="number" id="pAltura" min="30" max="200" step="1" value="80" style="max-width:90px"> <span class="scratch-opciones__label">mm</span>
+        <label class="scratch-check"><input type="checkbox" id="pBorde" checked> Borde realzado</label>
+      </div>
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Colgarlo con:</span>
+        <select class="campo__input" id="pColgar" style="max-width:260px">
+          <option value="cinta" selected>Argolla para cinta</option><option value="pie">Pie para la mesa (pieza aparte)</option><option value="iman">Imán de heladera (10 × 2 mm)</option>
+        </select>
+        <span id="grupoAgujero">
+          <span class="scratch-opciones__label">Agujero de la cinta:</span>
+          <input class="campo__input" type="number" id="pAgujero" min="0" max="10" step="0.5" value="5" style="max-width:80px"> <span class="scratch-opciones__label">mm (0 = sin argolla)</span>
+        </span>
+      </div>
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Grosor:</span>
+        <input class="campo__input" type="number" id="pGrosor" min="1.6" max="6" step="0.2" value="2.4" style="max-width:80px"> <span class="scratch-opciones__label">mm</span>
+        <span class="scratch-opciones__label">Relieve:</span>
+        <input class="campo__input" type="number" id="pRelieve" min="0.4" max="3" step="0.2" value="1" style="max-width:80px"> <span class="scratch-opciones__label">mm</span>
+        <span class="scratch-opciones__label">Ancho del borde:</span>
+        <input class="campo__input" type="number" id="pAnchoBorde" min="1" max="6" step="0.2" value="2.4" style="max-width:80px"> <span class="scratch-opciones__label">mm</span>
+      </div>
+      <div class="scratch-opciones" style="margin-top:0.8rem">
+        <span class="scratch-opciones__label">Color del adorno:</span> <input type="color" id="pColorAdorno" value="#1e8449">
+        <span class="scratch-opciones__label">Nombre:</span> <input type="color" id="pColorNombre" value="#f1c40f">
+        <span class="scratch-opciones__label">Borde y patrón:</span> <input type="color" id="pColorBorde" value="#c0392b">
+      </div>
+      <p class="ia-catalogo__ayuda" style="margin-top:0.5rem">El nombre se achica solo hasta caber dentro de la silueta: si sale chico, agrandá el adorno, repartí el nombre en más líneas o elegí el globo. Los trazos más finos que 1 mm no salen con pico de 0,4 mm: usá una fuente más gorda o sacá el borde. Todas las alturas son múltiplos de 0,2 mm (capas). Con «imán», el grosor sube a 3,4 mm para dejar 1,2 mm de fondo sobre el bolsillo.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== RESULTADO ====== -->
+<section class="editor-section" id="seccionResultado">
+  <div class="container">
+    <div class="section__eyebrow" style="margin-bottom:0.6rem">// Paso 3 — El adorno en 3D y las descargas</div>
+    <div id="descargas" class="moldes-descargas"></div>
+    <div id="statsModelo" class="inf-stats" style="margin-bottom:0.6rem"></div>
+    <div class="moldes-vista">
+      <h3 class="sello-panel__titulo">Vista 3D (giralo con el mouse)
+        <label class="scratch-check" id="filaVistaGlobo" style="margin-left:1rem;font-weight:400"><input type="checkbox" id="optVistaPartes"> Ver las mitades como se imprimen</label>
+      </h3>
+      <canvas id="lienzo3d"></canvas>
+    </div>
+    <div class="moldes-consejos">
+      <div id="consejosGlobo">
+        <h3 class="sello-panel__titulo">Imprimir y armar el globo</h3>
+        <ul class="gall-pasos">
+          <li>Cada mitad se apoya por la cara de corte, con la cúpula hacia arriba. Sin soportes, capas de 0,12 a 0,16 mm, 3 o 4 perímetros, PLA (el PLA seda queda brillante).</li>
+          <li>Cortá trozos de filamento de 1,75 mm de 5,5 mm de largo y metelos en los agujeros de una mitad.</li>
+          <li>Un hilo de cianoacrilato en gel por el borde, juntá las mitades y sostené un minuto.</li>
+          <li>Apretá el alambre del capuchón metálico y metelo en el cuello, o pasá una cinta por la argolla.</li>
+          <li>Con «STL del globo macizo» lo llevás a <a href="moldes.html">Moldes para colar</a>: molde de dos partes para velas de bola o caja para silicona.</li>
+        </ul>
+      </div>
+      <div id="consejosPlano" style="display:none">
+        <h3 class="sello-panel__titulo">Imprimir el adorno plano</h3>
+        <ul class="gall-pasos">
+          <li>Se imprime plano, con el nombre hacia arriba, sin soportes: capas de 0,2 mm, 3 perímetros, 15–20 % de relleno, PLA.</li>
+          <li>Dos colores sin impresora multicolor: el cuerpo ocupa de la cama hasta el grosor elegido y el nombre, el borde y el patrón van arriba. Programá un cambio de filamento a esa altura en el slicer.</li>
+          <li>Con impresora multicolor, el 3MF trae el adorno, el nombre y el borde como partes de colores distintos.</li>
+          <li>Pie: la base se imprime aparte y el adorno se calza en la ranura. Imán: pegá un imán de 10 × 2 mm en el bolsillo de atrás.</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="sello-panel__titulo">Para el aula</h3>
+        <ul class="gall-pasos">
+          <li>Cada estudiante diseña el suyo con su nombre: una tanda de adornos planos de 60 mm entra de a ocho o diez por cama.</li>
+          <li>Para regalar: 50–60 mm de altura sirve como etiqueta de regalo o marcador de lugar en la mesa (opción «pie»).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer footer--compact">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <span class="footer__logo font-display"><span class="accent">.</span></span>
+      <div class="footer__links">
+        <a href="index.html">Inicio</a>
+        <a href="editor.html?tipo=cuestionario">Editor</a>
+        <a href="scratch.html">Fichas Scratch · micro:bit</a>
+        <a href="lego.html">Ensamble con LEGO</a>
+        <a href="protocolos.html">Protocolos de práctico</a>
+        <a href="instrumentos.html">Banco de instrumentos</a>
+        <a href="papel3d.html">Diseño 3D con papel</a>
+        <a href="sello3d.html">Sello 3D desde una imagen</a>
+        <a href="galletitas.html">Moldes de galletitas</a>
+        <a href="moldes.html">Moldes para colar</a>
+        <a href="navidad.html">Adornos de Navidad</a>
+        <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
+        <a href="arenero.html">Arenero de realidad aumentada</a>
+        <a href="ia3d.html">Pieza 3D con IA</a>
+        <a href="sombras.html">Sombras recortadas</a>
+      </div>
+    </div>
+    <span class="footer__copy">Generador de Actividades. Hecho para docentes. Vista 3D con <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT). Inspirado en <a href="https://meshcast.app" target="_blank" rel="noopener">Meshcast</a>.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="jszip.min.js"></script>
+<script src="tema.js"></script>
+<script src="guia.js"></script>
+<script src="templatemo-axis-script.js"></script>
+<script type="module" src="navidad.js"></script>
+
+</body>
+</html>

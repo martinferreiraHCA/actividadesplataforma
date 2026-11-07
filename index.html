@@ -39,6 +39,7 @@
           <a href="sello3d.html">🧊 Sello 3D desde una imagen</a>
           <a href="galletitas.html">🍪 Moldes de galletitas</a>
           <a href="moldes.html">🕯️ Moldes para colar (STL)</a>
+          <a href="navidad.html">🎄 Adornos de Navidad</a>
           <a href="escaneo3d.html">🎥 Escaneo 3D con Kinect</a>
           <a href="arenero.html">🏖️ Arenero de realidad aumentada</a>
           <a href="ia3d.html">🤖 Pieza 3D con IA</a>
@@ -201,6 +202,7 @@
         <a href="sello3d.html">Sello 3D desde una imagen</a>
         <a href="galletitas.html">Moldes de galletitas</a>
         <a href="moldes.html">Moldes para colar</a>
+        <a href="navidad.html">Adornos de Navidad</a>
         <a href="escaneo3d.html">Escaneo 3D con Kinect</a>
         <a href="arenero.html">Arenero de realidad aumentada</a>
         <a href="ia3d.html">Pieza 3D con IA</a>
@@ -333,6 +335,20 @@
   `;
   grid.appendChild(cardMoldes);
   nuevasCards.push(cardMoldes);
+  idx++;
+
+  // Ficha especial: adornos de Navidad (página propia)
+  const cardNavidad = document.createElement('a');
+  cardNavidad.href = 'navidad.html';
+  cardNavidad.className = 'actividad-card reveal';
+  cardNavidad.setAttribute('role', 'listitem');
+  cardNavidad.innerHTML = `
+    <div class="actividad-card__id">AC—${String(idx).padStart(2, '0')}</div>
+    <h3 class="actividad-card__nombre">Adornos de Navidad</h3>
+    <p class="actividad-card__desc">Globos redondos personalizados con nombre, motivo y textura, en dos mitades para la impresora 3D, y adornos planos con nombre (estrella, corazón, campana, árbol, copo, jengibre, muñeco…) con cinta, pie o imán. STL de un color o 3MF de colores.</p>
+  `;
+  grid.appendChild(cardNavidad);
+  nuevasCards.push(cardNavidad);
   idx++;
 
   // Ficha especial: escaneo 3D con Kinect (página propia)

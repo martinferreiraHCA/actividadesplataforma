@@ -1,0 +1,40 @@
+/* Adornos de Navidad — pantalla
+   (tarjetas, grilla de íconos y panel 3D vienen de sello3d.css y moldes.css) */
+
+#grupoTextura, #grupoTexturaProf, #grupoCuello, #grupoPared, #grupoAgujero {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.navidad-mascara { margin-top: 0.8rem; }
+.navidad-mascara canvas {
+  display: block;
+  margin-top: 0.4rem;
+  max-width: 100%;
+  height: auto;
+  max-height: 160px;
+  border: 1px solid var(--borde, rgba(0,0,0,0.2));
+  border-radius: 8px;
+  background: #fff;
+}
+
+.navidad-plano {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.3fr) minmax(240px, 1fr);
+  gap: 1.2rem;
+}
+@media (max-width: 800px) { .navidad-plano { grid-template-columns: 1fr; } }
+
+.sello-icono canvas { width: 100%; height: 100%; display: block; }
+
+input[type="color"] {
+  width: 44px;
+  height: 32px;
+  padding: 2px;
+  border: 1.5px solid var(--borde, rgba(0,0,0,0.3));
+  border-radius: 6px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+}
