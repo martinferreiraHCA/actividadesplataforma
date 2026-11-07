@@ -906,6 +906,15 @@ $$T = 2\\pi\\sqrt{\\frac{L}{g}}$$                 ← centrada, en su propio blo
           con una sola impresora de un color, cambio de filamento a la altura del grosor en el slicer.</li>
           <li>Se imprime plano, con el nombre hacia arriba, sin soportes: capas de 0,2 mm, 3 perímetros, 15–20 % de relleno.</li>
         </ul>
+        <h4 class="guia-h">3 · Hacerle un molde y colarlo</h4>
+        <ul class="guia-lista">
+          <li>El adorno también puede ser el <strong>modelo de un molde</strong>: en el paso 4, un clic manda el adorno macizo a
+          «Moldes para colar» con el tipo de molde ya elegido (dos partes para velas, resina o yeso; caja para silicona; prensa
+          para jabón o arcilla; abierto). El globo va entero con el cuello como boca de colada; el adorno plano va dado vuelta,
+          con el relieve en el piso del molde. Después se imprime el molde y se cuela cera, jabón, yeso o resina.</li>
+          <li>Para velas de bola con nombre: globo bola o gota, nombre <strong>grabado</strong> (queda en relieve en la vela) y
+          molde de dos partes. Con texturas profundas, molde de silicona.</li>
+        </ul>
       `
     },
     {

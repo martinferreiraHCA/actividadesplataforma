@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './lego/vendor/OrbitControls.js';
 import { vectorizarMascara } from './sombras-vector.js';
 import { posar, poseDeJunta } from './moldes-nucleo.js';
+import { dejarModelo } from './modelo-puente.js';
 
 const $ = id => document.getElementById(id);
 
@@ -314,8 +315,48 @@ function mostrarGlobo() {
     descargarBlob(new Blob([stlDeMallas([m])], { type: 'model/stl' }), nombreBase + '-globo-macizo.stl');
     toast('Subí este STL en «Moldes para colar» para hacerle un molde de vela o de silicona');
   });
+  armarBotonesMolde(entero ? () => trisDeMallas([{ pos: entero.pos, idx: entero.idx }]) : null, 'globo-' + nombreBase, false);
   if (!vista3d) vista3d = iniciarVista3D();
   vista3d.mostrarGlobo(resultado, partes, $('optVistaPartes').checked);
+}
+
+// {pos, idx} → triángulos sueltos (9 números por triángulo)
+function trisDeMallas(mallas) {
+  let n = 0;
+  for (const m of mallas) n += m.idx.length;
+  const tris = new Float32Array(n * 3);
+  let o = 0;
+  for (const m of mallas) for (let t = 0; t < m.idx.length; t++) { const v = m.idx[t] * 3; tris[o++] = m.pos[v]; tris[o++] = m.pos[v + 1]; tris[o++] = m.pos[v + 2]; }
+  return tris;
+}
+
+// Paso 4: mandar el adorno macizo a «Moldes para colar» con el tipo de molde elegido
+function armarBotonesMolde(obtenerTris, nombre, darVuelta) {
+  const cont = $('botonesMolde');
+  cont.innerHTML = '';
+  if (!obtenerTris) return;
+  const tipos = [
+    ['🕯️ Molde de dos partes (velas, resina, yeso)', 'rigido'],
+    ['🧪 Caja para silicona (molde flexible)', 'silicona'],
+    ['🧼 Molde de prensa (jabón, arcilla)', 'prensa'],
+    ['🫙 Molde abierto (yeso, jabón de cara plana)', 'abierto']
+  ];
+  for (const [texto, tipo] of tipos) {
+    const b = document.createElement('button');
+    b.className = 'btn btn--primary';
+    b.textContent = texto;
+    b.addEventListener('click', async () => {
+      try {
+        await dejarModelo(obtenerTris(), nombre, { origen: 'navidad', tipo, invertir: !!darVuelta });
+      } catch (err) {
+        console.error(err);
+        toast('No pude pasar el modelo: ' + err.message);
+        return;
+      }
+      location.href = 'moldes.html?modelo=pendiente';
+    });
+    cont.appendChild(b);
+  }
 }
 
 // ============================================================
@@ -534,6 +575,7 @@ function generarPlano() {
     descargarBlob(await generar3MF(res.mallas, 'Adorno de Navidad'), nombreBase + '-adorno.3mf');
     toast('3MF con el adorno, el nombre y el borde como colores separados');
   });
+  armarBotonesMolde(() => trisDeMallas(principales), 'adorno-' + nombreBase, true);
   if (!vista3d) vista3d = iniciarVista3D();
   vista3d.mostrarPlano(res);
 }
@@ -721,6 +763,7 @@ function ajustarModo() {
   $('consejosPlano').style.display = modo === 'plano' ? '' : 'none';
   $('descargas').innerHTML = '';
   $('statsModelo').innerHTML = '';
+  $('botonesMolde').innerHTML = '';
   if (modo === 'globo') { if (estado.globo) mostrarGlobo(); else conFuentes(generarGlobo); }
   else generarPlanoPronto();
 }

@@ -481,6 +481,9 @@ pistón con el relieve) para arcilla, jabón en frío y bombas de baño. Un `.st
   nombre; argolla, pie con ranura (pieza aparte) o bolsillo para imán (cuerpo en dos capas). Todo extruido con three.js.
 - Exportación STL (unión) y 3MF multicolor con una parte por color; vista 3D del adorno armado o de las mitades como se
   imprimen.
+- **Hacerle un molde** (`modelo-puente.js`): el adorno macizo (el globo entero con cuello, o el adorno plano dado vuelta)
+  se deja en IndexedDB y `moldes.html?modelo=pendiente` lo levanta con el tipo de molde elegido (dos partes, silicona,
+  prensa o abierto), para imprimir el molde y colar cera, jabón, yeso o resina.
 
 ## Tecnología
 
@@ -518,6 +521,7 @@ Sección Diseño:
 /moldes-nucleo.js         ← Campos de distancia, armado de los moldes y mallas (Web Worker: moldes-worker.js)
 /navidad.html /.js /.css  ← Adornos de Navidad (globo redondo en dos mitades y adorno plano con nombre)
 /navidad-nucleo.js        ← Globo redondo con campos de distancia (Web Worker: navidad-worker.js)
+/modelo-puente.js         ← Pasa un modelo entre páginas por IndexedDB (adorno → molde)
 /escaneo3d.html           ← Escaneo 3D con Kinect
 /escaneo3d.js             ← Página: conexión, vista en vivo, tomas, modelo
 /escaneo3d-nucleo.js      ← Fusión volumétrica, malla, purgado y exportación (sin DOM)

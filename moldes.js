@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './lego/vendor/OrbitControls.js';
 import { leerModelo3D } from './modelo3d-leer.js';
 import { cajaDeTris, orientar } from './moldes-nucleo.js';
+import { tomarModelo } from './modelo-puente.js';
 
 const $ = id => document.getElementById(id);
 
@@ -459,3 +460,21 @@ $('btnGenerar').addEventListener('click', () => {
 });
 
 ajustarControles();
+
+// Modelo que dejó otra página (Adornos de Navidad): se carga solo al abrir
+if (new URLSearchParams(location.search).get('modelo') === 'pendiente') {
+  tomarModelo().then(dato => {
+    if (!dato || !dato.tris || !dato.tris.length) { toast('No encontré el modelo que venía de la otra página'); return; }
+    const meta = dato.meta || {};
+    if (meta.tipo) {
+      const radio = document.querySelector('input[name="tipo"][value="' + meta.tipo + '"]');
+      if (radio) radio.checked = true;
+    }
+    $('optInvertir').checked = !!meta.invertir;
+    $('optArriba').value = 'z';
+    $('optEscala').value = 100;
+    const origen = meta.origen === 'navidad' ? 'Adornos de Navidad' : 'otra página';
+    usarModelo(dato.tris, dato.nombre || 'modelo', `✔ Modelo recibido de «${origen}»: ${dato.nombre || 'modelo'} — ${(dato.tris.length / 9).toLocaleString('es')} triángulos` + (meta.invertir ? ' · dado vuelta para que el relieve quede en el piso del molde' : ''));
+    history.replaceState(null, '', location.pathname);
+  }).catch(err => { console.error(err); toast('No pude leer el modelo pendiente: ' + err.message); });
+}
