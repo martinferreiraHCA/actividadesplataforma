@@ -47,6 +47,21 @@ function detectarTipo(raw) {
   return alias[n] || null;
 }
 
+// Las IA (sobre todo ChatGPT al usar "copiar") a veces devuelven el Markdown
+// "escapado": "\# Cuestionario", "\- [x] ...", "\> Retro:", "\*\*Respuesta:\*\*",
+// "opcion\_multiple" y una "\" al final de cada línea. Lo deshacemos antes de
+// parsear. Sólo actúa si el texto muestra esos síntomas, para no tocar barras
+// invertidas legítimas (p. ej. LaTeX) en textos normales.
+export function limpiarEscapes(texto) {
+  texto = String(texto || "").replace(/\r\n?/g, "\n");
+  const escapado = /^[ \t]*\\(?:#|[-*>](?=[ \\])|\*\*)/m.test(texto) ||
+    /^[ \t]*#{1,2}.*\\$/m.test(texto) || /::\s*\w+\\_/.test(texto);
+  if (!escapado) return texto;
+  return texto.split("\n").map(l =>
+    l.replace(/\\[ \t]*$/, "").replace(/\\([#\-*>_\[\]`.!+~|])/g, "$1")
+  ).join("\n");
+}
+
 // ====== PARSER FORMATO EXTENDIDO ======
 export function parsearExtendido(texto) {
   const preguntas = [];
@@ -318,6 +333,7 @@ export function detectarFormato(texto) {
 }
 
 export function parsear(texto) {
+  texto = limpiarEscapes(texto);
   const formato = detectarFormato(texto);
   if (formato === "aiken") {
     return { ...parsearAiken(texto), formato: "aiken" };
